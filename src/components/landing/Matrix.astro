@@ -1,31 +1,19 @@
 ---
-const bloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-
-// Matriz de compatibilidad para Donantes y Receptores
-const compatibilityData = [
-  { type: "O-", giveTo: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], receiveFrom: ["O-"], isUniversalDonor: true },
-  { type: "O+", giveTo: ["O+", "A+", "B+", "AB+"], receiveFrom: ["O+", "O-"] },
-  { type: "A-", giveTo: ["A+", "A-", "AB+", "AB-"], receiveFrom: ["A-", "O-"] },
-  { type: "A+", giveTo: ["A+", "AB+"], receiveFrom: ["A+", "A-", "O+", "O-"] },
-  { type: "B-", giveTo: ["B+", "B-", "AB+", "AB-"], receiveFrom: ["B-", "O-"] },
-  { type: "B+", giveTo: ["B+", "AB+"], receiveFrom: ["B+", "B-", "O+", "O-"] },
-  { type: "AB-", giveTo: ["AB+", "AB-"], receiveFrom: ["AB-", "A-", "B-", "O-"] },
-  { type: "AB+", giveTo: ["AB+"], receiveFrom: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], isUniversalReceiver: true },
-];
+const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 ---
 
 <section id="compatibilidad" class="relative overflow-hidden bg-[#f7f7f7] py-20 lg:py-28">
   
-  <!-- Patrón de Rejilla de Fondo (Black Grid Overlay) -->
+  <!-- Patrón de Rejilla de Fondo -->
   <div 
     class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
     aria-hidden="true"
   ></div>
 
-  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     
     <!-- Encabezado de la Sección -->
-    <div class="text-center max-w-3xl mx-auto space-y-4">
+    <div class="text-center max-w-2xl mx-auto space-y-4">
       <span class="inline-block rounded-full bg-blud-flag-red/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blud-flag-red">
         Algoritmo Biológico
       </span>
@@ -33,137 +21,155 @@ const compatibilityData = [
         Matriz de <span class="text-blud-flag-red">Compatibilidad</span> Sanguínea
       </h2>
       <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
-        Selecciona un tipo de sangre para evaluar al instante las compatibilidades de donación y recepción de componentes sanguíneos.
+        Selecciona un tipo de sangre para consultar al instante sus compatibilidades de donación y recepción.
       </p>
     </div>
 
-    <!-- Selector Interactivo de Tipo de Sangre -->
-    <div class="mt-12 flex flex-wrap justify-center gap-2 sm:gap-3">
-      {bloodTypes.map((type, idx) => (
-        <button
-          type="button"
-          data-type={type}
-          class={`matrix-btn transition-all duration-200 px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base border-2 ${
-            idx === 0
-              ? "bg-blud-flag-red text-white border-blud-flag-red shadow-lg shadow-blud-flag-red/30 scale-105"
-              : "bg-white text-slate-700 border-slate-300 hover:border-blud-flag-red hover:text-blud-flag-red shadow-sm"
-          }`}
-        >
-          {type}
-        </button>
-      ))}
+    <!-- Unico Selector de Tipo de Sangre -->
+    <div class="mt-10 max-w-xs mx-auto">
+      <label for="blood-type-select" class="block text-xs font-black uppercase text-slate-500 mb-2 text-center">
+        Selecciona el Tipo de Sangre
+      </label>
+      <select
+        id="blood-type-select"
+        class="w-full bg-white border-2 border-slate-300 focus:border-blud-flag-red focus:ring-2 focus:ring-blud-flag-red/20 text-slate-900 font-bold text-lg rounded-xl px-4 py-3 shadow-sm transition-all outline-none cursor-pointer text-center"
+      >
+        {bloodTypes.map((type) => (
+          <option value={type}>Tipo {type}</option>
+        ))}
+      </select>
     </div>
 
-    <!-- Matriz Visual / Tabla de Transfusión -->
-    <div class="mt-12 rounded-2xl bg-white/90 border-2 border-slate-200 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
-      <div class="overflow-x-auto">
-        <table class="w-full text-center border-collapse">
-          <thead>
-            <tr class="border-b-2 border-slate-200">
-              <th class="py-4 px-3 text-xs font-black uppercase tracking-wider text-slate-500 text-left">
-                Tipo Sanguíneo
-              </th>
-              <th class="py-4 px-3 text-xs font-black uppercase tracking-wider text-slate-500">
-                Puede Donar A
-              </th>
-              <th class="py-4 px-3 text-xs font-black uppercase tracking-wider text-slate-500">
-                Puede Recibir De
-              </th>
-              <th class="py-4 px-3 text-xs font-black uppercase tracking-wider text-slate-500">
-                Atributo Especial
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            {compatibilityData.map((item, idx) => (
-              <tr 
-                id={`row-${item.type}`}
-                class={`matrix-row transition-all duration-200 hover:bg-slate-50/80 ${
-                  idx === 0 ? "bg-slate-100/90 ring-2 ring-blud-flag-red/50" : ""
-                }`}
-              >
-                <!-- Tipo de sangre -->
-                <td class="py-4 px-3 text-left font-black text-slate-900 text-lg">
-                  <span class="inline-flex items-center justify-center h-9 w-12 rounded-lg bg-slate-100 text-slate-900 shadow-xs border-2 border-slate-200">
-                    {item.type}
-                  </span>
-                </td>
+    <!-- Caja Única de Resultados -->
+    <div class="mt-8 rounded-2xl bg-white border-2 border-slate-200 p-6 sm:p-8 shadow-xl">
+      
+      <!-- Fila Resumen con Badges -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center pb-6 border-b-2 border-slate-100">
+        
+        <!-- Puede Donar A -->
+        <div class="space-y-2">
+          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
+            Puede Donar A
+          </span>
+          <div id="res-give" class="flex flex-wrap justify-center gap-1.5 min-h-[32px]"></div>
+        </div>
 
-                <!-- Puede Donar A -->
-                <td class="py-4 px-3">
-                  <div class="flex flex-wrap justify-center gap-1.5">
-                    {item.giveTo.map((target) => (
-                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300">
-                        {target}
-                      </span>
-                    ))}
-                  </div>
-                </td>
+        <!-- Tipo Seleccionado Destacado -->
+        <div class="flex flex-col items-center justify-center space-y-2 order-first md:order-none py-2 md:py-0 border-y md:border-y-0 md:border-x border-slate-100">
+          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
+            Tipo Evaluado
+          </span>
+          <span id="res-type" class="inline-flex items-center justify-center h-12 w-16 rounded-xl bg-blud-flag-red text-white font-black text-2xl shadow-md shadow-blud-flag-red/20">
+            O-
+          </span>
+          <div id="res-tag" class="pt-1"></div>
+        </div>
 
-                <!-- Puede Recibir De -->
-                <td class="py-4 px-3">
-                  <div class="flex flex-wrap justify-center gap-1.5">
-                    {item.receiveFrom.map((source) => (
-                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300">
-                        {source}
-                      </span>
-                    ))}
-                  </div>
-                </td>
+        <!-- Puede Recibir De -->
+        <div class="space-y-2">
+          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
+            Puede Recibir De
+          </span>
+          <div id="res-receive" class="flex flex-wrap justify-center gap-1.5 min-h-[32px]"></div>
+        </div>
 
-                <!-- Tag Especial -->
-                <td class="py-4 px-3">
-                  {item.isUniversalDonor && (
-                    <span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-extrabold text-emerald-600 border border-emerald-300">
-                      Donante Universal
-                    </span>
-                  )}
-                  {item.isUniversalReceiver && (
-                    <span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-extrabold text-blue-600 border border-blue-300">
-                      Receptor Universal
-                    </span>
-                  )}
-                  {!item.isUniversalDonor && !item.isUniversalReceiver && (
-                    <span class="text-xs text-slate-400 font-medium">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
+
+      <!-- Mensaje / Diagnóstico Biológico -->
+      <div class="mt-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5">
+        <div class="p-2 bg-blud-flag-red/10 text-blud-flag-red rounded-lg shrink-0 mt-0.5">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h4 class="text-xs font-black text-slate-900 uppercase tracking-wide">
+            Nota de Compatibilidad
+          </h4>
+          <p id="res-message" class="text-sm text-slate-600 leading-relaxed mt-1">
+            Cargando información...
+          </p>
+        </div>
+      </div>
+
     </div>
 
   </div>
 </section>
 
+<!-- Data JSON embed -->
+<script id="compatibility-json" type="application/json" is:raw>
+  {
+    "O-": { "giveTo": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "receiveFrom": ["O-"], "isUniversalDonor": true },
+    "O+": { "giveTo": ["O+", "A+", "B+", "AB+"], "receiveFrom": ["O+", "O-"] },
+    "A-": { "giveTo": ["A+", "A-", "AB+", "AB-"], "receiveFrom": ["A-", "O-"] },
+    "A+": { "giveTo": ["A+", "AB+"], "receiveFrom": ["A+", "A-", "O+", "O-"] },
+    "B-": { "giveTo": ["B+", "B-", "AB+", "AB-"], "receiveFrom": ["B-", "O-"] },
+    "B+": { "giveTo": ["B+", "AB+"], "receiveFrom": ["B+", "B-", "O+", "O-"] },
+    "AB-": { "giveTo": ["AB+", "AB-"], "receiveFrom": ["AB-", "A-", "B-", "O-"] },
+    "AB+": { "giveTo": ["AB+"], "receiveFrom": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "isUniversalReceiver": true }
+  }
+</script>
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    const buttons = document.querySelectorAll(".matrix-btn");
-    const rows = document.querySelectorAll(".matrix-row");
+    const dataElement = document.getElementById("compatibility-json");
+    if (!dataElement) return;
+    
+    const matrixData = JSON.parse(dataElement.textContent || "{}");
+    const bloodSelect = document.getElementById("blood-type-select") as HTMLSelectElement;
 
-    buttons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const selectedType = btn.getAttribute("data-type");
+    const resType = document.getElementById("res-type");
+    const resGive = document.getElementById("res-give");
+    const resReceive = document.getElementById("res-receive");
+    const resTag = document.getElementById("res-tag");
+    const resMessage = document.getElementById("res-message");
 
-        // Actualizar estados de botones
-        buttons.forEach((b) => {
-          b.classList.remove("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-lg", "shadow-blud-flag-red/30", "scale-105");
-          b.classList.add("bg-white", "text-slate-700", "border-slate-300", "shadow-sm");
-        });
+    function renderBadges(list: string[]) {
+      return list
+        .map(
+          (item) =>
+            `<span class="inline-block rounded-md bg-white px-2.5 py-1 text-xs font-bold text-slate-800 border-2 border-slate-300 shadow-xs">${item}</span>`
+        )
+        .join("");
+    }
 
-        btn.classList.remove("bg-white", "text-slate-700", "border-slate-300", "shadow-sm");
-        btn.classList.add("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-lg", "shadow-blud-flag-red/30", "scale-105");
+    function updateView() {
+      const selectedType = bloodSelect.value;
+      const info = matrixData[selectedType];
 
-        // Destacar la fila correspondiente
-        rows.forEach((row) => {
-          if (row.id === `row-${selectedType}`) {
-            row.classList.add("bg-slate-100/90", "ring-2", "ring-blud-flag-red/50");
-          } else {
-            row.classList.remove("bg-slate-100/90", "ring-2", "ring-blud-flag-red/50");
-          }
-        });
-      });
-    });
+      if (!info) return;
+
+      if (resType) resType.textContent = selectedType;
+      if (resGive) resGive.innerHTML = renderBadges(info.giveTo);
+      if (resReceive) resReceive.innerHTML = renderBadges(info.receiveFrom);
+
+      // Renderizar atributo especial
+      if (resTag) {
+        if (info.isUniversalDonor) {
+          resTag.innerHTML = `<span class="inline-block rounded-full bg-emerald-500/10 px-3 py-0.5 text-xs font-black text-emerald-600 border-2 border-emerald-300">Donante Universal</span>`;
+        } else if (info.isUniversalReceiver) {
+          resTag.innerHTML = `<span class="inline-block rounded-full bg-blue-500/10 px-3 py-0.5 text-xs font-black text-blue-600 border-2 border-blue-300">Receptor Universal</span>`;
+        } else {
+          resTag.innerHTML = ``;
+        }
+      }
+
+      // Mensaje descriptivo
+      if (resMessage) {
+        let msg = `El tipo <strong>${selectedType}</strong> es compatible para donar a <strong>${info.giveTo.length}</strong> grupo(s) (${info.giveTo.join(", ")}) y puede recibir de <strong>${info.receiveFrom.length}</strong> grupo(s) (${info.receiveFrom.join(", ")}).`;
+
+        if (info.isUniversalDonor) {
+          msg += ` <span class="text-emerald-700 font-semibold">Al ser Donante Universal, sus glóbulos rojos son aptos para cualquier paciente en emergencias.</span>`;
+        } else if (info.isUniversalReceiver) {
+          msg += ` <span class="text-blue-700 font-semibold">Al ser Receptor Universal, puede recibir transfusiones de cualquier grupo sanguíneo.</span>`;
+        }
+
+        resMessage.innerHTML = msg;
+      }
+    }
+
+    bloodSelect.addEventListener("change", updateView);
+    updateView();
   });
 </script>
