@@ -9,10 +9,18 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
     class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
     aria-hidden="true"
   ></div>
+
+  <!-- Luces decorativas de fondo -->
+  <div class="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blud-flag-red/10 rounded-full blur-3xl animate-pulse"></div>
+
+  <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     
-    <!-- Encabezado -->
+    <!-- Encabezado (Corregido) -->
     <div class="text-center max-w-2xl mx-auto space-y-4">
       <span class="inline-flex items-center gap-1.5 rounded-full bg-blud-flag-red/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blud-flag-red border border-blud-flag-red/20 shadow-xs">
+        <span class="w-2 h-2 rounded-full bg-blud-flag-red animate-ping"></span>
+        Algoritmo Biológico
+      </span>
       <h2 class="text-3xl font-black text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
         Matriz de <span class="text-blud-flag-red">Compatibilidad</span> Sanguínea
       </h2>
@@ -32,7 +40,9 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
         <button
           type="button"
           id="dropdown-trigger"
-          class="w-full bg-white border-2 border-slate-300 hover:border-blud-flag-red focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/15 text-slate-900 font-extrabold text-lg rounded-2xl px-5 py-3.5 shadow-md flex items-center justify-between transition-all duration-300 outline-none cursor-pointer"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          class="w-full bg-white border-2 border-slate-300 hover:border-blud-flag-red focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/15 text-slate-900 font-extrabold text-lg rounded-2xl px-5 py-3.5 shadow-md flex items-center justify-between transition-all duration-300 outline-none cursor-pointer group"
         >
           <span id="selected-text" class="mx-auto">Tipo O-</span>
           <svg id="dropdown-arrow" class="w-5 h-5 text-slate-400 transition-transform duration-300 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,17 +50,17 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
           </svg>
         </button>
 
-        <!-- Lista Desplegable Animada con Estilos Custom -->
+        <!-- Lista Desplegable Animada -->
         <div
           id="dropdown-menu"
           class="absolute left-0 right-0 mt-2 bg-white/95 backdrop-blur-md border-2 border-slate-200 rounded-2xl shadow-2xl p-2 z-50 transform opacity-0 scale-95 pointer-events-none transition-all duration-200 origin-top divide-y divide-slate-100"
         >
-          <div class="grid grid-cols-2 gap-1 p-1">
+          <div class="grid grid-cols-2 gap-1.5 p-1">
             {bloodTypes.map((type, idx) => (
               <button
                 type="button"
                 data-value={type}
-                class={`dropdown-option w-full py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                class={`dropdown-option w-full py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
                   idx === 0 
                     ? "bg-blud-flag-red text-white shadow-sm shadow-blud-flag-red/30" 
                     : "text-slate-700 hover:bg-slate-100 hover:text-blud-flag-red"
@@ -169,9 +179,13 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
     let isOpen = false;
 
-    // Abrir / Cerrar Dropdown con Animación
+    // Abrir / Cerrar Dropdown
     function toggleDropdown(show?: boolean) {
       isOpen = show !== undefined ? show : !isOpen;
+
+      if (trigger) {
+        trigger.setAttribute("aria-expanded", String(isOpen));
+      }
 
       if (isOpen) {
         menu?.classList.remove("opacity-0", "scale-95", "pointer-events-none");
@@ -210,7 +224,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
       if (selectedText) selectedText.textContent = `Tipo ${selectedType}`;
 
-      // Efecto háptico en la tarjeta
+      // Efecto háptico visual en la tarjeta
       if (resultsBox) {
         resultsBox.classList.add("scale-[0.98]", "opacity-80");
         setTimeout(() => resultsBox.classList.remove("scale-[0.98]", "opacity-80"), 150);
