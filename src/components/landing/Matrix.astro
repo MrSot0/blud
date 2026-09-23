@@ -43,9 +43,9 @@ const compatibilityData = [
         <button
           type="button"
           data-type={type}
-          class={`matrix-btn transition-all duration-200 px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base border ${
+          class={`matrix-btn transition-all duration-200 px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base border-2 ${
             idx === 0
-              ? "bg-blud-flag-red text-white border-blud-flag-red shadow-md shadow-blud-flag-red/20 scale-105"
+              ? "bg-blud-flag-red text-white border-blud-flag-red shadow-lg shadow-blud-flag-red/30 scale-105"
               : "bg-white text-slate-700 border-slate-300 hover:border-blud-flag-red hover:text-blud-flag-red shadow-sm"
           }`}
         >
@@ -55,11 +55,11 @@ const compatibilityData = [
     </div>
 
     <!-- Matriz Visual / Tabla de Transfusión -->
-    <div class="mt-12 rounded-2xl bg-white/90 border border-slate-200/80 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
+    <div class="mt-12 rounded-2xl bg-white/90 border-2 border-slate-200 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-center border-collapse">
           <thead>
-            <tr class="border-b border-slate-200">
+            <tr class="border-b-2 border-slate-200">
               <th class="py-4 px-3 text-xs font-black uppercase tracking-wider text-slate-500 text-left">
                 Tipo Sanguíneo
               </th>
@@ -79,12 +79,12 @@ const compatibilityData = [
               <tr 
                 id={`row-${item.type}`}
                 class={`matrix-row transition-all duration-200 hover:bg-slate-50/80 ${
-                  idx === 0 ? "bg-slate-100/90 ring-2 ring-blud-flag-red/30" : ""
+                  idx === 0 ? "bg-slate-100/90 ring-2 ring-blud-flag-red/50" : ""
                 }`}
               >
                 <!-- Tipo de sangre -->
                 <td class="py-4 px-3 text-left font-black text-slate-900 text-lg">
-                  <span class="inline-flex items-center justify-center h-9 w-12 rounded-lg bg-slate-100 text-slate-900 shadow-xs border border-slate-200">
+                  <span class="inline-flex items-center justify-center h-9 w-12 rounded-lg bg-slate-100 text-slate-900 shadow-xs border-2 border-slate-200">
                     {item.type}
                   </span>
                 </td>
@@ -93,7 +93,7 @@ const compatibilityData = [
                 <td class="py-4 px-3">
                   <div class="flex flex-wrap justify-center gap-1.5">
                     {item.giveTo.map((target) => (
-                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200/60">
+                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300">
                         {target}
                       </span>
                     ))}
@@ -104,7 +104,7 @@ const compatibilityData = [
                 <td class="py-4 px-3">
                   <div class="flex flex-wrap justify-center gap-1.5">
                     {item.receiveFrom.map((source) => (
-                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-200/60">
+                      <span class="inline-block rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300">
                         {source}
                       </span>
                     ))}
@@ -114,12 +114,12 @@ const compatibilityData = [
                 <!-- Tag Especial -->
                 <td class="py-4 px-3">
                   {item.isUniversalDonor && (
-                    <span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-extrabold text-emerald-600 border border-emerald-200">
+                    <span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-extrabold text-emerald-600 border border-emerald-300">
                       Donante Universal
                     </span>
                   )}
                   {item.isUniversalReceiver && (
-                    <span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-extrabold text-blue-600 border border-blue-200">
+                    <span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-extrabold text-blue-600 border border-blue-300">
                       Receptor Universal
                     </span>
                   )}
@@ -148,19 +148,19 @@ const compatibilityData = [
 
         // Actualizar estados de botones
         buttons.forEach((b) => {
-          b.classList.remove("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-md", "shadow-blud-flag-red/20", "scale-105");
+          b.classList.remove("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-lg", "shadow-blud-flag-red/30", "scale-105");
           b.classList.add("bg-white", "text-slate-700", "border-slate-300", "shadow-sm");
         });
 
         btn.classList.remove("bg-white", "text-slate-700", "border-slate-300", "shadow-sm");
-        btn.classList.add("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-md", "shadow-blud-flag-red/20", "scale-105");
+        btn.classList.add("bg-blud-flag-red", "text-white", "border-blud-flag-red", "shadow-lg", "shadow-blud-flag-red/30", "scale-105");
 
         // Destacar la fila correspondiente
         rows.forEach((row) => {
           if (row.id === `row-${selectedType}`) {
-            row.classList.add("bg-slate-100/90", "ring-2", "ring-blud-flag-red/30");
+            row.classList.add("bg-slate-100/90", "ring-2", "ring-blud-flag-red/50");
           } else {
-            row.classList.remove("bg-slate-100/90", "ring-2", "ring-blud-flag-red/30");
+            row.classList.remove("bg-slate-100/90", "ring-2", "ring-blud-flag-red/50");
           }
         });
       });
