@@ -1,120 +1,135 @@
 ---
-// WhatIs.astro - Explicación detallada y propuesta de valor de BLUD
+// src/components/WhatIs.astro
+const features = [
+  {
+    icon: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+    title: "Conexión Inmediata",
+    description: "Vinculamos de manera automatizada a donantes voluntarios con pacientes y bancos de sangre que requieren atención urgente.",
+  },
+  {
+    icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
+    title: "Red de Bancos de Sangre",
+    description: "Mapeo geolocalizado e inventario en vivo para visualizar la disponibilidad de tipos sanguíneos en hospitales y clínicas.",
+  },
+  {
+    icon: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z",
+    title: "Algoritmo de Compatibilidad",
+    description: "Análisis rápido de tipo de sangre y factor Rh para garantizar donaciones seguras y cruzamientos de compatibilidad sin margen de error.",
+  },
+];
 ---
 
-<section id="que-es" class="relative py-20 sm:py-24 bg-[#12161d] overflow-hidden border-t border-slate-800">
+<section id="que-es" class="relative overflow-hidden bg-[#f7f7f7] py-20 lg:py-28">
+  
+  <!-- Gotas Flotantes Animadas (SVGs de Fondo) -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <!-- Gota flotante 1: Superior Izquierda -->
+    <div class="absolute -top-6 left-10 text-blud-flag-red/10 animate-float-slow">
+      <svg class="h-28 w-28 fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+      </svg>
+    </div>
 
-  <div class="mx-auto max-w-6xl px-4 md:px-8 relative z-10">
+    <!-- Gota flotante 2: Centro Derecha -->
+    <div class="absolute top-1/3 right-8 text-blud-brick-ember/15 animate-float-delayed">
+      <svg class="h-36 w-36 fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+      </svg>
+    </div>
+
+    <!-- Gota flotante 3: Inferior Izquierda -->
+    <div class="absolute bottom-10 left-1/4 text-blud-flag-red/10 animate-float-reverse">
+      <svg class="h-20 w-20 fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+      </svg>
+    </div>
+
+    <!-- Gota flotante 4: Inferior Derecha -->
+    <div class="absolute -bottom-8 right-1/3 text-blud-brick-ember/10 animate-float-slow">
+      <svg class="h-32 w-32 fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     
     <!-- Encabezado de la Sección -->
-    <div class="text-center max-w-3xl mx-auto mb-16">
-      <span class="text-xs font-bold uppercase tracking-widest text-teal-400 bg-teal-500/10 px-3 py-1 rounded-full border border-teal-500/20 inline-block mb-3">
-        Ecosistema Digital de Salud
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <span class="inline-block rounded-full bg-blud-flag-red/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blud-flag-red">
+        Conoce la plataforma
       </span>
-      <h2 class="font-sans text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+      <h2 class="text-3xl font-black text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
         ¿Qué es <span class="text-blud-flag-red">BLUD</span>?
       </h2>
-      <p class="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
-        Una plataforma inteligente de optimización logística que conecta a <strong class="text-white font-semibold">donantes de sangre voluntarios</strong>, <strong class="text-white font-semibold">centros de salud</strong> y <strong class="text-white font-semibold">bancos de sangre</strong> para agilizar la respuesta médica en momentos críticos.
+      <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
+        Una ecosistema digital diseñado para optimizar el proceso de donación de sangre, reducir los tiempos de respuesta en situaciones críticas y coordinar eficientemente la red de donantes y centros médicos.
       </p>
     </div>
 
-    <!-- Banner Interactivo / Tarjeta Destacada -->
-    <div class="mb-16 rounded-3xl border border-slate-700/80 bg-slate-800/60 p-8 sm:p-10 backdrop-blur-md shadow-2xl relative overflow-hidden">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        
-        <div class="lg:col-span-7 space-y-4">
-          <div class="inline-flex items-center gap-2 text-xs font-semibold text-teal-400">
-            <span class="flex h-2 w-2 rounded-full bg-teal-400 animate-ping"></span>
-            Optimización Basada en Toma de Decisiones Multicriterio
+    <!-- Grid de Características principales -->
+    <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+      {features.map((item) => (
+        <div class="group relative rounded-2xl bg-white p-8 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-blud-flag-red/30">
+          <!-- Icono -->
+          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blud-flag-red/10 text-blud-flag-red group-hover:bg-blud-flag-red group-hover:text-white transition-colors duration-300 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 fill-current" viewBox="0 0 24 24">
+              <path d={item.icon}></path>
+            </svg>
           </div>
-          <h3 class="text-2xl sm:text-3xl font-bold text-white">
-            Transformando la logística hospitalaria y la red de donación
+
+          <!-- Contenido -->
+          <h3 class="mt-6 text-xl font-bold text-slate-900 group-hover:text-blud-flag-red transition-colors duration-200">
+            {item.title}
           </h3>
-          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
-            BLUD no es solo un directorio; es una red dinámica que reduce los tiempos de espera mediante modelos algorítmicos. Evaluamos factores clave como compatibilidad sanguínea, urgencia del paciente y distancia geográfica para priorizar llamados en tiempo real.
+          <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+            {item.description}
           </p>
         </div>
-
-        <!-- Estadísticas Rápida / Impacto -->
-        <div class="lg:col-span-5 grid grid-cols-2 gap-4">
-          <div class="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-5 text-center">
-            <span class="block text-3xl sm:text-4xl font-extrabold text-teal-400 mb-1">+40%</span>
-            <span class="text-xs text-slate-400 font-medium">Reducción en tiempo de respuesta</span>
-          </div>
-          <div class="rounded-2xl border border-slate-700/60 bg-slate-900/80 p-5 text-center">
-            <span class="block text-3xl sm:text-4xl font-extrabold text-blud-flag-red mb-1">100%</span>
-            <span class="text-xs text-slate-400 font-medium">Red de Donantes Verificados</span>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Tres Pilares Fundamentales -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      
-      <!-- Pilar 1 -->
-      <div class="rounded-3xl border border-slate-800 bg-slate-800/40 p-8 hover:border-teal-500/50 hover:bg-slate-800/70 transition-all duration-300 backdrop-blur-md flex flex-col items-center text-center justify-between group">
-        <div class="flex flex-col items-center">
-          <div class="h-12 w-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h4 class="text-xl font-bold text-white mb-3 group-hover:text-teal-400 transition-colors">
-            Alertas Inteligentes
-          </h4>
-          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Las emergencias generan notificaciones inmediatas geolocalizadas a los donantes aptos más cercanos, acelerando el proceso de captación.
-          </p>
-        </div>
-        <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-semibold text-teal-400">
-          Respuesta Instantánea →
-        </div>
-      </div>
-
-      <!-- Pilar 2 -->
-      <div class="rounded-3xl border border-slate-800 bg-slate-800/40 p-8 hover:border-blud-flag-red/50 hover:bg-slate-800/70 transition-all duration-300 backdrop-blur-md flex flex-col items-center text-center justify-between group">
-        <div class="flex flex-col items-center">
-          <div class="h-12 w-12 rounded-2xl bg-blud-flag-red/10 border border-blud-flag-red/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blud-flag-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </div>
-          <h4 class="text-xl font-bold text-white mb-3 group-hover:text-blud-flag-red transition-colors">
-            Conexión Hospitalaria
-          </h4>
-          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Permite a clínicas y bancos de sangre monitorear la disponibilidad de hemoderivados e interconectarse para realizar transferencias interinstitucionales.
-          </p>
-        </div>
-        <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-semibold text-blud-flag-red">
-          Red Interconectada →
-        </div>
-      </div>
-
-      <!-- Pilar 3 -->
-      <div class="rounded-3xl border border-slate-800 bg-slate-800/40 p-8 hover:border-amber-500/50 hover:bg-slate-800/70 transition-all duration-300 backdrop-blur-md flex flex-col items-center text-center justify-between group">
-        <div class="flex flex-col items-center">
-          <div class="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h4 class="text-xl font-bold text-white mb-3 group-hover:text-amber-400 transition-colors">
-            Privacidad y Seguridad
-          </h4>
-          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            Protocolos estrictos de protección de datos médicos. La información personal permanece encriptada y resguardada bajo estándares de salud.
-          </p>
-        </div>
-        <div class="mt-6 pt-4 border-t border-slate-800/80 text-xs font-semibold text-amber-400">
-          Datos Protegidos →
-        </div>
-      </div>
-
+      ))}
     </div>
 
   </div>
 </section>
+
+<style>
+  /* Animaciones suaves para las gotas flotantes */
+  @keyframes floatSlow {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-18px) rotate(4deg);
+    }
+  }
+
+  @keyframes floatDelayed {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-22px) rotate(-6deg);
+    }
+  }
+
+  @keyframes floatReverse {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(15px) rotate(3deg);
+    }
+  }
+
+  .animate-float-slow {
+    animation: floatSlow 7s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: floatDelayed 9s ease-in-out infinite 2s;
+  }
+
+  .animate-float-reverse {
+    animation: floatReverse 8s ease-in-out infinite 1s;
+  }
+</style>
