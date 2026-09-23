@@ -78,7 +78,9 @@ const compatibilityData = [
             {compatibilityData.map((item, idx) => (
               <tr 
                 id={`row-${item.type}`}
-                class={`matrix-row transition-colors duration-200 ${idx === 0 ? "bg-slate-50/80 font-semibold" : "hover:bg-slate-50/50"}`}
+                class={`matrix-row transition-all duration-200 hover:bg-slate-50/80 ${
+                  idx === 0 ? "bg-slate-100/90 ring-2 ring-blud-flag-red/30" : ""
+                }`}
               >
                 <!-- Tipo de sangre -->
                 <td class="py-4 px-3 text-left font-black text-slate-900 text-lg">
