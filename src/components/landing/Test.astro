@@ -2,34 +2,37 @@
 // Test.astro - Test interactivo de aptitud para donación de sangre (BLUD)
 ---
 
-<section id="test" class="relative py-20 sm:py-24 bg-blud-grid overflow-hidden border-t border-slate-800">
+<section id="test" class="relative py-20 sm:py-28 bg-white overflow-hidden select-none">
+
+  <!-- Patrón de Puntos de Fondo (Dot Pattern) -->
+  <div 
+    class="pointer-events-none absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
+    aria-hidden="true"
+  ></div>
 
   <div class="mx-auto max-w-3xl px-4 md:px-8 relative z-10">
     
     <!-- Encabezado -->
     <div class="text-center max-w-xl mx-auto mb-10">
-      <span class="text-xs font-bold uppercase tracking-widest text-teal-400 bg-teal-500/10 px-3 py-1 rounded-full border border-teal-500/20 inline-block mb-3">
-        Pre-Chequeo Médico
-      </span>
-      <h2 class="font-sans text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+      <h2 class="font-sans text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
         ¿Eres apto para <span class="text-blud-flag-red">donar</span>?
       </h2>
-      <p class="mt-2 text-sm text-slate-400 leading-relaxed">
+      <p class="mt-3 text-base sm:text-lg text-slate-600 leading-relaxed">
         Responde este cuestionario guiado para evaluar tu compatibilidad inmediata y conocer los criterios sanitarios aplicados a cada caso.
       </p>
     </div>
 
     <!-- Contenedor Principal del Test -->
-    <div class="rounded-3xl border border-slate-700/80 bg-slate-800/80 p-6 sm:p-10 backdrop-blur-md shadow-2xl relative transition-all">
+    <div class="rounded-3xl border-2 border-blud-flag-red/20 bg-white p-6 sm:p-10 shadow-2xl shadow-blud-flag-red/10 relative transition-all">
       
       <!-- Barra de Progreso -->
       <div id="quiz-progress-container" class="mb-8">
-        <div class="flex justify-between items-center text-xs font-semibold text-slate-400 mb-2">
+        <div class="flex justify-between items-center text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
           <span id="quiz-step-label">Pregunta 1 de 10</span>
-          <span id="quiz-progress-percent" class="text-teal-400 font-mono">10%</span>
+          <span id="quiz-progress-percent" class="text-blud-flag-red font-mono">10%</span>
         </div>
-        <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700/50">
-          <div id="quiz-progress-bar" class="h-full bg-teal-500 transition-all duration-300 w-[10%]"></div>
+        <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+          <div id="quiz-progress-bar" class="h-full bg-blud-flag-red transition-all duration-300 w-[10%] rounded-full"></div>
         </div>
       </div>
 
@@ -42,17 +45,17 @@
       <div id="quiz-result-container" class="hidden text-center space-y-6">
         
         <div>
-          <h3 id="result-title" class="text-2xl sm:text-3xl font-extrabold text-white mb-2"></h3>
-          <p id="result-description" class="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed"></p>
+          <h3 id="result-title" class="text-2xl sm:text-3xl font-black text-slate-900 mb-2"></h3>
+          <p id="result-description" class="text-sm sm:text-base text-slate-600 max-w-lg mx-auto leading-relaxed"></p>
         </div>
 
         <!-- Desglose Explicativo Detallado -->
-        <div id="result-reasons-box" class="hidden text-left bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 text-xs text-slate-300 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <span class="font-bold text-amber-400 text-sm">
+        <div id="result-reasons-box" class="hidden text-left bg-amber-50/60 border-2 border-amber-200/80 rounded-2xl p-5 text-xs text-slate-700 space-y-4 shadow-sm">
+          <div class="flex items-center justify-between pb-3 border-b border-amber-200/60">
+            <span class="font-black text-amber-800 text-xs uppercase tracking-wider">
               Criterios de Incompatibilidad Detectados
             </span>
-            <span class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Fundamento Médico</span>
+            <span class="text-[10px] text-amber-700 uppercase tracking-wider font-bold">Fundamento Médico</span>
           </div>
           
           <div id="result-reasons-list" class="space-y-4">
@@ -61,10 +64,10 @@
         </div>
 
         <!-- Acciones Finales -->
-        <div class="pt-4 border-t border-slate-700/80 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div class="pt-6 border-t-2 border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-3">
           <button
             id="restart-quiz-btn"
-            class="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs transition-all shadow-md active:scale-95"
+            class="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-all cursor-pointer active:scale-95"
           >
             Repetir Evaluación
           </button>
@@ -72,7 +75,7 @@
           <a
             href="#centros"
             id="find-center-btn"
-            class="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-bold text-xs transition-all active:scale-95 text-center"
+            class="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-extrabold text-xs transition-all active:scale-95 text-center"
           >
             Explorar Bancos de Sangre
           </a>
@@ -80,7 +83,7 @@
           <a
             href="/test-definitivo"
             id="definitive-test-btn"
-            class="w-full sm:w-auto px-6 py-3 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold text-xs transition-all shadow-lg shadow-teal-500/20 active:scale-95 text-center"
+            class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blud-flag-red hover:bg-red-700 text-white font-extrabold text-xs transition-all shadow-lg shadow-blud-flag-red/30 active:scale-95 text-center"
           >
             Realizar Test Definitivo
           </a>
@@ -91,9 +94,21 @@
     </div>
 
     <!-- Nota Legal y Médica -->
-    <p class="text-center text-[11px] text-slate-500 mt-5 leading-relaxed">
-      <strong>Aviso Médico:</strong> Este test es únicamente una guía de autoorientación algorítmica. La aptitud biológica y clínica final es dictaminada exclusivamente por el personal médico en el banco de sangre tras las pruebas de hemoglobina y examen físico.
-    </p>
+    <div class="mt-6 bg-blud-flag-red/[0.03] border border-blud-flag-red/20 rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-inner max-w-2xl mx-auto">
+      <div class="p-2.5 bg-blud-flag-red text-white rounded-xl shrink-0 mt-0.5 shadow-md shadow-blud-flag-red/20">
+        <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <h4 class="text-xs font-black text-blud-flag-red uppercase tracking-wide">
+          Aviso Médico
+        </h4>
+        <p class="text-xs text-slate-600 leading-relaxed mt-1">
+          Este test es únicamente una guía de autoorientación algorítmica. La aptitud biológica y clínica final es dictaminada exclusivamente por el personal médico en el banco de sangre tras las pruebas de hemoglobina y examen físico.
+        </p>
+      </div>
+    </div>
 
   </div>
 </section>
@@ -341,21 +356,21 @@
       questionsContainer.innerHTML = `
         <div class="space-y-6">
           <div>
-            <span class="text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-500/10 px-2.5 py-0.5 rounded-full border border-teal-500/20 inline-block mb-2 font-mono">
+            <span class="text-[10px] font-black uppercase tracking-wider text-blud-flag-red bg-blud-flag-red/10 px-3 py-1 rounded-full border border-blud-flag-red/20 inline-block mb-2 font-mono">
               Paso ${q.id < 10 ? '0' + q.id : q.id}
             </span>
-            <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 leading-snug">${q.title}</h3>
-            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${q.description}</p>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2 leading-snug">${q.title}</h3>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${q.description}</p>
           </div>
 
           <div class="space-y-3 pt-2">
             ${q.options.map((opt, idx) => `
               <button
                 data-option-index="${idx}"
-                class="quiz-option-btn w-full text-left p-4 rounded-2xl bg-slate-900/80 border border-slate-700/80 hover:border-teal-500 hover:bg-slate-800 text-xs sm:text-sm text-slate-200 hover:text-white font-medium transition-all flex items-center justify-between group active:scale-[0.99] shadow-sm"
+                class="quiz-option-btn w-full text-left p-4 rounded-2xl bg-slate-50 border-2 border-slate-200/80 hover:border-blud-flag-red hover:bg-blud-flag-red/5 text-xs sm:text-sm text-slate-800 font-bold transition-all flex items-center justify-between group cursor-pointer active:scale-[0.99] shadow-xs"
               >
                 <span class="pr-3 leading-snug">${opt.label}</span>
-                <span class="text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity font-bold text-base shrink-0">→</span>
+                <span class="text-blud-flag-red opacity-0 group-hover:opacity-100 transition-opacity font-bold text-base shrink-0">→</span>
               </button>
             `).join('')}
           </div>
@@ -409,14 +424,14 @@
         if (resultReasonsBox && resultReasonsList) {
           resultReasonsBox.classList.remove('hidden');
           resultReasonsList.innerHTML = userReasons.map(r => `
-            <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800 space-y-2">
+            <div class="bg-white rounded-xl p-4 border border-amber-200 shadow-xs space-y-2">
               <div class="flex items-center justify-between flex-wrap gap-2">
-                <h4 class="font-bold text-amber-400 text-xs sm:text-sm">${r.title}</h4>
-                <span class="px-2 py-0.5 text-[10px] font-semibold rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                <h4 class="font-extrabold text-amber-900 text-xs sm:text-sm">${r.title}</h4>
+                <span class="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-100 text-amber-800 border border-amber-300">
                   ${r.timeframe}
                 </span>
               </div>
-              <p class="text-[11px] sm:text-xs text-slate-300 leading-relaxed">${r.description}</p>
+              <p class="text-[11px] sm:text-xs text-slate-600 leading-relaxed">${r.description}</p>
             </div>
           `).join('');
         }
