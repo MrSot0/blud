@@ -1,0 +1,233 @@
+---
+// Login.astro - Inicio de sesión de BLUD
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="BLUD | Iniciar Sesión">
+  <section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-blud-drops px-4 py-16 overflow-hidden">
+
+    <div class="w-full max-w-md relative z-10">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group w-fit mx-auto">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-brick-ember text-white shadow-lg shadow-blud-brick-ember/40 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+          </svg>
+        </div>
+        <span class="font-sans text-2xl font-black tracking-tight text-white">
+          BLUD<span class="text-blud-flag-red">.</span>
+        </span>
+      </a>
+
+      <div class="rounded-3xl border border-slate-700/80 bg-slate-800/80 p-8 sm:p-10 backdrop-blur-md shadow-2xl">
+
+        <div class="text-center mb-8">
+          <h1 class="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Bienvenido de nuevo
+          </h1>
+          <p class="mt-2 text-sm text-slate-400">
+            Ingresa a tu cuenta para gestionar tus donaciones.
+          </p>
+        </div>
+
+        <!-- Banner de éxito (oculto por defecto) -->
+        <div id="form-success" class="hidden mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          Sesión iniciada correctamente. Redirigiendo...
+        </div>
+
+        <form id="login-form" novalidate class="space-y-5">
+
+          <!-- Email -->
+          <div>
+            <label for="login-email" class="block text-xs font-semibold text-slate-300 mb-2">
+              Correo electrónico
+            </label>
+            <div class="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <input
+                type="email"
+                id="login-email"
+                name="email"
+                autocomplete="email"
+                placeholder="tucorreo@ejemplo.com"
+                aria-describedby="login-email-error"
+                class="w-full pl-12 pr-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+              />
+            </div>
+            <p id="login-email-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label for="login-password" class="block text-xs font-semibold text-slate-300">
+                Contraseña
+              </label>
+              <a href="/recuperar" class="text-xs font-semibold text-teal-400 hover:text-teal-300 transition-colors">
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+            <div class="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <input
+                type="password"
+                id="login-password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                aria-describedby="login-password-error"
+                class="w-full pl-12 pr-12 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+              />
+              <button
+                type="button"
+                data-toggle-password="login-password"
+                aria-label="Mostrar contraseña"
+                class="toggle-password-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 012.223-3.592m3.242-2.3A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.964 9.964 0 01-4.132 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                </svg>
+              </button>
+            </div>
+            <p id="login-password-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Recordarme -->
+          <label class="flex items-center gap-2.5 text-xs text-slate-400 cursor-pointer select-none">
+            <input type="checkbox" id="login-remember" name="remember" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-teal-500 focus:ring-teal-500/40 focus:ring-offset-0" />
+            Mantener sesión iniciada
+          </label>
+
+          <button
+            type="submit"
+            class="w-full rounded-2xl bg-blud-brick-ember hover:bg-blud-flag-red py-3.5 font-sans text-sm font-bold text-white shadow-lg shadow-blud-brick-ember/30 transition-all active:scale-[0.98]"
+          >
+            Iniciar Sesión
+          </button>
+
+        </form>
+
+        <p class="mt-8 text-center text-sm text-slate-400">
+          ¿No tienes cuenta?
+          <a href="/register" class="font-semibold text-teal-400 hover:text-teal-300 transition-colors">
+            Regístrate
+          </a>
+        </p>
+
+      </div>
+    </div>
+
+  </section>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('login-form') as HTMLFormElement;
+    const successBanner = document.getElementById('form-success');
+    if (!form) return;
+
+    const emailInput = document.getElementById('login-email') as HTMLInputElement;
+    const passwordInput = document.getElementById('login-password') as HTMLInputElement;
+    const emailError = document.getElementById('login-email-error') as HTMLElement;
+    const passwordError = document.getElementById('login-password-error') as HTMLElement;
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function setError(input: HTMLInputElement, errorEl: HTMLElement, message: string) {
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
+      input.classList.add('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
+      input.classList.remove('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.setAttribute('aria-invalid', 'true');
+    }
+
+    function clearError(input: HTMLInputElement, errorEl: HTMLElement) {
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
+      input.classList.remove('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
+      input.classList.add('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.removeAttribute('aria-invalid');
+    }
+
+    function validateEmail(): boolean {
+      const value = emailInput.value.trim();
+      if (!value) {
+        setError(emailInput, emailError, 'Ingresa tu correo electrónico.');
+        return false;
+      }
+      if (!emailPattern.test(value)) {
+        setError(emailInput, emailError, 'Ingresa un correo electrónico válido.');
+        return false;
+      }
+      clearError(emailInput, emailError);
+      return true;
+    }
+
+    function validatePassword(): boolean {
+      const value = passwordInput.value;
+      if (!value) {
+        setError(passwordInput, passwordError, 'Ingresa tu contraseña.');
+        return false;
+      }
+      if (value.length < 8) {
+        setError(passwordInput, passwordError, 'La contraseña debe tener al menos 8 caracteres.');
+        return false;
+      }
+      clearError(passwordInput, passwordError);
+      return true;
+    }
+
+    emailInput.addEventListener('input', () => {
+      if (!emailError.classList.contains('hidden')) validateEmail();
+    });
+    passwordInput.addEventListener('input', () => {
+      if (!passwordError.classList.contains('hidden')) validatePassword();
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const isEmailValid = validateEmail();
+      const isPasswordValid = validatePassword();
+
+      if (!isEmailValid) {
+        emailInput.focus();
+        return;
+      }
+      if (!isPasswordValid) {
+        passwordInput.focus();
+        return;
+      }
+
+      // Aquí se conecta la llamada real al backend/autenticación.
+      if (successBanner) {
+        successBanner.classList.remove('hidden');
+        form.classList.add('opacity-50', 'pointer-events-none');
+      }
+    });
+
+    // Mostrar/ocultar contraseña
+    document.querySelectorAll<HTMLButtonElement>('[data-toggle-password]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-toggle-password');
+        const input = targetId ? document.getElementById(targetId) as HTMLInputElement : null;
+        if (!input) return;
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.querySelector('.eye-open')?.classList.toggle('hidden', isPassword);
+        btn.querySelector('.eye-closed')?.classList.toggle('hidden', !isPassword);
+        btn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      });
+    });
+  });
+</script>

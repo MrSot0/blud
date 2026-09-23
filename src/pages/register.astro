@@ -1,0 +1,328 @@
+---
+// Register.astro - Registro de nuevos usuarios de BLUD
+import Layout from '../layouts/Layout.astro';
+
+const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
+---
+
+<Layout title="BLUD | Crear Cuenta">
+  <section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-blud-drops px-4 py-16 overflow-hidden">
+
+    <div class="w-full max-w-md relative z-10">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group w-fit mx-auto">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-brick-ember text-white shadow-lg shadow-blud-brick-ember/40 group-hover:scale-105 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+          </svg>
+        </div>
+        <span class="font-sans text-2xl font-black tracking-tight text-white">
+          BLUD<span class="text-blud-flag-red">.</span>
+        </span>
+      </a>
+
+      <div class="rounded-3xl border border-slate-700/80 bg-slate-800/80 p-8 sm:p-10 backdrop-blur-md shadow-2xl">
+
+        <div class="text-center mb-8">
+          <h1 class="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Únete a la red
+          </h1>
+          <p class="mt-2 text-sm text-slate-400">
+            Crea tu cuenta de donante en menos de un minuto.
+          </p>
+        </div>
+
+        <!-- Banner de éxito (oculto por defecto) -->
+        <div id="form-success" class="hidden mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+          Cuenta creada correctamente. Redirigiendo...
+        </div>
+
+        <form id="register-form" novalidate class="space-y-5">
+
+          <!-- Nombre completo -->
+          <div>
+            <label for="register-name" class="block text-xs font-semibold text-slate-300 mb-2">
+              Nombre completo
+            </label>
+            <input
+              type="text"
+              id="register-name"
+              name="name"
+              autocomplete="name"
+              placeholder="Ej. María Fernández"
+              aria-describedby="register-name-error"
+              class="w-full px-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+            />
+            <p id="register-name-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="register-email" class="block text-xs font-semibold text-slate-300 mb-2">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              id="register-email"
+              name="email"
+              autocomplete="email"
+              placeholder="tucorreo@ejemplo.com"
+              aria-describedby="register-email-error"
+              class="w-full px-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+            />
+            <p id="register-email-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Tipo de sangre (opcional) -->
+          <div>
+            <label for="register-blood-type" class="block text-xs font-semibold text-slate-300 mb-2">
+              Tipo de sangre <span class="text-slate-500 font-normal normal-case">(si lo conoces)</span>
+            </label>
+            <select
+              id="register-blood-type"
+              name="bloodType"
+              class="w-full px-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+            >
+              <option value="">Aún no lo sé</option>
+              {bloodTypes.map((type) => <option value={type}>{type}</option>)}
+            </select>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label for="register-password" class="block text-xs font-semibold text-slate-300 mb-2">
+              Contraseña
+            </label>
+            <div class="relative">
+              <input
+                type="password"
+                id="register-password"
+                name="password"
+                autocomplete="new-password"
+                placeholder="Mínimo 8 caracteres"
+                aria-describedby="register-password-error"
+                class="w-full pl-4 pr-12 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+              />
+              <button
+                type="button"
+                data-toggle-password="register-password"
+                aria-label="Mostrar contraseña"
+                class="toggle-password-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 012.223-3.592m3.242-2.3A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.964 9.964 0 01-4.132 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                </svg>
+              </button>
+            </div>
+            <p id="register-password-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Confirmar Password -->
+          <div>
+            <label for="register-password-confirm" class="block text-xs font-semibold text-slate-300 mb-2">
+              Confirmar contraseña
+            </label>
+            <input
+              type="password"
+              id="register-password-confirm"
+              name="passwordConfirm"
+              autocomplete="new-password"
+              placeholder="Repite tu contraseña"
+              aria-describedby="register-password-confirm-error"
+              class="w-full px-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+            />
+            <p id="register-password-confirm-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <!-- Términos -->
+          <div>
+            <label class="flex items-start gap-2.5 text-xs text-slate-400 cursor-pointer select-none">
+              <input type="checkbox" id="register-terms" name="terms" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-600 bg-slate-900 text-teal-500 focus:ring-teal-500/40 focus:ring-offset-0" />
+              <span>
+                Acepto los <a href="/terminos" class="text-teal-400 hover:text-teal-300 underline">Términos y Condiciones</a> y la <a href="/privacidad" class="text-teal-400 hover:text-teal-300 underline">Política de Privacidad</a>.
+              </span>
+            </label>
+            <p id="register-terms-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full rounded-2xl bg-blud-brick-ember hover:bg-blud-flag-red py-3.5 font-sans text-sm font-bold text-white shadow-lg shadow-blud-brick-ember/30 transition-all active:scale-[0.98]"
+          >
+            Crear Cuenta
+          </button>
+
+        </form>
+
+        <p class="mt-8 text-center text-sm text-slate-400">
+          ¿Ya tienes cuenta?
+          <a href="/login" class="font-semibold text-teal-400 hover:text-teal-300 transition-colors">
+            Inicia sesión
+          </a>
+        </p>
+
+      </div>
+    </div>
+
+  </section>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('register-form') as HTMLFormElement;
+    const successBanner = document.getElementById('form-success');
+    if (!form) return;
+
+    const nameInput = document.getElementById('register-name') as HTMLInputElement;
+    const emailInput = document.getElementById('register-email') as HTMLInputElement;
+    const passwordInput = document.getElementById('register-password') as HTMLInputElement;
+    const confirmInput = document.getElementById('register-password-confirm') as HTMLInputElement;
+    const termsInput = document.getElementById('register-terms') as HTMLInputElement;
+
+    const nameError = document.getElementById('register-name-error') as HTMLElement;
+    const emailError = document.getElementById('register-email-error') as HTMLElement;
+    const passwordError = document.getElementById('register-password-error') as HTMLElement;
+    const confirmError = document.getElementById('register-password-confirm-error') as HTMLElement;
+    const termsError = document.getElementById('register-terms-error') as HTMLElement;
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function setError(input: HTMLInputElement, errorEl: HTMLElement, message: string) {
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
+      input.classList.add('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
+      input.classList.remove('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.setAttribute('aria-invalid', 'true');
+    }
+
+    function clearError(input: HTMLInputElement, errorEl: HTMLElement) {
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
+      input.classList.remove('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
+      input.classList.add('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.removeAttribute('aria-invalid');
+    }
+
+    function validateName(): boolean {
+      const value = nameInput.value.trim();
+      if (!value) {
+        setError(nameInput, nameError, 'Ingresa tu nombre completo.');
+        return false;
+      }
+      if (value.length < 3) {
+        setError(nameInput, nameError, 'El nombre debe tener al menos 3 caracteres.');
+        return false;
+      }
+      clearError(nameInput, nameError);
+      return true;
+    }
+
+    function validateEmail(): boolean {
+      const value = emailInput.value.trim();
+      if (!value) {
+        setError(emailInput, emailError, 'Ingresa tu correo electrónico.');
+        return false;
+      }
+      if (!emailPattern.test(value)) {
+        setError(emailInput, emailError, 'Ingresa un correo electrónico válido.');
+        return false;
+      }
+      clearError(emailInput, emailError);
+      return true;
+    }
+
+    function validatePassword(): boolean {
+      const value = passwordInput.value;
+      if (!value) {
+        setError(passwordInput, passwordError, 'Crea una contraseña.');
+        return false;
+      }
+      if (value.length < 8) {
+        setError(passwordInput, passwordError, 'La contraseña debe tener al menos 8 caracteres.');
+        return false;
+      }
+      clearError(passwordInput, passwordError);
+      return true;
+    }
+
+    function validateConfirm(): boolean {
+      const value = confirmInput.value;
+      if (!value) {
+        setError(confirmInput, confirmError, 'Confirma tu contraseña.');
+        return false;
+      }
+      if (value !== passwordInput.value) {
+        setError(confirmInput, confirmError, 'Las contraseñas no coinciden.');
+        return false;
+      }
+      clearError(confirmInput, confirmError);
+      return true;
+    }
+
+    function validateTerms(): boolean {
+      if (!termsInput.checked) {
+        termsError.textContent = 'Debes aceptar los términos para continuar.';
+        termsError.classList.remove('hidden');
+        return false;
+      }
+      termsError.classList.add('hidden');
+      termsError.textContent = '';
+      return true;
+    }
+
+    nameInput.addEventListener('input', () => { if (!nameError.classList.contains('hidden')) validateName(); });
+    emailInput.addEventListener('input', () => { if (!emailError.classList.contains('hidden')) validateEmail(); });
+    passwordInput.addEventListener('input', () => {
+      if (!passwordError.classList.contains('hidden')) validatePassword();
+      if (confirmInput.value && !confirmError.classList.contains('hidden')) validateConfirm();
+    });
+    confirmInput.addEventListener('input', () => { if (!confirmError.classList.contains('hidden')) validateConfirm(); });
+    termsInput.addEventListener('change', () => { if (!termsError.classList.contains('hidden')) validateTerms(); });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const validations = [
+        { valid: validateName(), input: nameInput },
+        { valid: validateEmail(), input: emailInput },
+        { valid: validatePassword(), input: passwordInput },
+        { valid: validateConfirm(), input: confirmInput },
+      ];
+      const termsValid = validateTerms();
+
+      const firstInvalid = validations.find((v) => !v.valid);
+      if (firstInvalid) {
+        firstInvalid.input.focus();
+        return;
+      }
+      if (!termsValid) return;
+
+      // Aquí se conecta la llamada real al backend/registro.
+      if (successBanner) {
+        successBanner.classList.remove('hidden');
+        form.classList.add('opacity-50', 'pointer-events-none');
+      }
+    });
+
+    // Mostrar/ocultar contraseña
+    document.querySelectorAll<HTMLButtonElement>('[data-toggle-password]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-toggle-password');
+        const input = targetId ? document.getElementById(targetId) as HTMLInputElement : null;
+        if (!input) return;
+
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.querySelector('.eye-open')?.classList.toggle('hidden', isPassword);
+        btn.querySelector('.eye-closed')?.classList.toggle('hidden', !isPassword);
+        btn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      });
+    });
+  });
+</script>

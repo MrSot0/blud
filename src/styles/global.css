@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blud-flag-red: #CA2B2B;
+  --color-blud-brick-ember: #CC000A;
+  --color-blud-oxblood: #A30008;
+  --color-blud-dark-teal: #005F73;
+  --color-blud-jade-green: #2BB951;
+  --color-blud-white: #FFFFFF;
+  --color-blud-alabaster: #E6E6E6;
+  --color-blud-shadow-grey: #1A202C;
+  --color-blud-slate-grey: #64748B;
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ===== Base ===== */
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-blud-brick-ember) var(--color-blud-shadow-grey);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  background-color: var(--color-blud-shadow-grey);
+  color: var(--color-blud-white);
+  font-family: var(--font-sans);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar WebKit */
+html::-webkit-scrollbar { width: 10px; }
+html::-webkit-scrollbar-track { background: var(--color-blud-shadow-grey); }
+html::-webkit-scrollbar-thumb {
+  background: var(--color-blud-dark-teal);
+  border-radius: 5px;
+  border: 2px solid var(--color-blud-shadow-grey);
+}
+html::-webkit-scrollbar-thumb:hover { background: var(--color-blud-brick-ember); }
+
+/* ===== Reveal / animaciones existentes ===== */
+.reveal-mask { overflow: hidden; }
+.reveal-mask > span {
+  display: inline-block;
+  transform: translateY(115%);
+  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-fade {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+[data-revealed] .reveal-mask > span { transform: translateY(0); }
+[data-revealed] .reveal-fade { opacity: 1; transform: translateY(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-mask > span, .reveal-fade {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.9; }
+}
+.animate-pulse-gentle { animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-gentle { animation: none !important; }
+}
+
+/* ===================================================
+   FONDOS BLUD — 4 variaciones sobre la paleta.
+   Reemplazan el "bg-slate-900" repetido en cada sección
+   y los blobs sueltos que cada componente dibujaba a mano.
+   =================================================== */
+
+.bg-blud-base {
+  background-color: var(--color-blud-shadow-grey);
+}
+
+/* 1. AURORA VITAL — glows de teal + ember en las esquinas.
+   WhatIs, Map. */
+.bg-blud-aurora {
+  background-color: var(--color-blud-shadow-grey);
+  background-image:
+    radial-gradient(60rem 40rem at 12% -10%, color-mix(in srgb, var(--color-blud-dark-teal) 24%, transparent), transparent 60%),
+    radial-gradient(50rem 36rem at 110% 115%, color-mix(in srgb, var(--color-blud-brick-ember) 18%, transparent), transparent 60%);
+}
+
+/* 2. MALLA CLÍNICA — grid punteado sutil + glow central.
+   Matrix, Test. */
+.bg-blud-grid {
+  background-color: var(--color-blud-shadow-grey);
+  background-image:
+    radial-gradient(38rem 28rem at 50% 15%, color-mix(in srgb, var(--color-blud-dark-teal) 16%, transparent), transparent 65%),
+    linear-gradient(color-mix(in srgb, white 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, white 6%, transparent) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+}
+
+/* 3. TEXTURA ORGÁNICA — grano fino, quita lo plano del gris sólido.
+   FAQ, Footer. */
+.bg-blud-grain {
+  background-color: var(--color-blud-shadow-grey);
+  position: relative;
+  isolation: isolate;
+}
+.bg-blud-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* 4. DIAGONAL PULSO — franja diagonal hacia teal, con urgencia visual.
+   Alerts. */
+.bg-blud-pulse {
+  background-color: var(--color-blud-shadow-grey);
+  background-image: linear-gradient(
+    135deg,
+    var(--color-blud-shadow-grey) 0%,
+    color-mix(in srgb, var(--color-blud-dark-teal) 35%, var(--color-blud-shadow-grey)) 55%,
+    var(--color-blud-shadow-grey) 100%
+  );
+}
+
+/* 5. GOTAS EN MOVIMIENTO — patrón de gotas (mismo ícono de marca del
+   Navbar/Footer) que se repite en mosaico y deriva lentamente en diagonal.
+   WhatIs. */
+.bg-blud-drops {
+  background-color: var(--color-blud-shadow-grey);
+  background-image:
+    radial-gradient(46rem 32rem at 50% 0%, color-mix(in srgb, var(--color-blud-jade-green) 20%, transparent), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='white'%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' transform='translate(14,10) scale(0.75)' fill-opacity='0.05'/%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' transform='translate(46,42) scale(0.55)' fill-opacity='0.035'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 80px 80px;
+  animation: blud-drops-drift 50s linear infinite;
+}
+
+@keyframes blud-drops-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 0, 160px 160px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-blud-drops { animation: none; }
+}

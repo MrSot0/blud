@@ -1,0 +1,245 @@
+---
+// FAQ.astro - Preguntas Frecuentes de la plataforma BLUD
+---
+
+<section id="faq" class="relative py-20 sm:py-24 bg-blud-grain overflow-hidden border-t border-slate-800">
+
+  <div class="mx-auto max-w-5xl px-4 md:px-8 relative z-10">
+    
+    <!-- Encabezado -->
+    <div class="text-center max-w-3xl mx-auto mb-12">
+      <span class="text-xs font-bold uppercase tracking-widest text-teal-400 bg-teal-500/10 px-3 py-1 rounded-full border border-teal-500/20 inline-block mb-3">
+        Resuelve tus dudas
+      </span>
+      <h2 class="font-sans text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Preguntas <span class="text-blud-flag-red">Frecuentes</span>
+      </h2>
+      <p class="mt-3 text-sm sm:text-base text-slate-400 leading-relaxed">
+        Todo lo que necesitas saber sobre el funcionamiento de BLUD, la gestión de donaciones y la red de centros hospitalarios.
+      </p>
+    </div>
+
+    <!-- Buscador de FAQs -->
+    <div class="max-w-xl mx-auto mb-10 relative">
+      <div class="relative flex items-center">
+        <input
+          type="text"
+          id="faq-search-input"
+          placeholder="¿Qué estás buscando? (ej. donar, requisitos, hospitales)..."
+          class="w-full pl-12 pr-4 py-3.5 bg-slate-800/90 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-lg transition-all"
+        />
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Filtros de Categoria -->
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-10" id="faq-categories">
+      <button data-category="all" class="faq-category-btn active px-4 py-2 rounded-xl text-xs font-semibold transition-all bg-teal-500 text-slate-900 shadow-md">
+        Todas
+      </button>
+      <button data-category="donantes" class="faq-category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-all">
+        Donantes
+      </button>
+      <button data-category="centros" class="faq-category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-all">
+        Centros de Salud
+      </button>
+      <button data-category="seguridad" class="faq-category-btn px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700 transition-all">
+        Seguridad y Privacidad
+      </button>
+    </div>
+
+    <!-- Lista de Preguntas Accordion -->
+    <div class="space-y-4 max-w-3xl mx-auto" id="faq-list">
+      
+      <!-- FAQ Item 1 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="donantes">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿Cuáles son los requisitos básicos para ser donante en BLUD?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          Para registrarte como donante activo debes ser mayor de 18 años (o contar con autorización legal), pesar más de 50 kg, contar con un documento de identidad válido y no haber sufrido enfermedades de transmisión sanguínea. La plataforma evaluará tu compatibilidad al momento de conectar con un centro.
+        </div>
+      </div>
+
+      <!-- FAQ Item 2 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="donantes">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿Cómo me notifica la plataforma si hay una emergencia con mi tipo de sangre?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          BLUD prioriza alertas geolocalizadas. Si un banco de sangre o centro de salud cercano a tu ubicación emite una solicitud urgente matching con tu tipo de sangre, recibirás una notificación directa a tu teléfono y correo con los detalles del centro.
+        </div>
+      </div>
+
+      <!-- FAQ Item 3 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="centros">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿Cómo se integra un hospital o banco de sangre a la red BLUD?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          Los centros médicos públicos o privados deben solicitar una verificación institucional. Una vez validada su credencial por el equipo de BLUD, reciben acceso a la API del ecosistema para gestionar su inventario de hemoderivados en tiempo real y emitir solicitudes.
+        </div>
+      </div>
+
+      <!-- FAQ Item 4 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="seguridad">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿Mis datos de salud e información personal están protegidos?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          Totalmente. En BLUD utilizamos protocolos de encriptación end-to-end para proteger tus datos personales y médicos. Ningún dato sensible es compartido públicamente; solo los centros verificados con los que decidas colaborar tienen acceso a tu contacto directo para agendar la donación.
+        </div>
+      </div>
+
+      <!-- FAQ Item 5 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="donantes">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿Cada cuánto tiempo puedo volver a realizar una donación?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          Por normativa médica general, los hombres pueden donar cada 3 meses y las mujeres cada 4 meses. La aplicación de BLUD calculará automáticamente tu temporizador de recuperación y mantendrá tu perfil pausado para evitar llamados hasta que estés médicamente apto nuevamente.
+        </div>
+      </div>
+
+      <!-- FAQ Item 6 -->
+      <div class="faq-item rounded-2xl border border-slate-800 bg-slate-800/50 backdrop-blur-md overflow-hidden transition-all duration-300" data-category="centros">
+        <button class="faq-trigger w-full px-6 py-5 text-left flex items-center justify-between gap-4 font-semibold text-white hover:text-teal-400 transition-colors">
+          <span class="text-sm sm:text-base">¿BLUD reemplaza las pruebas de compatibilidad en el hospital?</span>
+          <span class="faq-icon text-slate-400 text-lg transition-transform duration-300 font-bold">+</span>
+        </button>
+        <div class="faq-content hidden px-6 pb-5 text-xs sm:text-sm text-slate-400 leading-relaxed border-t border-slate-800/60 pt-4">
+          No. BLUD optimiza la logística, comunicación y agiliza la localización de voluntariado y hemoderivados mediante algoritmos de decisión multicriterio. Todas las pruebas de tamizaje y cruzado de sangre siguen ejecutándose bajo la estricta supervisión del personal médico en el laboratorio hospitalario.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Estado Vacío para Búsquedas -->
+    <div id="faq-empty" class="hidden text-center py-12 text-slate-500">
+      <p class="text-sm">No encontramos preguntas que coincidan con tu búsqueda.</p>
+    </div>
+
+    <!-- Banner Soporte -->
+    <div class="mt-16 text-center rounded-2xl border border-slate-800 bg-slate-800/40 p-6 backdrop-blur-md max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-left">
+        <h4 class="text-sm font-bold text-white">¿Tienes otra pregunta?</h4>
+        <p class="text-xs text-slate-400">Nuestro equipo de soporte está listo para asistirte.</p>
+      </div>
+      <a 
+        href="#contacto" 
+        class="px-5 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold text-xs transition-colors shrink-0"
+      >
+        Contactar Soporte
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const triggers = document.querySelectorAll('.faq-trigger');
+    const items = document.querySelectorAll<HTMLElement>('.faq-item');
+    const categoryBtns = document.querySelectorAll<HTMLButtonElement>('.faq-category-btn');
+    const searchInput = document.getElementById('faq-search-input') as HTMLInputElement;
+    const emptyState = document.getElementById('faq-empty');
+
+    // Accordion Toggle
+    triggers.forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        const item = trigger.closest('.faq-item') as HTMLElement;
+        const content = item.querySelector('.faq-content') as HTMLElement;
+        const icon = item.querySelector('.faq-icon') as HTMLElement;
+
+        const isOpen = !content.classList.contains('hidden');
+
+        // Cerrar los demás acordeones
+        items.forEach(otherItem => {
+          if (otherItem !== item) {
+            const otherContent = otherItem.querySelector('.faq-content');
+            const otherIcon = otherItem.querySelector('.faq-icon');
+            if (otherContent) otherContent.classList.add('hidden');
+            if (otherIcon) {
+              otherIcon.textContent = '+';
+              otherIcon.classList.remove('rotate-45');
+            }
+            otherItem.classList.remove('border-teal-500/50', 'bg-slate-800/80');
+          }
+        });
+
+        // Alternar el actual
+        if (isOpen) {
+          content.classList.add('hidden');
+          icon.textContent = '+';
+          icon.classList.remove('rotate-45');
+          item.classList.remove('border-teal-500/50', 'bg-slate-800/80');
+        } else {
+          content.classList.remove('hidden');
+          icon.textContent = '×';
+          icon.classList.add('rotate-45');
+          item.classList.add('border-teal-500/50', 'bg-slate-800/80');
+        }
+      });
+    });
+
+    // Filtrado de Categorías
+    let currentCategory = 'all';
+
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        categoryBtns.forEach(b => {
+          b.classList.remove('active', 'bg-teal-500', 'text-slate-900', 'shadow-md');
+          b.classList.add('bg-slate-800/80', 'text-slate-300', 'border', 'border-slate-700');
+        });
+
+        btn.classList.add('active', 'bg-teal-500', 'text-slate-900', 'shadow-md');
+        btn.classList.remove('bg-slate-800/80', 'text-slate-300', 'border', 'border-slate-700');
+
+        currentCategory = btn.getAttribute('data-category') || 'all';
+        filterFaqs();
+      });
+    });
+
+    // Filtro por Buscador
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        filterFaqs();
+      });
+    }
+
+    function filterFaqs() {
+      const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      let visibleCount = 0;
+
+      items.forEach(item => {
+        const itemCategory = item.getAttribute('data-category');
+        const text = item.textContent?.toLowerCase() || '';
+
+        const matchesCategory = currentCategory === 'all' || itemCategory === currentCategory;
+        const matchesQuery = text.includes(query);
+
+        if (matchesCategory && matchesQuery) {
+          item.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+
+      if (emptyState) {
+        if (visibleCount === 0) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+        }
+      }
+    }
+  });
+</script>

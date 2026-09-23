@@ -1,0 +1,56 @@
+---
+// src/layouts/Layout.astro
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { 
+  title = "BLUD | Red de Donación de Sangre en Tiempo Real",
+  description = "Conectamos donantes voluntarios con pacientes y bancos de sangre. Encuentra solicitudes urgentes, comprueba tu elegibilidad y salva vidas cerca de ti."
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- SEO Básico -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#1A202C" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+  </head>
+  <body class="flex min-h-screen flex-col bg-blud-shadow-grey text-white font-sans antialiased selection:bg-blud-flag-red selection:text-white">
+    
+    <!-- Navegación Superior Fija -->
+    <Navbar />
+
+    <!-- Contenido Principal de las Páginas -->
+    <main class="flex-grow">
+      <slot />
+    </main>
+
+    <!-- Pie de Página -->
+    <Footer />
+
+  </body>
+</html>
