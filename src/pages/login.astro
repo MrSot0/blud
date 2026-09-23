@@ -1,38 +1,45 @@
 ---
-// Login.astro - Inicio de sesión de BLUD
+// Login.astro - Inicio de sesión de BLUD (Tema Claro)
 import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="BLUD | Iniciar Sesión">
-  <section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-blud-drops px-4 py-16 overflow-hidden">
+  <section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-white px-4 py-16 overflow-hidden select-none">
+
+    <!-- Patrón de Puntos de Fondo -->
+    <div 
+      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-70"
+      aria-hidden="true"
+    ></div>
 
     <div class="w-full max-w-md relative z-10">
 
       <!-- Logo -->
       <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group w-fit mx-auto">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-brick-ember text-white shadow-lg shadow-blud-brick-ember/40 group-hover:scale-105 transition-transform">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-flag-red text-white shadow-lg shadow-blud-flag-red/30 group-hover:scale-105 transition-transform">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24">
             <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
           </svg>
         </div>
-        <span class="font-sans text-2xl font-black tracking-tight text-white">
+        <span class="font-sans text-2xl font-black tracking-tight text-slate-900">
           BLUD<span class="text-blud-flag-red">.</span>
         </span>
       </a>
 
-      <div class="rounded-3xl border border-slate-700/80 bg-slate-800/80 p-8 sm:p-10 backdrop-blur-md shadow-2xl">
+      <!-- Card Principal -->
+      <div class="rounded-3xl border-2 border-slate-200/80 bg-slate-50/80 p-8 sm:p-10 backdrop-blur-md shadow-xl shadow-slate-200/50">
 
         <div class="text-center mb-8">
-          <h1 class="font-sans text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+          <h1 class="font-sans text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
             Bienvenido de nuevo
           </h1>
-          <p class="mt-2 text-sm text-slate-400">
+          <p class="mt-2 text-sm text-slate-600">
             Ingresa a tu cuenta para gestionar tus donaciones.
           </p>
         </div>
 
-        <!-- Banner de éxito (oculto por defecto) -->
-        <div id="form-success" class="hidden mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+        <!-- Banner de éxito -->
+        <div id="form-success" class="hidden mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-xs">
           Sesión iniciada correctamente. Redirigiendo...
         </div>
 
@@ -40,11 +47,11 @@ import Layout from '../layouts/Layout.astro';
 
           <!-- Email -->
           <div>
-            <label for="login-email" class="block text-xs font-semibold text-slate-300 mb-2">
+            <label for="login-email" class="block text-xs font-extrabold text-slate-700 mb-2">
               Correo electrónico
             </label>
             <div class="relative">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <input
@@ -54,24 +61,24 @@ import Layout from '../layouts/Layout.astro';
                 autocomplete="email"
                 placeholder="tucorreo@ejemplo.com"
                 aria-describedby="login-email-error"
-                class="w-full pl-12 pr-4 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+                class="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
               />
             </div>
-            <p id="login-email-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+            <p id="login-email-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
           </div>
 
           <!-- Password -->
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label for="login-password" class="block text-xs font-semibold text-slate-300">
+              <label for="login-password" class="block text-xs font-extrabold text-slate-700">
                 Contraseña
               </label>
-              <a href="/recuperar" class="text-xs font-semibold text-teal-400 hover:text-teal-300 transition-colors">
+              <a href="/recuperar" class="text-xs font-bold text-blud-flag-red hover:underline transition-colors">
                 ¿Olvidaste tu contraseña?
               </a>
             </div>
             <div class="relative">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
               <input
@@ -81,13 +88,13 @@ import Layout from '../layouts/Layout.astro';
                 autocomplete="current-password"
                 placeholder="••••••••"
                 aria-describedby="login-password-error"
-                class="w-full pl-12 pr-12 py-3.5 bg-slate-900/60 border border-slate-700 rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-inner transition-all"
+                class="w-full pl-12 pr-12 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
               />
               <button
                 type="button"
                 data-toggle-password="login-password"
                 aria-label="Mostrar contraseña"
-                class="toggle-password-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                class="toggle-password-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -99,27 +106,27 @@ import Layout from '../layouts/Layout.astro';
                 </svg>
               </button>
             </div>
-            <p id="login-password-error" class="hidden mt-1.5 text-xs text-blud-brick-ember"></p>
+            <p id="login-password-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
           </div>
 
           <!-- Recordarme -->
-          <label class="flex items-center gap-2.5 text-xs text-slate-400 cursor-pointer select-none">
-            <input type="checkbox" id="login-remember" name="remember" class="h-4 w-4 rounded border-slate-600 bg-slate-900 text-teal-500 focus:ring-teal-500/40 focus:ring-offset-0" />
+          <label class="flex items-center gap-2.5 text-xs font-semibold text-slate-600 cursor-pointer select-none">
+            <input type="checkbox" id="login-remember" name="remember" class="h-4 w-4 rounded border-slate-300 bg-white text-blud-flag-red focus:ring-blud-flag-red/30 focus:ring-offset-0" />
             Mantener sesión iniciada
           </label>
 
           <button
             type="submit"
-            class="w-full rounded-2xl bg-blud-brick-ember hover:bg-blud-flag-red py-3.5 font-sans text-sm font-bold text-white shadow-lg shadow-blud-brick-ember/30 transition-all active:scale-[0.98]"
+            class="w-full rounded-2xl bg-blud-flag-red hover:bg-slate-900 py-3.5 font-sans text-sm font-extrabold text-white shadow-md shadow-blud-flag-red/20 transition-all active:scale-[0.98]"
           >
             Iniciar Sesión
           </button>
 
         </form>
 
-        <p class="mt-8 text-center text-sm text-slate-400">
+        <p class="mt-8 text-center text-sm text-slate-600">
           ¿No tienes cuenta?
-          <a href="/register" class="font-semibold text-teal-400 hover:text-teal-300 transition-colors">
+          <a href="/register" class="font-bold text-blud-flag-red hover:underline transition-colors">
             Regístrate
           </a>
         </p>
@@ -146,16 +153,16 @@ import Layout from '../layouts/Layout.astro';
     function setError(input: HTMLInputElement, errorEl: HTMLElement, message: string) {
       errorEl.textContent = message;
       errorEl.classList.remove('hidden');
-      input.classList.add('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
-      input.classList.remove('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.classList.add('border-blud-flag-red', 'focus:border-blud-flag-red', 'focus:ring-blud-flag-red/10');
+      input.classList.remove('border-slate-200', 'focus:border-slate-400');
       input.setAttribute('aria-invalid', 'true');
     }
 
     function clearError(input: HTMLInputElement, errorEl: HTMLElement) {
       errorEl.classList.add('hidden');
       errorEl.textContent = '';
-      input.classList.remove('border-blud-brick-ember', 'focus:border-blud-brick-ember', 'focus:ring-blud-brick-ember/20');
-      input.classList.add('border-slate-700', 'focus:border-teal-500', 'focus:ring-teal-500/20');
+      input.classList.remove('border-blud-flag-red', 'focus:border-blud-flag-red', 'focus:ring-blud-flag-red/10');
+      input.classList.add('border-slate-200', 'focus:border-blud-flag-red');
       input.removeAttribute('aria-invalid');
     }
 
@@ -208,7 +215,6 @@ import Layout from '../layouts/Layout.astro';
         return;
       }
 
-      // Aquí se conecta la llamada real al backend/autenticación.
       if (successBanner) {
         successBanner.classList.remove('hidden');
         form.classList.add('opacity-50', 'pointer-events-none');
