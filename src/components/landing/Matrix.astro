@@ -4,81 +4,106 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
 <section id="compatibilidad" class="relative overflow-hidden bg-[#f7f7f7] py-20 lg:py-28">
   
-  <!-- Patrón de Rejilla de Fondo -->
+  <!-- Patrón de Rejilla de Fondo con Pulso Sutil -->
   <div 
-    class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
+    class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
     aria-hidden="true"
   ></div>
 
+  <!-- Luces decorativas de fondo (Animated Glow Orbs) -->
+  <div class="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blud-flag-red/10 rounded-full blur-3xl animate-pulse"></div>
+
   <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     
-    <!-- Encabezado de la Sección -->
-    <div class="text-center max-w-2xl mx-auto space-y-4">
-      <span class="inline-block rounded-full bg-blud-flag-red/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blud-flag-red">
+    <!-- Encabezado con Animación de Entrada -->
+    <div class="text-center max-w-2xl mx-auto space-y-4 animate-fade-in-down">
+      <span class="inline-flex items-center gap-1.5 rounded-full bg-blud-flag-red/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blud-flag-red border border-blud-flag-red/20 shadow-xs animate-bounce-short">
+        <span class="w-2 h-2 rounded-full bg-blud-flag-red animate-ping"></span>
         Algoritmo Biológico
       </span>
       <h2 class="text-3xl font-black text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
-        Matriz de <span class="text-blud-flag-red">Compatibilidad</span> Sanguínea
+        Matriz de <span class="text-blud-flag-red drop-shadow-xs">Compatibilidad</span> Sanguínea
       </h2>
       <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
         Selecciona un tipo de sangre para consultar al instante sus compatibilidades de donación y recepción.
       </p>
     </div>
 
-    <!-- Unico Selector de Tipo de Sangre -->
+    <!-- Selector Desplegable Animado -->
     <div class="mt-10 max-w-xs mx-auto">
-      <label for="blood-type-select" class="block text-xs font-black uppercase text-slate-500 mb-2 text-center">
+      <label for="blood-type-select" class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2 text-center">
         Selecciona el Tipo de Sangre
       </label>
-      <select
-        id="blood-type-select"
-        class="w-full bg-white border-2 border-slate-300 focus:border-blud-flag-red focus:ring-2 focus:ring-blud-flag-red/20 text-slate-900 font-bold text-lg rounded-xl px-4 py-3 shadow-sm transition-all outline-none cursor-pointer text-center"
-      >
-        {bloodTypes.map((type) => (
-          <option value={type}>Tipo {type}</option>
-        ))}
-      </select>
+      
+      <div class="relative group">
+        <select
+          id="blood-type-select"
+          class="w-full appearance-none bg-white border-2 border-slate-300 focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/15 text-slate-900 font-extrabold text-lg rounded-2xl px-5 py-3.5 shadow-md hover:shadow-lg hover:border-blud-flag-red/60 transition-all duration-300 outline-none cursor-pointer text-center group-hover:scale-[1.02]"
+        >
+          {bloodTypes.map((type) => (
+            <option value={type} class="py-2 text-slate-800 font-bold">Tipo {type}</option>
+          ))}
+        </select>
+
+        <!-- Icono de Flecha Animado -->
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 group-hover:text-blud-flag-red group-hover:translate-y-0.5 transition-all duration-200">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </div>
 
-    <!-- Caja Única de Resultados -->
-    <div class="mt-8 rounded-2xl bg-white border-2 border-slate-200 p-6 sm:p-8 shadow-xl">
+    <!-- Caja de Resultados Animada -->
+    <div 
+      id="results-box"
+      class="mt-8 rounded-3xl bg-white border-2 border-slate-200/90 p-6 sm:p-8 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:shadow-2xl hover:border-slate-300"
+    >
       
-      <!-- Fila Resumen con Badges -->
+      <!-- Grid de Badges y Resumen -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center pb-6 border-b-2 border-slate-100">
         
         <!-- Puede Donar A -->
-        <div class="space-y-2">
+        <div class="space-y-3">
           <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
             Puede Donar A
           </span>
-          <div id="res-give" class="flex flex-wrap justify-center gap-1.5 min-h-[32px]"></div>
+          <div id="res-give" class="flex flex-wrap justify-center gap-2 min-h-[36px] transition-all duration-300"></div>
         </div>
 
-        <!-- Tipo Seleccionado Destacado -->
+        <!-- Badge Central Destacado con Pulso -->
         <div class="flex flex-col items-center justify-center space-y-2 order-first md:order-none py-2 md:py-0 border-y md:border-y-0 md:border-x border-slate-100">
           <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
             Tipo Evaluado
           </span>
-          <span id="res-type" class="inline-flex items-center justify-center h-12 w-16 rounded-xl bg-blud-flag-red text-white font-black text-2xl shadow-md shadow-blud-flag-red/20">
-            O-
-          </span>
-          <div id="res-tag" class="pt-1"></div>
+          
+          <div class="relative group">
+            <div class="absolute -inset-1 bg-gradient-to-r from-blud-flag-red to-red-600 rounded-2xl blur-sm opacity-40 group-hover:opacity-75 transition duration-300"></div>
+            <span 
+              id="res-type" 
+              class="relative inline-flex items-center justify-center h-14 w-18 rounded-2xl bg-blud-flag-red text-white font-black text-2xl shadow-lg shadow-blud-flag-red/30 transition-transform duration-300 transform group-hover:scale-105"
+            >
+              O-
+            </span>
+          </div>
+
+          <div id="res-tag" class="pt-1.5 transition-all duration-300"></div>
         </div>
 
         <!-- Puede Recibir De -->
-        <div class="space-y-2">
+        <div class="space-y-3">
           <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
             Puede Recibir De
           </span>
-          <div id="res-receive" class="flex flex-wrap justify-center gap-1.5 min-h-[32px]"></div>
+          <div id="res-receive" class="flex flex-wrap justify-center gap-2 min-h-[36px] transition-all duration-300"></div>
         </div>
 
       </div>
 
-      <!-- Mensaje / Diagnóstico Biológico -->
-      <div class="mt-6 bg-slate-50 border border-slate-200/80 rounded-xl p-4 sm:p-5 flex items-start gap-3.5">
-        <div class="p-2 bg-blud-flag-red/10 text-blud-flag-red rounded-lg shrink-0 mt-0.5">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <!-- Mensaje / Diagnóstico Biológico con Efecto Highlight -->
+      <div class="mt-6 bg-slate-50/80 border border-slate-200/80 rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-inner transition-all duration-300 hover:bg-slate-50">
+        <div class="p-2.5 bg-blud-flag-red/10 text-blud-flag-red rounded-xl shrink-0 mt-0.5 shadow-xs">
+          <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
@@ -86,7 +111,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
           <h4 class="text-xs font-black text-slate-900 uppercase tracking-wide">
             Nota de Compatibilidad
           </h4>
-          <p id="res-message" class="text-sm text-slate-600 leading-relaxed mt-1">
+          <p id="res-message" class="text-sm text-slate-600 leading-relaxed mt-1 transition-opacity duration-300">
             Cargando información...
           </p>
         </div>
@@ -118,6 +143,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
     
     const matrixData = JSON.parse(dataElement.textContent || "{}");
     const bloodSelect = document.getElementById("blood-type-select") as HTMLSelectElement;
+    const resultsBox = document.getElementById("results-box");
 
     const resType = document.getElementById("res-type");
     const resGive = document.getElementById("res-give");
@@ -129,7 +155,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
       return list
         .map(
           (item) =>
-            `<span class="inline-block rounded-md bg-white px-2.5 py-1 text-xs font-bold text-slate-800 border-2 border-slate-300 shadow-xs">${item}</span>`
+            `<span class="inline-block rounded-lg bg-white px-3 py-1 text-xs font-black text-slate-800 border-2 border-slate-200 shadow-xs hover:border-blud-flag-red hover:text-blud-flag-red hover:scale-110 transition-all duration-200 cursor-default animate-pop">${item}</span>`
         )
         .join("");
     }
@@ -140,22 +166,30 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
       if (!info) return;
 
+      // Micro-animación en la caja al cambiar
+      if (resultsBox) {
+        resultsBox.classList.add("scale-[0.98]", "opacity-80");
+        setTimeout(() => {
+          resultsBox.classList.remove("scale-[0.98]", "opacity-80");
+        }, 150);
+      }
+
       if (resType) resType.textContent = selectedType;
       if (resGive) resGive.innerHTML = renderBadges(info.giveTo);
       if (resReceive) resReceive.innerHTML = renderBadges(info.receiveFrom);
 
-      // Renderizar atributo especial
+      // Renderizar atributo especial con badges animados
       if (resTag) {
         if (info.isUniversalDonor) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-emerald-500/10 px-3 py-0.5 text-xs font-black text-emerald-600 border-2 border-emerald-300">Donante Universal</span>`;
+          resTag.innerHTML = `<span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-600 border-2 border-emerald-300 animate-pulse">Donante Universal</span>`;
         } else if (info.isUniversalReceiver) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-blue-500/10 px-3 py-0.5 text-xs font-black text-blue-600 border-2 border-blue-300">Receptor Universal</span>`;
+          resTag.innerHTML = `<span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-600 border-2 border-blue-300 animate-pulse">Receptor Universal</span>`;
         } else {
           resTag.innerHTML = ``;
         }
       }
 
-      // Mensaje descriptivo
+      // Mensaje explicativo
       if (resMessage) {
         let msg = `El tipo <strong>${selectedType}</strong> es compatible para donar a <strong>${info.giveTo.length}</strong> grupo(s) (${info.giveTo.join(", ")}) y puede recibir de <strong>${info.receiveFrom.length}</strong> grupo(s) (${info.receiveFrom.join(", ")}).`;
 
@@ -173,3 +207,24 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
     updateView();
   });
 </script>
+
+<style>
+  /* Animaciones personalizadas */
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes bounceShort {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .animate-pop {
+    animation: pop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  .animate-bounce-short {
+    animation: bounceShort 2s infinite ease-in-out;
+  }
+</style>
