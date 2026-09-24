@@ -1,0 +1,78 @@
+---
+// recuperar.astro - Recuperación de contraseña
+import Layout from '../layouts/Layout.astro';
+import AuthShell from '../components/auth/AuthShell.astro';
+import SubmitButton from '../components/auth/SubmitButton.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<Layout title="BLUD | Recuperar contraseña">
+  <AuthShell
+    title="Recupera tu acceso"
+    subtitle="Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva."
+  >
+    <div
+      id="form-success"
+      role="status"
+      class="mb-6 hidden items-start gap-3 rounded-control bg-ok-soft px-4 py-3 text-sm font-medium text-ok"
+    >
+      <Icon name="check-circle" class="mt-0.5 size-5 shrink-0" />
+      <span>Si el correo está registrado, recibirás el enlace en unos minutos. Revisa también la carpeta de spam.</span>
+    </div>
+
+    <form id="recover-form" novalidate class="flex flex-col gap-6">
+      <div>
+        <label for="recover-email" class="mb-2 block text-sm font-semibold text-ink">Correo electrónico</label>
+        <input
+          type="email"
+          id="recover-email"
+          name="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="tucorreo@ejemplo.com"
+          aria-describedby="recover-email-error"
+          class="field"
+        />
+        <p id="recover-email-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <SubmitButton label="Enviar enlace" loadingLabel="Enviando" />
+    </form>
+
+    <p class="mt-10 border-t border-line pt-6 text-ink-2">
+      ¿La recordaste?
+      <a href="/login" class="link-arrow ml-1">
+        Volver a iniciar sesión
+        <Icon name="arrow-right" class="size-4" />
+      </a>
+    </p>
+  </AuthShell>
+</Layout>
+
+<script>
+  import { isShowingError, validateEmailField, withSubmitting } from '../lib/forms';
+
+  const form = document.getElementById('recover-form') as HTMLFormElement | null;
+  const successBanner = document.getElementById('form-success');
+
+  if (form) {
+    const emailInput = document.getElementById('recover-email') as HTMLInputElement;
+    const emailError = document.getElementById('recover-email-error') as HTMLElement;
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    emailInput.addEventListener('input', () => {
+      if (isShowingError(emailError)) validateEmailField(emailInput, emailError);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!validateEmailField(emailInput, emailError)) return emailInput.focus();
+      if (!submit) return;
+      withSubmitting(submit, () => {
+        successBanner?.classList.remove('hidden');
+        successBanner?.classList.add('flex');
+        form.classList.add('opacity-60', 'pointer-events-none');
+      });
+    });
+  }
+</script>

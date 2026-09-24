@@ -1,0 +1,495 @@
+---
+import InfoLayout from '../../components/info/InfoLayout.astro';
+import Icon from '../../components/Icon.astro';
+import type { IconName } from '../../lib/icons';
+
+interface Stage {
+  title: string;
+  text: string;
+  stat: string;
+  icon: IconName;
+}
+
+const stages: Stage[] = [
+  {
+    title: 'Donación',
+    text: 'Donas unos 450 ml y, al mismo tiempo, se llenan varios tubos pequeños que irán directo al laboratorio.',
+    stat: '450 ml y tubos de muestra',
+    icon: 'drop',
+  },
+  {
+    title: 'Identificación',
+    text: 'La bolsa, los tubos y tu registro reciben el mismo código de barras. Así cada unidad se rastrea sin mostrar tu nombre.',
+    stat: 'Un código, tres etiquetas',
+    icon: 'barcode',
+  },
+  {
+    title: 'Separación',
+    text: 'Una centrífuga separa la sangre en glóbulos rojos, plasma y plaquetas. Se retiran los glóbulos blancos para evitar reacciones en el paciente.',
+    stat: '3 componentes',
+    icon: 'arrows-split',
+  },
+  {
+    title: 'Pruebas de laboratorio',
+    text: 'Se confirma tu grupo y factor Rh y se descartan VIH, hepatitis B y C, sífilis, HTLV y Chagas. Si algo sale alterado, la unidad se descarta y te contactan en privado.',
+    stat: 'Entre 24 y 48 horas',
+    icon: 'microscope',
+  },
+  {
+    title: 'Almacenamiento',
+    text: 'Cada componente se guarda a su temperatura: glóbulos rojos refrigerados hasta 42 días, plaquetas en agitación 5 días y plasma congelado hasta un año.',
+    stat: '1 a 6 °C, 20 a 24 °C y −18 °C',
+    icon: 'thermometer-cold',
+  },
+  {
+    title: 'Distribución',
+    text: 'Cuando un hospital hace una solicitud, las unidades compatibles salen del banco de sangre en contenedores que mantienen la cadena de frío.',
+    stat: 'Cadena de frío',
+    icon: 'truck',
+  },
+  {
+    title: 'Transfusión',
+    text: 'Antes de transfundir, el hospital hace una prueba cruzada con la sangre del paciente. Tu donación llega a quien la necesita.',
+    stat: 'Hasta 3 personas',
+    icon: 'hospital',
+  },
+];
+
+// Ruta en zigzag (coordenadas del viewBox 300 × 600).
+const W = 300;
+const H = 600;
+const nodes = stages.map((_, i) => ({ x: i % 2 === 0 ? 78 : 222, y: 50 + i * 83 }));
+const d = nodes
+  .map((n, i) => {
+    if (i === 0) return `M ${n.x} ${n.y}`;
+    const p = nodes[i - 1];
+    const my = (p.y + n.y) / 2;
+    return `C ${p.x} ${my}, ${n.x} ${my}, ${n.x} ${n.y}`;
+  })
+  .join(' ');
+
+const notifications = [
+  { when: 'Hoy, 9:42', title: 'Gracias por donar hoy', text: 'Tu donación ya va camino al laboratorio.', icon: 'drop' as IconName },
+  { when: 'Mañana, 16:10', title: 'Tu donación superó todas las pruebas', text: 'Está lista para ayudar a quien la necesite.', icon: 'seal-check' as IconName },
+  { when: 'En 4 días', title: 'Tu sangre llegó a un hospital', text: 'Tus glóbulos rojos llegaron al Hospital Universitario de Maracaibo. Gracias por hacerlo posible.', icon: 'hospital' as IconName },
+];
+---
+
+<InfoLayout
+  slug="viaje-de-tu-sangre"
+  title="El viaje de tu sangre"
+  lead="Entre tu brazo y el paciente hay siete etapas y varios días de controles. Recórrelas y descubre cómo te avisamos cuando tu donación llega."
+  description="Qué pasa con la sangre que donas: identificación, separación, pruebas, almacenamiento, distribución y transfusión. Y el aviso cuando llega a un hospital."
+>
+  <!-- Visual: mini recorrido en bucle -->
+  <div slot="visual" class="relative isolate overflow-hidden rounded-panel bg-night px-6 py-10 text-white sm:px-10">
+    <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+    <div class="mini-route relative mx-auto flex max-w-md items-center justify-between" aria-hidden="true">
+      <span class="absolute inset-x-6 top-1/2 h-px -translate-y-1/2 bg-white/15"></span>
+      <span class="mini-dot absolute left-6 top-1/2 size-3 -translate-y-1/2 rounded-full bg-[#F2605A] shadow-[0_0_0_6px_rgb(242_96_90/0.18)]"></span>
+      {(['drop', 'microscope', 'snowflake', 'truck', 'hospital'] as IconName[]).map((icon, i) => (
+        <span class="mini-node relative grid size-12 place-items-center rounded-full border border-white/15 bg-night-2 text-white/80" style={`--i:${i}`}>
+          <Icon name={icon} class="size-5" />
+        </span>
+      ))}
+    </div>
+    <div class="mt-10 grid grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-3xl font-bold tracking-[-0.04em]">7</p>
+        <p class="mt-1 text-xs text-white/60">etapas</p>
+      </div>
+      <div>
+        <p class="text-3xl font-bold tracking-[-0.04em]">2 a 5</p>
+        <p class="mt-1 text-xs text-white/60">días hasta el hospital</p>
+      </div>
+      <div>
+        <p class="text-3xl font-bold tracking-[-0.04em]">3</p>
+        <p class="mt-1 text-xs text-white/60">componentes</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recorrido guiado por el scroll -->
+  <section class="journey relative py-16 lg:py-24" data-journey>
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Del brazo al hospital</h2>
+        <p class="section-lead">Baja por la página y sigue a tu donación etapa por etapa.</p>
+      </div>
+
+      <!-- Barra compacta en móvil -->
+      <div class="journey-bar sticky top-16 z-20 -mx-4 mt-8 border-y border-line bg-surface/90 px-4 py-3 backdrop-blur-lg lg:hidden" aria-hidden="true">
+        <div class="flex items-center gap-3">
+          <span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-white" data-bar-icon>
+            <Icon name={stages[0].icon} class="size-4" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-semibold text-ink" data-bar-title>{stages[0].title}</p>
+            <div class="mt-1.5 grid gap-1" style={`grid-template-columns: repeat(${stages.length}, minmax(0, 1fr))`}>
+              {stages.map((_, i) => (
+                <span class="bar-seg h-1 rounded-full bg-line" data-bar-seg={i}></span>
+              ))}
+            </div>
+          </div>
+          <span class="font-mono text-xs text-ink-3" data-bar-count>1/{stages.length}</span>
+        </div>
+      </div>
+
+      <div class="mt-10 grid gap-10 lg:mt-14 lg:grid-cols-12 lg:gap-16">
+        <!-- Ruta animada (escritorio) -->
+        <div class="hidden lg:col-span-5 lg:block">
+          <div class="sticky top-24">
+            <div class="relative isolate overflow-hidden rounded-panel bg-night p-8 text-white">
+              <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+              <div class="flex items-center justify-between text-sm">
+                <p class="font-semibold" aria-live="polite">
+                  <span data-route-title>{stages[0].title}</span>
+                </p>
+                <p class="font-mono text-xs text-white/55">
+                  Etapa <span data-route-count>1</span> de {stages.length}
+                </p>
+              </div>
+
+              <div class="route relative mx-auto mt-6 w-[min(100%,300px,calc((100dvh-17rem)/2))]" style={`aspect-ratio: ${W} / ${H}`} aria-hidden="true">
+                <svg viewBox={`0 0 ${W} ${H}`} class="absolute inset-0 size-full overflow-visible">
+                  <path d={d} fill="none" stroke="rgb(255 255 255 / 0.12)" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round" />
+                  <path id="route-path" d={d} fill="none" stroke="#F2605A" stroke-width="3" stroke-linecap="round" class="route-progress" />
+                </svg>
+                {nodes.map((n, i) => (
+                  <span
+                    class="route-node absolute grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-night-2 text-white/60"
+                    style={`left:${(n.x / W) * 100}%; top:${(n.y / H) * 100}%`}
+                    data-route-node={i}
+                  >
+                    <Icon name={stages[i].icon} class="size-5" />
+                  </span>
+                ))}
+                <span class="route-drop absolute left-0 top-0 grid size-5 place-items-center" data-route-drop>
+                  <span class="size-3.5 rounded-full border-2 border-[#F2605A] bg-white shadow-[0_0_0_6px_rgb(242_96_90/0.28),0_0_22px_rgb(242_96_90/0.7)]"></span>
+                </span>
+              </div>
+
+              <p class="mt-6 rounded-control bg-white/[0.06] px-4 py-3 text-sm text-white/80" data-route-stat>{stages[0].stat}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Etapas -->
+        <ol class="lg:col-span-7 lg:pb-[22vh]">
+          {stages.map((s, i) => (
+            <li class="journey-step flex min-h-[46vh] flex-col justify-center py-8 lg:min-h-[62vh]" data-step={i}>
+              <div class="flex items-center gap-3">
+                <span class="step-icon grid size-11 place-items-center rounded-full border border-line-strong bg-surface text-ink-2">
+                  <Icon name={s.icon} class="size-5" />
+                </span>
+                <span class="font-mono text-xs text-ink-3">Etapa {i + 1} de {stages.length}</span>
+              </div>
+              <h3 class="mt-5 text-[clamp(1.75rem,1.3rem+1.4vw,2.5rem)] font-bold leading-[1.05] tracking-[-0.035em] text-ink">{s.title}</h3>
+              <p class="mt-4 max-w-[52ch] text-lg leading-relaxed text-ink-2">{s.text}</p>
+              <p class="mt-5 inline-flex w-fit items-center gap-2 rounded-control bg-sunken px-3 py-2 text-sm font-medium text-ink">
+                <Icon name="clock" class="size-4 text-ink-3" />
+                {s.stat}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Aviso de llegada -->
+  <section class="border-t border-line bg-sunken py-16 lg:py-24" data-notify>
+    <div class="container-blud grid gap-12 lg:grid-cols-12 lg:items-center">
+      <div class="lg:col-span-6" data-reveal>
+        <h2 class="section-title">Te avisamos cuando llega</h2>
+        <p class="section-lead">
+          Con tu cuenta de BLUD recibes un aviso en cada momento clave, hasta que tu donación llega a un hospital.
+          Nunca te decimos quién la recibe.
+        </p>
+
+        <div class="mt-8 grid gap-4 sm:grid-cols-2">
+          <div class="rounded-panel border border-line bg-surface p-5">
+            <p class="flex items-center gap-2 text-sm font-semibold text-ok">
+              <Icon name="check-circle" class="size-4" /> Qué te contamos
+            </p>
+            <ul class="mt-3 grid gap-2 text-sm text-ink-2">
+              <li>El componente que se usó</li>
+              <li>El hospital o la ciudad</li>
+              <li>La fecha de llegada</li>
+            </ul>
+          </div>
+          <div class="rounded-panel border border-line bg-surface p-5">
+            <p class="flex items-center gap-2 text-sm font-semibold text-accent-ink">
+              <Icon name="x-circle" class="size-4" /> Qué nunca compartimos
+            </p>
+            <ul class="mt-3 grid gap-2 text-sm text-ink-2">
+              <li>Nombre o edad del paciente</li>
+              <li>Su diagnóstico o tratamiento</li>
+              <li>Cualquier dato que lo identifique</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <a href="/register" class="btn btn-primary">
+            Activar mis avisos
+            <Icon name="arrow-right" class="size-4" />
+          </a>
+          <button type="button" class="btn text-ink-2 hover:bg-surface hover:text-ink" data-replay>
+            <Icon name="arrow-clockwise" class="size-4" />
+            Ver de nuevo
+          </button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-6">
+        <div class="notify-stage relative mx-auto max-w-md" aria-label="Ejemplo de avisos que recibirías" role="img">
+          <div class="absolute -inset-8 -z-10 rounded-[2rem] bg-[radial-gradient(60%_60%_at_50%_40%,color-mix(in_srgb,var(--accent)_14%,transparent),transparent)]" aria-hidden="true"></div>
+          <ul class="grid gap-3" aria-hidden="true">
+            {notifications.map((n, i) => (
+              <li class="notify-card flex gap-3.5 rounded-panel border border-line bg-surface/95 p-4 shadow-[0_18px_40px_-24px_hsl(var(--shadow-tint)/0.45)] backdrop-blur" style={`--i:${i}`}>
+                <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent text-white">
+                  <Icon name={n.icon} class="size-5" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="flex items-baseline justify-between gap-3">
+                    <span class="text-sm font-semibold text-ink">BLUD</span>
+                    <span class="shrink-0 text-xs text-ink-3">{n.when}</span>
+                  </span>
+                  <span class="mt-0.5 block font-semibold leading-snug text-ink">{n.title}</span>
+                  <span class="mt-0.5 block text-sm leading-snug text-ink-2">{n.text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</InfoLayout>
+
+<style>
+  /* Mini recorrido de la cabecera */
+  .mini-dot {
+    animation: mini-travel 6s var(--ease-in-out) infinite;
+  }
+  @keyframes mini-travel {
+    0% { transform: translate(0, -50%); opacity: 0; }
+    8% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translate(calc(min(28rem, 100vw - 5rem) - 3rem - 0.75rem), -50%); opacity: 0; }
+  }
+  .mini-node {
+    animation: mini-pulse 6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 1.3s + 0.4s);
+  }
+  @keyframes mini-pulse {
+    0%, 12%, 100% { border-color: rgb(255 255 255 / 0.15); color: rgb(255 255 255 / 0.8); }
+    4% { border-color: #F2605A; color: #fff; }
+  }
+
+  /* Ruta principal */
+  .route-progress {
+    transition: stroke-dashoffset 900ms var(--ease-out);
+  }
+  .route-node {
+    transition: border-color 400ms ease, background-color 400ms ease, color 400ms ease, scale 400ms var(--ease-out);
+  }
+  .route-node.is-done {
+    border-color: rgb(242 96 90 / 0.5);
+    color: #fff;
+  }
+  .route-node.is-active {
+    border-color: #F2605A;
+    background: #CA2B2B;
+    color: #fff;
+    scale: 1.12;
+  }
+  .route-drop {
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  /* Etapas: la activa se ilumina, el resto queda en segundo plano. */
+  .journey-step {
+    transition: opacity 500ms ease;
+  }
+  :global(.js) .journey-step:not(.is-active) {
+    opacity: 0.35;
+  }
+  .journey-step .step-icon {
+    transition: background-color 400ms ease, border-color 400ms ease, color 400ms ease;
+  }
+  .journey-step.is-active .step-icon {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .bar-seg { transition: background-color 300ms ease; }
+  .bar-seg.is-done { background: var(--accent); }
+
+  /* Avisos que llegan uno a uno */
+  :global(.js) .notify-card {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  .notify-stage.is-playing .notify-card {
+    animation: notify-in 620ms var(--ease-out) both;
+    animation-delay: calc(250ms + var(--i) * 900ms);
+  }
+  @keyframes notify-in {
+    from { opacity: 0; transform: translateY(18px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mini-dot, .mini-node { animation: none; }
+    .mini-dot { opacity: 0; }
+    :global(.js) .journey-step:not(.is-active) { opacity: 1; }
+    :global(.js) .notify-card { opacity: 1; transform: none; }
+    .notify-stage.is-playing .notify-card { animation: none; }
+  }
+</style>
+
+<script>
+  const journey = document.querySelector<HTMLElement>('[data-journey]');
+
+  if (journey) {
+    const steps = Array.from(journey.querySelectorAll<HTMLElement>('[data-step]'));
+    const nodes = Array.from(journey.querySelectorAll<HTMLElement>('[data-route-node]'));
+    const path = journey.querySelector<SVGPathElement>('#route-path');
+    const drop = journey.querySelector<HTMLElement>('[data-route-drop]');
+    const route = journey.querySelector<HTMLElement>('.route');
+    const titleEl = journey.querySelector('[data-route-title]');
+    const countEl = journey.querySelector('[data-route-count]');
+    const statEl = journey.querySelector('[data-route-stat]');
+    const barTitle = journey.querySelector('[data-bar-title]');
+    const barCount = journey.querySelector('[data-bar-count]');
+    const barIcon = journey.querySelector<HTMLElement>('[data-bar-icon]');
+    const barSegs = Array.from(journey.querySelectorAll<HTMLElement>('[data-bar-seg]'));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const total = path?.getTotalLength() ?? 0;
+    // Distancia a lo largo del trazado hasta cada nodo.
+    const nodeLengths: number[] = [];
+    if (path) {
+      let searchFrom = 0;
+      nodes.forEach((node, i) => {
+        if (i === 0) return nodeLengths.push(0);
+        if (i === nodes.length - 1) return nodeLengths.push(total);
+        const targetY = (parseFloat(node.style.top) / 100) * 600;
+        let lo = searchFrom;
+        let hi = total;
+        for (let k = 0; k < 30; k++) {
+          const mid = (lo + hi) / 2;
+          if (path.getPointAtLength(mid).y < targetY) lo = mid;
+          else hi = mid;
+        }
+        nodeLengths.push(hi);
+        searchFrom = hi;
+      });
+      path.style.strokeDasharray = `${total}`;
+      path.style.strokeDashoffset = `${total}`;
+    }
+
+    let current = -1;
+    let dropLength = 0;
+    let raf = 0;
+
+    const placeDrop = (length: number) => {
+      if (!path || !drop || !route) return;
+      const p = path.getPointAtLength(length);
+      const scale = route.clientWidth / 300;
+      drop.style.transform = `translate(${p.x * scale - 10}px, ${p.y * scale - 10}px)`;
+    };
+
+    const animateDrop = (to: number) => {
+      cancelAnimationFrame(raf);
+      if (reduceMotion) {
+        dropLength = to;
+        placeDrop(to);
+        return;
+      }
+      const from = dropLength;
+      const start = performance.now();
+      const duration = 850;
+      const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        dropLength = from + (to - from) * ease(t);
+        placeDrop(dropLength);
+        if (t < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    const activate = (index: number) => {
+      if (index === current) return;
+      current = index;
+      const step = steps[index];
+      steps.forEach((s, i) => s.classList.toggle('is-active', i === index));
+      nodes.forEach((n, i) => {
+        n.classList.toggle('is-active', i === index);
+        n.classList.toggle('is-done', i < index);
+      });
+      barSegs.forEach((seg, i) => seg.classList.toggle('is-done', i <= index));
+
+      const title = step.querySelector('h3')?.textContent ?? '';
+      const stat = step.querySelector('p:last-child')?.textContent?.trim() ?? '';
+      if (titleEl) titleEl.textContent = title;
+      if (countEl) countEl.textContent = String(index + 1);
+      if (statEl) statEl.textContent = stat;
+      if (barTitle) barTitle.textContent = title;
+      if (barCount) barCount.textContent = `${index + 1}/${steps.length}`;
+      const icon = step.querySelector('.step-icon svg');
+      if (barIcon && icon) barIcon.innerHTML = icon.outerHTML.replace(/class="[^"]*"/, 'class="size-4"');
+
+      if (path) {
+        const len = nodeLengths[index] ?? 0;
+        path.style.strokeDashoffset = `${total - len}`;
+        animateDrop(len);
+      }
+    };
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) activate(Number((entry.target as HTMLElement).dataset.step));
+          });
+        },
+        { rootMargin: '-45% 0px -50% 0px' }
+      );
+      steps.forEach((s) => io.observe(s));
+    }
+
+    activate(0);
+    placeDrop(0);
+    window.addEventListener('resize', () => placeDrop(dropLength));
+  }
+
+  // ----- Demostración de avisos -----
+  const notify = document.querySelector<HTMLElement>('[data-notify]');
+  const stage = notify?.querySelector<HTMLElement>('.notify-stage');
+  const play = () => {
+    if (!stage) return;
+    stage.classList.remove('is-playing');
+    void stage.offsetWidth;
+    stage.classList.add('is-playing');
+  };
+  if (stage && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          play();
+          io.disconnect();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    io.observe(stage);
+  } else {
+    stage?.classList.add('is-playing');
+  }
+  notify?.querySelector('[data-replay]')?.addEventListener('click', play);
+</script>

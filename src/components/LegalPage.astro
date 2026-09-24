@@ -1,0 +1,73 @@
+---
+// Plantilla para páginas legales: índice lateral + texto con ancho de lectura cómodo.
+import Layout from '../layouts/Layout.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  updated: string;
+  sections: { id: string; title: string }[];
+}
+
+const { title, description, updated, sections } = Astro.props;
+---
+
+<Layout title={`BLUD | ${title}`} description={description}>
+  <article class="container-blud py-16 lg:py-24">
+    <a href="/" class="link-arrow text-sm">
+      <Icon name="arrow-left" class="size-4" />
+      Volver al inicio
+    </a>
+
+    <header class="mt-8 max-w-3xl border-b border-line pb-10">
+      <h1 class="section-title">{title}</h1>
+      <p class="mt-4 text-sm text-ink-3">Última actualización: {updated}</p>
+      <p class="mt-6 flex gap-3 rounded-control bg-warn-soft p-4 text-sm leading-relaxed text-warn">
+        <Icon name="info" class="mt-0.5 size-5 shrink-0" />
+        Versión preliminar. Este texto se ajustará tras la revisión legal del proyecto.
+      </p>
+    </header>
+
+    <div class="mt-12 grid gap-12 lg:grid-cols-12">
+      <nav class="lg:col-span-3" aria-label="Contenido de la página">
+        <ol class="flex flex-col gap-2.5 text-sm lg:sticky lg:top-28">
+          {sections.map((s) => (
+            <li><a href={`#${s.id}`} class="text-ink-2 transition-colors hover:text-ink">{s.title}</a></li>
+          ))}
+        </ol>
+      </nav>
+      <div class="legal-body max-w-[68ch] lg:col-span-9">
+        <slot />
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .legal-body :global(h2) {
+    margin-top: 3rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ink);
+    scroll-margin-top: 6rem;
+  }
+  .legal-body :global(h2:first-child) { margin-top: 0; }
+  .legal-body :global(p),
+  .legal-body :global(li) {
+    margin-top: 1rem;
+    line-height: 1.75;
+    color: var(--ink-2);
+  }
+  .legal-body :global(ul) {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+  .legal-body :global(li) { margin-top: 0.5rem; }
+  .legal-body :global(a) {
+    color: var(--accent-ink);
+    font-weight: 600;
+    text-underline-offset: 4px;
+  }
+  .legal-body :global(a:hover) { text-decoration: underline; }
+</style>

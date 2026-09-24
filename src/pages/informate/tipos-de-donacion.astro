@@ -1,0 +1,481 @@
+---
+import InfoLayout from '../../components/info/InfoLayout.astro';
+import Icon from '../../components/Icon.astro';
+import type { IconName } from '../../lib/icons';
+
+const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
+const pretty = (t: string) => t.replace('-', '−');
+const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positivo');
+
+interface DonationType {
+  id: string;
+  name: string;
+  color: string;
+  summary: string;
+  stats: { label: string; value: string; icon: IconName }[];
+  helps: { text: string; icon: IconName }[];
+  ideal: string[];
+  note?: string;
+}
+
+// Frecuencias orientativas; cada banco de sangre aplica su normativa.
+const types: DonationType[] = [
+  {
+    id: 'sangre-total',
+    name: 'Sangre total',
+    color: '#B3121B',
+    summary:
+      'La donación más común. Se extrae la sangre completa y en el laboratorio se separa en glóbulos rojos, plasma y plaquetas, así que una sola bolsa puede ayudar a varias personas.',
+    stats: [
+      { label: 'Frecuencia', value: 'Cada 3 meses (4 si eres mujer)', icon: 'calendar-check' },
+      { label: 'Duración', value: '10 min de extracción, 1 hora en total', icon: 'timer' },
+      { label: 'Se extrae', value: '450 ml de sangre', icon: 'drop' },
+      { label: 'Dónde', value: 'Bancos de sangre y jornadas móviles', icon: 'map-pin' },
+    ],
+    helps: [
+      { text: 'Cirugías programadas', icon: 'first-aid-kit' },
+      { text: 'Accidentes y traumatismos', icon: 'siren' },
+      { text: 'Partos con hemorragia', icon: 'heart' },
+      { text: 'Anemias graves', icon: 'drop-half' },
+    ],
+    ideal: bloodTypes,
+  },
+  {
+    id: 'plaquetas',
+    name: 'Plaquetas',
+    color: '#E9CF7A',
+    summary:
+      'Una máquina de aféresis separa solo las plaquetas y te devuelve el resto de la sangre por el mismo brazo. Las plaquetas ayudan a coagular y duran apenas 5 días, por eso siempre hacen falta.',
+    stats: [
+      { label: 'Frecuencia', value: 'Cada 2 semanas, hasta 24 veces al año', icon: 'calendar-check' },
+      { label: 'Duración', value: 'Entre 1,5 y 2 horas', icon: 'timer' },
+      { label: 'Se extrae', value: 'Lo mismo que unas 5 donaciones de sangre total', icon: 'drop' },
+      { label: 'Dónde', value: 'Centros con equipo de aféresis', icon: 'hospital' },
+    ],
+    helps: [
+      { text: 'Pacientes con cáncer en quimioterapia', icon: 'heartbeat' },
+      { text: 'Leucemias y trasplantes de médula', icon: 'microscope' },
+      { text: 'Cirugía cardíaca', icon: 'heart' },
+      { text: 'Hemorragias graves', icon: 'siren' },
+    ],
+    ideal: ['A+', 'A-', 'B+', 'O+', 'AB+', 'AB-'],
+  },
+  {
+    id: 'plasma',
+    name: 'Plasma',
+    color: '#E0A63A',
+    summary:
+      'El plasma es la parte líquida de la sangre y transporta las proteínas que coagulan. El grupo AB es donante universal de plasma: sirve para pacientes de cualquier tipo.',
+    stats: [
+      { label: 'Frecuencia', value: 'Cada 4 semanas, hasta 13 veces al año', icon: 'calendar-check' },
+      { label: 'Duración', value: 'Alrededor de 1 hora y 15 min', icon: 'timer' },
+      { label: 'Se extrae', value: 'Unos 600 ml de plasma', icon: 'drop' },
+      { label: 'Dónde', value: 'Centros con equipo de aféresis', icon: 'hospital' },
+    ],
+    helps: [
+      { text: 'Quemaduras graves', icon: 'first-aid-kit' },
+      { text: 'Traumatismos y hemorragias masivas', icon: 'siren' },
+      { text: 'Trastornos de la coagulación', icon: 'bandaids' },
+      { text: 'Enfermedades del hígado', icon: 'stethoscope' },
+    ],
+    ideal: ['AB+', 'AB-'],
+    note: 'Los grupos A y B también pueden donar plasma; el AB es el que más se busca.',
+  },
+  {
+    id: 'globulos-rojos',
+    name: 'Glóbulos rojos',
+    color: '#7A0610',
+    summary:
+      'Se extraen dos unidades de glóbulos rojos en una sola visita y la máquina te devuelve el plasma y las plaquetas junto con suero. Es la mejor forma de aprovechar los tipos más buscados.',
+    stats: [
+      { label: 'Frecuencia', value: 'Cada 4 meses, hasta 3 veces al año', icon: 'calendar-check' },
+      { label: 'Duración', value: 'Alrededor de 1,5 horas', icon: 'timer' },
+      { label: 'Se extrae', value: '2 unidades de glóbulos rojos', icon: 'drop' },
+      { label: 'Dónde', value: 'Centros con equipo de aféresis', icon: 'hospital' },
+    ],
+    helps: [
+      { text: 'Accidentes y pérdidas de sangre', icon: 'siren' },
+      { text: 'Recién nacidos y partos', icon: 'heart' },
+      { text: 'Anemia falciforme y talasemia', icon: 'drop-half' },
+      { text: 'Cirugías mayores', icon: 'first-aid-kit' },
+    ],
+    ideal: ['O+', 'O-', 'A-', 'B-'],
+    note: 'Pide un peso y una talla mayores que la donación de sangre total.',
+  },
+];
+
+// Por qué se necesitan donantes todo el tiempo: vida útil de cada componente.
+const shelfLife = [
+  { name: 'Glóbulos rojos', value: '42 días', detail: 'Refrigerados entre 1 y 6 °C', color: '#B3121B', icon: 'thermometer-cold' as IconName },
+  { name: 'Plaquetas', value: '5 días', detail: 'A temperatura ambiente y en agitación constante', color: '#E9CF7A', icon: 'hourglass-medium' as IconName },
+  { name: 'Plasma', value: '1 año', detail: 'Congelado a 18 °C bajo cero o menos', color: '#E0A63A', icon: 'snowflake' as IconName },
+];
+
+const recommenderData = types.map((t) => ({ id: t.id, name: t.name, ideal: t.ideal, color: t.color }));
+---
+
+<InfoLayout
+  slug="tipos-de-donacion"
+  title="Tipos de donación"
+  lead="No todas las donaciones son iguales. Según tu tipo de sangre, puedes ayudar más donando un componente concreto."
+  description="Sangre total, plaquetas, plasma y glóbulos rojos: frecuencia, duración, a quién ayuda cada donación y qué tipos de sangre son ideales."
+>
+  <!-- Visual: tubo que se separa en sus componentes -->
+  <div slot="visual" class="relative isolate overflow-hidden rounded-panel bg-night p-8 text-white sm:p-10">
+    <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+    <div class="flex items-center justify-center gap-8 sm:gap-12">
+      <div class="tube relative h-72 w-20 overflow-hidden rounded-b-full rounded-t-lg border-2 border-white/25 bg-white/5 sm:h-80 sm:w-24" role="img" aria-label="Tubo de sangre separado en plasma (55 por ciento), plaquetas y glóbulos blancos (menos del 1 por ciento) y glóbulos rojos (45 por ciento)">
+        <div class="tube-plasma absolute inset-x-0 bottom-0 top-3"></div>
+        <div class="tube-red absolute inset-x-0 bottom-0"></div>
+        <div class="tube-shine pointer-events-none absolute inset-y-0 left-2 w-2 rounded-full bg-white/20"></div>
+      </div>
+      <ul class="tube-labels flex h-72 flex-col justify-between py-6 text-sm sm:h-80 sm:py-8" aria-hidden="true">
+        <li class="tube-label" style="--i:0">
+          <span class="flex items-center gap-2 font-semibold"><span class="size-2.5 rounded-full bg-[#E0A63A]"></span>Plasma</span>
+          <span class="mt-0.5 block pl-4.5 font-mono text-xs text-white/60">55 %</span>
+        </li>
+        <li class="tube-label" style="--i:1">
+          <span class="flex items-center gap-2 font-semibold"><span class="size-2.5 rounded-full bg-[#F3EBD8]"></span>Plaquetas y glóbulos blancos</span>
+          <span class="mt-0.5 block pl-4.5 font-mono text-xs text-white/60">menos del 1 %</span>
+        </li>
+        <li class="tube-label" style="--i:2">
+          <span class="flex items-center gap-2 font-semibold"><span class="size-2.5 rounded-full bg-[#B3121B]"></span>Glóbulos rojos</span>
+          <span class="mt-0.5 block pl-4.5 font-mono text-xs text-white/60">45 %</span>
+        </li>
+      </ul>
+    </div>
+    <p class="mt-6 text-center text-sm text-white/60">Así queda la sangre total tras centrifugarla en el laboratorio.</p>
+  </div>
+
+  <!-- Selector de tipos -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Cuatro formas de donar</h2>
+        <p class="section-lead">Elige una para ver cada cuánto puedes donarla, cuánto dura y a quién ayuda.</p>
+      </div>
+
+      <div class="mt-10" data-reveal>
+        <div role="tablist" aria-label="Tipos de donación" class="donation-tabs flex gap-2 overflow-x-auto pb-1">
+          {types.map((t, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-controls={`panel-${t.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              class="donation-tab inline-flex shrink-0 items-center gap-2.5 rounded-control border px-4 py-3 text-[0.9375rem] font-semibold transition-colors duration-200"
+            >
+              <span class="size-3 rounded-full ring-2 ring-black/5" style={`background:${t.color}`}></span>
+              {t.name}
+            </button>
+          ))}
+        </div>
+
+        {types.map((t, i) => (
+          <div
+            role="tabpanel"
+            id={`panel-${t.id}`}
+            aria-labelledby={`tab-${t.id}`}
+            tabindex="0"
+            class:list={['donation-panel panel mt-4 overflow-hidden focus:outline-none', i !== 0 && 'hidden']}
+          >
+            <div class="grid lg:grid-cols-12">
+              <div class="p-6 sm:p-8 lg:col-span-7 lg:p-10">
+                <div class="flex items-center gap-3">
+                  <span class="h-8 w-1.5 rounded-full" style={`background:${t.color}`}></span>
+                  <h3 class="text-3xl font-bold tracking-[-0.035em] text-ink">{t.name}</h3>
+                </div>
+                <p class="mt-4 max-w-[60ch] text-[1.0625rem] leading-relaxed text-ink-2">{t.summary}</p>
+
+                <dl class="mt-8 grid gap-3 sm:grid-cols-2">
+                  {t.stats.map((s) => (
+                    <div class="rounded-control bg-sunken p-4">
+                      <dt class="flex items-center gap-2 text-sm text-ink-3">
+                        <Icon name={s.icon} class="size-4" />
+                        {s.label}
+                      </dt>
+                      <dd class="mt-1.5 font-semibold leading-snug text-ink">{s.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {t.note && (
+                  <p class="mt-4 flex items-start gap-2 text-sm text-ink-3">
+                    <Icon name="info" class="mt-0.5 size-4 shrink-0" />
+                    {t.note}
+                  </p>
+                )}
+              </div>
+
+              <div class="border-t border-line bg-canvas/60 p-6 sm:p-8 lg:col-span-5 lg:border-l lg:border-t-0 lg:p-10">
+                <h4 class="text-sm font-semibold text-ink">A quién ayuda</h4>
+                <ul class="mt-4 grid gap-3">
+                  {t.helps.map((h) => (
+                    <li class="flex items-center gap-3 text-ink-2">
+                      <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-surface text-ink-2 shadow-[0_1px_2px_hsl(var(--shadow-tint)/0.08)]">
+                        <Icon name={h.icon} class="size-[1.125rem]" />
+                      </span>
+                      {h.text}
+                    </li>
+                  ))}
+                </ul>
+
+                <h4 class="mt-8 text-sm font-semibold text-ink">Tipos de sangre ideales</h4>
+                <ul class="mt-3 grid grid-cols-4 gap-1.5">
+                  {bloodTypes.map((b) => {
+                    const on = t.ideal.includes(b);
+                    return (
+                      <li
+                        class:list={[
+                          'grid h-10 place-items-center rounded-lg border font-mono text-sm font-semibold',
+                          on ? 'border-accent/35 bg-accent-soft text-accent-ink' : 'border-dashed border-line text-ink-3/70',
+                        ]}
+                      >
+                        <span aria-hidden="true">{pretty(b)}</span>
+                        <span class="sr-only">{spoken(b)}: {on ? 'ideal' : 'no es el más buscado'}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <p class="mt-4 flex items-start gap-2 text-sm text-ink-3">
+          <Icon name="info" class="mt-0.5 size-4 shrink-0" />
+          Las frecuencias son orientativas. Cada banco de sangre aplica su propia normativa y la donación por aféresis solo se hace en centros equipados.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recomendador -->
+  <section class="border-y border-line bg-sunken py-16 lg:py-24" data-recommender={JSON.stringify(recommenderData)}>
+    <div class="container-blud grid gap-10 lg:grid-cols-12 lg:gap-12">
+      <div class="lg:col-span-5" data-reveal>
+        <h2 class="section-title">¿Cuál te conviene?</h2>
+        <p class="section-lead">Elige tu tipo de sangre y te decimos qué donación aprovecha mejor lo que tienes.</p>
+        <fieldset class="mt-8">
+          <legend class="sr-only">Tu tipo de sangre</legend>
+          <div class="grid grid-cols-4 gap-2">
+            {bloodTypes.map((b) => (
+              <label class="cursor-pointer">
+                <input type="radio" name="reco-type" value={b} class="peer sr-only" />
+                <span class="flex h-14 items-center justify-center rounded-control border border-line-strong bg-surface text-xl font-bold tracking-[-0.03em] text-ink transition-[background-color,border-color,color,transform] duration-200 ease-out hover:border-ink-3 peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent active:scale-[0.96]" aria-hidden="true">
+                  {pretty(b)}
+                </span>
+                <span class="sr-only">{spoken(b)}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="lg:col-span-7" data-reveal style="--reveal-delay:1">
+        <div id="reco-result" class="panel min-h-72 p-6 sm:p-8" aria-live="polite">
+          <div class="flex h-full min-h-60 flex-col items-center justify-center text-center">
+            <span class="grid size-12 place-items-center rounded-full bg-sunken text-ink-3">
+              <Icon name="drop-half" class="size-6" />
+            </span>
+            <p class="mt-4 font-semibold text-ink">Elige tu tipo de sangre</p>
+            <p class="mt-1 max-w-xs text-sm text-ink-3">Si aún no lo conoces, te lo dirán en tu primera donación.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vida útil -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Por qué hacen falta donantes cada día</h2>
+        <p class="section-lead">Ningún componente dura para siempre. Las reservas se renuevan con cada donación.</p>
+      </div>
+      <ul class="mt-10 grid gap-4 md:grid-cols-3">
+        {shelfLife.map((s, i) => (
+          <li class="shelf panel relative overflow-hidden p-6 sm:p-7" data-reveal style={`--reveal-delay:${i}; --c:${s.color}`}>
+            <div class="flex items-center justify-between">
+              <p class="font-semibold text-ink">{s.name}</p>
+              <Icon name={s.icon} class="size-5 text-ink-3" />
+            </div>
+            <p class="mt-6 text-5xl font-bold tracking-[-0.05em] text-ink">{s.value}</p>
+            <p class="mt-2 text-sm text-ink-3">{s.detail}</p>
+            <span class="shelf-bar absolute inset-x-0 bottom-0 h-1" aria-hidden="true"></span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</InfoLayout>
+
+<style>
+  /* Tubo: la sangre "sedimenta" y aparecen las capas. */
+  .tube-plasma {
+    background: linear-gradient(180deg, #F0C766 0%, #E0A63A 100%);
+  }
+  .tube-red {
+    height: 100%;
+    background: linear-gradient(180deg, #C0121D 0%, #7A0610 100%);
+    box-shadow: 0 -6px 0 0 #F3EBD8;
+    animation: tube-settle 2400ms cubic-bezier(0.65, 0, 0.35, 1) 700ms both;
+  }
+  @keyframes tube-settle {
+    from { height: 100%; box-shadow: 0 0 0 0 #F3EBD8; }
+    70% { box-shadow: 0 0 0 0 #F3EBD8; }
+    to { height: 44%; box-shadow: 0 -6px 0 0 #F3EBD8; }
+  }
+  .tube-label {
+    opacity: 0;
+    transform: translateX(-8px);
+    animation: tube-label 600ms var(--ease-out) both;
+    animation-delay: calc(2600ms + var(--i) * 140ms);
+  }
+  @keyframes tube-label {
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tube-red { animation: none; height: 44%; }
+    .tube-label { animation: none; opacity: 1; transform: none; }
+  }
+
+  .donation-tabs { scrollbar-width: none; }
+  .donation-tabs::-webkit-scrollbar { display: none; }
+  .donation-tab[aria-selected="false"] {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    color: var(--ink-2);
+  }
+  .donation-tab[aria-selected="false"]:hover { border-color: var(--ink-3); color: var(--ink); }
+  .donation-tab[aria-selected="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--canvas);
+  }
+  .donation-panel.is-entering {
+    animation: panel-in 320ms var(--ease-out);
+  }
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .shelf-bar {
+    background: var(--c);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1200ms var(--ease-out) 200ms;
+  }
+  :global(.is-revealed) .shelf-bar,
+  .shelf:global(.is-revealed) .shelf-bar {
+    transform: scaleX(1);
+  }
+</style>
+
+<script>
+  import { iconSvg } from '../../lib/icons';
+
+  // ----- Pestañas accesibles (flechas, Inicio, Fin) -----
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.donation-tab'));
+  const select = (tab: HTMLButtonElement, focus = false) => {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(t.getAttribute('aria-controls') || '');
+      if (!panel) return;
+      panel.classList.toggle('hidden', !on);
+      if (on) {
+        panel.classList.remove('is-entering');
+        void panel.offsetWidth;
+        panel.classList.add('is-entering');
+      }
+    });
+    if (focus) tab.focus();
+  };
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', (e) => {
+      const keys: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      select(tabs[(keys[e.key] + tabs.length) % tabs.length], true);
+    });
+  });
+
+  // ----- Recomendador por tipo de sangre -----
+  type Reco = { id: string; name: string; ideal: string[]; color: string };
+  const section = document.querySelector<HTMLElement>('[data-recommender]');
+  const data: Reco[] = JSON.parse(section?.dataset.recommender || '[]');
+  const result = document.getElementById('reco-result');
+  const pretty = (t: string) => t.replace('-', '−');
+
+  const reasons: Record<string, (type: string) => string> = {
+    plasma: () => 'Tu plasma es universal: sirve para pacientes de cualquier grupo sanguíneo.',
+    'globulos-rojos': (type) =>
+      type === 'O-'
+        ? 'Eres donante universal de glóbulos rojos. Una doble unidad llega al doble de pacientes.'
+        : type === 'O+'
+          ? 'O+ es el tipo más frecuente entre los pacientes: tus glóbulos rojos se usan a diario.'
+          : 'Los tipos negativos escasean. Una doble unidad de glóbulos rojos cubre a más pacientes.',
+    plaquetas: () => 'Tus plaquetas son compatibles con muchos pacientes en tratamiento contra el cáncer.',
+    'sangre-total': () => 'Siempre hace falta y puedes donarla en cualquier banco de sangre o jornada.',
+  };
+  const order = ['plasma', 'globulos-rojos', 'plaquetas', 'sangre-total'];
+
+  document.querySelectorAll<HTMLInputElement>('input[name="reco-type"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!input.checked || !result) return;
+      const type = input.value;
+      const matches = order
+        .map((id) => data.find((d) => d.id === id))
+        .filter((d): d is Reco => !!d && d.ideal.includes(type));
+
+      result.innerHTML = `
+        <div class="reco-in">
+          <p class="text-sm text-ink-3">Recomendado para el tipo</p>
+          <p class="mt-1 text-5xl font-extrabold tracking-[-0.05em] text-ink">${pretty(type)}</p>
+          <ol class="mt-6 grid gap-3">
+            ${matches
+              .map(
+                (m, i) => `
+                <li class="reco-item flex items-start gap-4 rounded-control border ${i === 0 ? 'border-accent/40 bg-accent-soft' : 'border-line bg-surface'} p-4" style="--i:${i}">
+                  <span class="mt-1 size-3 shrink-0 rounded-full" style="background:${m.color}"></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="flex flex-wrap items-center gap-2">
+                      <span class="font-semibold text-ink">${m.name}</span>
+                      ${i === 0 ? `<span class="rounded-md bg-accent px-1.5 py-0.5 text-[0.6875rem] font-bold text-white">Mayor impacto</span>` : ''}
+                    </span>
+                    <span class="mt-1 block text-sm leading-relaxed text-ink-2">${reasons[m.id](type)}</span>
+                  </span>
+                  <a href="#tab-${m.id}" data-open-tab="${m.id}" class="shrink-0 self-center text-ink-3 transition-colors hover:text-ink" aria-label="Ver detalles de ${m.name}">
+                    ${iconSvg('arrow-up-right', 'size-5')}
+                  </a>
+                </li>`
+              )
+              .join('')}
+          </ol>
+        </div>`;
+
+      result.querySelectorAll<HTMLAnchorElement>('[data-open-tab]').forEach((link) => {
+        link.addEventListener('click', () => {
+          const tab = document.getElementById(`tab-${link.dataset.openTab}`) as HTMLButtonElement | null;
+          if (tab) select(tab);
+        });
+      });
+    });
+  });
+</script>
+
+<style is:global>
+  .reco-in .reco-item {
+    animation: reco-in 420ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  @keyframes reco-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>

@@ -9,48 +9,104 @@ interface Props {
   description?: string;
 }
 
-const { 
+const {
   title = "BLUD | Red de Donación de Sangre en Tiempo Real",
   description = "Conectamos donantes voluntarios con pacientes y bancos de sangre. Encuentra solicitudes urgentes, comprueba tu elegibilidad y salva vidas cerca de ti."
 } = Astro.props;
+
+const base = Astro.site ?? Astro.url;
+const canonical = new URL(Astro.url.pathname, base).href;
+const ogImage = new URL('/og-image.jpg', base).href;
 ---
 
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="generator" content={Astro.generator} />
+
+    <!-- Tema: se resuelve antes de pintar para evitar parpadeo.
+         Sin elección guardada, sigue al sistema (y a sus cambios). -->
+    <script is:inline>
+      (function () {
+        var root = document.documentElement;
+        root.classList.add('js');
+        var saved = null;
+        try { saved = localStorage.getItem('blud-theme'); } catch (e) {}
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var theme = saved === 'light' || saved === 'dark' ? saved : mq.matches ? 'dark' : 'light';
+        root.setAttribute('data-theme', theme);
+        mq.addEventListener('change', function (e) {
+          var stored = null;
+          try { stored = localStorage.getItem('blud-theme'); } catch (err) {}
+          if (!stored) root.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        });
+      })();
+    </script>
 
     <!-- SEO Básico -->
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#1A202C" />
 
     <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_VE" />
+    <meta property="og:site_name" content="BLUD" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <slot name="head" />
   </head>
-  <body class="flex min-h-screen flex-col bg-blud-shadow-grey text-white font-sans antialiased selection:bg-blud-flag-red selection:text-white">
-    
-    <!-- Navegación Superior Fija -->
+  <body class="flex min-h-dvh flex-col bg-canvas text-ink antialiased">
+    <a
+      href="#contenido"
+      class="btn btn-primary btn-sm fixed left-4 top-3 z-[70] -translate-y-20 focus:translate-y-0"
+    >
+      Saltar al contenido
+    </a>
+
     <Navbar />
 
-    <!-- Contenido Principal de las Páginas -->
-    <main class="flex-grow">
+    <main id="contenido" class="flex-grow focus:outline-none" tabindex="-1">
       <slot />
     </main>
 
-    <!-- Pie de Página -->
     <Footer />
 
+    <script>
+      // Revelado progresivo: los elementos con [data-reveal] aparecen al entrar en pantalla.
+      const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add('is-revealed');
+              io.unobserve(entry.target);
+            });
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.12 }
+        );
+        targets.forEach((el) => io.observe(el));
+      } else {
+        targets.forEach((el) => el.classList.add('is-revealed'));
+      }
+    </script>
   </body>
 </html>

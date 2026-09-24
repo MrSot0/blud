@@ -1,0 +1,63 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+
+const sections = [
+  { id: 'datos', title: 'Qué datos recogemos' },
+  { id: 'uso', title: 'Para qué los usamos' },
+  { id: 'datos-de-salud', title: 'Datos de salud' },
+  { id: 'compartir', title: 'Con quién los compartimos' },
+  { id: 'derechos', title: 'Tus derechos' },
+  { id: 'contacto-privacidad', title: 'Contacto' },
+];
+---
+
+<LegalPage
+  title="Política de privacidad"
+  description="Qué datos recoge BLUD, para qué los usa y cómo protegemos tu información médica."
+  updated="23 de septiembre de 2026"
+  sections={sections}
+>
+  <h2 id="datos">Qué datos recogemos</h2>
+  <p>Solo pedimos lo necesario para conectarte con centros de salud:</p>
+  <ul>
+    <li>Datos de cuenta: nombre, correo electrónico y contraseña cifrada.</li>
+    <li>Tipo de sangre, si decides indicarlo.</li>
+    <li>Tu ubicación aproximada, solo si autorizas las alertas cercanas.</li>
+    <li>Las donaciones que registres en la plataforma.</li>
+  </ul>
+
+  <h2 id="uso">Para qué los usamos</h2>
+  <p>
+    Usamos tus datos para avisarte de solicitudes compatibles con tu tipo de sangre, calcular tu tiempo
+    de recuperación entre donaciones y coordinar citas con los centros. No usamos tus datos para
+    publicidad.
+  </p>
+
+  <h2 id="datos-de-salud">Datos de salud</h2>
+  <p>
+    Tu tipo de sangre y tu historial de donaciones son datos sensibles. Se guardan cifrados y solo los
+    ven los centros verificados con los que decidas colaborar.
+  </p>
+  <p>
+    El test de elegibilidad funciona en tu navegador: tus respuestas no se envían
+    ni se guardan.
+  </p>
+
+  <h2 id="compartir">Con quién los compartimos</h2>
+  <p>
+    Compartimos tus datos de contacto únicamente con los centros de salud verificados que elijas para
+    donar. No vendemos ni cedemos información a terceros.
+  </p>
+
+  <h2 id="derechos">Tus derechos</h2>
+  <p>
+    Puedes consultar, corregir o eliminar tus datos en cualquier momento. Si eliminas tu cuenta,
+    borramos tu información personal, salvo la que la ley nos obligue a conservar.
+  </p>
+
+  <h2 id="contacto-privacidad">Contacto</h2>
+  <p>
+    Para cualquier consulta sobre privacidad escríbenos a{' '}
+    <a href="mailto:soporte@blud.app">soporte@blud.app</a>.
+  </p>
+</LegalPage>

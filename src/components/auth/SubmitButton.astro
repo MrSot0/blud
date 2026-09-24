@@ -1,0 +1,18 @@
+---
+import Icon from '../Icon.astro';
+
+interface Props {
+  label: string;
+  loadingLabel: string;
+}
+
+const { label, loadingLabel } = Astro.props;
+---
+
+<button type="submit" class="btn btn-primary btn-lg w-full">
+  <span data-label>{label}</span>
+  <span data-loading class="hidden items-center gap-2">
+    <Icon name="spinner-gap" class="spin size-5" />
+    {loadingLabel}
+  </span>
+</button>

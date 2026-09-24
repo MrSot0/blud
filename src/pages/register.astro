@@ -1,191 +1,166 @@
 ---
-// Register.astro - Registro de nuevos usuarios de BLUD (Tema Claro)
+// register.astro - Registro de nuevos donantes de BLUD
 import Layout from '../layouts/Layout.astro';
+import AuthShell from '../components/auth/AuthShell.astro';
+import PasswordInput from '../components/auth/PasswordInput.astro';
+import SubmitButton from '../components/auth/SubmitButton.astro';
+import Icon from '../components/Icon.astro';
 
 const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
+const pretty = (t: string) => t.replace('-', '−');
 ---
 
-<Layout title="BLUD | Crear Cuenta">
-  <section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-white px-4 py-16 overflow-hidden select-none">
-
-    <!-- Patrón de Puntos de Fondo -->
-    <div 
-      class="pointer-events-none absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-70"
-      aria-hidden="true"
-    ></div>
-
-    <div class="w-full max-w-md relative z-10">
-
-      <!-- Logo -->
-      <a href="/" class="flex items-center justify-center gap-2.5 mb-8 group w-fit mx-auto">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-flag-red text-white shadow-lg shadow-blud-flag-red/30 group-hover:scale-105 transition-transform">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-          </svg>
-        </div>
-        <span class="font-sans text-2xl font-black tracking-tight text-slate-900">
-          BLUD<span class="text-blud-flag-red">.</span>
-        </span>
-      </a>
-
-      <!-- Card Principal -->
-      <div class="rounded-3xl border-2 border-slate-200/80 bg-slate-50/80 p-8 sm:p-10 backdrop-blur-md shadow-xl shadow-slate-200/50">
-
-        <div class="text-center mb-8">
-          <h1 class="font-sans text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Únete a la red
-          </h1>
-          <p class="mt-2 text-sm text-slate-600">
-            Crea tu cuenta de donante en menos de un minuto.
-          </p>
-        </div>
-
-        <!-- Banner de éxito -->
-        <div id="form-success" class="hidden mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 shadow-xs">
-          Cuenta creada correctamente. Redirigiendo...
-        </div>
-
-        <form id="register-form" novalidate class="space-y-5">
-
-          <!-- Nombre completo -->
-          <div>
-            <label for="register-name" class="block text-xs font-extrabold text-slate-700 mb-2">
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              id="register-name"
-              name="name"
-              autocomplete="name"
-              placeholder="Ej. María Fernández"
-              aria-describedby="register-name-error"
-              class="w-full px-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
-            />
-            <p id="register-name-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
-          </div>
-
-          <!-- Email -->
-          <div>
-            <label for="register-email" class="block text-xs font-extrabold text-slate-700 mb-2">
-              Correo electrónico
-            </label>
-            <input
-              type="email"
-              id="register-email"
-              name="email"
-              autocomplete="email"
-              placeholder="tucorreo@ejemplo.com"
-              aria-describedby="register-email-error"
-              class="w-full px-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
-            />
-            <p id="register-email-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
-          </div>
-
-          <!-- Tipo de sangre (opcional) -->
-          <div>
-            <label for="register-blood-type" class="block text-xs font-extrabold text-slate-700 mb-2">
-              Tipo de sangre <span class="text-slate-400 font-normal normal-case">(si lo conoces)</span>
-            </label>
-            <select
-              id="register-blood-type"
-              name="bloodType"
-              class="w-full px-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
-            >
-              <option value="">Aún no lo sé</option>
-              {bloodTypes.map((type) => <option value={type}>{type}</option>)}
-            </select>
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label for="register-password" class="block text-xs font-extrabold text-slate-700 mb-2">
-              Contraseña
-            </label>
-            <div class="relative">
-              <input
-                type="password"
-                id="register-password"
-                name="password"
-                autocomplete="new-password"
-                placeholder="Mínimo 8 caracteres"
-                aria-describedby="register-password-error"
-                class="w-full pl-4 pr-12 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
-              />
-              <button
-                type="button"
-                data-toggle-password="register-password"
-                aria-label="Mostrar contraseña"
-                class="toggle-password-btn absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-open" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 eye-closed hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.025 10.025 0 012.223-3.592m3.242-2.3A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.964 9.964 0 01-4.132 5.411M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
-                </svg>
-              </button>
-            </div>
-            <p id="register-password-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
-          </div>
-
-          <!-- Confirmar Password -->
-          <div>
-            <label for="register-password-confirm" class="block text-xs font-extrabold text-slate-700 mb-2">
-              Confirmar contraseña
-            </label>
-            <input
-              type="password"
-              id="register-password-confirm"
-              name="passwordConfirm"
-              autocomplete="new-password"
-              placeholder="Repite tu contraseña"
-              aria-describedby="register-password-confirm-error"
-              class="w-full px-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/10 shadow-xs transition-all"
-            />
-            <p id="register-password-confirm-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
-          </div>
-
-          <!-- Términos -->
-          <div>
-            <label class="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer select-none">
-              <input type="checkbox" id="register-terms" name="terms" class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 bg-white text-blud-flag-red focus:ring-blud-flag-red/30 focus:ring-offset-0" />
-              <span>
-                Acepto los <a href="/terminos" class="font-bold text-blud-flag-red hover:underline">Términos y Condiciones</a> y la <a href="/privacidad" class="font-bold text-blud-flag-red hover:underline">Política de Privacidad</a>.
-              </span>
-            </label>
-            <p id="register-terms-error" class="hidden mt-1.5 text-xs font-bold text-blud-flag-red"></p>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full rounded-2xl bg-blud-flag-red hover:bg-slate-900 py-3.5 font-sans text-sm font-extrabold text-white shadow-md shadow-blud-flag-red/20 transition-all active:scale-[0.98]"
-          >
-            Crear Cuenta
-          </button>
-
-        </form>
-
-        <p class="mt-8 text-center text-sm text-slate-600">
-          ¿Ya tienes cuenta?
-          <a href="/login" class="font-bold text-blud-flag-red hover:underline transition-colors">
-            Inicia sesión
-          </a>
-        </p>
-
-      </div>
+<Layout title="BLUD | Crear cuenta">
+  <AuthShell title="Únete a la red" subtitle="Crea tu cuenta de donante en menos de un minuto.">
+    <div
+      id="form-success"
+      role="status"
+      class="mb-6 hidden items-start gap-3 rounded-control bg-ok-soft px-4 py-3 text-sm font-medium text-ok"
+    >
+      <Icon name="check-circle" class="mt-0.5 size-5 shrink-0" />
+      <span>Cuenta creada. Te avisaremos cuando un centro cercano necesite tu tipo de sangre.</span>
     </div>
 
-  </section>
+    <form id="register-form" novalidate class="flex flex-col gap-6">
+      <div>
+        <label for="register-name" class="mb-2 block text-sm font-semibold text-ink">Nombre completo</label>
+        <input
+          type="text"
+          id="register-name"
+          name="name"
+          autocomplete="name"
+          placeholder="Ej. María Fernández"
+          aria-describedby="register-name-error"
+          class="field"
+        />
+        <p id="register-name-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <div>
+        <label for="register-email" class="mb-2 block text-sm font-semibold text-ink">Correo electrónico</label>
+        <input
+          type="email"
+          id="register-email"
+          name="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="tucorreo@ejemplo.com"
+          aria-describedby="register-email-error"
+          class="field"
+        />
+        <p id="register-email-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <fieldset id="register-blood-type">
+        <legend class="mb-2 text-sm font-semibold text-ink">
+          Tipo de sangre <span class="font-normal text-ink-3">(si lo conoces)</span>
+        </legend>
+        <div class="grid grid-cols-4 gap-2">
+          {bloodTypes.map((type) => (
+            <label class="cursor-pointer">
+              <input type="radio" name="bloodType" value={type} class="peer sr-only" />
+              <span class="flex h-11 items-center justify-center rounded-control border border-line-strong bg-surface font-semibold text-ink transition-colors duration-150 hover:border-ink-3 peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+                {pretty(type)}
+              </span>
+            </label>
+          ))}
+          <label class="col-span-4 cursor-pointer">
+            <input type="radio" name="bloodType" value="" class="peer sr-only" checked />
+            <span class="flex h-11 items-center justify-center rounded-control border border-line-strong bg-surface text-sm font-medium text-ink-2 transition-colors duration-150 hover:border-ink-3 peer-checked:border-ink peer-checked:bg-ink peer-checked:text-canvas peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent">
+              Aún no lo sé
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div>
+        <label for="register-password" class="mb-2 block text-sm font-semibold text-ink">Contraseña</label>
+        <PasswordInput
+          id="register-password"
+          name="password"
+          autocomplete="new-password"
+          placeholder="Mínimo 8 caracteres"
+          describedby="register-password-hint register-password-error"
+        />
+        <div class="mt-3 flex items-center gap-3" aria-hidden="true">
+          <div class="grid flex-1 grid-cols-3 gap-1.5">
+            <span class="strength-seg h-1 rounded-full bg-line" data-seg="0"></span>
+            <span class="strength-seg h-1 rounded-full bg-line" data-seg="1"></span>
+            <span class="strength-seg h-1 rounded-full bg-line" data-seg="2"></span>
+          </div>
+          <span id="strength-label" class="w-16 text-right text-xs font-medium text-ink-3"></span>
+        </div>
+        <p id="register-password-hint" class="mt-2 text-sm text-ink-3">
+          Usa al menos 8 caracteres. Mezclar números y símbolos la hace más segura.
+        </p>
+        <p id="register-password-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <div>
+        <label for="register-password-confirm" class="mb-2 block text-sm font-semibold text-ink">Confirmar contraseña</label>
+        <input
+          type="password"
+          id="register-password-confirm"
+          name="passwordConfirm"
+          autocomplete="new-password"
+          placeholder="Repite tu contraseña"
+          aria-describedby="register-password-confirm-error"
+          class="field"
+        />
+        <p id="register-password-confirm-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <div>
+        <label class="flex cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-2">
+          <input
+            type="checkbox"
+            id="register-terms"
+            name="terms"
+            aria-describedby="register-terms-error"
+            class="mt-0.5 size-[1.125rem] shrink-0 accent-(--accent)"
+          />
+          <span>
+            Acepto los <a href="/terminos" class="font-semibold text-accent-ink underline-offset-4 hover:underline">Términos y condiciones</a>{' '}
+            y la <a href="/privacidad" class="font-semibold text-accent-ink underline-offset-4 hover:underline">Política de privacidad</a>.
+          </span>
+        </label>
+        <p id="register-terms-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+
+      <SubmitButton label="Crear cuenta" loadingLabel="Creando cuenta" />
+    </form>
+
+    <p class="mt-10 border-t border-line pt-6 text-ink-2">
+      ¿Ya tienes cuenta?
+      <a href="/login" class="link-arrow ml-1">
+        Iniciar sesión
+        <Icon name="arrow-right" class="size-4" />
+      </a>
+    </p>
+  </AuthShell>
 </Layout>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('register-form') as HTMLFormElement;
-    const successBanner = document.getElementById('form-success');
-    if (!form) return;
+<style>
+  .strength-seg { transition: background-color 240ms ease; }
+  .strength-seg[data-on="weak"] { background: var(--accent); }
+  .strength-seg[data-on="fair"] { background: var(--warn); }
+  .strength-seg[data-on="strong"] { background: var(--ok); }
+</style>
 
+<script>
+  import {
+    bindPasswordToggles,
+    clearError,
+    isShowingError,
+    setError,
+    validateEmailField,
+    withSubmitting,
+  } from '../lib/forms';
+
+  const form = document.getElementById('register-form') as HTMLFormElement | null;
+  const successBanner = document.getElementById('form-success');
+
+  if (form) {
     const nameInput = document.getElementById('register-name') as HTMLInputElement;
     const emailInput = document.getElementById('register-email') as HTMLInputElement;
     const passwordInput = document.getElementById('register-password') as HTMLInputElement;
@@ -197,24 +172,9 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
     const passwordError = document.getElementById('register-password-error') as HTMLElement;
     const confirmError = document.getElementById('register-password-confirm-error') as HTMLElement;
     const termsError = document.getElementById('register-terms-error') as HTMLElement;
-
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    function setError(input: HTMLInputElement, errorEl: HTMLElement, message: string) {
-      errorEl.textContent = message;
-      errorEl.classList.remove('hidden');
-      input.classList.add('border-blud-flag-red', 'focus:border-blud-flag-red', 'focus:ring-blud-flag-red/10');
-      input.classList.remove('border-slate-200', 'focus:border-slate-400');
-      input.setAttribute('aria-invalid', 'true');
-    }
-
-    function clearError(input: HTMLInputElement, errorEl: HTMLElement) {
-      errorEl.classList.add('hidden');
-      errorEl.textContent = '';
-      input.classList.remove('border-blud-flag-red', 'focus:border-blud-flag-red', 'focus:ring-blud-flag-red/10');
-      input.classList.add('border-slate-200', 'focus:border-blud-flag-red');
-      input.removeAttribute('aria-invalid');
-    }
+    const strengthLabel = document.getElementById('strength-label');
+    const segments = document.querySelectorAll<HTMLElement>('.strength-seg');
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
     function validateName(): boolean {
       const value = nameInput.value.trim();
@@ -230,19 +190,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
       return true;
     }
 
-    function validateEmail(): boolean {
-      const value = emailInput.value.trim();
-      if (!value) {
-        setError(emailInput, emailError, 'Ingresa tu correo electrónico.');
-        return false;
-      }
-      if (!emailPattern.test(value)) {
-        setError(emailInput, emailError, 'Ingresa un correo electrónico válido.');
-        return false;
-      }
-      clearError(emailInput, emailError);
-      return true;
-    }
+    const validateEmail = () => validateEmailField(emailInput, emailError);
 
     function validatePassword(): boolean {
       const value = passwordInput.value;
@@ -274,61 +222,65 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
     function validateTerms(): boolean {
       if (!termsInput.checked) {
-        termsError.textContent = 'Debes aceptar los términos para continuar.';
-        termsError.classList.remove('hidden');
+        setError(termsInput, termsError, 'Debes aceptar los términos para continuar.');
         return false;
       }
-      termsError.classList.add('hidden');
-      termsError.textContent = '';
+      clearError(termsInput, termsError);
       return true;
     }
 
-    nameInput.addEventListener('input', () => { if (!nameError.classList.contains('hidden')) validateName(); });
-    emailInput.addEventListener('input', () => { if (!emailError.classList.contains('hidden')) validateEmail(); });
+    // Medidor simple: longitud + variedad de caracteres.
+    function updateStrength() {
+      const value = passwordInput.value;
+      let score = 0;
+      if (value.length >= 8) score++;
+      if (value.length >= 12) score++;
+      if (/\d/.test(value) && /[A-Za-z]/.test(value)) score++;
+      if (/[^A-Za-z0-9]/.test(value)) score++;
+      const level = !value ? 0 : score <= 1 ? 1 : score <= 2 ? 2 : 3;
+      const names = ['', 'weak', 'fair', 'strong'];
+      const labels = ['', 'Débil', 'Aceptable', 'Segura'];
+      segments.forEach((seg, i) => {
+        if (i < level) seg.dataset.on = names[level];
+        else delete seg.dataset.on;
+      });
+      if (strengthLabel) strengthLabel.textContent = labels[level];
+    }
+
+    nameInput.addEventListener('input', () => { if (isShowingError(nameError)) validateName(); });
+    emailInput.addEventListener('blur', () => { if (emailInput.value) validateEmail(); });
+    emailInput.addEventListener('input', () => { if (isShowingError(emailError)) validateEmail(); });
     passwordInput.addEventListener('input', () => {
-      if (!passwordError.classList.contains('hidden')) validatePassword();
-      if (confirmInput.value && !confirmError.classList.contains('hidden')) validateConfirm();
+      updateStrength();
+      if (isShowingError(passwordError)) validatePassword();
+      if (confirmInput.value && isShowingError(confirmError)) validateConfirm();
     });
-    confirmInput.addEventListener('input', () => { if (!confirmError.classList.contains('hidden')) validateConfirm(); });
-    termsInput.addEventListener('change', () => { if (!termsError.classList.contains('hidden')) validateTerms(); });
+    confirmInput.addEventListener('input', () => { if (isShowingError(confirmError)) validateConfirm(); });
+    termsInput.addEventListener('change', () => { if (isShowingError(termsError)) validateTerms(); });
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      const validations = [
+      const checks = [
         { valid: validateName(), input: nameInput },
         { valid: validateEmail(), input: emailInput },
         { valid: validatePassword(), input: passwordInput },
         { valid: validateConfirm(), input: confirmInput },
+        { valid: validateTerms(), input: termsInput },
       ];
-      const termsValid = validateTerms();
 
-      const firstInvalid = validations.find((v) => !v.valid);
-      if (firstInvalid) {
-        firstInvalid.input.focus();
-        return;
-      }
-      if (!termsValid) return;
+      const firstInvalid = checks.find((c) => !c.valid);
+      if (firstInvalid) return firstInvalid.input.focus();
+      if (!submit) return;
 
-      if (successBanner) {
-        successBanner.classList.remove('hidden');
-        form.classList.add('opacity-50', 'pointer-events-none');
-      }
-    });
-
-    // Mostrar/ocultar contraseña
-    document.querySelectorAll<HTMLButtonElement>('[data-toggle-password]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-toggle-password');
-        const input = targetId ? document.getElementById(targetId) as HTMLInputElement : null;
-        if (!input) return;
-
-        const isPassword = input.type === 'password';
-        input.type = isPassword ? 'text' : 'password';
-        btn.querySelector('.eye-open')?.classList.toggle('hidden', isPassword);
-        btn.querySelector('.eye-closed')?.classList.toggle('hidden', !isPassword);
-        btn.setAttribute('aria-label', isPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      withSubmitting(submit, () => {
+        successBanner?.classList.remove('hidden');
+        successBanner?.classList.add('flex');
+        form.classList.add('opacity-60', 'pointer-events-none');
+        successBanner?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     });
-  });
+
+    bindPasswordToggles(form);
+  }
 </script>

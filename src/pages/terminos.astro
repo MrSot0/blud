@@ -1,0 +1,58 @@
+---
+import LegalPage from '../components/LegalPage.astro';
+
+const sections = [
+  { id: 'servicio', title: 'Qué es BLUD' },
+  { id: 'cuenta', title: 'Tu cuenta' },
+  { id: 'medico', title: 'Criterio médico' },
+  { id: 'centros', title: 'Centros de salud' },
+  { id: 'cambios', title: 'Cambios en estos términos' },
+  { id: 'contacto-terminos', title: 'Contacto' },
+];
+---
+
+<LegalPage
+  title="Términos y condiciones"
+  description="Condiciones de uso de BLUD para donantes y centros de salud."
+  updated="23 de septiembre de 2026"
+  sections={sections}
+>
+  <h2 id="servicio">Qué es BLUD</h2>
+  <p>
+    BLUD es una plataforma que coordina a donantes voluntarios con bancos de sangre y centros de salud.
+    No presta servicios médicos ni realiza extracciones.
+  </p>
+
+  <h2 id="cuenta">Tu cuenta</h2>
+  <ul>
+    <li>Debes ser mayor de 18 años o contar con autorización legal.</li>
+    <li>La información que registres debe ser verdadera y estar actualizada.</li>
+    <li>Eres responsable de mantener tu contraseña en privado.</li>
+  </ul>
+
+  <h2 id="medico">Criterio médico</h2>
+  <p>
+    El test de elegibilidad y la matriz de compatibilidad son guías de orientación. La aptitud final para
+    donar la decide siempre el personal médico del banco de sangre.
+  </p>
+  <p>
+    BLUD no es un servicio de emergencias. Ante una emergencia médica, acude al centro de salud más
+    cercano o llama al <a href="tel:911">911</a>.
+  </p>
+
+  <h2 id="centros">Centros de salud</h2>
+  <p>
+    Los centros que publican solicitudes pasan por una verificación institucional y son responsables de
+    la exactitud de sus solicitudes y de su inventario.
+  </p>
+
+  <h2 id="cambios">Cambios en estos términos</h2>
+  <p>
+    Si modificamos estos términos te avisaremos por correo antes de que entren en vigor.
+  </p>
+
+  <h2 id="contacto-terminos">Contacto</h2>
+  <p>
+    Escríbenos a <a href="mailto:soporte@blud.app">soporte@blud.app</a>.
+  </p>
+</LegalPage>

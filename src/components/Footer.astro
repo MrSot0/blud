@@ -1,126 +1,90 @@
 ---
-// Footer.astro - Componente de Pie de Página para BLUD
+// Footer.astro - Pie de página de BLUD
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { infoTopics, infoHref } from '../data/info';
+
 const currentYear = new Date().getFullYear();
 
 const quickLinks = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#urgencias", label: "Solicitudes Urgentes" },
-  { href: "#elegibilidad", label: "Test de Elegibilidad" },
-  { href: "#compatibilidad", label: "Matriz de Compatibilidad" },
-  { href: "#centros", label: "Centros de Donación" },
+  { href: "/#urgencias", label: "Solicitudes urgentes" },
+  { href: "/#compatibilidad", label: "Compatibilidad" },
+  { href: "/elegibilidad", label: "Test de elegibilidad" },
+  { href: "/#centros", label: "Centros de donación" },
+  { href: "/#faq", label: "Preguntas frecuentes" },
 ];
 
+const infoLinks = infoTopics.map((t) => ({ href: infoHref(t.slug), label: t.title }));
+
 const legalLinks = [
-  { href: "/privacidad", label: "Política de Privacidad" },
-  { href: "/terminos", label: "Términos y Condiciones" },
-  { href: "/proteccion-datos", label: "Protección de Datos Médicos" },
-  { href: "/faq", label: "Preguntas Frecuentes" },
+  { href: "/privacidad", label: "Privacidad" },
+  { href: "/terminos", label: "Términos" },
+  { href: "/privacidad#datos-de-salud", label: "Datos médicos" },
 ];
 ---
 
-<footer class="relative overflow-hidden bg-blud-grain border-t border-white/10 text-white pt-16 pb-12">
-  
-  <!-- Destellos decorativos de fondo -->
-  <div class="absolute top-0 left-1/4 h-64 w-64 rounded-full bg-blud-brick-ember/10 blur-3xl pointer-events-none"></div>
-  <div class="absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-blud-dark-teal/20 blur-3xl pointer-events-none"></div>
+<footer class="relative isolate overflow-hidden bg-night text-white">
+  <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
 
-  <div class="mx-auto max-w-7xl px-4 md:px-8 relative z-10">
-    <div class="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-12 pb-12 border-b border-white/10">
-      
-      <!-- Columna 1: Identidad de Marca y Propósito -->
-      <div class="flex flex-col gap-4">
-        <a href="#inicio" class="flex items-center gap-3 group w-fit">
-          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-brick-ember text-white shadow-md shadow-blud-brick-ember/20 transition-transform group-hover:scale-105">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24">
-              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-            </svg>
-          </div>
-          <span class="flex flex-col leading-tight">
-            <span class="font-sans text-xl font-extrabold tracking-tight text-white">
-              BLUD
-            </span>
-            <span class="font-mono text-[9px] uppercase tracking-wider text-blud-alabaster/70">
-              Red de Donación de Sangre
-            </span>
-          </span>
-        </a>
-
-        <p class="text-sm leading-relaxed text-blud-alabaster/80 font-normal">
-          Plataforma web enfocada en conectar donantes voluntarios con pacientes y bancos de sangre en tiempo real. Cero intermediarios, máxima transparencia y rapidez.
-        </p>
-
-        <!-- Indicador de estado del sistema -->
-        <div class="inline-flex items-center gap-2 rounded-full border border-blud-jade-green/30 bg-blud-jade-green/10 px-3 py-1 text-xs text-blud-jade-green w-fit mt-2">
-          <span class="h-2 w-2 rounded-full bg-blud-jade-green animate-pulse"></span>
-          Sistema de Alertas Operativo
-        </div>
-      </div>
-
-      <!-- Columna 2: Navegación Rápida -->
-      <div>
-        <h3 class="font-sans text-base font-semibold text-white tracking-wide uppercase text-xs text-blud-flag-red mb-4">
-          Navegación
-        </h3>
-        <ul class="flex flex-col gap-2.5 font-sans text-sm text-blud-alabaster/80">
-          {quickLinks.map((link) => (
-            <li>
-              <a href={link.href} class="transition-colors hover:text-white hover:translate-x-1 inline-block duration-200">
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <!-- Columna 3: Legales y Seguridad -->
-      <div>
-        <h3 class="font-sans text-base font-semibold text-white tracking-wide uppercase text-xs text-blud-flag-red mb-4">
-          Legales y Privacidad
-        </h3>
-        <ul class="flex flex-col gap-2.5 font-sans text-sm text-blud-alabaster/80">
-          {legalLinks.map((link) => (
-            <li>
-              <a href={link.href} class="transition-colors hover:text-white hover:translate-x-1 inline-block duration-200">
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <!-- Columna 4: Contacto y Soporte de Emergencia -->
-      <div class="flex flex-col gap-4">
-        <h3 class="font-sans text-base font-semibold text-white tracking-wide uppercase text-xs text-blud-flag-red mb-1">
-          Contacto Urgente
-        </h3>
-        <p class="text-xs text-blud-alabaster/70">
-          ¿Representas a un centro de salud o banco de sangre y necesitas integración directa?
-        </p>
-        
-        <a 
-          href="mailto:soporte@blud.app" 
-          class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white transition-colors hover:bg-white/10 hover:border-white/20"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blud-dark-teal shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span class="truncate">soporte@blud.app</span>
-        </a>
-
-        <div class="rounded-xl bg-blud-brick-ember/15 border border-blud-brick-ember/30 p-3 text-xs text-blud-alabaster">
-          <strong class="block text-white font-semibold mb-0.5">Línea de emergencia médica:</strong>
-          En situaciones críticas de salud, acude directamente al centro médico más cercano o llama al 911.
-        </div>
-      </div>
-
+  <div class="container-blud grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-6 lg:py-14">
+    <div class="sm:col-span-2 lg:col-span-3">
+      <Logo tone="light" />
+      <p class="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
+        Conectamos donantes voluntarios con pacientes y bancos de sangre en tiempo real.
+      </p>
     </div>
 
-    <!-- Pie Inferior: Copyright y Créditos -->
-    <div class="mt-8 flex flex-col items-center justify-between gap-4 text-center text-xs text-blud-alabaster/60 sm:flex-row sm:text-left">
-      <p>© {currentYear} <strong class="text-white font-medium">BLUD</strong>. Todos los derechos reservados.</p>
-      
-      <p class="font-mono text-[11px]">
-        Diseñado con compromiso social y médico.
+    <nav class="lg:col-span-2" aria-label="Enlaces del sitio">
+      <h2 class="text-sm font-semibold text-white">Plataforma</h2>
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+        {quickLinks.map((link) => (
+          <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <nav class="lg:col-span-3" aria-label="Infórmate">
+      <h2 class="text-sm font-semibold text-white">Infórmate</h2>
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+        {infoLinks.map((link) => (
+          <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <nav class="lg:col-span-2" aria-label="Enlaces legales">
+      <h2 class="text-sm font-semibold text-white">Legal</h2>
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+        {legalLinks.map((link) => (
+          <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <div id="contacto" class="lg:col-span-2">
+      <h2 class="text-sm font-semibold text-white">Contacto</h2>
+      <a
+        href="mailto:soporte@blud.app"
+        class="mt-3 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
+      >
+        <Icon name="envelope-simple" class="size-4 text-white/50" />
+        soporte@blud.app
+      </a>
+      <p class="mt-2 text-sm leading-relaxed text-white/60">
+        ¿Eres un centro de salud? Escríbenos para integrarte a la red.
+      </p>
+    </div>
+  </div>
+
+  <div class="border-t border-white/10">
+    <div class="container-blud flex flex-col gap-3 py-5 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+      <p>© {currentYear} BLUD. Todos los derechos reservados.</p>
+      <p class="flex items-start gap-1.5">
+        <Icon name="first-aid-kit" class="size-4 shrink-0 text-[#F2605A]" />
+        <span>
+          Emergencia médica: acude al centro más cercano o llama al{' '}
+          <a href="tel:911" class="font-semibold text-white underline underline-offset-2">911</a>
+        </span>
       </p>
     </div>
   </div>

@@ -1,43 +1,54 @@
-# Astro Starter Kit: Minimal
+# BLUD
 
-```sh
-npm create astro@latest -- --template minimal
-```
+Red de donación de sangre en tiempo real. Conecta donantes voluntarios con pacientes, bancos de sangre y centros de salud en Maracaibo y San Francisco (Zulia).
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Construido con [Astro](https://astro.build) y Tailwind CSS v4.
 
-## 🚀 Project Structure
+## Comandos
 
-Inside of your Astro project, you'll see the following folders and files:
+| Comando           | Acción                                       |
+| :---------------- | :------------------------------------------- |
+| `npm install`     | Instala las dependencias                     |
+| `npm run dev`     | Servidor de desarrollo en `localhost:4321`   |
+| `npm run build`   | Genera el sitio estático en `./dist/`        |
+| `npm run preview` | Sirve la build localmente                    |
+
+## Estructura
 
 ```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+src/
+├── components/
+│   ├── auth/          # Shell, campo de contraseña y botón de envío de login/registro
+│   ├── eligibility/   # Test de elegibilidad (20 preguntas)
+│   ├── info/          # Plantilla de las páginas de Infórmate
+│   ├── landing/       # Secciones de la página principal
+│   ├── Icon.astro     # Íconos Phosphor (ver src/lib/icons.ts)
+│   ├── LegalPage.astro
+│   ├── Logo.astro
+│   ├── Navbar.astro
+│   └── Footer.astro
+├── data/
+│   ├── eligibility.ts # Preguntas del test de elegibilidad
+│   └── info.ts        # Temas de Infórmate (menú, índice y footer)
+├── lib/
+│   ├── forms.ts       # Validación y estados de envío compartidos
+│   └── icons.ts       # Registro de íconos
+├── layouts/Layout.astro
+├── pages/             # index, elegibilidad, informate/*, login, register, recuperar, privacidad, terminos, 404
+└── styles/global.css  # Tokens de diseño (tema claro y oscuro)
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Sistema de diseño
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+- **Tipografía:** Schibsted Grotesk (texto y titulares) y Geist Mono (datos), autoalojadas con Fontsource.
+- **Color:** un solo acento, el rojo de marca `#CA2B2B`. Superficies y textos usan tokens semánticos (`bg-canvas`, `bg-surface`, `text-ink`, `text-ink-2`, `border-line`...) definidos en `global.css`, con valores para tema claro y oscuro. No uses colores `slate-*` ni hex sueltos en los componentes.
+- **Tema:** sigue la preferencia del sistema; el botón de la barra superior alterna claro u oscuro (se guarda en `localStorage`).
+- **Radios:** controles (botones, inputs, chips) `rounded-control` (12px); paneles e imágenes `rounded-panel` (20px).
+- **Componentes base:** `.btn` + `.btn-primary` / `.btn-secondary` / `.btn-on-night`, `.field`, `.panel`, `.section-title`, `.section-lead`, `.link-arrow`.
+- **Movimiento:** añade `data-reveal` para que un elemento aparezca al entrar en pantalla. Todo respeta `prefers-reduced-motion`.
 
-Any static assets, like images, can be placed in the `public/` directory.
+## Pendiente
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- Las solicitudes urgentes, los centros y los formularios usan datos de ejemplo; falta conectarlos a la API.
+- Definir `site` en `astro.config.mjs` para que se genere el sitemap y las URLs canónicas sean absolutas.
+- Los textos de privacidad y términos son un borrador para revisión legal.

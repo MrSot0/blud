@@ -1,284 +1,235 @@
 ---
-const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
+import Icon from '../Icon.astro';
+
+const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"] as const;
+type BloodType = (typeof bloodTypes)[number];
+
+interface Compat {
+  giveTo: BloodType[];
+  receiveFrom: BloodType[];
+  isUniversalDonor?: boolean;
+  isUniversalReceiver?: boolean;
+}
+
+// Compatibilidad de glóbulos rojos (ABO + Rh).
+const matrix: Record<BloodType, Compat> = {
+  "O-": { giveTo: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], receiveFrom: ["O-"], isUniversalDonor: true },
+  "O+": { giveTo: ["O+", "A+", "B+", "AB+"], receiveFrom: ["O+", "O-"] },
+  "A-": { giveTo: ["A+", "A-", "AB+", "AB-"], receiveFrom: ["A-", "O-"] },
+  "A+": { giveTo: ["A+", "AB+"], receiveFrom: ["A+", "A-", "O+", "O-"] },
+  "B-": { giveTo: ["B+", "B-", "AB+", "AB-"], receiveFrom: ["B-", "O-"] },
+  "B+": { giveTo: ["B+", "AB+"], receiveFrom: ["B+", "B-", "O+", "O-"] },
+  "AB-": { giveTo: ["AB+", "AB-"], receiveFrom: ["AB-", "A-", "B-", "O-"] },
+  "AB+": { giveTo: ["AB+"], receiveFrom: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], isUniversalReceiver: true },
+};
+
+const initial: BloodType = "O-";
+const pretty = (t: string) => t.replace('-', '−');
+const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positivo');
+
+const strips = [
+  { key: 'giveTo', title: 'Puede donar a' },
+  { key: 'receiveFrom', title: 'Puede recibir de' },
+] as const;
 ---
 
-<section id="compatibilidad" class="relative overflow-hidden bg-[#f7f7f7] py-20 lg:py-28 select-none">
-  
-  <!-- Patrón de Rejilla de Fondo -->
-  <div 
-    class="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#0000000a_1px,transparent_1px),linear-gradient(to_bottom,#0000000a_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-80"
-    aria-hidden="true"
-  ></div>
-
-  <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-    
-    <!-- Encabezado -->
-    <div class="text-center max-w-2xl mx-auto space-y-4">
-      <h2 class="text-3xl font-black text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
-        Matriz de <span class="text-blud-flag-red">Compatibilidad</span> Sanguínea
-      </h2>
-      <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
-        Selecciona un tipo de sangre para consultar al instante sus compatibilidades de donación y recepción.
+<section id="compatibilidad" class="py-24 lg:py-32" data-matrix={JSON.stringify(matrix)}>
+  <div class="container-blud">
+    <div class="max-w-3xl" data-reveal>
+      <h2 class="section-title">Matriz de compatibilidad sanguínea</h2>
+      <p class="section-lead">
+        Toca un tipo de sangre para ver al instante a quién puede donar y de quién puede recibir.
       </p>
     </div>
 
-    <!-- CUSTOM SELECTOR ANIMADO -->
-    <div class="mt-10 max-w-xs mx-auto relative z-30">
-      <label class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2 text-center">
-        Selecciona el Tipo de Sangre
-      </label>
-      
-      <div class="relative" id="custom-dropdown">
-        <!-- Botón del Selector Custom -->
-        <button
-          type="button"
-          id="dropdown-trigger"
-          aria-haspopup="listbox"
-          aria-expanded="false"
-          class="w-full bg-white border-2 border-slate-300 hover:border-blud-flag-red focus:border-blud-flag-red focus:ring-4 focus:ring-blud-flag-red/15 text-slate-900 font-extrabold text-lg rounded-2xl px-5 py-3.5 shadow-md flex items-center justify-between transition-all duration-300 outline-none cursor-pointer group"
-        >
-          <span id="selected-text" class="mx-auto">Tipo O-</span>
-          <svg id="dropdown-arrow" class="w-5 h-5 text-slate-400 transition-transform duration-300 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
-        <!-- Lista Desplegable Animada -->
-        <div
-          id="dropdown-menu"
-          class="absolute left-0 right-0 mt-2 bg-white/95 backdrop-blur-md border-2 border-slate-200 rounded-2xl shadow-2xl p-2 z-50 transform opacity-0 scale-95 pointer-events-none transition-all duration-200 origin-top divide-y divide-slate-100"
-        >
-          <div class="grid grid-cols-2 gap-1.5 p-1">
-            {bloodTypes.map((type, idx) => (
-              <button
-                type="button"
-                data-value={type}
-                class={`dropdown-option w-full py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
-                  idx === 0 
-                    ? "bg-blud-flag-red text-white shadow-sm shadow-blud-flag-red/30" 
-                    : "text-slate-700 hover:bg-slate-100 hover:text-blud-flag-red"
-                }`}
-              >
-                <span>Tipo</span>
-                <span class="text-base">{type}</span>
-              </button>
+    <div class="mt-12 grid gap-6 lg:grid-cols-12 lg:gap-8">
+      <!-- Selector -->
+      <div class="lg:col-span-5" data-reveal>
+        <fieldset>
+          <legend class="mb-4 text-sm font-semibold text-ink">Elige un tipo de sangre</legend>
+          <div class="grid grid-cols-4 gap-2 sm:gap-3">
+            {bloodTypes.map((type) => (
+              <label class="type-tile relative cursor-pointer">
+                <input
+                  type="radio"
+                  name="matrix-blood-type"
+                  value={type}
+                  checked={type === initial}
+                  class="peer sr-only"
+                />
+                <span
+                  class="flex h-20 items-center justify-center rounded-control border border-line-strong bg-surface text-2xl font-bold tracking-[-0.04em] text-ink transition-[background-color,border-color,color,transform] duration-200 ease-out peer-checked:border-accent peer-checked:bg-accent peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-accent active:scale-[0.96] sm:h-24 sm:text-3xl"
+                  aria-hidden="true"
+                >
+                  {pretty(type)}
+                </span>
+                <span class="sr-only">Tipo {spoken(type)}</span>
+              </label>
             ))}
           </div>
-        </div>
-      </div>
-    </div>
+        </fieldset>
 
-    <!-- Caja de Resultados Animada -->
-    <div 
-      id="results-box"
-      class="mt-8 rounded-3xl bg-white border-2 border-slate-200/90 p-6 sm:p-8 shadow-xl shadow-slate-200/50 transition-all duration-300 relative z-10"
-    >
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center pb-6 border-b-2 border-slate-100">
-        
-        <!-- Puede Donar A -->
-        <div class="space-y-3">
-          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
-            Puede Donar A
-          </span>
-          <div id="res-give" class="flex flex-wrap justify-center gap-2 min-h-[36px]"></div>
-        </div>
-
-        <!-- Badge Central Destacado -->
-        <div class="flex flex-col items-center justify-center space-y-2 order-first md:order-none py-2 md:py-0 border-y md:border-y-0 md:border-x border-slate-100">
-          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
-            Tipo Evaluado
-          </span>
-          
-          <div class="relative group">
-            <div class="absolute -inset-1 bg-gradient-to-r from-blud-flag-red to-red-600 rounded-2xl blur-sm opacity-40 group-hover:opacity-75 transition duration-300"></div>
-            <span 
-              id="res-type" 
-              class="relative inline-flex items-center justify-center h-14 w-18 rounded-2xl bg-blud-flag-red text-white font-black text-2xl shadow-lg shadow-blud-flag-red/30 transition-transform duration-300 transform group-hover:scale-105"
-            >
-              O-
-            </span>
-          </div>
-
-          <div id="res-tag" class="pt-1.5"></div>
-        </div>
-
-        <!-- Puede Recibir De -->
-        <div class="space-y-3">
-          <span class="block text-xs font-black uppercase tracking-wider text-slate-400">
-            Puede Recibir De
-          </span>
-          <div id="res-receive" class="flex flex-wrap justify-center gap-2 min-h-[36px]"></div>
-        </div>
-
-      </div>
-
-      <!-- Nota Informativa -->
-      <div class="mt-6 bg-slate-50 border border-slate-200/80 rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-inner">
-        <div class="p-2.5 bg-blud-flag-red/10 text-blud-flag-red rounded-xl shrink-0 mt-0.5">
-          <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <h4 class="text-xs font-black text-slate-900 uppercase tracking-wide">
-            Nota de Compatibilidad
-          </h4>
-          <p id="res-message" class="text-sm text-slate-600 leading-relaxed mt-1">
-            Cargando información...
+        <div class="mt-6 flex gap-3 rounded-control bg-sunken p-4 text-sm leading-relaxed text-ink-2">
+          <Icon name="info" class="mt-0.5 size-5 shrink-0 text-ink-3" />
+          <p>
+            Estas reglas corresponden a glóbulos rojos. El plasma y las plaquetas siguen reglas distintas,
+            y el banco de sangre siempre confirma con pruebas cruzadas.
           </p>
         </div>
       </div>
 
-    </div>
+      <!-- Resultado -->
+      <div class="panel p-6 sm:p-8 lg:col-span-7" data-reveal style="--reveal-delay:1">
+        <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+          <div>
+            <p class="text-sm font-medium text-ink-3">Tipo evaluado</p>
+            <p id="res-type" class="res-type mt-1 text-7xl font-extrabold leading-none tracking-[-0.06em] text-ink">
+              {pretty(initial)}
+            </p>
+          </div>
+          <p id="res-tag" class="min-h-8">
+            {matrix[initial].isUniversalDonor && (
+              <span class="inline-flex items-center gap-1.5 rounded-lg bg-ok-soft px-3 py-1.5 text-sm font-bold text-ok">
+                <Icon name="check-circle" class="size-4" /> Donante universal
+              </span>
+            )}
+          </p>
+        </div>
 
+        {strips.map((strip) => (
+          <div class="mt-6">
+            <div class="flex items-baseline justify-between gap-4">
+              <h3 class="text-base font-semibold text-ink">{strip.title}</h3>
+              <p class="text-sm text-ink-3">
+                <span class="font-semibold text-ink tabular" data-count={strip.key}>{matrix[initial][strip.key].length}</span> de 8 grupos
+              </p>
+            </div>
+            <ul class="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-8" data-strip={strip.key}>
+              {bloodTypes.map((type, i) => {
+                const on = matrix[initial][strip.key].includes(type);
+                return (
+                  <li
+                    data-type={type}
+                    data-on={String(on)}
+                    class="compat-cell flex h-12 flex-col items-center justify-center rounded-lg border font-mono text-sm font-semibold"
+                    style={`--i:${i}`}
+                  >
+                    <span aria-hidden="true">{pretty(type)}</span>
+                    <span class="sr-only" data-sr>{`${spoken(type)}: ${on ? 'compatible' : 'no compatible'}`}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+
+        <p id="res-message" class="mt-7 border-t border-line pt-6 text-[0.9375rem] leading-relaxed text-ink-2" aria-live="polite">
+          El tipo <strong class="text-ink">O−</strong> puede donar a los 8 grupos y recibir de O−.
+          Sus glóbulos rojos sirven para cualquier paciente.
+        </p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- Data JSON embed -->
-<script id="compatibility-json" type="application/json" is:raw>
-  {
-    "O-": { "giveTo": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "receiveFrom": ["O-"], "isUniversalDonor": true },
-    "O+": { "giveTo": ["O+", "A+", "B+", "AB+"], "receiveFrom": ["O+", "O-"] },
-    "A-": { "giveTo": ["A+", "A-", "AB+", "AB-"], "receiveFrom": ["A-", "O-"] },
-    "A+": { "giveTo": ["A+", "AB+"], "receiveFrom": ["A+", "A-", "O+", "O-"] },
-    "B-": { "giveTo": ["B+", "B-", "AB+", "AB-"], "receiveFrom": ["B-", "O-"] },
-    "B+": { "giveTo": ["B+", "AB+"], "receiveFrom": ["B+", "B-", "O+", "O-"] },
-    "AB-": { "giveTo": ["AB+", "AB-"], "receiveFrom": ["AB-", "A-", "B-", "O-"] },
-    "AB+": { "giveTo": ["AB+"], "receiveFrom": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "isUniversalReceiver": true }
+<style>
+  .compat-cell {
+    transition:
+      background-color 240ms var(--ease-out),
+      border-color 240ms var(--ease-out),
+      color 240ms var(--ease-out),
+      opacity 240ms var(--ease-out);
+    transition-delay: calc(var(--i) * 18ms);
   }
-</script>
+  .compat-cell[data-on="true"] {
+    background: var(--accent-soft);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--accent-ink);
+  }
+  .compat-cell[data-on="false"] {
+    background: transparent;
+    border-color: var(--line);
+    border-style: dashed;
+    color: var(--ink-3);
+    opacity: 0.7;
+  }
+  .res-type.swap {
+    animation: type-swap 360ms var(--ease-out);
+  }
+  @keyframes type-swap {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const dataElement = document.getElementById("compatibility-json");
-    if (!dataElement) return;
-    
-    const matrixData = JSON.parse(dataElement.textContent || "{}");
+  import { iconSvg } from '../../lib/icons';
 
-    // Elementos del Dropdown Custom
-    const trigger = document.getElementById("dropdown-trigger");
-    const menu = document.getElementById("dropdown-menu");
-    const arrow = document.getElementById("dropdown-arrow");
-    const selectedText = document.getElementById("selected-text");
-    const options = document.querySelectorAll(".dropdown-option");
+  type Compat = {
+    giveTo: string[];
+    receiveFrom: string[];
+    isUniversalDonor?: boolean;
+    isUniversalReceiver?: boolean;
+  };
 
-    // Elementos de Resultados
-    const resultsBox = document.getElementById("results-box");
-    const resType = document.getElementById("res-type");
-    const resGive = document.getElementById("res-give");
-    const resReceive = document.getElementById("res-receive");
-    const resTag = document.getElementById("res-tag");
-    const resMessage = document.getElementById("res-message");
+  const section = document.getElementById('compatibilidad');
+  const matrix: Record<string, Compat> = JSON.parse(section?.dataset.matrix || '{}');
 
-    let isOpen = false;
+  const pretty = (t: string) => t.replace('-', '−');
+  const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positivo');
+  const joinTypes = (list: string[]) => list.map(pretty).join(', ');
 
-    // Abrir / Cerrar Dropdown
-    function toggleDropdown(show?: boolean) {
-      isOpen = show !== undefined ? show : !isOpen;
+  const resType = document.getElementById('res-type');
+  const resTag = document.getElementById('res-tag');
+  const resMessage = document.getElementById('res-message');
 
-      if (trigger) {
-        trigger.setAttribute("aria-expanded", String(isOpen));
-      }
+  function update(type: string) {
+    const info = matrix[type];
+    if (!info) return;
 
-      if (isOpen) {
-        menu?.classList.remove("opacity-0", "scale-95", "pointer-events-none");
-        menu?.classList.add("opacity-100", "scale-100", "pointer-events-auto");
-        arrow?.classList.add("rotate-180", "text-blud-flag-red");
-        trigger?.classList.add("border-blud-flag-red", "ring-4", "ring-blud-flag-red/15");
-      } else {
-        menu?.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
-        menu?.classList.add("opacity-0", "scale-95", "pointer-events-none");
-        arrow?.classList.remove("rotate-180", "text-blud-flag-red");
-        trigger?.classList.remove("border-blud-flag-red", "ring-4", "ring-blud-flag-red/15");
-      }
+    if (resType) {
+      resType.textContent = pretty(type);
+      resType.classList.remove('swap');
+      void resType.offsetWidth;
+      resType.classList.add('swap');
     }
 
-    trigger?.addEventListener("click", () => toggleDropdown());
-
-    // Cerrar al hacer clic fuera del componente
-    document.addEventListener("click", (e) => {
-      if (!trigger?.contains(e.target as Node) && !menu?.contains(e.target as Node)) {
-        toggleDropdown(false);
-      }
-    });
-
-    function renderBadges(list: string[]) {
-      return list
-        .map(
-          (item) =>
-            `<span class="inline-block rounded-lg bg-white px-3 py-1 text-xs font-black text-slate-800 border-2 border-slate-200 shadow-xs animate-pop">${item}</span>`
-        )
-        .join("");
-    }
-
-    function updateView(selectedType: string) {
-      const info = matrixData[selectedType];
-      if (!info) return;
-
-      if (selectedText) selectedText.textContent = `Tipo ${selectedType}`;
-
-      // Efecto háptico visual en la tarjeta
-      if (resultsBox) {
-        resultsBox.classList.add("scale-[0.98]", "opacity-80");
-        setTimeout(() => resultsBox.classList.remove("scale-[0.98]", "opacity-80"), 150);
-      }
-
-      if (resType) resType.textContent = selectedType;
-      if (resGive) resGive.innerHTML = renderBadges(info.giveTo);
-      if (resReceive) resReceive.innerHTML = renderBadges(info.receiveFrom);
-
-      if (resTag) {
-        if (info.isUniversalDonor) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-600 border-2 border-emerald-300 animate-pulse">Donante Universal</span>`;
-        } else if (info.isUniversalReceiver) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-600 border-2 border-blue-300 animate-pulse">Receptor Universal</span>`;
-        } else {
-          resTag.innerHTML = ``;
-        }
-      }
-
-      if (resMessage) {
-        let msg = `El tipo <strong>${selectedType}</strong> es compatible para donar a <strong>${info.giveTo.length}</strong> grupo(s) (${info.giveTo.join(", ")}) y puede recibir de <strong>${info.receiveFrom.length}</strong> grupo(s) (${info.receiveFrom.join(", ")}).`;
-
-        if (info.isUniversalDonor) {
-          msg += ` <span class="text-emerald-700 font-semibold">Al ser Donante Universal, sus glóbulos rojos son aptos para cualquier paciente.</span>`;
-        } else if (info.isUniversalReceiver) {
-          msg += ` <span class="text-blue-700 font-semibold">Al ser Receptor Universal, puede recibir transfusiones de cualquier grupo sanguíneo.</span>`;
-        }
-
-        resMessage.innerHTML = msg;
-      }
-    }
-
-    // Manejo de clicks en las opciones de la lista
-    options.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const val = btn.getAttribute("data-value") || "O-";
-
-        options.forEach((opt) => {
-          opt.classList.remove("bg-blud-flag-red", "text-white", "shadow-sm", "shadow-blud-flag-red/30");
-          opt.classList.add("text-slate-700", "hover:bg-slate-100", "hover:text-blud-flag-red");
-        });
-
-        btn.classList.remove("text-slate-700", "hover:bg-slate-100", "hover:text-blud-flag-red");
-        btn.classList.add("bg-blud-flag-red", "text-white", "shadow-sm", "shadow-blud-flag-red/30");
-
-        updateView(val);
-        toggleDropdown(false);
+    (['giveTo', 'receiveFrom'] as const).forEach((key) => {
+      const list = info[key];
+      const count = document.querySelector(`[data-count="${key}"]`);
+      if (count) count.textContent = String(list.length);
+      document.querySelectorAll<HTMLElement>(`[data-strip="${key}"] [data-type]`).forEach((cell) => {
+        const cellType = cell.dataset.type || '';
+        const on = list.includes(cellType);
+        cell.dataset.on = String(on);
+        const sr = cell.querySelector('[data-sr]');
+        if (sr) sr.textContent = `${spoken(cellType)}: ${on ? 'compatible' : 'no compatible'}`;
       });
     });
 
-    // Estado inicial
-    updateView("O-");
+    if (resTag) {
+      if (info.isUniversalDonor) {
+        resTag.innerHTML = `<span class="inline-flex items-center gap-1.5 rounded-lg bg-ok-soft px-3 py-1.5 text-sm font-bold text-ok">${iconSvg('check-circle', 'size-4')} Donante universal</span>`;
+      } else if (info.isUniversalReceiver) {
+        resTag.innerHTML = `<span class="inline-flex items-center gap-1.5 rounded-lg bg-sunken px-3 py-1.5 text-sm font-bold text-ink">${iconSvg('check-circle', 'size-4')} Receptor universal</span>`;
+      } else {
+        resTag.innerHTML = '';
+      }
+    }
+
+    if (resMessage) {
+      const give = info.giveTo.length === 8 ? 'a los 8 grupos' : `a ${joinTypes(info.giveTo)}`;
+      const receive = info.receiveFrom.length === 8 ? 'de los 8 grupos' : `de ${joinTypes(info.receiveFrom)}`;
+      let msg = `El tipo <strong class="text-ink">${pretty(type)}</strong> puede donar ${give} y recibir ${receive}.`;
+      if (info.isUniversalDonor) msg += ' Sus glóbulos rojos sirven para cualquier paciente.';
+      if (info.isUniversalReceiver) msg += ' Puede recibir glóbulos rojos de cualquier grupo.';
+      resMessage.innerHTML = msg;
+    }
+  }
+
+  document.querySelectorAll<HTMLInputElement>('input[name="matrix-blood-type"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (input.checked) update(input.value);
+    });
   });
 </script>
-
-<style>
-  @keyframes pop {
-    0% { transform: scale(0.85); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .animate-pop {
-    animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  }
-</style>

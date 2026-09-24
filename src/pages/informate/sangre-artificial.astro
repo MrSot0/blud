@@ -1,0 +1,434 @@
+---
+import InfoLayout from '../../components/info/InfoLayout.astro';
+import Icon from '../../components/Icon.astro';
+import type { IconName } from '../../lib/icons';
+
+// Fuente principal: protocolo del ensayo fase Ib de NMU-HbV (Universidad Médica de Nara).
+// El violeta de esta página es el color real del producto; no es un acento de marca.
+
+const facts = [
+  { value: 'Sin grupo', label: 'Sirve para cualquier paciente, sin pruebas de compatibilidad.' },
+  { value: '2 años', label: 'A temperatura ambiente. Los glóbulos rojos donados duran 42 días refrigerados.' },
+  { value: '400 ml', label: 'Dosis máxima que se está probando ahora en voluntarios sanos.' },
+];
+
+const howSteps: { title: string; text: string; icon: IconName }[] = [
+  {
+    title: 'Se recupera la hemoglobina',
+    text: 'Se parte de sangre donada que ya caducó y no puede transfundirse. De sus glóbulos rojos se extrae la hemoglobina, la proteína que transporta el oxígeno.',
+    icon: 'drop',
+  },
+  {
+    title: 'Se encapsula en lípidos',
+    text: 'La hemoglobina purificada se encierra en diminutas cápsulas de grasa (liposomas). Funcionan como un glóbulo rojo artificial, pero sin su membrana.',
+    icon: 'atom',
+  },
+  {
+    title: 'Circula y entrega oxígeno',
+    text: 'Las partículas son mucho más pequeñas que un glóbulo rojo, así que pasan sin obstáculos por los capilares y liberan oxígeno en los tejidos.',
+    icon: 'heartbeat',
+  },
+];
+
+const comparison = [
+  { label: 'Origen', natural: 'Un donante', artificial: 'Hemoglobina de sangre donada caducada' },
+  { label: 'Grupo sanguíneo', natural: 'A, B, AB u O, y factor Rh', artificial: 'Ninguno: es universal' },
+  { label: 'Conservación', natural: '42 días, refrigerado entre 1 y 6 °C', artificial: 'Hasta 2 años a temperatura ambiente' },
+  { label: 'Tamaño', natural: 'Unas 8 micras', artificial: 'Menos de 1 micra' },
+  { label: 'Qué hace', natural: 'Transporta oxígeno y dióxido de carbono', artificial: 'Solo transporta oxígeno' },
+];
+
+const timeline = [
+  { when: '2022', title: 'Fase I', text: '11 voluntarios sanos recibieron entre 10 y 100 ml. No se observó aumento de la presión arterial.', state: 'done' },
+  { when: '2025 a 2026', title: 'Fase Ib', text: '16 voluntarios sanos en cuatro grupos, con dosis de 100 a 400 ml. Se evalúa la seguridad durante 14 días.', state: 'current' },
+  { when: 'Después', title: 'Ensayos en pacientes', text: 'Personas con anemia o hemorragias, donde harían falta entre 400 y 800 ml.', state: 'next' },
+  { when: 'Hacia 2030', title: 'Uso clínico', text: 'Es la meta de los investigadores si los resultados acompañan.', state: 'next' },
+];
+
+const uses: { title: string; icon: IconName }[] = [
+  { title: 'Ambulancias y atención antes de llegar al hospital', icon: 'siren' },
+  { title: 'Islas y zonas remotas sin banco de sangre', icon: 'globe-hemisphere-west' },
+  { title: 'Desastres naturales y emergencias masivas', icon: 'lightning' },
+  { title: 'Cirugías con sangrado grave', icon: 'first-aid-kit' },
+];
+
+const limits = [
+  'Solo transporta oxígeno: no coagula ni defiende contra infecciones.',
+  'No reemplaza a las plaquetas ni al plasma.',
+  'El cuerpo la elimina en días; el ensayo mide exactamente cuánto dura.',
+  'Todavía no está aprobada para tratar pacientes.',
+  'Se fabrica con hemoglobina de sangre donada: sigue dependiendo de donantes.',
+];
+
+const sources = [
+  {
+    label: 'Protocolo del ensayo fase Ib de NMU-HbV (Universidad Médica de Nara)',
+    href: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC12829376/',
+  },
+  { label: 'The Hill: Japan close to artificial blood breakthrough', href: 'https://thehill.com/policy/healthcare/5336091-universal-artificial-blood-japan-studies/' },
+  { label: 'Newsweek: Artificial blood that could work for all blood types', href: 'https://www.newsweek.com/artificial-blood-japan-all-blood-types-2079654' },
+];
+---
+
+<InfoLayout
+  slug="sangre-artificial"
+  title="Sangre artificial en Japón"
+  lead="Investigadores japoneses crearon glóbulos rojos artificiales que sirven para cualquier grupo sanguíneo y ya se prueban en personas. Así funcionan."
+  description="Cómo funcionan las vesículas de hemoglobina desarrolladas en Japón, en qué fase están los ensayos clínicos y por qué donar sangre sigue siendo imprescindible."
+>
+  <!-- Visual: vesícula de hemoglobina -->
+  <div slot="visual" class="vesicle-visual relative isolate overflow-hidden rounded-panel bg-night p-6 text-white sm:p-8">
+    <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(50%_60%_at_45%_45%,rgb(123_63_160/0.35),transparent_70%)]" aria-hidden="true"></div>
+    <svg viewBox="0 0 400 300" class="w-full" role="img" aria-label="Diagrama de una vesícula: una membrana de lípidos que encierra moléculas de hemoglobina y libera oxígeno">
+      <defs>
+        <radialGradient id="ves-fill" cx="45%" cy="40%" r="65%">
+          <stop offset="0%" stop-color="#9B5CC0" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#4A1F66" stop-opacity="0.85" />
+        </radialGradient>
+      </defs>
+
+      <!-- vesículas pequeñas de fondo -->
+      <g class="ves-float" style="--d:0s">
+        <circle cx="335" cy="70" r="20" fill="url(#ves-fill)" stroke="#C69BE0" stroke-opacity="0.5" stroke-width="3" />
+      </g>
+      <g class="ves-float" style="--d:-3s">
+        <circle cx="62" cy="228" r="15" fill="url(#ves-fill)" stroke="#C69BE0" stroke-opacity="0.5" stroke-width="3" />
+      </g>
+      <g class="ves-float" style="--d:-5s">
+        <circle cx="352" cy="232" r="11" fill="url(#ves-fill)" stroke="#C69BE0" stroke-opacity="0.45" stroke-width="2.5" />
+      </g>
+
+      <!-- vesícula principal -->
+      <g class="ves-main">
+        <circle cx="185" cy="150" r="96" fill="url(#ves-fill)" />
+        <circle cx="185" cy="150" r="96" fill="none" stroke="#D7B3EE" stroke-width="7" stroke-dasharray="1.5 6" stroke-linecap="round" class="ves-membrane" />
+        <circle cx="185" cy="150" r="87" fill="none" stroke="#D7B3EE" stroke-opacity="0.45" stroke-width="2" />
+        {[
+          [150, 110], [196, 98], [232, 132], [140, 158], [188, 150], [228, 182], [160, 200], [205, 212], [118, 128],
+        ].map(([x, y], i) => (
+          <g class="hb" style={`--i:${i}`} transform={`translate(${x} ${y})`}>
+            <circle r="9" fill="#C0121D" />
+            <circle r="9" fill="none" stroke="#F2605A" stroke-width="1.5" stroke-opacity="0.8" />
+            <circle r="3" fill="#F7A1A1" />
+          </g>
+        ))}
+      </g>
+
+      <!-- oxígeno que sale -->
+      {[0, 1, 2].map((i) => (
+        <g class={`o2 o2-${i}`} style={`--i:${i}`}>
+          <circle cx="0" cy="0" r="5" fill="#8FD3FF" />
+          <circle cx="9" cy="0" r="5" fill="#8FD3FF" />
+        </g>
+      ))}
+    </svg>
+    <ul class="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-white/70">
+      <li class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full border-2 border-[#D7B3EE]"></span>Membrana de lípidos</li>
+      <li class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full bg-[#C0121D]"></span>Hemoglobina purificada</li>
+      <li class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full bg-[#8FD3FF]"></span>Oxígeno</li>
+    </ul>
+  </div>
+
+  <!-- Qué es -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-5" data-reveal>
+        <h2 class="section-title">Qué es</h2>
+        <p class="section-lead">
+          Se llaman vesículas de hemoglobina (NMU-HbV). Las desarrollan la Universidad Médica de Nara, con la
+          profesora Hiromi Sakai, junto a las universidades de Waseda y Asahikawa y con apoyo del gobierno japonés.
+        </p>
+        <p class="mt-4 max-w-[60ch] leading-relaxed text-ink-2">
+          El producto tiene un característico color violeta y está pensado para las situaciones en las que no
+          hay tiempo o medios para conseguir sangre compatible.
+        </p>
+      </div>
+      <ul class="grid gap-4 sm:grid-cols-3 lg:col-span-7 lg:grid-cols-1 xl:grid-cols-3">
+        {facts.map((f, i) => (
+          <li class="panel p-6" data-reveal style={`--reveal-delay:${i}`}>
+            <p class="text-4xl font-bold tracking-[-0.05em] text-[var(--plum-ink)]">{f.value}</p>
+            <p class="mt-3 text-sm leading-relaxed text-ink-2">{f.label}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Cómo funciona -->
+  <section class="border-y border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">¿Cómo funciona esta sangre artificial?</h2>
+        <p class="section-lead">Tres pasos convierten sangre que se habría desechado en un transportador de oxígeno universal.</p>
+      </div>
+
+      <ol class="how mt-12 grid gap-4 lg:grid-cols-3 lg:gap-0">
+        {howSteps.map((s, i) => (
+          <li class="how-step relative flex flex-col lg:px-6 lg:first:pl-0 lg:last:pr-0" data-reveal style={`--reveal-delay:${i}`}>
+            <div class="flex items-center gap-4">
+              <span class="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--plum)] text-white shadow-[0_10px_24px_-12px_var(--plum)]">
+                <Icon name={s.icon} class="size-6" />
+              </span>
+              {i < howSteps.length - 1 && (
+                <span class="how-line hidden h-px flex-1 bg-line-strong lg:block" aria-hidden="true">
+                  <span class="how-line-fill block h-full origin-left bg-[var(--plum)]"></span>
+                </span>
+              )}
+            </div>
+            <h3 class="mt-5 text-xl font-bold tracking-[-0.02em] text-ink">{s.title}</h3>
+            <p class="mt-2 max-w-[40ch] leading-relaxed text-ink-2">{s.text}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div class="mt-12 grid gap-6 lg:grid-cols-12">
+        <div class="rounded-panel bg-night p-7 text-white lg:col-span-5" data-reveal>
+          <p class="flex items-center gap-2 text-sm font-semibold text-[#D7B3EE]">
+            <Icon name="question" class="size-4" /> ¿Por qué no tiene grupo sanguíneo?
+          </p>
+          <p class="mt-3 leading-relaxed text-white/85">
+            Los grupos A, B y el factor Rh dependen de unas marcas (antígenos) que están en la membrana del glóbulo
+            rojo. Al usar solo la hemoglobina, sin esa membrana, desaparecen las marcas. Por eso puede
+            administrarse a cualquier persona sin pruebas de compatibilidad.
+          </p>
+        </div>
+
+        <div class="panel overflow-hidden lg:col-span-7" data-reveal style="--reveal-delay:1">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Comparación entre un glóbulo rojo natural y la vesícula artificial</caption>
+            <thead>
+              <tr class="border-b border-line bg-canvas/60">
+                <th scope="col" class="px-5 py-3 font-medium text-ink-3"><span class="sr-only">Característica</span></th>
+                <th scope="col" class="px-5 py-3 font-semibold text-ink">
+                  <span class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full bg-[#C0121D]"></span>Glóbulo rojo</span>
+                </th>
+                <th scope="col" class="px-5 py-3 font-semibold text-ink">
+                  <span class="inline-flex items-center gap-2"><span class="size-2.5 rounded-full bg-[var(--plum)]"></span>Vesícula artificial</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {comparison.map((row) => (
+                <tr>
+                  <th scope="row" class="px-5 py-3.5 align-top font-medium text-ink-3">{row.label}</th>
+                  <td class="px-5 py-3.5 align-top text-ink-2">{row.natural}</td>
+                  <td class="px-5 py-3.5 align-top font-medium text-ink">{row.artificial}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Estado de los ensayos -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">En qué punto está</h2>
+        <p class="section-lead">Las pruebas avanzan por fases: primero se comprueba que es segura y después que funciona en pacientes.</p>
+      </div>
+
+      <ol class="trial mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-6" data-reveal>
+        {timeline.map((t, i) => (
+          <li class="trial-item relative pt-8" data-state={t.state} style={`--i:${i}`}>
+            <span class="trial-track absolute left-0 right-0 top-2 h-0.5 rounded-full bg-line" aria-hidden="true">
+              <span class="trial-fill absolute inset-0 origin-left rounded-full bg-[var(--plum)]"></span>
+            </span>
+            <span class="trial-dot absolute left-0 top-0 grid size-[1.125rem] place-items-center rounded-full border-2 border-line-strong bg-canvas" aria-hidden="true"></span>
+            <p class="font-mono text-xs text-ink-3">{t.when}</p>
+            <h3 class="mt-1 flex items-center gap-2 text-lg font-bold tracking-[-0.02em] text-ink">
+              {t.title}
+              {t.state === 'current' && (
+                <span class="rounded-md bg-[var(--plum-soft)] px-1.5 py-0.5 text-[0.6875rem] font-bold text-[var(--plum-ink)]">En curso</span>
+              )}
+            </h3>
+            <p class="mt-2 text-sm leading-relaxed text-ink-2">{t.text}</p>
+          </li>
+        ))}
+      </ol>
+      <p class="mt-8 flex items-start gap-2 text-sm text-ink-3">
+        <Icon name="info" class="mt-0.5 size-4 shrink-0" />
+        La fase Ib estaba prevista entre enero de 2025 y junio de 2026. Consulta las fuentes para ver sus resultados más recientes.
+      </p>
+    </div>
+  </section>
+
+  <!-- Usos y límites -->
+  <section class="border-t border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud grid gap-12 lg:grid-cols-2">
+      <div data-reveal>
+        <h2 class="text-3xl font-bold tracking-[-0.035em] text-ink">Para qué serviría</h2>
+        <ul class="mt-6 grid gap-3 sm:grid-cols-2">
+          {uses.map((u) => (
+            <li class="flex items-start gap-3 rounded-control bg-surface p-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-[var(--plum-soft)] text-[var(--plum-ink)]">
+                <Icon name={u.icon} class="size-5" />
+              </span>
+              <span class="pt-1.5 font-medium leading-snug text-ink">{u.title}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div data-reveal style="--reveal-delay:1">
+        <h2 class="text-3xl font-bold tracking-[-0.035em] text-ink">Lo que todavía no puede hacer</h2>
+        <ul class="mt-6 divide-y divide-line-strong border-y border-line-strong">
+          {limits.map((l) => (
+            <li class="flex items-start gap-3 py-3.5 text-ink-2">
+              <Icon name="warning-circle" class="mt-0.5 size-5 shrink-0 text-warn" />
+              <span class="leading-relaxed">{l}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mensaje clave -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="grid gap-8 rounded-panel border border-line bg-surface p-8 lg:grid-cols-12 lg:items-center lg:p-12" data-reveal>
+        <div class="lg:col-span-8">
+          <h2 class="text-[clamp(1.75rem,1.3rem+1.6vw,2.5rem)] font-bold leading-[1.08] tracking-[-0.035em] text-ink">
+            Tu donación sigue siendo imprescindible.
+          </h2>
+          <p class="mt-4 max-w-[60ch] leading-relaxed text-ink-2">
+            Incluso cuando llegue a los hospitales, la sangre artificial se fabricará con hemoglobina de sangre
+            donada y no sustituirá a las plaquetas ni al plasma. Los pacientes seguirán necesitando donantes.
+          </p>
+        </div>
+        <div class="lg:col-span-4 lg:text-right">
+          <a href="/informate/tipos-de-donacion" class="link-arrow">
+            Ver los tipos de donación
+            <Icon name="arrow-right" class="size-4" />
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-10 border-t border-line pt-6">
+        <p class="text-sm font-semibold text-ink">Fuentes</p>
+        <ul class="mt-3 grid gap-2 text-sm">
+          {sources.map((s) => (
+            <li>
+              <a href={s.href} target="_blank" rel="noopener noreferrer" class="inline-flex items-start gap-1.5 text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink hover:decoration-ink-3">
+                {s.label}
+                <Icon name="arrow-up-right" class="mt-0.5 size-3.5 shrink-0" />
+                <span class="sr-only">(abre en otra pestaña)</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p class="mt-4 text-xs text-ink-3">
+          También en Japón, la Universidad Chuo (profesor Teruyuki Komatsu) investiga transportadores de oxígeno a base de albúmina. Página actualizada en septiembre de 2026.
+        </p>
+      </div>
+    </div>
+  </section>
+</InfoLayout>
+
+<style>
+  /* Violeta del producto: solo en esta página. */
+  :global(:root) {
+    --plum: #7B3FA0;
+    --plum-soft: #F2E9F8;
+    --plum-ink: #6A2F8E;
+  }
+  :global(:root[data-theme="dark"]) {
+    --plum: #9B5CC0;
+    --plum-soft: #2A1A35;
+    --plum-ink: #D2A8EC;
+  }
+
+  /* Diagrama de la vesícula */
+  .ves-main {
+    transform-origin: 185px 150px;
+    animation: ves-breathe 6s ease-in-out infinite;
+  }
+  @keyframes ves-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.025); }
+  }
+  .ves-membrane {
+    transform-origin: 185px 150px;
+    animation: ves-spin 40s linear infinite;
+  }
+  @keyframes ves-spin {
+    to { transform: rotate(360deg); }
+  }
+  .hb {
+    animation: hb-drift 5s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -0.6s);
+  }
+  .hb > circle:first-child { transform-box: fill-box; }
+  @keyframes hb-drift {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 3px -4px; }
+  }
+  .ves-float {
+    animation: ves-float 8s ease-in-out infinite;
+    animation-delay: var(--d);
+  }
+  @keyframes ves-float {
+    0%, 100% { translate: 0 0; }
+    50% { translate: -6px 8px; }
+  }
+  .o2 {
+    opacity: 0;
+    animation: o2-out 4.5s var(--ease-out) infinite;
+    animation-delay: calc(var(--i) * 1.5s);
+  }
+  @keyframes o2-out {
+    0% { opacity: 0; transform: translate(215px, 150px) scale(0.6); }
+    15% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translate(360px, 120px) scale(1); }
+  }
+  .o2-1 { animation-name: o2-out-b; }
+  .o2-2 { animation-name: o2-out-c; }
+  @keyframes o2-out-b {
+    0% { opacity: 0; transform: translate(200px, 190px) scale(0.6); }
+    15% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translate(330px, 285px) scale(1); }
+  }
+  @keyframes o2-out-c {
+    0% { opacity: 0; transform: translate(170px, 110px) scale(0.6); }
+    15% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translate(250px, 18px) scale(1); }
+  }
+
+  /* Pasos: la línea entre pasos se dibuja al aparecer. */
+  .how-line-fill {
+    transform: scaleX(0);
+    transition: transform 900ms var(--ease-out) 400ms;
+  }
+  .how-step:global(.is-revealed) .how-line-fill { transform: scaleX(1); }
+
+  /* Línea de tiempo de ensayos */
+  .trial-fill {
+    transform: scaleX(0);
+    transition: transform 700ms var(--ease-out);
+    transition-delay: calc(200ms + var(--i) * 220ms);
+  }
+  .trial:global(.is-revealed) .trial-item[data-state="done"] .trial-fill,
+  .trial:global(.is-revealed) .trial-item[data-state="current"] .trial-fill { transform: scaleX(1); }
+  .trial:global(.is-revealed) .trial-item[data-state="current"] .trial-fill { transform: scaleX(0.55); }
+  .trial-item[data-state="done"] .trial-dot { background: var(--plum); border-color: var(--plum); }
+  .trial-item[data-state="current"] .trial-dot {
+    border-color: var(--plum);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--plum) 22%, transparent);
+    animation: trial-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes trial-pulse {
+    0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--plum) 22%, transparent); }
+    50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--plum) 6%, transparent); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ves-main, .ves-membrane, .hb, .ves-float, .trial-item[data-state="current"] .trial-dot { animation: none; }
+    .o2 { display: none; }
+  }
+</style>

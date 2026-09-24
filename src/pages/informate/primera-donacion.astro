@@ -1,0 +1,459 @@
+---
+import InfoLayout from '../../components/info/InfoLayout.astro';
+import Icon from '../../components/Icon.astro';
+import type { IconName } from '../../lib/icons';
+
+// Minutos aproximados de cada etapa de la visita (suman cerca de una hora).
+const visit = [
+  { label: 'Registro', minutes: 10, color: '#8B94A3' },
+  { label: 'Entrevista y chequeo', minutes: 15, color: '#E0A63A' },
+  { label: 'Extracción', minutes: 10, color: '#CA2B2B' },
+  { label: 'Descanso', minutes: 15, color: '#2BB951' },
+];
+const total = visit.reduce((sum, v) => sum + v.minutes, 0);
+const R = 70;
+const C = 2 * Math.PI * R;
+let acc = 0;
+const arcs = visit.map((v, i) => {
+  const len = (v.minutes / total) * C;
+  const gap = 4;
+  const arc = { ...v, dash: `${Math.max(len - gap, 0)} ${C}`, offset: -acc, i };
+  acc += len;
+  return arc;
+});
+
+const steps: { title: string; time: string; text: string; icon: IconName }[] = [
+  {
+    title: 'Registro',
+    time: '5 a 10 min',
+    text: 'Muestras tu documento de identidad y completas un formulario con tus datos y tu historia de salud.',
+    icon: 'identification-card',
+  },
+  {
+    title: 'Entrevista y mini chequeo',
+    time: '10 a 15 min',
+    text: 'Un profesional revisa tus respuestas en privado y te mide la tensión, el pulso, la temperatura y la hemoglobina con un pinchazo en el dedo.',
+    icon: 'stethoscope',
+  },
+  {
+    title: 'Extracción',
+    time: '8 a 10 min',
+    text: 'Te recuestas, se desinfecta el brazo y se extraen unos 450 ml con material estéril de un solo uso. Solo notarás el pinchazo inicial.',
+    icon: 'drop',
+  },
+  {
+    title: 'Descanso y refrigerio',
+    time: '10 a 15 min',
+    text: 'Te quedas unos minutos en reposo, tomas algo de beber y de comer, y te vas con un vendaje en el brazo.',
+    icon: 'coffee',
+  },
+];
+
+const phases = [
+  {
+    id: 'antes',
+    label: 'Antes',
+    icon: 'bed' as IconName,
+    intro: 'Las 24 horas previas marcan la diferencia entre una donación tranquila y un mareo.',
+    items: [
+      'Duerme al menos 6 horas la noche anterior.',
+      'Come algo ligero y sin grasa entre 2 y 4 horas antes. No vayas en ayunas.',
+      'Bebe unos 500 ml de agua extra antes de ir.',
+      'Evita el alcohol durante las 24 horas previas.',
+      'Lleva tu documento de identidad y ropa con mangas fáciles de remangar.',
+      'Si tomas medicamentos, lleva anotados sus nombres.',
+    ],
+  },
+  {
+    id: 'durante',
+    label: 'Durante',
+    icon: 'drop' as IconName,
+    intro: 'La extracción dura unos 10 minutos. El personal está contigo todo el tiempo.',
+    items: [
+      'Relájate y respira con calma.',
+      'Aprieta y suelta la mano cuando te lo indiquen para que la sangre fluya.',
+      'Avisa enseguida si te mareas, sientes calor o náuseas.',
+      'Si te impresiona la aguja, mira hacia otro lado o conversa.',
+      'No te levantes hasta que te lo indiquen.',
+    ],
+  },
+  {
+    id: 'despues',
+    label: 'Después',
+    icon: 'bandaids' as IconName,
+    intro: 'Tu cuerpo repone el volumen en uno o dos días. Ayúdalo con estos cuidados.',
+    items: [
+      'Quédate de 10 a 15 minutos en reposo y toma el refrigerio.',
+      'Bebe más líquido de lo habitual durante 24 a 48 horas.',
+      'No hagas ejercicio intenso ni cargues peso con ese brazo durante el día.',
+      'Deja el vendaje puesto unas 4 horas.',
+      'Si te mareas, acuéstate con las piernas en alto.',
+      'Si en los días siguientes tienes fiebre o te sientes mal, avisa al banco de sangre.',
+    ],
+  },
+];
+
+const ironFoods: { name: string; note: string; icon: IconName }[] = [
+  { name: 'Hígado y carnes rojas', note: 'Hierro que el cuerpo absorbe mejor.', icon: 'cow' },
+  { name: 'Caraotas negras y lentejas', note: 'La opción vegetal más completa.', icon: 'cooking-pot' },
+  { name: 'Huevos', note: 'Fáciles de sumar al desayuno.', icon: 'egg' },
+  { name: 'Sardinas y atún', note: 'Hierro y proteína a la vez.', icon: 'fish' },
+  { name: 'Espinaca y hojas verdes', note: 'Mejor si las acompañas con cítricos.', icon: 'leaf' },
+  { name: 'Harina de maíz enriquecida', note: 'La de las arepas viene fortificada con hierro.', icon: 'grains' },
+];
+
+const myths = [
+  { myth: 'Donar sangre duele mucho.', fact: 'Solo notarás el pinchazo inicial, parecido al de un análisis de sangre. La extracción en sí no duele.' },
+  { myth: 'Me voy a quedar sin sangre o muy débil.', fact: 'Un adulto tiene unos 5 litros. Se extraen 450 ml y el cuerpo repone el volumen en 24 a 48 horas.' },
+  { myth: 'Puedo contagiarme de algo al donar.', fact: 'Todo el material es estéril y de un solo uso. No hay forma de contagiarse por donar.' },
+  { myth: 'Si tengo un tatuaje, nunca podré donar.', fact: 'Solo hay que esperar 12 meses desde que te lo hiciste.' },
+  { myth: 'Si tomo medicamentos, no puedo donar.', fact: 'La mayoría no lo impide. Unos pocos piden esperar un tiempo; coméntalo en la entrevista.' },
+  { myth: 'Mi tipo de sangre es común, no hace falta.', fact: 'Los tipos comunes son justamente los que más se transfunden. Todos los grupos se necesitan.' },
+  { myth: 'Donar engorda o adelgaza.', fact: 'No cambia tu peso. Ese día solo conviene comer bien e hidratarte.' },
+  { myth: 'Solo hace falta sangre en emergencias.', fact: 'Se usa todos los días en cirugías, partos, tratamientos contra el cáncer y anemias.' },
+];
+---
+
+<InfoLayout
+  slug="primera-donacion"
+  title="Tu primera donación"
+  lead="Toda la visita dura alrededor de una hora, y la extracción apenas 10 minutos. Esto es lo que vas a vivir."
+  description="Qué esperar en tu primera donación de sangre paso a paso: antes, durante y después, hierro y alimentación, y los mitos más comunes."
+>
+  <!-- Visual: reloj de la visita -->
+  <div slot="visual" class="relative isolate overflow-hidden rounded-panel bg-night p-8 text-white sm:p-10">
+    <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+    <div class="flex flex-col items-center gap-8 sm:flex-row sm:justify-center sm:gap-12">
+      <div class="relative size-48 shrink-0 sm:size-56">
+        <svg viewBox="0 0 180 180" class="size-full -rotate-90" role="img" aria-label="Reparto aproximado de una visita de cerca de una hora: registro, entrevista y chequeo, extracción y descanso">
+          <circle cx="90" cy="90" r={R} fill="none" stroke="rgb(255 255 255 / 0.08)" stroke-width="16" />
+          {arcs.map((a) => (
+            <circle
+              class="visit-arc"
+              cx="90"
+              cy="90"
+              r={R}
+              fill="none"
+              stroke={a.color}
+              stroke-width="16"
+              stroke-linecap="round"
+              stroke-dasharray={a.dash}
+              stroke-dashoffset={a.offset}
+              style={`--i:${a.i}; --len:${C}`}
+            />
+          ))}
+        </svg>
+        <div class="absolute inset-0 grid place-content-center text-center">
+          <p class="text-4xl font-extrabold tracking-[-0.05em]">≈ 1 h</p>
+          <p class="text-xs text-white/60">visita completa</p>
+        </div>
+      </div>
+      <ul class="grid w-full max-w-64 gap-3 text-sm">
+        {visit.map((v, i) => (
+          <li class="visit-legend flex items-center gap-3" style={`--i:${i}`}>
+            <span class="size-2.5 shrink-0 rounded-full" style={`background:${v.color}`}></span>
+            <span class="min-w-0 flex-1 text-white/85">{v.label}</span>
+            <span class="whitespace-nowrap font-mono text-xs text-white/55">{v.minutes} min</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Paso a paso -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-4">
+        <div class="lg:sticky lg:top-28" data-reveal>
+          <h2 class="section-title">Paso a paso</h2>
+          <p class="section-lead">Del mostrador al refrigerio. Nadie te apura: puedes preguntar en cualquier momento.</p>
+        </div>
+      </div>
+      <ol class="lg:col-span-8">
+        {steps.map((s, i) => (
+          <li class="step relative grid grid-cols-[3rem_1fr] gap-5 pb-12 last:pb-0" data-reveal style={`--reveal-delay:0`}>
+            <div class="relative flex flex-col items-center">
+              <span class="step-dot relative z-10 grid size-12 place-items-center rounded-full border border-line-strong bg-surface text-ink">
+                <Icon name={s.icon} class="size-5" />
+              </span>
+              {i < steps.length - 1 && (
+                <span class="absolute top-12 bottom-[-3rem] w-px bg-line" aria-hidden="true">
+                  <span class="step-line absolute inset-0 origin-top bg-accent"></span>
+                </span>
+              )}
+            </div>
+            <div class="pt-2">
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 class="text-xl font-bold tracking-[-0.02em] text-ink">{s.title}</h3>
+                <span class="font-mono text-xs text-ink-3">{s.time}</span>
+              </div>
+              <p class="mt-2 max-w-[58ch] leading-relaxed text-ink-2">{s.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Antes, durante y después -->
+  <section class="border-y border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
+        <div class="max-w-2xl">
+          <h2 class="section-title">Antes, durante y después</h2>
+          <p class="section-lead">Pequeños cuidados que evitan mareos y hacen que quieras volver.</p>
+        </div>
+        <div role="tablist" aria-label="Momento de la donación" class="phase-tabs relative inline-grid w-full grid-cols-3 rounded-control border border-line bg-surface p-1 sm:w-auto">
+          <span class="phase-thumb absolute inset-y-1 left-1 rounded-[9px] bg-ink" aria-hidden="true"></span>
+          {phases.map((p, i) => (
+            <button
+              type="button"
+              role="tab"
+              id={`phase-tab-${p.id}`}
+              aria-controls={`phase-${p.id}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+              class="phase-tab relative z-10 inline-flex items-center justify-center gap-2 rounded-[9px] px-5 py-2.5 text-sm font-semibold transition-colors duration-300"
+            >
+              <Icon name={p.icon} class="size-4" />
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {phases.map((p, i) => (
+        <div
+          role="tabpanel"
+          id={`phase-${p.id}`}
+          aria-labelledby={`phase-tab-${p.id}`}
+          tabindex="0"
+          class:list={['phase-panel mt-8 focus:outline-none', i !== 0 && 'hidden']}
+        >
+          <p class="max-w-2xl text-lg text-ink-2">{p.intro}</p>
+          <ul class="mt-6 grid gap-3 md:grid-cols-2">
+            {p.items.map((item, j) => (
+              <li class="phase-item flex items-start gap-3 rounded-control bg-surface p-4 text-ink" style={`--i:${j}`}>
+                <Icon name="check-circle" class="mt-0.5 size-5 shrink-0 text-ok" />
+                <span class="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Hierro y alimentación -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-5" data-reveal>
+        <h2 class="section-title">Hierro y alimentación</h2>
+        <p class="section-lead">
+          Antes de cada donación te miden la hemoglobina, la proteína que transporta el oxígeno y que necesita
+          hierro. Si está baja, te pedirán esperar: es por tu salud.
+        </p>
+
+        <div class="panel mt-8 p-6" aria-label="Valores mínimos de hemoglobina orientativos">
+          <p class="text-sm font-semibold text-ink">Hemoglobina mínima habitual para donar</p>
+          <div class="hb-scale relative mt-8">
+            <div class="h-3 rounded-full bg-[linear-gradient(90deg,var(--warn-soft),var(--ok-soft))] ring-1 ring-line"></div>
+            <div class="hb-marker absolute -top-6 flex flex-col items-center" style="left: 37.5%; --i:0">
+              <span class="whitespace-nowrap font-mono text-xs font-semibold text-ink">12,5</span>
+              <span class="mt-1 h-7 w-0.5 rounded-full bg-accent"></span>
+            </div>
+            <div class="hb-marker absolute -top-6 flex flex-col items-center" style="left: 50%; --i:1">
+              <span class="whitespace-nowrap font-mono text-xs font-semibold text-ink">13</span>
+              <span class="mt-1 h-7 w-0.5 rounded-full bg-ink"></span>
+            </div>
+            <div class="mt-3 flex justify-between font-mono text-xs text-ink-3">
+              <span>11 g/dL</span>
+              <span>15 g/dL</span>
+            </div>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2">
+            <span class="inline-flex items-center gap-2"><span class="h-3 w-0.5 rounded-full bg-accent"></span>Mujeres: 12,5 g/dL</span>
+            <span class="inline-flex items-center gap-2"><span class="h-3 w-0.5 rounded-full bg-ink"></span>Hombres: 13 g/dL</span>
+          </div>
+          <p class="mt-4 text-xs text-ink-3">Valores orientativos. Cada banco de sangre fija su mínimo.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7" data-reveal style="--reveal-delay:1">
+        <h3 class="text-sm font-semibold text-ink">Alimentos ricos en hierro</h3>
+        <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+          {ironFoods.map((f) => (
+            <li class="flex items-start gap-3 rounded-control border border-line bg-surface p-4">
+              <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-ink">
+                <Icon name={f.icon} class="size-5" />
+              </span>
+              <span>
+                <span class="block font-semibold text-ink">{f.name}</span>
+                <span class="mt-0.5 block text-sm text-ink-3">{f.note}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+          <p class="flex items-start gap-3 rounded-control bg-ok-soft p-4 text-sm leading-relaxed text-ink">
+            <Icon name="orange-slice" class="mt-0.5 size-5 shrink-0 text-ok" />
+            <span><strong class="font-semibold">Súmale vitamina C.</strong> Guayaba, naranja, parchita o pimentón ayudan a absorber el hierro.</span>
+          </p>
+          <p class="flex items-start gap-3 rounded-control bg-warn-soft p-4 text-sm leading-relaxed text-ink">
+            <Icon name="coffee" class="mt-0.5 size-5 shrink-0 text-warn" />
+            <span><strong class="font-semibold">Separa el café y el té</strong> de las comidas: reducen la absorción del hierro.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mitos -->
+  <section class="border-t border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Mitos frecuentes</h2>
+        <p class="section-lead">Toca cada tarjeta para ver qué dice la realidad.</p>
+      </div>
+      <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {myths.map((m, i) => (
+          <li class="myth-wrap" data-reveal style={`--reveal-delay:${i % 4}`}>
+            <button type="button" class="myth group relative block h-60 w-full text-left lg:h-64" aria-pressed="false">
+              <span class="myth-face myth-front absolute inset-0 flex flex-col rounded-panel border border-line bg-surface p-6">
+                <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-accent-ink">
+                  <Icon name="x-circle" class="size-4" /> Mito
+                </span>
+                <span class="mt-3 text-xl font-bold leading-snug tracking-[-0.02em] text-ink">{m.myth}</span>
+                <span class="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-ink-3 transition-colors group-hover:text-ink">
+                  Ver la realidad
+                  <Icon name="arrow-clockwise" class="size-4" />
+                </span>
+              </span>
+              <span class="myth-face myth-back absolute inset-0 flex flex-col rounded-panel bg-night p-6 text-white" aria-hidden="true">
+                <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-[#6FD891]">
+                  <Icon name="check-circle" class="size-4" /> Realidad
+                </span>
+                <span class="mt-3 leading-relaxed text-white/90">{m.fact}</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</InfoLayout>
+
+<style>
+  /* Reloj de la visita: cada tramo se dibuja en orden. */
+  .visit-arc {
+    animation: arc-draw 900ms var(--ease-out) both;
+    animation-delay: calc(500ms + var(--i) * 260ms);
+  }
+  @keyframes arc-draw {
+    from { stroke-dasharray: 0 var(--len); }
+  }
+  .visit-legend {
+    animation: legend-in 500ms var(--ease-out) both;
+    animation-delay: calc(700ms + var(--i) * 260ms);
+  }
+  @keyframes legend-in {
+    from { opacity: 0; transform: translateX(-6px); }
+  }
+
+  /* Línea de tiempo: el tramo se colorea al aparecer el paso. */
+  .step-line {
+    transform: scaleY(0);
+    transition: transform 900ms var(--ease-out) 250ms;
+  }
+  .step:global(.is-revealed) .step-line { transform: scaleY(1); }
+  .step-dot { transition: border-color 400ms ease, background-color 400ms ease, color 400ms ease; }
+  .step:global(.is-revealed) .step-dot {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+
+  /* Control segmentado con indicador deslizante. */
+  .phase-thumb {
+    width: calc((100% - 0.5rem) / 3);
+    transform: translateX(calc(var(--phase, 0) * 100%));
+    transition: transform 360ms var(--ease-out);
+  }
+  .phase-tab[aria-selected="true"] { color: var(--canvas); }
+  .phase-tab[aria-selected="false"] { color: var(--ink-2); }
+  .phase-tab[aria-selected="false"]:hover { color: var(--ink); }
+  .phase-panel:not(.hidden) .phase-item {
+    animation: item-in 420ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 50ms);
+  }
+  @keyframes item-in {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+
+  /* Escala de hemoglobina */
+  .hb-marker {
+    opacity: 0;
+    transition: opacity 500ms ease, transform 700ms var(--ease-out);
+    transform: translate(-50%, -8px);
+    transition-delay: calc(300ms + var(--i) * 150ms);
+  }
+  :global(.is-revealed) .hb-marker {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  /* Tarjetas de mitos que giran */
+  .myth { perspective: 1200px; }
+  .myth-face {
+    backface-visibility: hidden;
+    transition: transform 620ms var(--ease-out);
+  }
+  .myth-back { transform: rotateY(180deg); }
+  .myth[aria-pressed="true"] .myth-front { transform: rotateY(-180deg); }
+  .myth[aria-pressed="true"] .myth-back { transform: rotateY(0); }
+  .myth:focus-visible { outline: none; }
+  .myth:focus-visible .myth-face { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .visit-arc, .visit-legend { animation: none; }
+    .myth-face { transition: opacity 200ms ease; transform: none !important; }
+    .myth-back { opacity: 0; }
+    .myth[aria-pressed="true"] .myth-front { opacity: 0; }
+    .myth[aria-pressed="true"] .myth-back { opacity: 1; }
+  }
+</style>
+
+<script>
+  // ----- Antes / Durante / Después -----
+  const tablist = document.querySelector<HTMLElement>('.phase-tabs');
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.phase-tab'));
+  const select = (index: number, focus = false) => {
+    tabs.forEach((tab, i) => {
+      const on = i === index;
+      tab.setAttribute('aria-selected', String(on));
+      tab.tabIndex = on ? 0 : -1;
+      document.getElementById(tab.getAttribute('aria-controls') || '')?.classList.toggle('hidden', !on);
+    });
+    tablist?.style.setProperty('--phase', String(index));
+    if (focus) tabs[index].focus();
+  };
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(i));
+    tab.addEventListener('keydown', (e) => {
+      const keys: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 };
+      if (!(e.key in keys)) return;
+      e.preventDefault();
+      select((keys[e.key] + tabs.length) % tabs.length, true);
+    });
+  });
+
+  // ----- Tarjetas de mitos -----
+  document.querySelectorAll<HTMLButtonElement>('.myth').forEach((card) => {
+    card.addEventListener('click', () => {
+      const flipped = card.getAttribute('aria-pressed') !== 'true';
+      card.setAttribute('aria-pressed', String(flipped));
+      card.querySelector('.myth-front')?.setAttribute('aria-hidden', String(flipped));
+      card.querySelector('.myth-back')?.setAttribute('aria-hidden', String(!flipped));
+    });
+  });
+</script>
