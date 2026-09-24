@@ -20,3 +20,5 @@ Thumbs.db
 
 # local
 .claude/
+
+.vercel
