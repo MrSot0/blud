@@ -1,0 +1,131 @@
+---
+// Plantilla de las páginas de "Infórmate": cabecera con visual propio,
+// pestañas entre temas, navegación anterior/siguiente y llamada final.
+import Layout from '../../layouts/Layout.astro';
+import Icon from '../Icon.astro';
+import { infoTopics, infoHref } from '../../data/info';
+
+interface Props {
+  slug: string;
+  title: string;
+  lead: string;
+  description: string;
+}
+
+const { slug, title, lead, description } = Astro.props;
+const index = infoTopics.findIndex((t) => t.slug === slug);
+const prev = infoTopics[index - 1];
+const next = infoTopics[index + 1];
+---
+
+<Layout title={`BLUD | ${title}`} description={description}>
+  <header class="relative overflow-hidden border-b border-line bg-sunken">
+    <div class="container-blud grid gap-10 pb-10 pt-10 lg:grid-cols-12 lg:items-center lg:gap-12 lg:pb-14 lg:pt-14">
+      <div class="lg:col-span-6">
+        <nav aria-label="Ruta de navegación">
+          <ol class="flex items-center gap-2 text-sm text-ink-3">
+            <li><a href="/informate" class="font-medium text-ink-2 transition-colors hover:text-ink">Infórmate</a></li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" class="truncate">{title}</li>
+          </ol>
+        </nav>
+        <h1 class="info-in mt-5 text-[clamp(2.5rem,1.6rem+3.4vw,4rem)] font-extrabold leading-[1] tracking-[-0.045em] text-ink" style="--i:0">
+          {title}
+        </h1>
+        <p class="info-in mt-5 max-w-[34rem] text-lg leading-relaxed text-ink-2" style="--i:1">{lead}</p>
+        <div class="info-in" style="--i:2"><slot name="header-extra" /></div>
+      </div>
+      <div class="info-in lg:col-span-6" style="--i:2">
+        <slot name="visual" />
+      </div>
+    </div>
+
+    <div class="container-blud">
+      <nav aria-label="Temas de Infórmate" class="topic-tabs relative -mb-px flex gap-1 overflow-x-auto">
+        {infoTopics.map((topic) => (
+          <a
+            href={infoHref(topic.slug)}
+            aria-current={topic.slug === slug ? 'page' : undefined}
+            class="inline-flex shrink-0 items-center gap-2 border-b-2 border-transparent px-3 py-3.5 text-sm font-medium text-ink-3 transition-colors hover:text-ink aria-[current=page]:border-accent aria-[current=page]:text-ink"
+          >
+            <Icon name={topic.icon} class="size-4" />
+            {topic.title}
+          </a>
+        ))}
+      </nav>
+    </div>
+  </header>
+
+  <slot />
+
+  <!-- Continuar leyendo -->
+  <section class="border-t border-line py-16 lg:py-20">
+    <div class="container-blud grid gap-4 md:grid-cols-2">
+      {prev ? (
+        <a href={infoHref(prev.slug)} class="group flex items-center gap-4 rounded-panel border border-line bg-surface p-6 transition-colors hover:border-line-strong">
+          <Icon name="arrow-left" class="size-5 shrink-0 text-ink-3 transition-transform duration-200 ease-out group-hover:-translate-x-0.5" />
+          <span>
+            <span class="block text-sm text-ink-3">Anterior</span>
+            <span class="mt-0.5 block text-lg font-semibold text-ink">{prev.title}</span>
+          </span>
+        </a>
+      ) : (
+        <a href="/informate" class="group flex items-center gap-4 rounded-panel border border-line bg-surface p-6 transition-colors hover:border-line-strong">
+          <Icon name="arrow-left" class="size-5 shrink-0 text-ink-3" />
+          <span>
+            <span class="block text-sm text-ink-3">Volver</span>
+            <span class="mt-0.5 block text-lg font-semibold text-ink">Todos los temas</span>
+          </span>
+        </a>
+      )}
+      {next && (
+        <a href={infoHref(next.slug)} class="group flex items-center justify-between gap-4 rounded-panel border border-line bg-surface p-6 text-right transition-colors hover:border-line-strong md:col-start-2">
+          <span class="ml-auto">
+            <span class="block text-sm text-ink-3">Siguiente</span>
+            <span class="mt-0.5 block text-lg font-semibold text-ink">{next.title}</span>
+          </span>
+          <Icon name="arrow-right" class="size-5 shrink-0 text-ink-3 transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+        </a>
+      )}
+    </div>
+
+    <div class="container-blud mt-6">
+      <div class="relative isolate flex flex-col items-start justify-between gap-6 overflow-hidden rounded-panel bg-night p-8 text-white sm:flex-row sm:items-center lg:p-10">
+        <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+        <div>
+          <p class="text-2xl font-bold tracking-[-0.03em]">¿Listo para dar el paso?</p>
+          <p class="mt-2 max-w-md text-white/70">Comprueba si puedes donar hoy o crea tu cuenta para recibir avisos cuando tu tipo de sangre haga falta.</p>
+        </div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <a href="/elegibilidad" class="btn btn-on-night">Haz el test</a>
+          <a href="/register" class="btn btn-primary">Quiero ser donante</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .topic-tabs {
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .topic-tabs::-webkit-scrollbar { display: none; }
+  .topic-tabs a { scroll-snap-align: start; }
+
+  .info-in {
+    animation: info-in 800ms var(--ease-out) both;
+    animation-delay: calc(80ms + var(--i) * 90ms);
+  }
+  @keyframes info-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+</style>
+
+<script>
+  // En móvil, la pestaña del tema actual queda a la vista.
+  const tabs = document.querySelector<HTMLElement>('.topic-tabs');
+  const current = tabs?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (tabs && current) tabs.scrollLeft = current.offsetLeft - (tabs.clientWidth - current.offsetWidth) / 2;
+</script>

@@ -1,130 +1,706 @@
 ---
 // src/components/Navbar.astro
-const navLinks = [
-  { href: "/#que-es", label: "¿Qué es BLUD?" },
-  { href: "/#compatibilidad", label: "Compatibilidad" },
-  { href: "/#elegibilidad", label: "Test de Elegibilidad" },
-  { href: "/#mapa", label: "Bancos de Sangre" },
-  { href: "/#faq", label: "Preguntas Frecuentes" },
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { infoTopics, infoHref } from '../data/info';
+
+// Compatibilidad se recorre desde la portada; el menú prioriza las páginas.
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const inInfo = path.startsWith('/informate');
+const linkClass =
+  'nav-link relative rounded-control px-3 py-2 text-[0.9375rem] font-medium text-ink-2 transition-colors duration-200 hover:text-ink';
+
+// Páginas que siguen a "Infórmate" (en escritorio y en el menú móvil).
+const pageLinks = [
+  { href: '/centros', label: 'Centros' },
+  { href: '/elegibilidad', label: 'Elegibilidad' },
 ];
+const current = (href: string) => (path === href ? 'page' : undefined);
 ---
 
-<header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md transition-colors duration-300 shadow-sm">
-  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-20">
-    
-    <!-- Logo de la Marca -->
-    <a href="/" class="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-blud-flag-red/50 rounded-xl p-1">
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blud-brick-ember text-white shadow-md shadow-blud-brick-ember/20 group-hover:scale-105 transition-transform duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-        </svg>
-      </div>
-      <span class="font-sans text-2xl font-black tracking-tight text-slate-900">
-        BLUD<span class="text-blud-flag-red">.</span>
-      </span>
-    </a>
+<header
+  id="site-header"
+  class="sticky top-0 z-50 w-full border-b border-line bg-surface/85 backdrop-blur-lg supports-[not(backdrop-filter:blur(0))]:bg-surface"
+>
+  <div class="container-blud flex h-16 items-center justify-between gap-6">
+    <Logo />
 
-    <!-- Enlaces de Navegación Desktop -->
-    <nav class="hidden lg:flex items-center gap-8" aria-label="Navegación principal">
-      {navLinks.map((link) => (
-        <a
-          href={link.href}
-          class="text-sm font-semibold text-slate-700 hover:text-blud-flag-red transition-colors duration-200"
-        >
-          {link.label}
-        </a>
-      ))}
+    <nav class="hidden lg:block" aria-label="Navegación principal">
+      <ul class="flex items-center gap-1">
+        <li>
+          <a href="/#que-es" data-nav-link="que-es" class={linkClass}>¿Qué es BLUD?</a>
+        </li>
+
+        <!-- Infórmate: menú desplegable -->
+        <li class="relative" data-info-menu>
+          <button
+            type="button"
+            id="info-trigger"
+            aria-expanded="false"
+            aria-controls="info-panel"
+            aria-current={inInfo ? 'page' : undefined}
+            class={`${linkClass} inline-flex items-center gap-1`}
+          >
+            Infórmate
+            <Icon name="caret-down" class="info-caret size-3.5" />
+          </button>
+
+          <div id="info-panel" class="info-panel absolute left-1/2 top-full z-10 pt-3" data-open="false">
+            <div class="panel w-[34rem] overflow-hidden p-2">
+              <ul class="grid gap-0.5">
+                {infoTopics.map((topic, i) => (
+                  <li class="info-item" style={`--i:${i}`}>
+                    <a
+                      href={infoHref(topic.slug)}
+                      aria-current={current(infoHref(topic.slug))}
+                      class="group flex items-start gap-3.5 rounded-control p-3 transition-colors duration-150 hover:bg-sunken aria-[current=page]:bg-accent-soft"
+                    >
+                      <span class="grid size-10 shrink-0 place-items-center rounded-[10px] bg-sunken text-ink-2 transition-colors duration-200 group-hover:bg-accent group-hover:text-white group-aria-[current=page]:bg-accent group-aria-[current=page]:text-white">
+                        <Icon name={topic.icon} class="size-5" />
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block text-[0.9375rem] font-semibold text-ink">{topic.title}</span>
+                        <span class="mt-0.5 block text-sm leading-snug text-ink-3">{topic.short}</span>
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="/informate"
+                class="mt-1 flex items-center justify-between rounded-control border-t border-line px-3 py-3 text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken"
+              >
+                Ver todo en Infórmate
+                <Icon name="arrow-right" class="size-4" />
+              </a>
+            </div>
+          </div>
+        </li>
+
+        {pageLinks.map((link) => (
+          <li>
+            <a href={link.href} aria-current={current(link.href)} class={linkClass}>{link.label}</a>
+          </li>
+        ))}
+        <li>
+          <a href="/#faq" data-nav-link="faq" class={linkClass}>FAQ</a>
+        </li>
+      </ul>
     </nav>
 
-    <!-- Acciones / Autenticación Desktop -->
-    <div class="hidden lg:flex items-center gap-4">
-      <a
-        href="/login"
-        class="text-sm font-semibold text-slate-700 hover:text-blud-flag-red transition-colors duration-200 px-4 py-2"
-      >
-        Iniciar Sesión
-      </a>
-      <a
-        href="/register"
-        class="rounded-xl bg-blud-brick-ember hover:bg-blud-flag-red px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-blud-brick-ember/20 hover:shadow-lg hover:shadow-blud-flag-red/30 transition-all duration-200 active:scale-95"
-      >
-        Registrarse
-      </a>
-    </div>
-
-    <!-- Botón Hamburger Mobile -->
-    <button
-      type="button"
-      id="mobile-menu-btn"
-      aria-expanded="false"
-      aria-controls="mobile-menu"
-      aria-label="Abrir menú de navegación"
-      class="lg:hidden p-2 rounded-xl text-slate-600 hover:text-blud-flag-red hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blud-flag-red/50 transition-colors"
-    >
-      <svg id="hamburger-icon" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-      </svg>
-      <svg id="close-icon" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-  </div>
-
-  <!-- Desplegable Menú Mobile -->
-  <div id="mobile-menu" class="hidden lg:hidden border-b border-slate-200 bg-white/98 backdrop-blur-xl px-4 pb-6 pt-2 shadow-lg">
-    <nav class="flex flex-col space-y-2" aria-label="Navegación móvil">
-      {navLinks.map((link) => (
-        <a
-          href={link.href}
-          class="mobile-nav-link rounded-xl px-4 py-3 text-base font-semibold text-slate-700 hover:bg-slate-100 hover:text-blud-flag-red transition-colors"
-        >
-          {link.label}
-        </a>
-      ))}
-      <div class="pt-4 border-t border-slate-200 flex flex-col gap-3">
+    <div class="flex items-center gap-1.5">
+      <!-- Sin sesión -->
+      <div class="mr-1 hidden items-center gap-2 lg:flex" data-auth-out>
         <a
           href="/login"
-          class="mobile-nav-link text-center rounded-xl border border-slate-300 py-3 text-base font-semibold text-slate-700 hover:bg-slate-100 hover:text-blud-flag-red transition-colors"
+          aria-current={current('/login')}
+          class="rounded-control px-3 py-2 text-[0.9375rem] font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-accent-ink"
         >
-          Iniciar Sesión
+          Iniciar sesión
         </a>
-        <a
-          href="/register"
-          class="mobile-nav-link text-center rounded-xl bg-blud-brick-ember py-3 text-base font-bold text-white shadow-md shadow-blud-brick-ember/20 active:scale-98 transition-all"
-        >
-          Registrarse
-        </a>
+        <a href="/register" class="btn btn-primary btn-sm">Quiero ser donante</a>
       </div>
-    </nav>
+
+      <!-- Con sesión: menú de cuenta -->
+      <div class="relative mr-1 hidden lg:block" data-auth-in data-account-menu>
+        <button
+          type="button"
+          id="account-trigger"
+          aria-expanded="false"
+          aria-controls="account-panel"
+          class="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-ink transition-colors hover:bg-sunken"
+        >
+          <span class="grid size-8 place-items-center rounded-full bg-accent text-[0.8125rem] font-bold text-white" data-user-initials></span>
+          <span class="max-w-[9rem] truncate text-[0.9375rem] font-medium" data-user-first></span>
+          <Icon name="caret-down" class="account-caret size-3.5 text-ink-3" />
+          <span class="sr-only">Abrir menú de la cuenta</span>
+        </button>
+
+        <div id="account-panel" class="account-panel absolute right-0 top-full z-10 pt-3" data-open="false">
+          <div class="panel w-80 p-2">
+            <div class="flex items-center gap-3 p-3">
+              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-white" data-user-initials></span>
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-ink" data-user-name></p>
+                <p class="truncate text-sm text-ink-3" data-user-email></p>
+              </div>
+              <span class="ml-auto shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-ink empty:hidden" data-user-blood></span>
+            </div>
+            <div class="mx-1 rounded-control bg-sunken p-3 text-sm">
+              <p class="flex items-center gap-2 font-semibold text-ink">
+                <Icon name="calendar-check" class="size-4 text-ink-3" />
+                Próxima cita
+              </p>
+              <p class="mt-1 text-ink-2" data-next-appointment>Aún no tienes citas agendadas.</p>
+            </div>
+            <a
+              href="/centros"
+              class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+            >
+              Agendar una donación
+              <Icon name="arrow-right" class="size-4 text-ink-3" />
+            </a>
+            <button
+              type="button"
+              data-logout
+              class="flex w-full items-center rounded-control border-t border-line px-3 py-3 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        id="theme-toggle"
+        class="theme-toggle relative grid size-10 place-items-center rounded-control text-ink-2 transition-colors duration-200 hover:bg-sunken hover:text-ink active:scale-95"
+        aria-label="Cambiar a modo oscuro"
+        title="Cambiar a modo oscuro"
+      >
+        <span class="theme-icon theme-icon-sun" aria-hidden="true"><Icon name="sun" class="size-[1.3rem]" /></span>
+        <span class="theme-icon theme-icon-moon" aria-hidden="true"><Icon name="moon" class="size-[1.2rem]" /></span>
+      </button>
+
+      <button
+        type="button"
+        id="mobile-menu-btn"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        class="grid size-11 place-items-center rounded-control text-ink transition-colors hover:bg-sunken lg:hidden"
+      >
+        <span class="sr-only" data-menu-label>Abrir menú</span>
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+      </button>
+    </div>
   </div>
 </header>
 
+<!-- Menú móvil a pantalla completa. Vive fuera del <header> porque su
+     backdrop-filter convertiría el position: fixed en relativo al header. -->
+<div id="mobile-menu" class="mobile-menu fixed inset-0 z-40 flex flex-col bg-canvas pt-16 lg:hidden" data-open="false" inert>
+  <nav class="container-blud flex flex-1 flex-col overflow-y-auto overscroll-contain pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4" aria-label="Navegación móvil">
+    <!-- Cuenta (solo con sesión) -->
+    <div class="menu-item mb-2 flex items-center gap-3 rounded-panel border border-line bg-surface p-4" style="--i:0" data-auth-in>
+      <span class="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-lg font-bold text-white" data-user-initials></span>
+      <div class="min-w-0 flex-1">
+        <p class="truncate font-semibold text-ink" data-user-name></p>
+        <p class="truncate text-sm text-ink-3" data-next-appointment-short>Sin citas agendadas</p>
+      </div>
+      <span class="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-ink empty:hidden" data-user-blood></span>
+    </div>
+
+    <ul class="flex flex-col">
+      <li class="menu-item" style="--i:1">
+        <a href="/#que-es" class="mobile-nav-link mobile-link">
+          ¿Qué es BLUD?
+          <Icon name="arrow-right" class="size-6 text-ink-3" />
+        </a>
+      </li>
+      <li class="menu-item border-b border-line" style="--i:2">
+        <button
+          type="button"
+          id="mobile-info-trigger"
+          aria-expanded={inInfo ? 'true' : 'false'}
+          aria-controls="mobile-info-list"
+          class="mobile-link mobile-link-plain w-full"
+        >
+          Infórmate
+          <Icon name="caret-down" class="mobile-info-caret size-6 text-ink-3" />
+        </button>
+        <div id="mobile-info-list" class="mobile-info grid" data-open={inInfo ? 'true' : 'false'}>
+          <div class="overflow-hidden">
+            <ul class="grid gap-1 pb-4">
+              {infoTopics.map((topic) => (
+                <li>
+                  <a
+                    href={infoHref(topic.slug)}
+                    aria-current={current(infoHref(topic.slug))}
+                    class="mobile-nav-link flex items-center gap-3 rounded-control px-2 py-2 text-base font-medium text-ink-2 transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
+                  >
+                    <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-sunken text-ink-2">
+                      <Icon name={topic.icon} class="size-5" />
+                    </span>
+                    {topic.title}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href="/informate" aria-current={current('/informate')} class="mobile-nav-link link-arrow px-2 py-2.5 text-sm">
+                  Ver todo en Infórmate
+                  <Icon name="arrow-right" class="size-4" />
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </li>
+      {pageLinks.map((link, i) => (
+        <li class="menu-item" style={`--i:${i + 3}`}>
+          <a href={link.href} aria-current={current(link.href)} class="mobile-nav-link mobile-link">
+            {link.label}
+            <Icon name="arrow-right" class="size-6 text-ink-3" />
+          </a>
+        </li>
+      ))}
+      <li class="menu-item" style={`--i:${pageLinks.length + 3}`}>
+        <a href="/#faq" class="mobile-nav-link mobile-link">
+          FAQ
+          <Icon name="arrow-right" class="size-6 text-ink-3" />
+        </a>
+      </li>
+    </ul>
+
+    <div class="menu-item mt-auto pt-8" style={`--i:${pageLinks.length + 4}`}>
+      <div class="grid gap-3 sm:grid-cols-2" data-auth-out>
+        <a href="/register" class="mobile-nav-link btn btn-primary btn-lg">Quiero ser donante</a>
+        <a href="/login" class="mobile-nav-link btn btn-secondary btn-lg">Iniciar sesión</a>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2" data-auth-in>
+        <a href="/centros" class="mobile-nav-link btn btn-primary btn-lg">Agendar una donación</a>
+        <button type="button" data-logout class="btn btn-secondary btn-lg">Cerrar sesión</button>
+      </div>
+      <p class="mt-6 flex items-center gap-2 text-sm text-ink-3">
+        <Icon name="first-aid-kit" class="size-4 shrink-0 text-accent-ink" />
+        <span>Emergencia médica: llama al <a href="tel:911" class="font-semibold text-ink underline underline-offset-2">911</a></span>
+      </p>
+    </div>
+  </nav>
+</div>
+
+<!-- Rellena los datos de la cuenta antes del primer pintado para evitar parpadeos. -->
+<script is:inline>
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-name]', s.name);
+  })();
+</script>
+
+<style>
+  /* ----- Menú móvil a pantalla completa ----- */
+  .mobile-menu {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 180ms ease,
+      visibility 0s linear 180ms;
+  }
+  .mobile-menu[data-open="true"] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 220ms ease;
+  }
+  .menu-item {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+  }
+  .mobile-menu[data-open="true"] .menu-item {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 320ms ease,
+      transform 460ms var(--ease-out);
+    transition-delay: calc(60ms + var(--i) * 35ms);
+  }
+
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.125rem;
+    border-bottom: 1px solid var(--line);
+    font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--ink);
+    text-align: left;
+  }
+  .mobile-link-plain {
+    border-bottom: 0;
+  }
+  .mobile-link[aria-current="page"] {
+    color: var(--accent-ink);
+  }
+  .mobile-link :global(svg) {
+    transition: transform 240ms var(--ease-out);
+  }
+  @media (hover: hover) {
+    a.mobile-link:hover :global(svg) { transform: translateX(4px); }
+  }
+
+  .mobile-info {
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 300ms var(--ease-out);
+  }
+  .mobile-info[data-open="true"] {
+    grid-template-rows: 1fr;
+  }
+  .mobile-info[data-open="false"] > div {
+    visibility: hidden;
+    transition: visibility 0s linear 300ms;
+  }
+  .mobile-info-caret {
+    transition: transform 280ms var(--ease-out);
+  }
+  #mobile-info-trigger[aria-expanded="true"] .mobile-info-caret {
+    transform: rotate(180deg);
+  }
+
+  /* Icono hamburguesa que se convierte en X. */
+  .menu-icon {
+    position: relative;
+    width: 22px;
+    height: 14px;
+  }
+  .menu-icon > span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transition:
+      transform 300ms var(--ease-out),
+      top 300ms var(--ease-out);
+  }
+  .menu-icon > span:first-child { top: 2px; }
+  .menu-icon > span:last-child { top: 10px; }
+  [aria-expanded="true"] > .menu-icon > span:first-child { top: 6px; transform: rotate(45deg); }
+  [aria-expanded="true"] > .menu-icon > span:last-child { top: 6px; transform: rotate(-45deg); }
+
+  /* Bloquea el scroll de la página mientras el menú está abierto. */
+  :global(html.menu-open) {
+    overflow: hidden;
+  }
+
+  /* Indicador de sección o página activa */
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 0.2rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 260ms var(--ease-out);
+  }
+  .nav-link[aria-current] {
+    color: var(--ink);
+  }
+  .nav-link[aria-current]::after {
+    transform: scaleX(1);
+  }
+
+  /* Menús desplegables (Infórmate y cuenta): aparecen desde arriba. */
+  .info-panel,
+  .account-panel {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 160ms ease,
+      transform 220ms var(--ease-out),
+      visibility 0s linear 220ms;
+  }
+  .info-panel {
+    transform: translate(-50%, -6px) scale(0.98);
+    transform-origin: top center;
+  }
+  .account-panel {
+    transform: translateY(-6px) scale(0.98);
+    transform-origin: top right;
+  }
+  .info-panel[data-open="true"],
+  .account-panel[data-open="true"] {
+    visibility: visible;
+    opacity: 1;
+    transition:
+      opacity 180ms ease,
+      transform 260ms var(--ease-out);
+  }
+  .info-panel[data-open="true"] { transform: translate(-50%, 0) scale(1); }
+  .account-panel[data-open="true"] { transform: none; }
+  .info-item {
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 200ms ease, transform 260ms var(--ease-out);
+  }
+  .info-panel[data-open="true"] .info-item {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(40ms + var(--i) * 30ms);
+  }
+  .info-caret,
+  .account-caret {
+    transition: transform 240ms var(--ease-out);
+  }
+  #info-trigger[aria-expanded="true"] .info-caret,
+  #account-trigger[aria-expanded="true"] .account-caret {
+    transform: rotate(180deg);
+  }
+
+  /* Botón de tema: el sol gira y se oculta mientras la luna entra, y viceversa. */
+  .theme-icon {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    transition:
+      transform 520ms var(--ease-out),
+      opacity 240ms ease;
+  }
+  .theme-icon-sun { transform: rotate(0) scale(1); opacity: 1; }
+  .theme-icon-moon { transform: rotate(-100deg) scale(0.4); opacity: 0; }
+  :global(:root[data-theme="dark"]) .theme-icon-sun { transform: rotate(100deg) scale(0.4); opacity: 0; }
+  :global(:root[data-theme="dark"]) .theme-icon-moon { transform: rotate(0) scale(1); opacity: 1; }
+
+  @media (hover: hover) {
+    .theme-toggle:hover .theme-icon-sun :global(svg) { animation: sun-spin 1.2s var(--ease-out); }
+    .theme-toggle:hover .theme-icon-moon :global(svg) { animation: moon-tilt 900ms var(--ease-out); }
+  }
+  @keyframes sun-spin {
+    from { transform: rotate(0); }
+    to { transform: rotate(90deg); }
+  }
+  @keyframes moon-tilt {
+    0%, 100% { transform: rotate(0); }
+    40% { transform: rotate(-18deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .theme-icon { transition: opacity 150ms ease; transform: none !important; }
+    .info-panel, .info-panel[data-open="true"] { transform: translate(-50%, 0); }
+    .account-panel, .info-item, .menu-item { transform: none !important; }
+  }
+</style>
+
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const menuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const hamburgerIcon = document.getElementById('hamburger-icon');
-    const closeIcon = document.getElementById('close-icon');
-    const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+  import { appointmentLabel, getSession, initials, logout, nextAppointment } from '../lib/auth';
 
-    if (!menuBtn || !mobileMenu) return;
+  const root = document.documentElement;
 
-    const toggleMenu = () => {
-      const isOpen = menuBtn.getAttribute('aria-expanded') === 'true';
-      menuBtn.setAttribute('aria-expanded', (!isOpen).toString());
-      mobileMenu.classList.toggle('hidden');
-      hamburgerIcon?.classList.toggle('hidden');
-      closeIcon?.classList.toggle('hidden');
-    };
+  // ----- Tema claro / oscuro -----
+  const themeBtn = document.getElementById('theme-toggle');
 
-    menuBtn.addEventListener('click', toggleMenu);
+  const currentTheme = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
 
-    mobileLinks.forEach((link) => {
-      link.addEventListener('click', () => {
-        if (!mobileMenu.classList.contains('hidden')) {
-          toggleMenu();
-        }
-      });
+  const syncThemeLabel = () => {
+    const label = currentTheme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    themeBtn?.setAttribute('aria-label', label);
+    themeBtn?.setAttribute('title', label);
+  };
+
+  const applyTheme = (theme: 'light' | 'dark') => {
+    root.dataset.theme = theme;
+    try {
+      localStorage.setItem('blud-theme', theme);
+    } catch {}
+    syncThemeLabel();
+  };
+
+  themeBtn?.addEventListener('click', (event) => {
+    const button = event.currentTarget as HTMLElement;
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+
+    if (!doc.startViewTransition || reduce) {
+      applyTheme(next);
+      return;
+    }
+
+    const rect = button.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    root.style.setProperty('--vt-x', `${x}px`);
+    root.style.setProperty('--vt-y', `${y}px`);
+    root.style.setProperty('--vt-r', `${r}px`);
+    root.classList.add('theme-vt');
+
+    doc.startViewTransition(() => applyTheme(next)).finished.finally(() => {
+      root.classList.remove('theme-vt');
     });
   });
+
+  syncThemeLabel();
+  new MutationObserver(syncThemeLabel).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ----- Menús desplegables de escritorio (Infórmate y cuenta) -----
+  function bindDropdown(container: HTMLElement | null, trigger: HTMLElement | null, panel: HTMLElement | null, hover: boolean) {
+    if (!container || !trigger || !panel) return;
+    let hoverTimer = 0;
+    const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
+    const setOpen = (open: boolean) => {
+      trigger.setAttribute('aria-expanded', String(open));
+      panel.dataset.open = String(open);
+    };
+
+    trigger.addEventListener('click', () => setOpen(!isOpen()));
+
+    // Con ratón se abre al pasar por encima, con una pequeña pausa para no parpadear.
+    if (hover) {
+      const canHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+      container.addEventListener('pointerenter', () => {
+        if (!canHover.matches) return;
+        clearTimeout(hoverTimer);
+        hoverTimer = window.setTimeout(() => setOpen(true), 90);
+      });
+      container.addEventListener('pointerleave', () => {
+        if (!canHover.matches) return;
+        clearTimeout(hoverTimer);
+        hoverTimer = window.setTimeout(() => setOpen(false), 180);
+      });
+    }
+
+    container.addEventListener('focusout', (e) => {
+      if (!container.contains(e.relatedTarget as Node)) setOpen(false);
+    });
+    document.addEventListener('click', (e) => {
+      if (isOpen() && !container.contains(e.target as Node)) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) {
+        setOpen(false);
+        trigger.focus();
+      }
+    });
+  }
+
+  bindDropdown(
+    document.querySelector<HTMLElement>('[data-info-menu]'),
+    document.getElementById('info-trigger'),
+    document.getElementById('info-panel'),
+    true
+  );
+  bindDropdown(
+    document.querySelector<HTMLElement>('[data-account-menu]'),
+    document.getElementById('account-trigger'),
+    document.getElementById('account-panel'),
+    false
+  );
+
+  // ----- Menú móvil a pantalla completa -----
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  if (menuBtn && mobileMenu) {
+    const label = menuBtn.querySelector('[data-menu-label]');
+    const infoTrigger = document.getElementById('mobile-info-trigger');
+    const infoList = document.getElementById('mobile-info-list');
+
+    const setOpen = (open: boolean) => {
+      menuBtn.setAttribute('aria-expanded', String(open));
+      mobileMenu.dataset.open = String(open);
+      mobileMenu.inert = !open;
+      root.classList.toggle('menu-open', open);
+      if (label) label.textContent = open ? 'Cerrar menú' : 'Abrir menú';
+      // El resto de la página queda fuera del foco mientras el menú está abierto.
+      document.querySelectorAll<HTMLElement>('#contenido, body > footer, [data-assistant]').forEach((el) => {
+        el.inert = open;
+      });
+    };
+
+    menuBtn.addEventListener('click', () => {
+      setOpen(menuBtn.getAttribute('aria-expanded') !== 'true');
+    });
+
+    infoTrigger?.addEventListener('click', () => {
+      const open = infoTrigger.getAttribute('aria-expanded') !== 'true';
+      infoTrigger.setAttribute('aria-expanded', String(open));
+      if (infoList) infoList.dataset.open = String(open);
+    });
+
+    mobileMenu.querySelectorAll('.mobile-nav-link').forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuBtn.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        menuBtn.focus();
+      }
+    });
+
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => {
+      if (e.matches) setOpen(false);
+    });
+  }
+
+  // ----- Estado de la sesión -----
+  const fill = (selector: string, value: string) =>
+    document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
+
+  function renderAuth() {
+    const user = getSession();
+    if (!user) {
+      delete root.dataset.auth;
+      return;
+    }
+    root.dataset.auth = 'in';
+    fill('[data-user-initials]', initials(user.name));
+    fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
+    fill('[data-user-name]', user.name);
+    fill('[data-user-email]', user.email);
+    fill('[data-user-blood]', user.bloodType ? user.bloodType.replace('-', '−') : '');
+
+    const next = nextAppointment(user.email);
+    fill(
+      '[data-next-appointment]',
+      next ? `${next.centerName}, ${appointmentLabel(next)}` : 'Aún no tienes citas agendadas.'
+    );
+    fill('[data-next-appointment-short]', next ? `Próxima cita: ${appointmentLabel(next)}` : 'Sin citas agendadas');
+  }
+
+  document.querySelectorAll('[data-logout]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      logout();
+      if (menuBtn?.getAttribute('aria-expanded') === 'true') menuBtn.click();
+    })
+  );
+
+  renderAuth();
+  window.addEventListener('blud:auth', renderAuth);
+  // Sincroniza entre pestañas.
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key.startsWith('blud-')) renderAuth();
+  });
+
+  // ----- Sección activa en la portada -----
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]');
+  const sections = Array.from(links)
+    .map((link) => document.getElementById(link.dataset.navLink || ''))
+    .filter((el): el is HTMLElement => el !== null);
+
+  if (sections.length && 'IntersectionObserver' in window) {
+    const setActive = (id: string | null) => {
+      links.forEach((link) => {
+        if (link.dataset.navLink === id) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        });
+      },
+      { rootMargin: '-45% 0px -50% 0px' }
+    );
+    sections.forEach((section) => io.observe(section));
+  }
 </script>

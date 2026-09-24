@@ -1,80 +1,309 @@
 ---
-// Lista de imágenes de alta calidad enfocadas en salud y donación de sangre
-const backgroundImages = [
-  "https://images.unsplash.com/photo-1615461066841-6116e61058f4?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1579154204601-01588f351e67?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?q=80&w=1920&auto=format&fit=crop"
+import Icon from '../Icon.astro';
+
+// Fotos reales de donación de sangre (Unsplash). Se alternan con fundido y zoom lento.
+// Para usar video, añade el archivo en /public/hero/ y un <video> equivalente en .hero-slide.
+const slides = [
+  { id: "photo-1615461066841-6116e61058f4", pos: "72% center" },
+  { id: "photo-1536856136534-bb679c52a9aa", pos: "center" },
+  { id: "photo-1615461065929-4f8ffed6ca40", pos: "75% center" },
+  { id: "photo-1753011399874-e4fa3ec22645", pos: "70% center" },
+  { id: "photo-1615461066159-fea0960485d5", pos: "70% center" },
 ];
+const src = (id: string, w: number) => `https://images.unsplash.com/${id}?q=72&w=${w}&auto=format&fit=crop`;
+const srcset = (id: string) => `${src(id, 768)} 768w, ${src(id, 1280)} 1280w, ${src(id, 1920)} 1920w`;
+
+// Segunda línea del titular: rota entre el lema y datos de la donación.
+// Frases cortas a propósito: caben en una línea desde 375px, así el titular no deja hueco.
+const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
 ---
 
-<section class="relative flex min-h-[calc(100vh-4.5rem)] w-full items-center justify-center bg-blud-shadow-grey px-6 overflow-hidden text-center py-20">
-  
-  <!-- Contenedor del Carrusel de Imágenes con Fade -->
-  <div class="absolute inset-0 z-0">
-    {backgroundImages.map((img, index) => (
-      <div 
-        class={`hero-slide absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === 0 ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <img 
-          src={img} 
-          alt={`Donación de sangre Blud ${index + 1}`} 
-          class="h-full w-full object-cover scale-105"
-        />
+<section id="inicio" class="hero relative isolate overflow-hidden bg-blud-shadow-grey text-white" data-hero>
+  <div class="absolute inset-0 -z-10" aria-hidden="true">
+    {slides.map((slide, i) => (
+      <div class="hero-slide" data-state={i === 0 ? 'active' : ''} style={`--kx:${i % 2 === 0 ? '-2%' : '2%'}`}>
+        {i === 0 ? (
+          <img
+            src={src(slide.id, 1600)}
+            srcset={srcset(slide.id)}
+            sizes="100vw"
+            alt=""
+            fetchpriority="high"
+            decoding="async"
+            style={`object-position:${slide.pos}`}
+          />
+        ) : (
+          <img
+            data-src={src(slide.id, 1600)}
+            data-srcset={srcset(slide.id)}
+            sizes="100vw"
+            alt=""
+            decoding="async"
+            style={`object-position:${slide.pos}`}
+          />
+        )}
       </div>
     ))}
-
-    <!-- Capa de transparencia con gradiente (50%, 55%, 45%) -->
-    <div class="absolute inset-0 z-10 bg-blud-shadow-grey/50 backdrop-blur-[2px]"></div>
-    <div class="absolute inset-0 z-10 bg-gradient-to-t from-blud-shadow-grey/50 via-blud-shadow-grey/55 to-blud-dark-teal/45"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgb(26_32_44/0.55)_0%,rgb(26_32_44/0.88)_55%,#1A202C_100%)] lg:bg-[linear-gradient(90deg,#1A202C_0%,rgb(26_32_44/0.94)_34%,rgb(26_32_44/0.55)_62%,rgb(0_95_115/0.25)_100%)]"></div>
+    <div class="grain absolute inset-0"></div>
   </div>
 
-  <!-- Destellos decorativos de fondo -->
-  <div class="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blud-brick-ember/20 blur-3xl pointer-events-none z-10"></div>
-  <div class="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-blud-dark-teal/25 blur-3xl pointer-events-none z-10"></div>
-
-  <!-- Contenedor Principal Centrado -->
-  <div class="mx-auto flex max-w-3xl flex-col items-center relative z-20">
-
-    <!-- Título principal -->
-    <h1 class="font-sans text-4xl font-extrabold leading-tight text-white sm:text-5xl md:text-6xl tracking-tight drop-shadow-xl">
-      Conectando donantes, <span class="text-blud-flag-red">salvando vidas</span>
-    </h1>
-    
-    <!-- Párrafo descriptivo -->
-    <p class="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-blud-alabaster/95 drop-shadow-md font-normal">
-      Optimizamos la búsqueda e intermediación de donaciones de sangre. Encuentra centros cercanos, atiende solicitudes de emergencia o agenda tu cita en minutos.
-    </p>
-    
-    <!-- Botón de Acción Único -->
-    <div class="mt-10 flex justify-center">
-      <a 
-        href="#donar" 
-        class="inline-flex items-center justify-center rounded-2xl bg-blud-brick-ember px-8 py-4 font-sans text-base font-bold text-white shadow-2xl shadow-blud-brick-ember/40 transition-all duration-300 hover:scale-105 hover:bg-blud-oxblood hover:shadow-blud-brick-ember/60 active:scale-95"
+  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] items-center pb-32 pt-20 lg:grid-cols-12">
+    <div class="lg:col-span-9 xl:col-span-8">
+      <h1
+        class="hero-in text-[clamp(2.625rem,1.3rem+4.2vw,4.5rem)] font-extrabold leading-[0.98] tracking-[-0.045em]"
+        style="--i:0"
       >
-        Quiero ser donante
-      </a>
-    </div>
+        <span class="lg:whitespace-nowrap">Conectando donantes,</span>
+        <span class="sr-only">salvando vidas.</span>
+        <span class="hero-rotator grid text-[#F2605A]" aria-hidden="true" data-rotator>
+          {phrases.map((phrase, i) => (
+            <span class="hero-phrase" data-state={i === 0 ? 'active' : ''}>
+              {phrase.split(' ').map((word, w) => (
+                <Fragment><span class="hero-word" style={`--w:${w}`}>{word}</span>{' '}</Fragment>
+              ))}
+            </span>
+          ))}
+        </span>
+      </h1>
 
+      <p class="hero-in mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
+        Encuentra centros cercanos, atiende solicitudes de emergencia o agenda tu cita en minutos.
+      </p>
+
+      <div class="hero-in mt-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-7" style="--i:2">
+        <a href="/register" class="btn btn-primary btn-lg group">
+          Quiero ser donante
+          <Icon name="arrow-right" class="size-5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+        </a>
+        <a
+          href="/elegibilidad"
+          class="inline-flex items-center gap-2 font-semibold text-white/90 underline decoration-white/30 underline-offset-[6px] transition-colors hover:text-white hover:decoration-white"
+        >
+          ¿Puedo donar? Haz el test
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pausa: detiene el cambio de fondo y del titular (WCAG 2.2.2) -->
+  <div class="container-blud pointer-events-none absolute inset-x-0 bottom-24 flex justify-end">
+    <button
+      type="button"
+      id="hero-toggle"
+      class="hero-in pointer-events-auto grid size-9 place-items-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+      style="--i:3"
+      aria-label="Pausar animaciones del encabezado"
+    >
+      <span data-icon-pause><Icon name="pause" class="size-3.5" /></span>
+      <span data-icon-play class="hidden"><Icon name="play" class="size-3.5" /></span>
+    </button>
   </div>
 </section>
 
-<!-- Script para rotar las imágenes con efecto Fade -->
+<style>
+  .hero {
+    --slide-duration: 6500ms;
+  }
+
+  .hero-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1400ms ease;
+  }
+  .hero-slide[data-state="active"] {
+    opacity: 1;
+  }
+  .hero-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.1);
+  }
+  /* El zoom continúa mientras la imagen sale para que el fundido no salte. */
+  .hero-slide[data-state="active"] img,
+  .hero-slide[data-state="leaving"] img {
+    animation: hero-kenburns calc(var(--slide-duration) + 2200ms) linear both;
+  }
+  .hero.is-paused .hero-slide img {
+    animation-play-state: paused;
+  }
+  @keyframes hero-kenburns {
+    from { transform: scale(1.12) translate3d(var(--kx), 0, 0); }
+    to { transform: scale(1.01) translate3d(0, 0, 0); }
+  }
+
+  /* Titular rotativo: todas las frases ocupan la misma celda, así la altura
+     es la de la frase más larga y el contenido de abajo nunca salta. */
+  .hero-phrase {
+    grid-area: 1 / 1;
+  }
+  .hero-word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(8px);
+  }
+  .hero-phrase[data-state="active"] .hero-word {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+    transition:
+      opacity 420ms ease,
+      transform 640ms var(--ease-out),
+      filter 520ms ease;
+    transition-delay: calc(var(--w) * 60ms);
+  }
+  .hero-phrase[data-state="leaving"] .hero-word {
+    opacity: 0;
+    transform: translateY(-0.3em);
+    filter: blur(6px);
+    transition:
+      opacity 240ms ease,
+      transform 300ms ease-in,
+      filter 240ms ease;
+    transition-delay: calc(var(--w) * 25ms);
+  }
+
+  .hero-in {
+    animation: hero-in 900ms var(--ease-out) both;
+    animation-delay: calc(120ms + var(--i) * 90ms);
+  }
+  @keyframes hero-in {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-slide { transition-duration: 300ms; }
+    .hero-slide img, .hero-slide[data-state] img { animation: none; transform: none; }
+    .hero-word { transform: none !important; filter: none !important; }
+    .hero-in { animation: none; }
+  }
+</style>
+
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const slides = document.querySelectorAll('.hero-slide');
-    if (slides.length === 0) return;
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
 
-    let currentIndex = 0;
-    const intervalTime = 5000;
+  if (hero) {
+    const slides = Array.from(hero.querySelectorAll<HTMLElement>('.hero-slide'));
+    const phrases = Array.from(hero.querySelectorAll<HTMLElement>('.hero-phrase'));
+    const toggle = hero.querySelector<HTMLButtonElement>('#hero-toggle');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Duración de cada imagen (se comparte con el zoom del CSS) y de cada frase del titular.
+    const SLIDE_MS = 6500;
+    const PHRASE_MS = 3200;
+    hero.style.setProperty('--slide-duration', `${SLIDE_MS}ms`);
 
-    setInterval(() => {
-      slides[currentIndex].classList.remove('opacity-100');
-      slides[currentIndex].classList.add('opacity-0');
+    let userPaused = reduceMotion;
+    let onScreen = true;
+    const isRunning = () => !userPaused && onScreen && !document.hidden;
 
-      currentIndex = (currentIndex + 1) % slides.length;
+    /** Temporizador que se puede pausar y reanudar conservando el tiempo restante. */
+    const createTicker = (duration: number, onTick: () => void) => {
+      let timer = 0;
+      let remaining = duration;
+      let startedAt = 0;
+      return {
+        start() {
+          if (timer) return;
+          startedAt = performance.now();
+          timer = window.setTimeout(() => {
+            timer = 0;
+            remaining = duration;
+            onTick();
+            if (isRunning()) this.start();
+          }, remaining);
+        },
+        stop() {
+          if (!timer) return;
+          clearTimeout(timer);
+          timer = 0;
+          remaining = Math.max(0, remaining - (performance.now() - startedAt));
+        },
+      };
+    };
 
-      slides[currentIndex].classList.remove('opacity-0');
-      slides[currentIndex].classList.add('opacity-100');
-    }, intervalTime);
-  });
+    // ----- Imágenes de fondo -----
+    let slideIndex = 0;
+
+    const loadSlide = (i: number): Promise<void> => {
+      const img = slides[i]?.querySelector('img');
+      if (!img) return Promise.resolve();
+      if (img.dataset.src) {
+        img.srcset = img.dataset.srcset || '';
+        img.src = img.dataset.src;
+        delete img.dataset.src;
+        delete img.dataset.srcset;
+      }
+      return img.decode().catch(() => undefined);
+    };
+
+    const nextSlide = async () => {
+      const next = (slideIndex + 1) % slides.length;
+      await loadSlide(next);
+
+      const prev = slides[slideIndex];
+      prev.dataset.state = 'leaving';
+      window.setTimeout(() => {
+        if (prev.dataset.state === 'leaving') prev.dataset.state = '';
+      }, 1500);
+
+      slideIndex = next;
+      slides[slideIndex].dataset.state = 'active';
+      loadSlide((slideIndex + 1) % slides.length);
+    };
+
+    // ----- Titular rotativo -----
+    let phraseIndex = 0;
+
+    const showPhrase = (next: number) => {
+      const prev = phrases[phraseIndex];
+      prev.dataset.state = 'leaving';
+      window.setTimeout(() => {
+        if (prev.dataset.state === 'leaving') prev.dataset.state = '';
+      }, 500);
+
+      phraseIndex = next;
+      phrases[phraseIndex].dataset.state = 'active';
+    };
+
+    const slideTicker = createTicker(SLIDE_MS, nextSlide);
+    const phraseTicker = createTicker(PHRASE_MS, () => showPhrase((phraseIndex + 1) % phrases.length));
+
+    const sync = () => {
+      hero.classList.toggle('is-paused', !isRunning());
+      if (isRunning()) {
+        slideTicker.start();
+        phraseTicker.start();
+      } else {
+        slideTicker.stop();
+        phraseTicker.stop();
+      }
+    };
+
+    const setPaused = (paused: boolean) => {
+      userPaused = paused;
+      toggle?.setAttribute('aria-label', paused ? 'Reanudar animaciones del encabezado' : 'Pausar animaciones del encabezado');
+      toggle?.querySelector('[data-icon-pause]')?.classList.toggle('hidden', paused);
+      toggle?.querySelector('[data-icon-play]')?.classList.toggle('hidden', !paused);
+      sync();
+    };
+
+    toggle?.addEventListener('click', () => setPaused(!userPaused));
+    document.addEventListener('visibilitychange', sync);
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver((entries) => {
+        onScreen = entries[0]?.isIntersecting ?? true;
+        sync();
+      }).observe(hero);
+    }
+
+    setPaused(userPaused);
+    // Precarga la segunda imagen cuando el navegador esté libre.
+    if ('requestIdleCallback' in window) window.requestIdleCallback(() => loadSlide(1));
+    else setTimeout(() => loadSlide(1), 1200);
+  }
 </script>

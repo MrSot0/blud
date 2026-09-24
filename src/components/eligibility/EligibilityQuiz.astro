@@ -1,0 +1,321 @@
+---
+// Test de elegibilidad: una pregunta a la vez, con temas, progreso y regreso.
+import Icon from '../Icon.astro';
+import { categories, questions } from '../../data/eligibility';
+
+const countByCategory = Object.fromEntries(
+  categories.map((c) => [c.id, questions.filter((q) => q.category === c.id).length])
+);
+---
+
+<div class="grid gap-8 lg:grid-cols-12 lg:gap-12">
+  <!-- Temas del test -->
+  <aside class="hidden lg:col-span-4 lg:block">
+    <div class="lg:sticky lg:top-28">
+      <h2 class="text-sm font-semibold text-ink">Temas que revisamos</h2>
+      <ol class="mt-4 flex flex-col gap-1" id="quiz-topics">
+        {categories.map((cat, i) => (
+          <li
+            data-topic={cat.id}
+            data-state={i === 0 ? 'current' : 'todo'}
+            class="topic flex items-center gap-3 rounded-control px-3 py-2.5 text-sm"
+          >
+            <span class="topic-mark grid size-6 shrink-0 place-items-center rounded-full border text-[0.6875rem] font-semibold tabular">
+              <span class="topic-num">{i + 1}</span>
+              <span class="topic-check hidden"><Icon name="check" class="size-3" /></span>
+            </span>
+            <span class="topic-label flex-1">{cat.label}</span>
+            <span class="text-xs text-ink-3 tabular">{countByCategory[cat.id]}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </aside>
+
+  <!-- Test -->
+  <div class="lg:col-span-8">
+    <div class="panel scroll-mt-24 overflow-hidden" id="quiz" data-questions={JSON.stringify(questions)} data-categories={JSON.stringify(categories)}>
+      <div id="quiz-progress" class="border-b border-line px-6 pb-5 pt-6 sm:px-9">
+        <div class="flex items-center justify-between text-sm">
+          <p id="quiz-step-label" class="font-semibold text-ink" aria-live="polite">
+            Pregunta 1 de {questions.length}
+          </p>
+          <button
+            type="button"
+            id="quiz-back"
+            class="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-medium text-ink-2 transition-colors hover:bg-sunken hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+            disabled
+          >
+            <Icon name="arrow-left" class="size-4" />
+            Anterior
+          </button>
+        </div>
+        <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
+          <div id="quiz-bar" class="quiz-bar h-full origin-left rounded-full bg-accent" style="transform: scaleX(0)"></div>
+        </div>
+      </div>
+
+      <div id="quiz-body" class="px-6 py-8 sm:px-9 sm:py-10">
+        <noscript>
+          <p class="text-ink-2">Activa JavaScript para realizar el test de elegibilidad.</p>
+        </noscript>
+      </div>
+
+      <div id="quiz-result" class="hidden px-6 py-8 sm:px-9 sm:py-10"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .quiz-bar {
+    transition: transform 420ms var(--ease-out);
+  }
+
+  .topic { color: var(--ink-3); transition: background-color 200ms ease, color 200ms ease; }
+  .topic .topic-mark { border-color: var(--line-strong); transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease; }
+  .topic[data-state="current"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px hsl(var(--shadow-tint) / 0.06); }
+  .topic[data-state="current"] .topic-mark { border-color: var(--accent); color: var(--accent-ink); }
+  .topic[data-state="done"] { color: var(--ink-2); }
+  .topic[data-state="done"] .topic-mark { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .topic[data-state="done"] .topic-num { display: none; }
+  .topic[data-state="done"] .topic-check { display: grid; }
+
+  :global(.quiz-enter) { animation: quiz-enter 320ms var(--ease-out) both; }
+  :global(.quiz-enter-back) { animation: quiz-enter-back 320ms var(--ease-out) both; }
+  @keyframes quiz-enter {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes quiz-enter-back {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.quiz-enter), :global(.quiz-enter-back) { animation: none; }
+    .quiz-bar { transition: none; }
+  }
+</style>
+
+<script>
+  import { iconSvg } from '../../lib/icons';
+  import type { CategoryId, Option, Question } from '../../data/eligibility';
+
+  const quiz = document.getElementById('quiz');
+  const questions: Question[] = JSON.parse(quiz?.dataset.questions || '[]');
+  const categories: { id: CategoryId; label: string }[] = JSON.parse(quiz?.dataset.categories || '[]');
+
+  const body = document.getElementById('quiz-body');
+  const result = document.getElementById('quiz-result');
+  const progress = document.getElementById('quiz-progress');
+  const stepLabel = document.getElementById('quiz-step-label');
+  const bar = document.getElementById('quiz-bar');
+  const backBtn = document.getElementById('quiz-back') as HTMLButtonElement | null;
+  const topics = document.querySelectorAll<HTMLElement>('[data-topic]');
+
+  let step = 0;
+  // Índice de la opción elegida en cada pregunta (permite volver atrás).
+  const answers: (number | undefined)[] = [];
+
+  const escapeHtml = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+
+  const categoryLabel = (id: CategoryId) => categories.find((c) => c.id === id)?.label ?? '';
+
+  function updateTopics(finished = false) {
+    const order = categories.map((c) => c.id);
+    const currentIndex = finished ? order.length : order.indexOf(questions[step].category);
+    topics.forEach((topic) => {
+      const i = order.indexOf(topic.dataset.topic as CategoryId);
+      topic.dataset.state = i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
+    });
+  }
+
+  function updateProgress() {
+    if (stepLabel) stepLabel.textContent = `Pregunta ${step + 1} de ${questions.length}`;
+    if (backBtn) backBtn.disabled = step === 0;
+    if (bar) bar.style.transform = `scaleX(${step / questions.length})`;
+    updateTopics();
+  }
+
+  // En móvil, si el inicio del test quedó fuera de pantalla, lo traemos de vuelta.
+  function keepQuizInView() {
+    if (!quiz) return;
+    if (quiz.getBoundingClientRect().top < 64) {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      quiz.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+  }
+
+  function renderQuestion(direction: 'forward' | 'back' = 'forward', moveFocus = false) {
+    if (!body) return;
+    const q = questions[step];
+    updateProgress();
+
+    body.innerHTML = `
+      <div class="${direction === 'back' ? 'quiz-enter-back' : 'quiz-enter'}">
+        <p class="text-sm font-medium text-accent-ink">${escapeHtml(categoryLabel(q.category))}</p>
+        <h3 id="quiz-question" tabindex="-1" class="mt-2 text-2xl font-bold leading-tight tracking-[-0.03em] text-ink focus:outline-none sm:text-[1.75rem]">
+          ${escapeHtml(q.title)}
+        </h3>
+        <p class="mt-3 max-w-[60ch] leading-relaxed text-ink-2">${escapeHtml(q.description)}</p>
+        <div class="mt-8 grid gap-3" role="group" aria-labelledby="quiz-question">
+          ${q.options
+            .map((opt, idx) => {
+              const selected = answers[step] === idx;
+              return `
+                <button
+                  type="button"
+                  data-option="${idx}"
+                  aria-pressed="${selected}"
+                  class="group flex w-full items-center gap-4 rounded-control border px-5 py-4 text-left transition-[background-color,border-color,transform] duration-200 ease-out active:scale-[0.99] ${
+                    selected ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface hover:border-ink-3 hover:bg-canvas'
+                  }"
+                >
+                  <span class="grid size-5 shrink-0 place-items-center rounded-full border-2 ${
+                    selected ? 'border-accent bg-accent' : 'border-line-strong group-hover:border-ink-3'
+                  }">
+                    <span class="size-2 rounded-full ${selected ? 'bg-white' : 'bg-transparent'}"></span>
+                  </span>
+                  <span class="font-medium leading-snug text-ink">${escapeHtml(opt.label)}</span>
+                </button>`;
+            })
+            .join('')}
+        </div>
+      </div>
+    `;
+
+    body.querySelectorAll<HTMLButtonElement>('[data-option]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        answers[step] = Number(btn.dataset.option);
+        if (step < questions.length - 1) {
+          step++;
+          renderQuestion('forward', true);
+        } else {
+          showResult();
+        }
+      });
+    });
+
+    if (moveFocus) {
+      body.querySelector<HTMLElement>('#quiz-question')?.focus({ preventScroll: true });
+      keepQuizInView();
+    }
+  }
+
+  const listItem = (title: string, text: string, badge?: string, tone: 'warn' | 'ok' = 'warn') => `
+    <li class="py-5">
+      <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <h4 class="font-semibold text-ink">${escapeHtml(title)}</h4>
+        ${
+          badge
+            ? `<span class="inline-flex max-w-full items-start gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                tone === 'warn' ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'
+              }">${iconSvg('clock', 'mt-px size-3.5 shrink-0')}<span>${escapeHtml(badge)}</span></span>`
+            : ''
+        }
+      </div>
+      <p class="mt-2 max-w-[65ch] text-sm leading-relaxed text-ink-2">${escapeHtml(text)}</p>
+    </li>`;
+
+  function showResult() {
+    if (!body || !result || !progress) return;
+
+    const chosen = questions.map((q, i) => ({ q, opt: q.options[answers[i] ?? 0] as Option }));
+    const reasons = chosen.filter(({ opt }) => !opt.eligible);
+    const notes = chosen.filter(({ opt }) => opt.eligible && opt.note);
+    const eligible = reasons.length === 0;
+
+    body.classList.add('hidden');
+    progress.classList.add('hidden');
+    result.classList.remove('hidden');
+    updateTopics(true);
+
+    const reasonsHtml = reasons
+      .map(({ opt }) => listItem(opt.reasonTitle || 'Motivo de espera', opt.medicalReason || '', opt.timeframe))
+      .join('');
+    const notesHtml = notes.map(({ q, opt }) => listItem(q.title, opt.note || '')).join('');
+
+    const tips = [
+      'Duerme bien la noche anterior.',
+      'Come algo ligero y sin grasa antes de ir.',
+      'Bebe agua antes y después de donar.',
+      'Lleva tu documento de identidad.',
+    ];
+
+    result.innerHTML = `
+      <div class="quiz-enter">
+        <span class="grid size-14 place-items-center rounded-control ${eligible ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">
+          ${iconSvg(eligible ? 'check-circle' : 'warning-circle', 'size-7')}
+        </span>
+        <h3 id="quiz-result-title" tabindex="-1" class="mt-6 text-3xl font-bold tracking-[-0.03em] text-ink focus:outline-none">
+          ${eligible ? 'Puedes ser candidato a donar' : 'Por ahora no es recomendable donar'}
+        </h3>
+        <p class="mt-3 max-w-[60ch] leading-relaxed text-ink-2">
+          ${
+            eligible
+              ? 'Tus respuestas cumplen los criterios iniciales. El paso siguiente es crear tu cuenta y acudir a un centro, donde el personal médico hará la evaluación final.'
+              : `Según tus respuestas, hay ${reasons.length === 1 ? 'un motivo' : `${reasons.length} motivos`} para esperar. Revisa cada uno y el plazo orientativo:`
+          }
+        </p>
+
+        ${eligible ? '' : `<ul class="mt-4 divide-y divide-line border-y border-line">${reasonsHtml}</ul>`}
+
+        ${
+          notes.length
+            ? `<h4 class="mt-8 text-sm font-semibold text-ink">Para comentar en la entrevista</h4>
+               <ul class="mt-2 divide-y divide-line border-y border-line">${notesHtml}</ul>`
+            : ''
+        }
+
+        ${
+          eligible
+            ? `<div class="mt-8 rounded-control bg-sunken p-5">
+                 <h4 class="text-sm font-semibold text-ink">Antes de ir a donar</h4>
+                 <ul class="mt-3 grid gap-2 text-sm text-ink-2 sm:grid-cols-2">
+                   ${tips.map((t) => `<li class="flex items-start gap-2">${iconSvg('check-circle', 'mt-0.5 size-4 shrink-0 text-ok')}<span>${t}</span></li>`).join('')}
+                 </ul>
+               </div>`
+            : ''
+        }
+
+        <p class="mt-8 flex items-start gap-2 text-sm leading-relaxed text-ink-3">
+          ${iconSvg('info', 'mt-0.5 size-4 shrink-0')}
+          <span>Este resultado es solo una guía. La aptitud para donar la decide siempre el personal médico del banco de sangre.</span>
+        </p>
+
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          ${
+            eligible
+              ? `<a href="/register" class="btn btn-primary">Quiero ser donante ${iconSvg('arrow-right', 'size-4')}</a>
+                 <a href="/centros" class="btn btn-secondary">Ver centros cercanos</a>`
+              : `<a href="/#faq" class="btn btn-secondary">Leer preguntas frecuentes</a>`
+          }
+          <button type="button" id="quiz-restart" class="btn text-ink-2 hover:bg-sunken hover:text-ink">
+            ${iconSvg('arrow-clockwise', 'size-4')} Repetir test
+          </button>
+        </div>
+      </div>
+    `;
+
+    result.querySelector<HTMLElement>('#quiz-result-title')?.focus({ preventScroll: true });
+    keepQuizInView();
+    result.querySelector('#quiz-restart')?.addEventListener('click', restart);
+  }
+
+  function restart() {
+    step = 0;
+    answers.length = 0;
+    result?.classList.add('hidden');
+    progress?.classList.remove('hidden');
+    body?.classList.remove('hidden');
+    renderQuestion('back', true);
+  }
+
+  backBtn?.addEventListener('click', () => {
+    if (step === 0) return;
+    step--;
+    renderQuestion('back', true);
+  });
+
+  if (questions.length) renderQuestion();
+</script>

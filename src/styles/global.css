@@ -1,4 +1,16 @@
 @import "tailwindcss";
+@import "@fontsource-variable/schibsted-grotesk";
+@import "@fontsource-variable/geist-mono";
+
+/* ===================================================
+   TOKENS BLUD
+   - La paleta de marca original se conserva (--color-blud-*).
+   - Las superficies y textos usan tokens semánticos que cambian
+     entre tema claro y oscuro. Ningún componente debe usar
+     colores "slate-*" o hex sueltos: siempre estos tokens.
+   - Regla de radios: controles (botones, inputs, chips) = 12px,
+     paneles e imágenes = 20px.
+   =================================================== */
 
 @theme {
   --color-blud-flag-red: #CA2B2B;
@@ -11,151 +23,376 @@
   --color-blud-shadow-grey: #1A202C;
   --color-blud-slate-grey: #64748B;
 
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: "Schibsted Grotesk Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-control: 12px;
+  --radius-panel: 20px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+}
+
+:root {
+  color-scheme: light;
+  --canvas: #F6F7F9;
+  --surface: #FFFFFF;
+  --sunken: #EDEFF3;
+  --ink: #151A23;
+  --ink-2: #434C5A;
+  --ink-3: #616B7C;
+  --line: #DEE2E8;
+  --line-strong: #C3CAD4;
+  --accent: #CA2B2B;
+  --accent-strong: #A30008;
+  --accent-ink: #B42121;
+  --accent-soft: #FBEAEA;
+  --ok: #1D7F3E;
+  --ok-soft: #E3F4E8;
+  --warn: #975400;
+  --warn-soft: #FCF0DC;
+  /* La noche es la superficie de marca (hero y footer); no cambia de tema. */
+  --night: #1A202C;
+  --night-2: #232B3A;
+  --shadow-tint: 220 30% 20%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: #0E1116;
+    --surface: #151A21;
+    --sunken: #11151B;
+    --ink: #EDEFF3;
+    --ink-2: #B3BAC6;
+    --ink-3: #8B94A3;
+    --line: #242B35;
+    --line-strong: #353E4B;
+    --accent: #CF3333;
+    --accent-strong: #E04848;
+    --accent-ink: #F28080;
+    --accent-soft: #2B1518;
+    --ok: #62D286;
+    --ok-soft: #10251A;
+    --warn: #F0B45A;
+    --warn-soft: #2A2012;
+    --night: #0A0D12;
+    --night-2: #131821;
+    --shadow-tint: 220 40% 2%;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0E1116;
+  --surface: #151A21;
+  --sunken: #11151B;
+  --ink: #EDEFF3;
+  --ink-2: #B3BAC6;
+  --ink-3: #8B94A3;
+  --line: #242B35;
+  --line-strong: #353E4B;
+  --accent: #CF3333;
+  --accent-strong: #E04848;
+  --accent-ink: #F28080;
+  --accent-soft: #2B1518;
+  --ok: #62D286;
+  --ok-soft: #10251A;
+  --warn: #F0B45A;
+  --warn-soft: #2A2012;
+  --night: #0A0D12;
+  --night-2: #131821;
+  --shadow-tint: 220 40% 2%;
 }
 
 /* ===== Base ===== */
-html {
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-blud-brick-ember) var(--color-blud-shadow-grey);
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) var(--canvas);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+
+  p { text-wrap: pretty; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: #fff;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
 
-body {
-  background-color: var(--color-blud-shadow-grey);
-  color: var(--color-blud-white);
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Cambio de tema: el nuevo tema se revela en círculo desde el botón.
+   Las coordenadas (--vt-x, --vt-y, --vt-r) las fija el script del Navbar. */
+html.theme-vt::view-transition-old(root),
+html.theme-vt::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-vt::view-transition-new(root) {
+  animation: theme-reveal 620ms var(--ease-out);
+}
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--vt-x) var(--vt-y)); }
+  to { clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y)); }
 }
 
-/* Scrollbar WebKit */
-html::-webkit-scrollbar { width: 10px; }
-html::-webkit-scrollbar-track { background: var(--color-blud-shadow-grey); }
-html::-webkit-scrollbar-thumb {
-  background: var(--color-blud-dark-teal);
-  border-radius: 5px;
-  border: 2px solid var(--color-blud-shadow-grey);
-}
-html::-webkit-scrollbar-thumb:hover { background: var(--color-blud-brick-ember); }
+/* ===== Componentes compartidos ===== */
+@layer components {
+  .container-blud {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) { .container-blud { padding-inline: 1.5rem; } }
+  @media (min-width: 1024px) { .container-blud { padding-inline: 2rem; } }
 
-/* ===== Reveal / animaciones existentes ===== */
-.reveal-mask { overflow: hidden; }
-.reveal-mask > span {
-  display: inline-block;
-  transform: translateY(115%);
-  transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.reveal-fade {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-[data-revealed] .reveal-mask > span { transform: translateY(0); }
-[data-revealed] .reveal-fade { opacity: 1; transform: translateY(0); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-control);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      transform 160ms var(--ease-out),
+      background-color 200ms ease,
+      border-color 200ms ease,
+      color 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled, .btn[aria-disabled="true"] { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-lg { min-height: 3.25rem; padding: 0 1.5rem; font-size: 1rem; }
+  .btn-sm { min-height: 2.25rem; padding: 0 0.875rem; font-size: 0.875rem; }
 
-@media (prefers-reduced-motion: reduce) {
-  .reveal-mask > span, .reveal-fade {
-    transition: none !important;
-    transform: none !important;
-    opacity: 1 !important;
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.18),
+      0 8px 20px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+  }
+  .btn-primary:hover { background: var(--accent-strong); }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+  }
+  .btn-secondary:hover { background: var(--sunken); border-color: var(--ink-3); }
+
+  /* Botón claro sobre superficies "night" (hero y footer). */
+  .btn-on-night {
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 0.18);
+  }
+  .btn-on-night:hover { background: rgb(255 255 255 / 0.14); border-color: rgb(255 255 255 / 0.3); }
+
+  .link-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    text-underline-offset: 4px;
+  }
+  .link-arrow svg { transition: transform 200ms var(--ease-out); }
+  .link-arrow:hover { text-decoration: underline; }
+  @media (hover: hover) {
+    .link-arrow:hover svg { transform: translateX(3px); }
+  }
+
+  .field {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0 1rem;
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    font-size: 1rem;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .field::placeholder { color: var(--ink-3); opacity: 1; }
+  .field:hover { border-color: var(--ink-3); }
+  .field:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .field[aria-invalid="true"] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-panel);
+    box-shadow: 0 1px 2px hsl(var(--shadow-tint) / 0.04), 0 12px 32px -18px hsl(var(--shadow-tint) / 0.18);
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 1.4rem + 2.4vw, 3.25rem);
+    line-height: 1.02;
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+  }
+  .section-lead {
+    margin-top: 1rem;
+    max-width: 60ch;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--ink-2);
   }
 }
 
-@keyframes pulse-gentle {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.04); opacity: 0.9; }
+/* ===== Sesión =====
+   El script del <head> marca <html data-auth="in"> antes de pintar;
+   así los bloques de cada estado no parpadean al cargar. */
+html:not([data-auth="in"]) [data-auth-in],
+html[data-auth="in"] [data-auth-out] {
+  display: none !important;
 }
-.animate-pulse-gentle { animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+/* ===== Revelado al hacer scroll =====
+   Solo se oculta si hay JS (clase .js en <html>), así el contenido
+   nunca queda invisible si el script falla. */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 700ms var(--ease-out),
+    transform 700ms var(--ease-out);
+  transition-delay: calc(var(--reveal-delay, 0) * 80ms);
+}
+.js [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse-gentle { animation: none !important; }
+  .js [data-reveal] {
+    transform: none;
+    transition: opacity 300ms ease;
+    transition-delay: 0ms;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
-/* ===================================================
-   FONDOS BLUD — 4 variaciones sobre la paleta.
-   Reemplazan el "bg-slate-900" repetido en cada sección
-   y los blobs sueltos que cada componente dibujaba a mano.
-   =================================================== */
+/* ===== Utilidades de marca ===== */
 
-.bg-blud-base {
-  background-color: var(--color-blud-shadow-grey);
-}
-
-/* 1. AURORA VITAL — glows de teal + ember en las esquinas.
-   WhatIs, Map. */
-.bg-blud-aurora {
-  background-color: var(--color-blud-shadow-grey);
-  background-image:
-    radial-gradient(60rem 40rem at 12% -10%, color-mix(in srgb, var(--color-blud-dark-teal) 24%, transparent), transparent 60%),
-    radial-gradient(50rem 36rem at 110% 115%, color-mix(in srgb, var(--color-blud-brick-ember) 18%, transparent), transparent 60%);
-}
-
-/* 2. MALLA CLÍNICA — grid punteado sutil + glow central.
-   Matrix, Test. */
-.bg-blud-grid {
-  background-color: var(--color-blud-shadow-grey);
-  background-image:
-    radial-gradient(38rem 28rem at 50% 15%, color-mix(in srgb, var(--color-blud-dark-teal) 16%, transparent), transparent 65%),
-    linear-gradient(color-mix(in srgb, white 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, white 6%, transparent) 1px, transparent 1px);
-  background-size: auto, 32px 32px, 32px 32px;
-}
-
-/* 3. TEXTURA ORGÁNICA — grano fino, quita lo plano del gris sólido.
-   FAQ, Footer. */
-.bg-blud-grain {
-  background-color: var(--color-blud-shadow-grey);
-  position: relative;
-  isolation: isolate;
-}
-.bg-blud-grain::before {
+/* Grano fino fijo: rompe lo plano sin repintar al hacer scroll. */
+.grain::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 0;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
 }
 
-/* 4. DIAGONAL PULSO — franja diagonal hacia teal, con urgencia visual.
-   Alerts. */
-.bg-blud-pulse {
-  background-color: var(--color-blud-shadow-grey);
-  background-image: linear-gradient(
-    135deg,
-    var(--color-blud-shadow-grey) 0%,
-    color-mix(in srgb, var(--color-blud-dark-teal) 35%, var(--color-blud-shadow-grey)) 55%,
-    var(--color-blud-shadow-grey) 100%
-  );
+.tabular { font-variant-numeric: tabular-nums; }
+
+@keyframes blud-ping {
+  0% { transform: scale(1); opacity: 0.55; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  animation: blud-ping 2s var(--ease-out) infinite;
 }
 
-/* 5. GOTAS EN MOVIMIENTO — patrón de gotas (mismo ícono de marca del
-   Navbar/Footer) que se repite en mosaico y deriva lentamente en diagonal.
-   WhatIs. */
-.bg-blud-drops {
-  background-color: var(--color-blud-shadow-grey);
-  background-image:
-    radial-gradient(46rem 32rem at 50% 0%, color-mix(in srgb, var(--color-blud-jade-green) 20%, transparent), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='white'%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' transform='translate(14,10) scale(0.75)' fill-opacity='0.05'/%3E%3Cpath d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z' transform='translate(46,42) scale(0.55)' fill-opacity='0.035'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat;
-  background-size: auto, 80px 80px;
-  animation: blud-drops-drift 50s linear infinite;
+@keyframes blud-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.skeleton {
+  background:
+    linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--surface) 70%, transparent) 50%, transparent 70%) var(--sunken);
+  background-size: 200% 100%;
+  animation: blud-shimmer 1.4s linear infinite;
 }
 
-@keyframes blud-drops-drift {
-  from { background-position: 0 0, 0 0; }
-  to   { background-position: 0 0, 160px 160px; }
-}
+@keyframes blud-spin { to { transform: rotate(360deg); } }
+.spin { animation: blud-spin 0.9s linear infinite; }
 
-@media (prefers-reduced-motion: reduce) {
-  .bg-blud-drops { animation: none; }
+/* En tema oscuro, los paneles "night" se separan del fondo con un filo sutil. */
+:root[data-theme="dark"] .rounded-panel.bg-night {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
 }

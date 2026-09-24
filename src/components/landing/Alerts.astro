@@ -1,143 +1,145 @@
 ---
-// UrgentRequests.astro
+// Alerts.astro - Solicitudes urgentes de sangre.
+// Vista pública: solo tipo de sangre, centro y urgencia. Los nombres de pacientes,
+// las unidades y el inventario son datos internos que solo gestionan los administradores.
+// Datos de ejemplo hasta conectar la API de solicitudes.
+import Icon from '../Icon.astro';
+
 interface RequestItem {
   id: string;
-  patientName: string;
   bloodType: string;
   hospital: string;
   location: string;
-  unitsNeeded: number;
-  unitsFulfilled: number;
-  urgency: 'Alta' | 'Crítica' | 'Moderada';
+  urgency: 'Crítica' | 'Alta' | 'Moderada';
   timeAgo: string;
 }
 
 const urgentRequests: RequestItem[] = [
   {
     id: "REQ-01",
-    patientName: "Paciente A. Mendoza",
     bloodType: "O-",
     hospital: "Hospital Universitario",
     location: "Maracaibo, Zulia",
-    unitsNeeded: 3,
-    unitsFulfilled: 1,
     urgency: "Crítica",
-    timeAgo: "Hace 15 min"
+    timeAgo: "Hace 15 min",
   },
   {
     id: "REQ-02",
-    patientName: "Paciente R. Torres",
     bloodType: "A+",
     hospital: "Clínica San Rafael",
     location: "Maracaibo, Zulia",
-    unitsNeeded: 2,
-    unitsFulfilled: 0,
     urgency: "Alta",
-    timeAgo: "Hace 40 min"
+    timeAgo: "Hace 40 min",
   },
   {
     id: "REQ-03",
-    patientName: "Paciente B. Colina",
     bloodType: "AB-",
     hospital: "Centro Médico Docente",
     location: "San Francisco, Zulia",
-    unitsNeeded: 4,
-    unitsFulfilled: 2,
     urgency: "Crítica",
-    timeAgo: "Hace 1 hora"
-  }
+    timeAgo: "Hace 1 hora",
+  },
 ];
+
+// Quién puede responder a cada solicitud (compatibilidad de glóbulos rojos).
+const donorsFor: Record<string, string[]> = {
+  "O-": ["O-"],
+  "O+": ["O+", "O-"],
+  "A-": ["A-", "O-"],
+  "A+": ["A+", "A-", "O+", "O-"],
+  "B-": ["B-", "O-"],
+  "B+": ["B+", "B-", "O+", "O-"],
+  "AB-": ["AB-", "A-", "B-", "O-"],
+  "AB+": ["AB+", "AB-", "A+", "A-", "B+", "B-", "O+", "O-"],
+};
+
+const pretty = (t: string) => t.replace('-', '−');
+const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positivo');
 ---
 
-<section id="urgencias" class="relative py-20 bg-blud-pulse border-t border-white/5">
-  <div class="mx-auto max-w-7xl px-4 md:px-8">
-    
-    <!-- Encabezado de Sección -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-      <div>
-        <div class="inline-flex items-center gap-2 rounded-full border border-blud-brick-ember/40 bg-blud-brick-ember/10 px-3 py-1 text-xs text-blud-brick-ember mb-3">
-          <span class="h-2 w-2 rounded-full bg-blud-brick-ember animate-ping"></span>
-          Solicitudes Activas
-        </div>
-        <h2 class="font-sans text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-          Solicitudes <span class="text-blud-flag-red">Urgentes</span>
-        </h2>
-        <p class="mt-2 text-sm md:text-base text-blud-alabaster/80 max-w-xl">
-          Pacientes y centros de salud que requieren donantes de manera prioritaria en este momento.
+<section id="urgencias" class="border-y border-line bg-sunken py-24 lg:py-28">
+  <div class="container-blud">
+    <div class="max-w-3xl" data-reveal>
+      <h2 class="section-title">Solicitudes urgentes</h2>
+      <p class="section-lead">
+        Centros de salud que necesitan donantes ahora mismo. Si tu tipo de sangre coincide, puedes
+        responder en un par de pasos.
+      </p>
+    </div>
+
+    <div class="panel mt-12 overflow-hidden" data-reveal>
+      <div class="flex items-center justify-between gap-4 border-b border-line px-5 py-4 sm:px-7">
+        <p class="inline-flex items-center gap-2.5 text-sm font-semibold text-ink">
+          <span class="live-dot text-accent" aria-hidden="true"></span>
+          {urgentRequests.length} solicitudes activas
         </p>
+        <p class="hidden font-mono text-xs text-ink-3 sm:block">Maracaibo y San Francisco</p>
       </div>
 
-      <a href="#donar" class="inline-flex items-center gap-2 text-sm font-semibold text-blud-dark-teal hover:text-white transition-colors duration-200">
-        Ver todas las solicitudes
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-      </a>
-    </div>
-
-    <!-- Grid de Tarjetas de Urgencia -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {urgentRequests.map((req) => (
-        <article class="relative flex flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xs transition-all duration-300 hover:border-blud-brick-ember/40 hover:bg-white/[0.07] hover:-translate-y-1">
-          
-          <div>
-            <!-- Header de la tarjeta -->
-            <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-              <span class="font-mono text-xs text-blud-alabaster/60">{req.id} • {req.timeAgo}</span>
-              <span class={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                req.urgency === 'Crítica' 
-                  ? 'bg-blud-brick-ember/20 text-blud-brick-ember border border-blud-brick-ember/30' 
-                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-              }`}>
-                Nivel {req.urgency}
+      <ul class="divide-y divide-line">
+        {urgentRequests.map((req) => (
+            <li class="grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-5 px-5 py-6 transition-colors hover:bg-canvas/60 sm:px-7 lg:grid-cols-[4rem_minmax(0,1.1fr)_minmax(0,1fr)_9.5rem_auto] lg:gap-x-8">
+              <span
+                class="grid size-16 place-items-center rounded-control bg-accent text-2xl font-extrabold tracking-[-0.04em] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2)]"
+                aria-label={`Tipo ${spoken(req.bloodType)}`}
+              >
+                {pretty(req.bloodType)}
               </span>
-            </div>
 
-            <!-- Información del Paciente y Tipo de Sangre -->
-            <div class="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <h3 class="font-sans text-lg font-bold text-white">{req.patientName}</h3>
-                <p class="text-xs text-blud-alabaster/70 flex items-center gap-1.5 mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blud-dark-teal shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  {req.hospital}
-                </p>
-                <p class="text-xs text-blud-alabaster/50 ml-5">{req.location}</p>
+              <div class="min-w-0">
+                <h3 class="flex items-center gap-2 text-lg font-bold tracking-[-0.02em] text-ink">
+                  <Icon name="hospital" class="size-5 shrink-0 text-ink-3" />
+                  <span class="lg:truncate">{req.hospital}</span>
+                </h3>
+                <p class="mt-1 text-sm text-ink-3">{req.location}</p>
               </div>
 
-              <!-- Badge con el Tipo de Sangre -->
-              <div class="flex flex-col items-center justify-center h-14 w-14 rounded-2xl bg-blud-brick-ember/20 border border-blud-brick-ember/40 text-white font-extrabold text-xl shadow-inner shrink-0">
-                {req.bloodType}
+              <div class="col-span-2 lg:col-span-1">
+                <p class="text-xs font-medium text-ink-3">Pueden responder donantes</p>
+                <ul class="mt-1.5 flex flex-wrap gap-1" aria-label="Tipos de sangre que pueden responder">
+                  {donorsFor[req.bloodType].map((type) => (
+                    <li class="rounded-md border border-line px-1.5 py-0.5 font-mono text-xs font-semibold text-ink-2" aria-label={spoken(type)}>
+                      {pretty(type)}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
 
-            <!-- Barra de Progreso de Unidades -->
-            <div class="mt-4 mb-6">
-              <div class="flex justify-between text-xs font-semibold mb-1.5">
-                <span class="text-blud-alabaster/70">Unidades requeridas</span>
-                <span class="text-white">{req.unitsFulfilled} de {req.unitsNeeded} completadas</span>
+              <div class="col-span-2 flex items-center gap-3 lg:col-span-1 lg:flex-col lg:items-start lg:gap-1.5">
+                <span
+                  class:list={[
+                    'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold',
+                    req.urgency === 'Crítica' ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn',
+                  ]}
+                >
+                  <Icon name="siren" class="size-3.5" />
+                  Urgencia {req.urgency.toLowerCase()}
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-xs text-ink-3">
+                  <Icon name="clock" class="size-3.5" />
+                  {req.timeAgo}
+                </span>
               </div>
-              <div class="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                <div 
-                  class="h-full bg-blud-brick-ember rounded-full transition-all duration-500" 
-                  style={`width: ${(req.unitsFulfilled / req.unitsNeeded) * 100}%`}
-                ></div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Botón de Respuesta -->
-          <a 
-            href={`#responder-${req.id}`}
-            class="w-full inline-flex items-center justify-center rounded-xl bg-white/10 hover:bg-blud-brick-ember py-3 font-sans text-sm font-semibold text-white transition-all duration-200 border border-white/10 hover:border-blud-brick-ember shadow-md"
-          >
-            Quiero Donar a este Paciente
-          </a>
-
-        </article>
-      ))}
+              <a
+                href="/register"
+                class="btn btn-secondary col-span-2 w-full lg:col-span-1 lg:w-auto"
+                aria-label={`Responder a la solicitud de sangre ${spoken(req.bloodType)} en ${req.hospital}`}
+              >
+                Responder
+                <Icon name="arrow-right" class="size-4" />
+              </a>
+            </li>
+        ))}
+      </ul>
     </div>
 
+    <p class="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-2" data-reveal>
+      ¿Ya eres donante?
+      <a href="/login" class="link-arrow">
+        Ver todas las solicitudes de tu zona
+        <Icon name="arrow-right" class="size-4" />
+      </a>
+    </p>
   </div>
 </section>

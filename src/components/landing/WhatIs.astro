@@ -1,158 +1,117 @@
 ---
-const features = [
-  {
-    icon: "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
-    title: "Conexión Inmediata",
-    description: "Vinculamos de manera automatizada a donantes voluntarios con pacientes y bancos de sangre que requieren atención urgente.",
-  },
-  {
-    icon: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z",
-    title: "Red de Bancos de Sangre",
-    description: "Mapeo geolocalizado e inventario en vivo para visualizar la disponibilidad de tipos sanguíneos en hospitales y clínicas.",
-  },
-  {
-    icon: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z",
-    title: "Algoritmo de Compatibilidad",
-    description: "Análisis rápido de tipo de sangre y factor Rh para garantizar donaciones seguras y cruzamientos de compatibilidad sin margen de error.",
-  },
-];
+import Icon from '../Icon.astro';
+
+const labPhoto = "https://images.unsplash.com/photo-1579154204601-01588f351e67";
+const labSrc = (w: number) => `${labPhoto}?q=70&w=${w}&auto=format&fit=crop`;
+
+// Vista previa de la matriz: tipos que O- puede recibir (solo O-) frente al resto.
+const previewTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
+const pretty = (t: string) => t.replace('-', '−');
 ---
 
-<section id="que-es" class="relative overflow-hidden bg-[#ffffff] py-20 lg:py-28">
-  
-  <!-- Gotas Flotantes Animadas (Múltiples SVG de tamaño reducido) -->
-  <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-    <!-- Gota 1: Superior Izquierda -->
-    <div class="absolute top-6 left-8 text-blud-flag-red/15 animate-float-slow">
-      <svg class="h-10 w-10 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 2: Superior Centro-Derecha -->
-    <div class="absolute top-12 left-1/2 text-blud-brick-ember/15 animate-float-delayed">
-      <svg class="h-14 w-14 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 3: Superior Derecha -->
-    <div class="absolute top-10 right-12 text-blud-flag-red/10 animate-float-reverse">
-      <svg class="h-12 w-12 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 4: Centro Izquierda -->
-    <div class="absolute top-1/2 left-6 text-blud-brick-ember/15 animate-float-slow">
-      <svg class="h-12 w-12 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 5: Centro Derecha -->
-    <div class="absolute top-1/2 right-8 text-blud-flag-red/15 animate-float-delayed">
-      <svg class="h-16 w-16 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 6: Inferior Izquierda -->
-    <div class="absolute bottom-12 left-1/4 text-blud-flag-red/10 animate-float-reverse">
-      <svg class="h-10 w-10 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 7: Inferior Centro -->
-    <div class="absolute bottom-8 left-2/3 text-blud-brick-ember/15 animate-float-slow">
-      <svg class="h-14 w-14 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-
-    <!-- Gota 8: Inferior Derecha -->
-    <div class="absolute bottom-6 right-12 text-blud-flag-red/15 animate-float-delayed">
-      <svg class="h-10 w-10 fill-current" viewBox="0 0 24 24">
-        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-      </svg>
-    </div>
-  </div>
-
-  <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    
-    <!-- Encabezado de la Sección -->
-    <div class="text-center max-w-3xl mx-auto space-y-4">
-      <h2 class="text-3xl font-black text-slate-900 sm:text-4xl lg:text-5xl tracking-tight">
-        ¿Qué es <span class="text-blud-flag-red">BLUD</span>?
-      </h2>
-      <p class="text-base sm:text-lg text-slate-600 leading-relaxed">
-        Un ecosistema digital diseñado para optimizar el proceso de donación de sangre, reducir los tiempos de respuesta en situaciones críticas y coordinar eficientemente la red de donantes y centros médicos.
+<section id="que-es" class="relative pb-24 pt-24 lg:pb-32 lg:pt-32">
+  <div class="container-blud">
+    <div class="max-w-3xl" data-reveal>
+      <h2 class="section-title">¿Qué es BLUD?</h2>
+      <p class="section-lead">
+        Un ecosistema digital para que donar sangre sea más rápido y más claro: reduce los tiempos de
+        respuesta en situaciones críticas y coordina a donantes y centros médicos en una sola red.
       </p>
     </div>
 
-    <!-- Grid de Características principales (Contenido Centrado) -->
-    <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
-      {features.map((item) => (
-        <div class="group relative flex flex-col items-center text-center rounded-2xl bg-white p-8 shadow-sm border border-slate-200/80 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-blud-flag-red/30">
-          <!-- Icono Centrado -->
-          <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blud-flag-red/10 text-blud-flag-red group-hover:bg-blud-flag-red group-hover:text-white transition-colors duration-300 shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 fill-current" viewBox="0 0 24 24">
-              <path d={item.icon}></path>
-            </svg>
-          </div>
+    <div class="mt-14 grid gap-4 lg:mt-16 lg:grid-cols-12 lg:grid-rows-[auto_auto] lg:gap-5">
+      <!-- Red de bancos de sangre: foto real -->
+      <article
+        class="group relative isolate flex min-h-[26rem] flex-col justify-end overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-7 lg:row-span-2 lg:min-h-[34rem] lg:p-10"
+        data-reveal
+      >
+        <img
+          src={labSrc(1200)}
+          srcset={`${labSrc(640)} 640w, ${labSrc(1200)} 1200w`}
+          sizes="(min-width: 1024px) 58vw, 100vw"
+          alt="Técnica de laboratorio trabajando en un banco de sangre con equipos de análisis"
+          loading="lazy"
+          decoding="async"
+          class="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+        />
+        <div class="absolute inset-0 -z-10 bg-[linear-gradient(180deg,transparent_20%,rgb(26_32_44/0.7)_55%,rgb(26_32_44/0.96)_100%)]" aria-hidden="true"></div>
 
-          <!-- Contenido Centrado -->
-          <h3 class="mt-6 text-xl font-bold text-slate-900 group-hover:text-blud-flag-red transition-colors duration-200">
-            {item.title}
-          </h3>
-          <p class="mt-3 text-sm text-slate-600 leading-relaxed max-w-sm">
-            {item.description}
-          </p>
+        <span class="mb-5 grid size-11 place-items-center rounded-control bg-white/12 text-white backdrop-blur-md">
+          <Icon name="map-trifold" class="size-6" />
+        </span>
+        <h3 class="text-2xl font-bold tracking-[-0.03em] lg:text-3xl">Red de bancos de sangre</h3>
+        <p class="mt-3 max-w-md leading-relaxed text-white/80">
+          Hospitales, clínicas y bancos de sangre verificados en un mapa, con su dirección, su contacto y
+          cómo llegar.
+        </p>
+        <a href="#centros" class="mt-6 inline-flex w-fit items-center gap-2 font-semibold text-white underline decoration-white/40 underline-offset-[6px] hover:decoration-white">
+          Ver centros conectados
+          <Icon name="arrow-right" class="size-4" />
+        </a>
+      </article>
+
+      <!-- Conexión inmediata: patrón de ondas en tono de marca -->
+      <article
+        class="relative isolate overflow-hidden rounded-panel border border-accent/15 bg-accent-soft p-7 lg:col-span-5 lg:p-9"
+        data-reveal
+        style="--reveal-delay:1"
+      >
+        <div class="ripple pointer-events-none absolute -right-24 -top-24 -z-10 size-72" aria-hidden="true"></div>
+        <span class="grid size-11 place-items-center rounded-control bg-accent text-white">
+          <Icon name="bell-ringing" class="size-6" />
+        </span>
+        <h3 class="mt-8 text-2xl font-bold tracking-[-0.03em] text-ink">Conexión inmediata</h3>
+        <p class="mt-3 max-w-md leading-relaxed text-ink-2">
+          Vinculamos de forma automática a donantes voluntarios con pacientes y bancos de sangre que
+          necesitan atención urgente.
+        </p>
+      </article>
+
+      <!-- Compatibilidad: vista previa real de la matriz -->
+      <article
+        class="rounded-panel border border-line bg-surface p-7 lg:col-span-5 lg:p-9"
+        data-reveal
+        style="--reveal-delay:2"
+      >
+        <div class="flex items-start justify-between gap-6">
+          <span class="grid size-11 place-items-center rounded-control bg-sunken text-ink">
+            <Icon name="intersect-three" class="size-6" />
+          </span>
+          <ul class="grid grid-cols-4 gap-1.5" aria-hidden="true">
+            {previewTypes.map((type) => (
+              <li
+                class:list={[
+                  'grid h-8 w-11 place-items-center rounded-lg font-mono text-xs font-semibold',
+                  type === 'O-' ? 'bg-accent text-white' : 'border border-line text-ink-3',
+                ]}
+              >
+                {pretty(type)}
+              </li>
+            ))}
+          </ul>
         </div>
-      ))}
+        <h3 class="mt-8 text-2xl font-bold tracking-[-0.03em] text-ink">Algoritmo de compatibilidad</h3>
+        <p class="mt-3 max-w-md leading-relaxed text-ink-2">
+          Cruza tipo de sangre y factor Rh para proponerte solo donaciones compatibles. Las pruebas
+          finales siguen en manos del hospital.
+        </p>
+        <a href="#compatibilidad" class="link-arrow mt-5">
+          Consultar la matriz
+          <Icon name="arrow-right" class="size-4" />
+        </a>
+      </article>
     </div>
-
   </div>
 </section>
 
 <style>
-  @keyframes floatSlow {
-    0%, 100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-      transform: translateY(-12px) rotate(4deg);
-    }
-  }
-
-  @keyframes floatDelayed {
-    0%, 100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-      transform: translateY(-16px) rotate(-6deg);
-    }
-  }
-
-  @keyframes floatReverse {
-    0%, 100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-      transform: translateY(10px) rotate(3deg);
-    }
-  }
-
-  .animate-float-slow {
-    animation: floatSlow 6s ease-in-out infinite;
-  }
-
-  .animate-float-delayed {
-    animation: floatDelayed 8s ease-in-out infinite 2s;
-  }
-
-  .animate-float-reverse {
-    animation: floatReverse 7s ease-in-out infinite 1s;
+  .ripple {
+    border-radius: 999px;
+    background: repeating-radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--accent) 16%, transparent) 0 1px,
+      transparent 1px 22px
+    );
+    mask-image: radial-gradient(circle at center, #000 30%, transparent 70%);
   }
 </style>

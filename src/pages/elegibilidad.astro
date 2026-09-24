@@ -1,0 +1,51 @@
+---
+// elegibilidad.astro - Test de elegibilidad para donar sangre (20 preguntas)
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import EligibilityQuiz from '../components/eligibility/EligibilityQuiz.astro';
+import { questions } from '../data/eligibility';
+---
+
+<Layout
+  title="BLUD | Test de elegibilidad"
+  description="Responde 20 preguntas y descubre si puedes donar sangre o cuánto tiempo debes esperar. Es una guía orientativa; la decisión final es del personal médico."
+>
+  <section class="border-b border-line bg-sunken">
+    <div class="container-blud py-14 lg:py-16">
+      <a href="/" class="link-arrow text-sm">
+        <Icon name="arrow-left" class="size-4" />
+        Volver al inicio
+      </a>
+
+      <div class="mt-8 grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-12">
+        <div class="lg:col-span-7">
+          <h1 class="section-title">¿Puedes donar sangre?</h1>
+          <p class="section-lead">
+            {questions.length} preguntas basadas en los criterios de selección de donantes. Al final sabrás si
+            puedes acudir a un centro o cuánto tiempo conviene esperar.
+          </p>
+          <ul class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-ink-2">
+            <li class="inline-flex items-center gap-2"><Icon name="clipboard-text" class="size-4 text-ink-3" />{questions.length} preguntas</li>
+            <li class="inline-flex items-center gap-2"><Icon name="clock" class="size-4 text-ink-3" />Unos 4 minutos</li>
+            <li class="inline-flex items-center gap-2"><Icon name="shield-check" class="size-4 text-ink-3" />Tus respuestas no se envían ni se guardan</li>
+          </ul>
+        </div>
+
+        <div class="flex gap-3 rounded-panel border border-warn/25 bg-warn-soft p-5 text-sm leading-relaxed text-ink-2 lg:col-span-5">
+          <Icon name="first-aid-kit" class="mt-0.5 size-5 shrink-0 text-warn" />
+          <p>
+            <strong class="font-semibold text-ink">Es solo una guía orientativa.</strong> No reemplaza la
+            entrevista médica. La decisión final la toma el personal del banco de sangre tras la prueba de
+            hemoglobina y el examen físico.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-12 lg:py-16">
+    <div class="container-blud">
+      <EligibilityQuiz />
+    </div>
+  </section>
+</Layout>

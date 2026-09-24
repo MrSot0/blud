@@ -1,0 +1,215 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
+import { infoTopics, infoHref } from '../../data/info';
+import type { IconName } from '../../lib/icons';
+
+const topic = (slug: string) => infoTopics.find((t) => t.slug === slug)!;
+const viaje = topic('viaje-de-tu-sangre');
+const tipos = topic('tipos-de-donacion');
+const primera = topic('primera-donacion');
+const artificial = topic('sangre-artificial');
+const beneficios = topic('beneficios');
+
+const components = [
+  { name: 'Sangre total', color: '#B3121B', w: '100%' },
+  { name: 'Glóbulos rojos', color: '#7A0610', w: '72%' },
+  { name: 'Plasma', color: '#E0A63A', w: '58%' },
+  { name: 'Plaquetas', color: '#E9CF7A', w: '40%' },
+];
+---
+
+<Layout
+  title="BLUD | Infórmate"
+  description="Todo lo que conviene saber sobre la donación de sangre: tipos de donación, tu primera vez, el viaje de tu sangre, la sangre artificial y los beneficios de donar."
+>
+  <header class="border-b border-line bg-sunken">
+    <div class="container-blud grid gap-8 py-14 lg:grid-cols-12 lg:items-end lg:py-20">
+      <div class="lg:col-span-7">
+        <h1 class="hub-in text-[clamp(2.75rem,1.6rem+4.4vw,5rem)] font-extrabold leading-[0.95] tracking-[-0.05em] text-ink" style="--i:0">
+          Infórmate
+        </h1>
+        <p class="hub-in mt-5 max-w-[36rem] text-lg leading-relaxed text-ink-2 sm:text-xl" style="--i:1">
+          Todo lo que conviene saber antes, durante y después de donar, explicado sin tecnicismos.
+        </p>
+      </div>
+      <p class="hub-in flex items-center gap-2 text-sm text-ink-3 lg:col-span-5 lg:justify-end" style="--i:2">
+        <Icon name="book-open-text" class="size-4" />
+        {infoTopics.length} temas, unos 3 minutos de lectura cada uno
+      </p>
+    </div>
+  </header>
+
+  <section class="py-12 lg:py-16">
+    <div class="container-blud grid gap-4 lg:grid-cols-12 lg:gap-5">
+      <!-- El viaje de tu sangre -->
+      <a href={infoHref(viaje.slug)} class="hub-card group relative isolate flex min-h-[24rem] flex-col justify-between overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-7 lg:row-span-2 lg:min-h-[36rem] lg:p-10" data-reveal>
+        <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+        <div class="absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_70%_30%,rgb(202_43_43/0.28),transparent_70%)]" aria-hidden="true"></div>
+        <div class="route-mini relative mx-auto mt-4 aspect-[5/2] w-full max-w-md" aria-hidden="true">
+          <svg viewBox="0 0 400 160" class="absolute inset-0 size-full">
+            <path id="hub-route" d="M 30 120 C 90 120, 90 40, 150 40 S 210 120, 270 120 S 330 40, 370 40" fill="none" stroke="rgb(255 255 255 / 0.18)" stroke-width="2" stroke-dasharray="2 7" stroke-linecap="round" />
+            <circle r="7" fill="#F2605A" class="hub-dot">
+              <animateMotion dur="5s" repeatCount="indefinite" calcMode="spline" keyPoints="0;1" keyTimes="0;1" keySplines="0.45 0 0.2 1">
+                <mpath href="#hub-route" />
+              </animateMotion>
+            </circle>
+          </svg>
+          {([['drop', 7.5, 75], ['microscope', 37.5, 25], ['snowflake', 67.5, 75], ['hospital', 92.5, 25]] as [IconName, number, number][]).map(([icon, x, y]) => (
+            <span class="absolute grid size-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/15 bg-night-2 text-white/80" style={`left:${x}%; top:${y}%`}>
+              <Icon name={icon} class="size-5" />
+            </span>
+          ))}
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold tracking-[-0.035em] lg:text-4xl">{viaje.title}</h2>
+          <p class="mt-3 max-w-md leading-relaxed text-white/75">{viaje.short}</p>
+          <span class="mt-6 inline-flex items-center gap-2 font-semibold text-white">
+            Recorrer el viaje
+            <Icon name="arrow-right" class="size-4 transition-transform duration-200 ease-out group-hover:translate-x-1" />
+          </span>
+        </div>
+      </a>
+
+      <!-- Tipos de donación -->
+      <a href={infoHref(tipos.slug)} class="hub-card group flex flex-col justify-between gap-8 rounded-panel border border-line bg-surface p-7 lg:col-span-5 lg:p-8" data-reveal style="--reveal-delay:1">
+        <ul class="grid gap-2" aria-hidden="true">
+          {components.map((c, i) => (
+            <li class="flex items-center gap-3">
+              <span class="hub-bar h-2.5 rounded-full" style={`--w:${c.w}; background:${c.color}; --i:${i}`}></span>
+              <span class="shrink-0 text-xs text-ink-3">{c.name}</span>
+            </li>
+          ))}
+        </ul>
+        <div>
+          <h2 class="flex items-center justify-between gap-4 text-2xl font-bold tracking-[-0.03em] text-ink">
+            {tipos.title}
+            <Icon name="arrow-right" class="size-5 shrink-0 text-ink-3 transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:text-ink" />
+          </h2>
+          <p class="mt-2 leading-relaxed text-ink-2">{tipos.short}</p>
+        </div>
+      </a>
+
+      <!-- Primera donación -->
+      <a href={infoHref(primera.slug)} class="hub-card group flex flex-col justify-between gap-8 rounded-panel border border-accent/15 bg-accent-soft p-7 lg:col-span-5 lg:p-8" data-reveal style="--reveal-delay:2">
+        <div class="flex items-end gap-4" aria-hidden="true">
+          <p class="text-6xl font-extrabold leading-none tracking-[-0.06em] text-accent-ink">1 h</p>
+          <div class="mb-1.5 flex flex-1 gap-1">
+            {[10, 15, 10, 15].map((m, i) => (
+              <span class="h-2 rounded-full bg-accent" style={`flex:${m}; opacity:${0.4 + i * 0.2}`}></span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h2 class="flex items-center justify-between gap-4 text-2xl font-bold tracking-[-0.03em] text-ink">
+            {primera.title}
+            <Icon name="arrow-right" class="size-5 shrink-0 text-ink-3 transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:text-ink" />
+          </h2>
+          <p class="mt-2 leading-relaxed text-ink-2">{primera.short}</p>
+        </div>
+      </a>
+
+      <!-- Sangre artificial -->
+      <a href={infoHref(artificial.slug)} class="hub-card group relative isolate flex min-h-64 flex-col justify-end overflow-hidden rounded-panel bg-[#2A1438] p-7 text-white lg:col-span-6 lg:p-8" data-reveal>
+        <div class="mb-auto flex items-start justify-between gap-4">
+          <span class="inline-flex w-fit items-center gap-1.5 rounded-md bg-white/10 px-2 py-1 text-xs font-semibold text-[#E6CCF5]">
+            <Icon name="flask" class="size-3.5" />
+            En ensayo clínico
+          </span>
+          <div class="relative -mr-2 -mt-2 size-28 shrink-0" aria-hidden="true">
+            <span class="hub-ves absolute right-3 top-3 size-20 rounded-full border-[5px] border-dotted border-[#D7B3EE]/60 bg-[radial-gradient(circle_at_40%_35%,#9B5CC0,#4A1F66)]"></span>
+            <span class="hub-ves absolute bottom-0 left-2 size-8 rounded-full border-[3px] border-dotted border-[#D7B3EE]/50 bg-[#6D3590]" style="--d:-2s"></span>
+            <span class="hub-ves absolute right-0 top-0 size-5 rounded-full border-2 border-dotted border-[#D7B3EE]/50 bg-[#6D3590]" style="--d:-4s"></span>
+          </div>
+        </div>
+        <h2 class="mt-8 flex items-center justify-between gap-4 text-2xl font-bold tracking-[-0.03em]">
+          {artificial.title}
+          <Icon name="arrow-right" class="size-5 shrink-0 text-white/60 transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:text-white" />
+        </h2>
+        <p class="mt-2 max-w-md leading-relaxed text-white/75">{artificial.short}</p>
+      </a>
+
+      <!-- Beneficios -->
+      <a href={infoHref(beneficios.slug)} class="hub-card group flex min-h-64 flex-col justify-between gap-8 rounded-panel border border-line bg-surface p-7 lg:col-span-6 lg:p-8" data-reveal style="--reveal-delay:1">
+        <div class="flex items-center gap-4 text-ink" aria-hidden="true">
+          <span class="grid size-14 place-items-center rounded-full bg-accent text-white">
+            <Icon name="drop-fill" class="size-6" />
+          </span>
+          <Icon name="arrow-right" class="size-5 text-ink-3" />
+          <div class="flex -space-x-2">
+            {[0, 1, 2].map((i) => (
+              <span class="grid size-11 place-items-center rounded-full border-2 border-surface bg-sunken text-ink-2" style={`--i:${i}`}>
+                <Icon name="heart" class="size-5" />
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h2 class="flex items-center justify-between gap-4 text-2xl font-bold tracking-[-0.03em] text-ink">
+            {beneficios.title}
+            <Icon name="arrow-right" class="size-5 shrink-0 text-ink-3 transition-transform duration-200 ease-out group-hover:translate-x-1 group-hover:text-ink" />
+          </h2>
+          <p class="mt-2 leading-relaxed text-ink-2">{beneficios.short}</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="container-blud mt-10">
+      <p class="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-6 text-ink-2">
+        ¿Buscas algo concreto?
+        <a href="/#faq" class="link-arrow">Preguntas frecuentes <Icon name="arrow-right" class="size-4" /></a>
+        <a href="/elegibilidad" class="link-arrow">Test de elegibilidad <Icon name="arrow-right" class="size-4" /></a>
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .hub-in {
+    animation: hub-in 800ms var(--ease-out) both;
+    animation-delay: calc(80ms + var(--i) * 90ms);
+  }
+  @keyframes hub-in {
+    from { opacity: 0; transform: translateY(14px); }
+  }
+
+  .hub-card {
+    transition: transform 300ms var(--ease-out), box-shadow 300ms ease, border-color 200ms ease;
+  }
+  @media (hover: hover) {
+    .hub-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 22px 44px -28px hsl(var(--shadow-tint) / 0.5);
+    }
+  }
+  .hub-card:active { transform: scale(0.99); }
+
+  .hub-bar {
+    width: calc(var(--w) * 0.7);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 900ms var(--ease-out);
+    transition-delay: calc(200ms + var(--i) * 120ms);
+  }
+  .hub-card:global(.is-revealed) .hub-bar { transform: scaleX(1); }
+
+  .hub-ves {
+    animation: hub-float 7s ease-in-out infinite;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes hub-float {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-6px, 8px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hub-ves { animation: none; }
+    .hub-bar { transition: none; }
+  }
+</style>
+
+<script>
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<SVGSVGElement>('.route-mini svg').forEach((svg) => svg.pauseAnimations());
+  }
+</script>

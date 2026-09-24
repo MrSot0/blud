@@ -1,0 +1,117 @@
+/* Estilos compartidos de los mapas Leaflet (portada y /centros). */
+
+.blud-map {
+  font-family: var(--font-sans);
+  background: var(--sunken);
+}
+
+.center-card:has([aria-pressed="true"]) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+}
+
+/* ----- Marcadores ----- */
+.blud-pin {
+  display: grid;
+  place-items: center;
+}
+.blud-pin span {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  background: #CA2B2B;
+  box-shadow: 0 4px 10px rgb(15 23 42 / 0.35);
+  transition: transform 220ms var(--ease-out);
+}
+.is-hovered .blud-pin span { transform: scale(1.2); }
+.is-selected .blud-pin span { transform: scale(1.4); }
+
+.blud-user-pin {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.blud-user-pin span {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  background: #2563EB;
+  box-shadow: 0 0 0 6px rgb(37 99 235 / 0.2), 0 4px 10px rgb(15 23 42 / 0.3);
+}
+
+/* ----- Globos ----- */
+.blud-map .leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 16px 40px -12px rgb(15 23 42 / 0.35);
+  border: 1px solid var(--line);
+}
+.blud-map .leaflet-popup-tip { background: var(--surface); border: 1px solid var(--line); }
+.blud-map .leaflet-popup-content { margin: 14px 16px; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.blud-map a.leaflet-popup-close-button { color: var(--ink-3); top: 4px; right: 4px; }
+.blud-map a.leaflet-popup-close-button:hover { color: var(--ink); }
+.blud-popup h4 { margin: 0 20px 0 0; font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--ink); }
+.blud-map .blud-popup p { margin: 3px 0 0; color: var(--ink-2); }
+.blud-map .blud-popup .blud-popup-meta { font-size: 12px; color: var(--ink-3); }
+.blud-popup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.blud-map .blud-popup .blud-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 13px/1 var(--font-sans);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms var(--ease-out);
+}
+.blud-map .blud-popup .blud-popup-btn:hover { background: var(--sunken); }
+.blud-map .blud-popup .blud-popup-btn:active { transform: scale(0.97); }
+.blud-map .blud-popup .blud-popup-btn.is-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.blud-map .blud-popup .blud-popup-btn.is-primary:hover { background: var(--accent-strong); }
+
+/* ----- Controles ----- */
+.blud-map .leaflet-bar {
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 6px 16px -8px rgb(15 23 42 / 0.3) !important;
+}
+.blud-map .leaflet-bar a {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+}
+.blud-map .leaflet-bar a:hover { background: var(--sunken) !important; }
+.blud-map .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 85%, transparent) !important;
+  color: var(--ink-3) !important;
+}
+.blud-map .leaflet-control-attribution a { color: var(--ink-2) !important; }
+
+/* Mapa en tema oscuro: se invierten solo las teselas. */
+:root[data-theme="dark"] .blud-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .blud-map .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55);
+  }
+}

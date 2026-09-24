@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+
+const shortcuts = [
+  { href: '/#urgencias', label: 'Solicitudes urgentes', icon: 'siren' },
+  { href: '/elegibilidad', label: 'Test de elegibilidad', icon: 'heartbeat' },
+  { href: '/centros', label: 'Centros de donación', icon: 'map-pin' },
+] as const;
+---
+
+<Layout title="BLUD | Página no encontrada">
+  <section class="container-blud flex min-h-[calc(100dvh-4rem)] flex-col justify-center py-20">
+    <p class="font-mono text-sm font-medium text-accent-ink">Error 404</p>
+    <h1 class="mt-4 max-w-2xl text-[clamp(2.5rem,1.6rem+3.6vw,4.5rem)] font-extrabold leading-[1] tracking-[-0.045em] text-ink">
+      Esta página no existe.
+    </h1>
+    <p class="mt-5 max-w-xl text-lg leading-relaxed text-ink-2">
+      Puede que el enlace esté mal escrito o que la página se haya movido. Estos accesos te llevan a lo más buscado:
+    </p>
+
+    <ul class="mt-10 grid max-w-3xl gap-3 sm:grid-cols-3">
+      {shortcuts.map((s) => (
+        <li>
+          <a href={s.href} class="group flex h-full flex-col gap-6 rounded-panel border border-line bg-surface p-5 transition-colors hover:border-line-strong">
+            <Icon name={s.icon} class="size-6 text-accent-ink" />
+            <span class="flex items-center justify-between font-semibold text-ink">
+              {s.label}
+              <Icon name="arrow-right" class="size-4 text-ink-3 transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <a href="/" class="btn btn-primary mt-10 w-fit">
+      <Icon name="arrow-left" class="size-4" />
+      Volver al inicio
+    </a>
+  </section>
+</Layout>

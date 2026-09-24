@@ -1,0 +1,72 @@
+---
+// Tarjeta de un centro de salud: se usa en la lista del mapa de la portada y en /centros.
+// El cuerpo es un botón que ubica el centro en el mapa; debajo, las dos acciones.
+import Icon from '../Icon.astro';
+import { directionsUrl, hoursLabel, prettyBloodType, telHref, type HealthCenter } from '../../data/centers';
+
+interface Props {
+  center: HealthCenter;
+  /** Muestra horario, estado de apertura, distancia y tipos que necesita. */
+  detailed?: boolean;
+}
+
+const { center: c, detailed = false } = Astro.props;
+---
+
+<div class="center-card rounded-control border border-line bg-surface transition-colors duration-200 hover:border-line-strong">
+  <button
+    type="button"
+    data-center-id={c.id}
+    aria-pressed="false"
+    class="w-full rounded-t-control px-4 pb-3 pt-4 text-left"
+  >
+    {detailed && (
+      <span class="mb-2 flex min-h-5 items-center justify-between gap-3 text-xs">
+        <span data-open-status class="inline-flex items-center gap-1.5 font-medium text-ink-3"></span>
+        <span data-distance class="shrink-0 font-mono font-medium text-ink-2 empty:hidden"></span>
+      </span>
+    )}
+    <span class="block font-semibold leading-snug text-ink">{c.name}</span>
+    <span class="mt-1 block text-sm text-ink-3">{c.type}</span>
+    <span class="mt-2 flex items-start gap-1.5 text-sm text-ink-2">
+      <Icon name="map-pin" class="mt-0.5 size-4 shrink-0 text-ink-3" />
+      {c.address}
+    </span>
+    {detailed && (
+      <span class="mt-1.5 flex items-start gap-1.5 text-sm text-ink-2">
+        <Icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-3" />
+        {hoursLabel(c.hours)}
+      </span>
+    )}
+    {detailed && c.needs.length > 0 && (
+      <span class="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+        <span class="font-medium text-ink-2">Necesita hoy:</span>
+        {c.needs.map((t) => (
+          <span class="rounded-full bg-accent-soft px-2 py-0.5 font-bold text-accent-ink">{prettyBloodType(t)}</span>
+        ))}
+      </span>
+    )}
+  </button>
+
+  <div class="border-t border-line px-4 pb-4 pt-3">
+    <a href={telHref(c.phone)} class="inline-flex items-center gap-1.5 font-mono text-xs text-ink-2 hover:text-ink">
+      <Icon name="phone" class="size-4" />
+      {c.phone}
+    </a>
+    <div class="mt-3 grid grid-cols-2 gap-2">
+      <a
+        href={directionsUrl(c)}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-secondary btn-sm pointer-coarse:min-h-11"
+      >
+        Cómo llegar
+        <Icon name="arrow-up-right" class="size-4" />
+        <span class="sr-only">(abre Google Maps en otra pestaña)</span>
+      </a>
+      <button type="button" data-schedule={c.id} class="btn btn-primary btn-sm pointer-coarse:min-h-11">
+        Agendar aquí
+      </button>
+    </div>
+  </div>
+</div>

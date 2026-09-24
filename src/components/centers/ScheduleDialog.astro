@@ -1,0 +1,409 @@
+---
+// Diálogo "Agendar aquí": elige día y hora en un centro y guarda la cita (demo en localStorage).
+// Se abre desde cualquier botón con [data-schedule="id-del-centro"], también los del mapa.
+import Icon from '../Icon.astro';
+import SubmitButton from '../auth/SubmitButton.astro';
+import { centers } from '../../data/centers';
+---
+
+<dialog
+  id="schedule-dialog"
+  class="schedule-dialog"
+  aria-labelledby="schedule-title"
+  data-open="false"
+  data-centers={JSON.stringify(centers)}
+>
+  <div class="flex min-h-0 flex-1 flex-col">
+    <header class="flex items-start gap-4 border-b border-line px-5 pb-4 pt-5 sm:px-6">
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold text-accent-ink">Agendar donación</p>
+        <h2 id="schedule-title" class="mt-1 text-xl font-bold leading-tight tracking-[-0.02em] text-ink" data-center-name></h2>
+        <p class="mt-1 text-sm text-ink-3" data-center-meta></p>
+      </div>
+      <button
+        type="button"
+        data-close
+        class="-mr-2 -mt-1 grid size-10 shrink-0 place-items-center rounded-control text-ink-2 transition-colors hover:bg-sunken hover:text-ink"
+        aria-label="Cerrar"
+      >
+        <Icon name="x" class="size-5" />
+      </button>
+    </header>
+
+    <!-- Sin sesión -->
+    <div data-step="login" hidden class="px-5 py-8 text-center sm:px-6">
+      <span class="mx-auto grid size-14 place-items-center rounded-full bg-accent-soft text-accent-ink">
+        <Icon name="calendar-check" class="size-7" />
+      </span>
+      <h3 class="mt-4 text-lg font-bold text-ink">Inicia sesión para agendar</h3>
+      <p class="mx-auto mt-2 max-w-sm text-ink-2">
+        Necesitamos saber quién eres para reservar tu hora y avisarte si el centro cambia algo.
+      </p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2">
+        <a href="/login" data-auth-link="login" class="btn btn-primary">Iniciar sesión</a>
+        <a href="/register" data-auth-link="register" class="btn btn-secondary">Crear cuenta</a>
+      </div>
+    </div>
+
+    <!-- Elegir día y hora -->
+    <form data-step="pick" hidden class="flex min-h-0 flex-1 flex-col" novalidate>
+      <div class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-5 py-5 sm:px-6">
+        <fieldset>
+          <legend class="text-sm font-semibold text-ink">Día</legend>
+          <div class="day-scroller relative -mx-5 mt-3 flex snap-x gap-2 overflow-x-auto px-5 pb-1 sm:-mx-6 sm:px-6" data-days></div>
+        </fieldset>
+
+        <fieldset class="mt-6">
+          <legend class="text-sm font-semibold text-ink">Hora</legend>
+          <div class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4" data-times></div>
+          <p class="mt-3 text-sm text-ink-3" data-times-empty hidden>No quedan horarios para este día. Elige otro.</p>
+        </fieldset>
+
+        <p class="mt-6 flex gap-3 rounded-control bg-sunken p-3.5 text-sm leading-relaxed text-ink-2">
+          <Icon name="identification-card" class="mt-0.5 size-5 shrink-0 text-ink-3" />
+          <span>
+            Lleva tu documento de identidad y come algo ligero antes de ir.{' '}
+            <a href="/informate/primera-donacion" class="font-semibold text-accent-ink underline-offset-4 hover:underline">Cómo prepararte</a>
+          </span>
+        </p>
+      </div>
+
+      <footer class="border-t border-line px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+        <p class="mb-3 min-h-5 text-sm text-ink-2" data-summary aria-live="polite">Elige un día y una hora.</p>
+        <SubmitButton label="Confirmar cita" loadingLabel="Agendando" />
+      </footer>
+    </form>
+
+    <!-- Confirmada -->
+    <div data-step="done" hidden class="px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8 text-center sm:px-6">
+      <span class="done-check mx-auto grid size-16 place-items-center rounded-full bg-ok-soft text-ok">
+        <Icon name="check-circle" class="size-9" />
+      </span>
+      <h3 class="mt-4 text-xl font-bold text-ink">¡Cita agendada!</h3>
+      <p class="mx-auto mt-2 max-w-sm text-ink-2" data-done-text></p>
+      <p class="mx-auto mt-1 max-w-sm text-sm text-ink-3">La verás en tu cuenta, arriba a la derecha.</p>
+      <button type="button" data-close class="btn btn-primary btn-lg mt-7 w-full">Listo</button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  /* Hoja inferior en móvil, ventana centrada desde 640px. */
+  .schedule-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 24px 60px -20px rgb(0 0 0 / 0.45);
+    transform: translateY(100%);
+    transition: transform 340ms var(--ease-out);
+  }
+  .schedule-dialog[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .schedule-dialog[data-open="true"] {
+    transform: none;
+  }
+  .schedule-dialog::backdrop {
+    background: rgb(10 13 18 / 0.55);
+    opacity: 0;
+    transition: opacity 240ms ease;
+  }
+  .schedule-dialog[data-open="true"]::backdrop {
+    opacity: 1;
+  }
+  @media (min-width: 640px) {
+    .schedule-dialog {
+      max-width: 32rem;
+      max-height: min(90dvh, 46rem);
+      margin: auto;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      opacity: 0;
+      transform: translateY(10px) scale(0.97);
+      transition:
+        opacity 200ms ease,
+        transform 260ms var(--ease-out);
+    }
+    .schedule-dialog[data-open="true"] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  :global(html:has(.schedule-dialog[open])) {
+    overflow: hidden;
+  }
+
+  .day-scroller {
+    scrollbar-width: none;
+  }
+  .day-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Chips de día y hora (radios). */
+  .schedule-dialog :global(.slot) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-control);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 150ms var(--ease-out);
+  }
+  .schedule-dialog :global(label:hover .slot) {
+    border-color: var(--ink-3);
+  }
+  .schedule-dialog :global(label:active .slot) {
+    transform: scale(0.96);
+  }
+  .schedule-dialog :global(input:checked + .slot) {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .schedule-dialog :global(input:focus-visible + .slot) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .done-check {
+    animation: pop-in 420ms var(--ease-out) both;
+  }
+  @keyframes pop-in {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .schedule-dialog,
+    .schedule-dialog[data-open="true"] {
+      transform: none;
+      transition: opacity 150ms ease;
+    }
+  }
+</style>
+
+<script>
+  import { addAppointment, appointmentLabel, getSession, toDateKey } from '../../lib/auth';
+  import { withSubmitting } from '../../lib/forms';
+  import { hoursLabel, type HealthCenter } from '../../data/centers';
+
+  const dialog = document.getElementById('schedule-dialog') as HTMLDialogElement | null;
+
+  if (dialog) {
+    const centers: HealthCenter[] = JSON.parse(dialog.dataset.centers || '[]');
+    const steps = dialog.querySelectorAll<HTMLElement>('[data-step]');
+    const form = dialog.querySelector<HTMLFormElement>('form[data-step="pick"]')!;
+    const daysEl = dialog.querySelector<HTMLElement>('[data-days]')!;
+    const timesEl = dialog.querySelector<HTMLElement>('[data-times]')!;
+    const timesEmpty = dialog.querySelector<HTMLElement>('[data-times-empty]')!;
+    const summary = dialog.querySelector<HTMLElement>('[data-summary]')!;
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    let center: HealthCenter | null = null;
+
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const toClock = (minutes: number) =>
+      `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const fromKey = (key: string) => {
+      const [y, m, d] = key.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+    /** Horas disponibles cada 30 min; la última, una hora antes del cierre. Hoy, solo con 1 h de margen. */
+    function slotsFor(c: HealthCenter, date: Date): string[] {
+      const start = toMinutes(c.hours.open);
+      const end = toMinutes(c.hours.close) - 60;
+      const now = new Date();
+      const isToday = toDateKey(date) === toDateKey(now);
+      const earliest = isToday ? now.getHours() * 60 + now.getMinutes() + 60 : 0;
+      const slots: string[] = [];
+      for (let m = start; m <= end; m += 30) if (m >= earliest) slots.push(toClock(m));
+      return slots;
+    }
+
+    function availableDays(c: HealthCenter): Date[] {
+      const days: Date[] = [];
+      const cursor = new Date();
+      cursor.setHours(0, 0, 0, 0);
+      for (let i = 0; i < 21 && days.length < 10; i++) {
+        const date = new Date(cursor);
+        date.setDate(cursor.getDate() + i);
+        if (c.hours.days.includes(date.getDay()) && slotsFor(c, date).length) days.push(date);
+      }
+      return days;
+    }
+
+    function showStep(name: 'login' | 'pick' | 'done') {
+      steps.forEach((step) => (step.hidden = step.dataset.step !== name));
+    }
+
+    function renderTimes(dateKey: string) {
+      if (!center) return;
+      const slots = slotsFor(center, fromKey(dateKey));
+      timesEl.innerHTML = slots
+        .map(
+          (t) => `
+          <label>
+            <input type="radio" name="time" value="${t}" class="peer sr-only" />
+            <span class="slot h-11 font-mono text-sm font-medium tabular">${t.replace(/^0/, '')}</span>
+          </label>`
+        )
+        .join('');
+      timesEmpty.hidden = slots.length > 0;
+      updateSummary();
+    }
+
+    function renderDays() {
+      if (!center) return;
+      const today = toDateKey(new Date());
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowKey = toDateKey(tomorrow);
+
+      const days = availableDays(center);
+      daysEl.innerHTML = days
+        .map((d, i) => {
+          const key = toDateKey(d);
+          const top =
+            key === today ? 'Hoy' : key === tomorrowKey ? 'Mañana' : d.toLocaleDateString('es-VE', { weekday: 'short' }).replace('.', '');
+          const month = d.toLocaleDateString('es-VE', { month: 'short' }).replace('.', '');
+          return `
+          <label class="shrink-0 snap-start">
+            <input type="radio" name="day" value="${key}" class="sr-only" ${i === 0 ? 'checked' : ''} />
+            <span class="slot h-[4.5rem] w-[4.25rem] flex-col gap-0.5">
+              <span class="text-[0.6875rem] font-semibold uppercase tracking-wide opacity-80">${top}</span>
+              <span class="text-xl font-bold leading-none tabular">${d.getDate()}</span>
+              <span class="text-[0.6875rem] opacity-70">${month}</span>
+            </span>
+          </label>`;
+        })
+        .join('');
+      if (days.length) renderTimes(toDateKey(days[0]));
+    }
+
+    function selection() {
+      const data = new FormData(form);
+      return { day: data.get('day') as string | null, time: data.get('time') as string | null };
+    }
+
+    function updateSummary() {
+      const { day, time } = selection();
+      submit.disabled = !(day && time);
+      if (!day || !time) {
+        summary.textContent = day ? 'Ahora elige una hora.' : 'Elige un día y una hora.';
+        return;
+      }
+      const long = fromKey(day).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' });
+      summary.innerHTML = `<strong class="font-semibold text-ink">${capitalize(long)}, ${time.replace(/^0/, '')}</strong>`;
+    }
+
+    form.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.name === 'day') renderTimes(target.value);
+      else updateSummary();
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = getSession();
+      const { day, time } = selection();
+      if (!user || !center || !day || !time) return;
+      const chosen = center;
+      withSubmitting(submit, () => {
+        const appointment = addAppointment(user.email, {
+          centerId: chosen.id,
+          centerName: chosen.name,
+          date: day,
+          time,
+        });
+        const doneText = dialog.querySelector<HTMLElement>('[data-done-text]');
+        if (doneText) doneText.textContent = `${chosen.name}, ${appointmentLabel(appointment)}.`;
+        showStep('done');
+        dialog.querySelector<HTMLElement>('[data-step="done"] [data-close]')?.focus();
+      });
+    });
+
+    function returnPath(id: string) {
+      const base = `${location.pathname}?agendar=${encodeURIComponent(id)}`;
+      return location.pathname === '/' ? `${base}#centros` : base;
+    }
+
+    function open(id: string) {
+      center = centers.find((c) => c.id === id) ?? null;
+      if (!center) return;
+
+      dialog.querySelector('[data-center-name]')!.textContent = center.name;
+      dialog.querySelector('[data-center-meta]')!.textContent = `${center.address} · ${hoursLabel(center.hours)}`;
+
+      if (getSession()) {
+        form.reset();
+        submit.disabled = true;
+        renderDays();
+        showStep('pick');
+      } else {
+        const next = encodeURIComponent(returnPath(center.id));
+        dialog.querySelectorAll<HTMLAnchorElement>('[data-auth-link]').forEach((link) => {
+          link.href = `/${link.dataset.authLink}?next=${next}`;
+        });
+        showStep('login');
+      }
+
+      dialog.showModal();
+      // Fuerza el cálculo del estado inicial para que la transición de entrada se vea.
+      dialog.getBoundingClientRect();
+      dialog.dataset.open = 'true';
+    }
+
+    function close() {
+      if (!dialog.open) return;
+      dialog.dataset.open = 'false';
+      window.setTimeout(() => dialog.close(), reduceMotion.matches ? 0 : 260);
+    }
+
+    document.addEventListener('click', (e) => {
+      const trigger = (e.target as Element).closest<HTMLElement>('[data-schedule]');
+      if (trigger?.dataset.schedule) open(trigger.dataset.schedule);
+    });
+    dialog.querySelectorAll('[data-close]').forEach((btn) => btn.addEventListener('click', close));
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      close();
+    });
+    // Clic en el fondo oscuro.
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) close();
+    });
+
+    // Al volver de iniciar sesión (?agendar=c1) se reabre el diálogo en ese centro.
+    const params = new URLSearchParams(location.search);
+    const pending = params.get('agendar');
+    if (pending) {
+      params.delete('agendar');
+      const query = params.toString();
+      history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}${location.hash}`);
+      if (getSession()) open(pending);
+    }
+  }
+</script>

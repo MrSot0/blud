@@ -1,0 +1,46 @@
+---
+// Acceso a la sección Infórmate desde la portada.
+import Icon from '../Icon.astro';
+import { infoTopics, infoHref } from '../../data/info';
+---
+
+<section id="informate" class="py-24 lg:py-32">
+  <div class="container-blud grid gap-12 lg:grid-cols-12">
+    <div class="lg:col-span-4" data-reveal>
+      <h2 class="section-title">Infórmate antes de donar</h2>
+      <p class="section-lead">Cinco lecturas cortas para llegar con calma a tu primera donación y entender a dónde va tu sangre.</p>
+      <a href="/informate" class="link-arrow mt-6">
+        Ver todos los temas
+        <Icon name="arrow-right" class="size-4" />
+      </a>
+    </div>
+
+    <ol class="border-t border-line-strong lg:col-span-8">
+      {infoTopics.map((topic, i) => (
+        <li class="border-b border-line-strong" data-reveal style={`--reveal-delay:${i}`}>
+          <a href={infoHref(topic.slug)} class="teaser-row group grid grid-cols-[auto_1fr_auto] items-center gap-5 py-5 sm:gap-6 sm:py-6">
+            <span class="grid size-12 place-items-center rounded-control bg-sunken text-ink-2 transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
+              <Icon name={topic.icon} class="size-6" />
+            </span>
+            <span class="min-w-0">
+              <span class="block text-lg font-semibold tracking-[-0.01em] text-ink sm:text-xl">{topic.title}</span>
+              <span class="mt-0.5 block text-sm leading-snug text-ink-3 sm:text-[0.9375rem]">{topic.short}</span>
+            </span>
+            <span class="teaser-arrow grid size-10 place-items-center rounded-full border border-line-strong text-ink-3 transition-colors duration-200 group-hover:border-ink group-hover:bg-ink group-hover:text-canvas">
+              <Icon name="arrow-right" class="size-4" />
+            </span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .teaser-row .teaser-arrow :global(svg) {
+    transition: transform 240ms var(--ease-out);
+  }
+  @media (hover: hover) {
+    .teaser-row:hover .teaser-arrow :global(svg) { transform: translateX(2px) rotate(-45deg); }
+  }
+</style>

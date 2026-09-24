@@ -1,0 +1,370 @@
+---
+import InfoLayout from '../../components/info/InfoLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { icons, type IconName } from '../../lib/icons';
+
+// Ícono Phosphor incrustado dentro de un SVG en una posición concreta.
+const iconAt = (name: IconName, x: number, y: number, size: number, color: string) =>
+  icons[name].replace('<svg ', `<svg x="${x - size / 2}" y="${y - size / 2}" width="${size}" height="${size}" color="${color}" aria-hidden="true" `);
+
+const split = [
+  { id: 'rojos', name: 'Glóbulos rojos', use: 'cirugías y accidentes', color: '#F2605A', y: 62, icon: 'first-aid-kit' as IconName },
+  { id: 'plasma', name: 'Plasma', use: 'quemaduras graves', color: '#E0A63A', y: 150, icon: 'bandaids' as IconName },
+  { id: 'plaquetas', name: 'Plaquetas', use: 'tratamiento de cáncer', color: '#E9CF7A', y: 238, icon: 'heartbeat' as IconName },
+];
+const originX = 74;
+const originY = 150;
+const destX = 318;
+const pathFor = (y: number) => `M ${originX + 34} ${originY} C 200 ${originY}, 220 ${y}, ${destX - 26} ${y}`;
+
+const forYou: { title: string; text: string; icon: IconName }[] = [
+  {
+    title: 'Conoces tu tipo de sangre',
+    text: 'Te lo confirman con tu primera donación y queda en tu perfil para siempre.',
+    icon: 'drop-half',
+  },
+  {
+    title: 'Tu sangre se analiza',
+    text: 'Se estudia para VIH, hepatitis B y C, sífilis, HTLV y Chagas. Si algo sale alterado, el banco te contacta en privado.',
+    icon: 'microscope',
+  },
+  {
+    title: 'Formas parte de algo',
+    text: 'Muchas personas cuentan la satisfacción de saber que su donación llegó a un hospital de su ciudad.',
+    icon: 'users-three',
+  },
+];
+
+const checkup = ['Tensión arterial', 'Pulso', 'Temperatura', 'Hemoglobina'];
+---
+
+<InfoLayout
+  slug="beneficios"
+  title="Beneficios de donar"
+  lead="Una donación de 10 minutos puede ayudar hasta a tres personas. Y tú también te llevas algo: información sobre tu salud."
+  description="Los beneficios de donar sangre para ti y para tu comunidad, tu impacto a lo largo de los años y lo que dice la evidencia, sin exagerar."
+>
+  <!-- Visual: una donación se reparte entre tres pacientes -->
+  <div slot="visual" class="relative isolate overflow-hidden rounded-panel bg-night p-6 text-white sm:p-8">
+    <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+    <svg viewBox="0 0 480 300" class="split w-full" role="img" aria-label="Una donación se separa en glóbulos rojos, plasma y plaquetas, que ayudan a tres pacientes distintos">
+      {split.map((s, i) => (
+        <g>
+          <path d={pathFor(s.y)} fill="none" stroke="rgb(255 255 255 / 0.1)" stroke-width="2" />
+          <path id={`split-${s.id}`} d={pathFor(s.y)} fill="none" stroke={s.color} stroke-width="2.5" stroke-linecap="round" class="split-path" pathLength="1" style={`--i:${i}`} />
+          <circle r="4.5" fill={s.color} class="split-dot">
+            <animateMotion dur="3.2s" repeatCount="indefinite" begin={`${1.6 + i * 0.5}s`} keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.4 0 0.2 1">
+              <mpath href={`#split-${s.id}`} />
+            </animateMotion>
+          </circle>
+        </g>
+      ))}
+
+      <circle cx={originX} cy={originY} r="36" fill="#CA2B2B" />
+      <circle cx={originX} cy={originY} r="36" fill="none" stroke="#F2605A" stroke-opacity="0.35" stroke-width="10" class="split-pulse" />
+      <Fragment set:html={iconAt('drop-fill', originX, originY, 30, '#FFFFFF')} />
+      <text x={originX} y={originY + 60} text-anchor="middle" fill="rgb(255 255 255 / 0.7)" font-size="13">1 donación</text>
+
+      {split.map((s, i) => (
+        <g class="split-dest" style={`--i:${i}`}>
+          <circle cx={destX} cy={s.y} r="26" fill="#232B3A" stroke={s.color} stroke-width="2" />
+          <Fragment set:html={iconAt(s.icon, destX, s.y, 22, s.color)} />
+          <text x={destX + 38} y={s.y - 3} fill="#FFFFFF" font-size="14" font-weight="600">{s.name}</text>
+          <text x={destX + 38} y={s.y + 15} fill="rgb(255 255 255 / 0.6)" font-size="12">{s.use}</text>
+        </g>
+      ))}
+    </svg>
+  </div>
+
+  <!-- Para ti -->
+  <section class="py-16 lg:py-24">
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Lo que ganas tú</h2>
+        <p class="section-lead">Además de ayudar, cada donación te da información útil sobre tu salud.</p>
+      </div>
+
+      <div class="mt-12 grid gap-4 lg:grid-cols-12">
+        <article class="relative isolate overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-5 lg:row-span-3 lg:p-9" data-reveal>
+          <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
+          <span class="grid size-12 place-items-center rounded-control bg-white/10">
+            <Icon name="stethoscope" class="size-6" />
+          </span>
+          <h3 class="mt-6 text-2xl font-bold tracking-[-0.03em]">Un mini chequeo gratis</h3>
+          <p class="mt-3 max-w-sm leading-relaxed text-white/75">
+            Antes de donar te miden estos valores. Si alguno está fuera de rango, te lo dicen y te recomiendan consultar.
+          </p>
+          <ul class="mt-8 grid grid-cols-2 gap-3">
+            {checkup.map((c, i) => (
+              <li class="checkup-item rounded-control border border-white/10 bg-white/[0.05] p-4" style={`--i:${i}`}>
+                <Icon name={(['gauge', 'heartbeat', 'thermometer-cold', 'drop'] as IconName[])[i]} class="size-5 text-[#F2605A]" />
+                <p class="mt-3 text-sm font-semibold">{c}</p>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        {forYou.map((f, i) => (
+          <article class="flex gap-5 rounded-panel border border-line bg-surface p-6 lg:col-span-7" data-reveal style={`--reveal-delay:${i + 1}`}>
+            <span class="grid size-12 shrink-0 place-items-center rounded-control bg-accent-soft text-accent-ink">
+              <Icon name={f.icon} class="size-6" />
+            </span>
+            <div>
+              <h3 class="text-lg font-bold tracking-[-0.02em] text-ink">{f.title}</h3>
+              <p class="mt-1.5 leading-relaxed text-ink-2">{f.text}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p class="mt-4 flex items-start gap-2 text-sm text-ink-3">
+        <Icon name="info" class="mt-0.5 size-4 shrink-0" />
+        Donar no es una forma de hacerse pruebas. Si crees que pudiste exponerte a una infección, acude a tu centro de salud.
+      </p>
+    </div>
+  </section>
+
+  <!-- Para tu comunidad -->
+  <section class="border-y border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud grid gap-12 lg:grid-cols-12 lg:items-center">
+      <div class="lg:col-span-5" data-reveal>
+        <h2 class="section-title">Lo que gana tu ciudad</h2>
+        <p class="section-lead">
+          La sangre no se fabrica: cada cirugía, parto complicado o tratamiento contra el cáncer depende de que
+          alguien haya donado antes.
+        </p>
+      </div>
+      <ul class="grid gap-4 sm:grid-cols-2 lg:col-span-7">
+        <li class="panel p-6 sm:col-span-2" data-reveal>
+          <p class="text-[clamp(2.5rem,1.8rem+2.4vw,3.75rem)] font-bold leading-none tracking-[-0.05em] text-ink">1 %</p>
+          <p class="mt-3 max-w-md leading-relaxed text-ink-2">
+            Según la OMS, si al menos el 1 % de la población dona sangre, un país cubre sus necesidades básicas.
+          </p>
+        </li>
+        <li class="panel p-6" data-reveal style="--reveal-delay:1">
+          <p class="text-4xl font-bold tracking-[-0.05em] text-ink">3</p>
+          <p class="mt-2 text-sm leading-relaxed text-ink-2">personas pueden recibir ayuda de una sola donación.</p>
+        </li>
+        <li class="panel p-6" data-reveal style="--reveal-delay:2">
+          <p class="text-4xl font-bold tracking-[-0.05em] text-ink">5 días</p>
+          <p class="mt-2 text-sm leading-relaxed text-ink-2">duran las plaquetas. Las reservas se renuevan sin parar.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Calculadora de impacto -->
+  <section class="py-16 lg:py-24" data-impact>
+    <div class="container-blud">
+      <div class="max-w-3xl" data-reveal>
+        <h2 class="section-title">Calcula tu impacto</h2>
+        <p class="section-lead">Mueve los controles y mira a cuántas personas podrías ayudar si donas con regularidad.</p>
+      </div>
+
+      <div class="panel mt-10 grid overflow-hidden lg:grid-cols-12" data-reveal>
+        <div class="flex flex-col gap-8 border-b border-line p-6 sm:p-8 lg:col-span-5 lg:border-b-0 lg:border-r lg:p-10">
+          <div>
+            <div class="flex items-baseline justify-between">
+              <label for="impact-per-year" class="font-semibold text-ink">Donaciones al año</label>
+              <output for="impact-per-year" class="font-mono text-lg font-semibold text-ink" data-out="perYear">3</output>
+            </div>
+            <input id="impact-per-year" type="range" min="1" max="4" step="1" value="3" class="range mt-4 w-full" />
+            <p class="mt-2 text-xs text-ink-3">Hasta 4 al año en hombres y 3 en mujeres.</p>
+          </div>
+          <div>
+            <div class="flex items-baseline justify-between">
+              <label for="impact-years" class="font-semibold text-ink">Años donando</label>
+              <output for="impact-years" class="font-mono text-lg font-semibold text-ink" data-out="years">5</output>
+            </div>
+            <input id="impact-years" type="range" min="1" max="20" step="1" value="5" class="range mt-4 w-full" />
+          </div>
+          <div class="mt-auto rounded-control bg-accent-soft p-5">
+            <p class="text-sm text-ink-2">Podrías ayudar hasta a</p>
+            <p class="mt-1 text-5xl font-extrabold tracking-[-0.05em] text-accent-ink tabular" aria-live="polite">
+              <span data-out="people">45</span> <span class="text-2xl font-bold">personas</span>
+            </p>
+            <p class="mt-1 text-sm text-ink-3"><span data-out="donations">15</span> donaciones × 3 componentes</p>
+          </div>
+        </div>
+        <div class="flex items-center p-6 sm:p-8 lg:col-span-7 lg:p-10">
+          <div class="impact-grid grid w-full gap-1.5" aria-hidden="true">
+            {Array.from({ length: 240 }, (_, i) => (
+              <span class="impact-dot aspect-square rounded-full" data-dot={i}></span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Evidencia -->
+  <section class="border-t border-line bg-sunken py-16 lg:py-24">
+    <div class="container-blud grid gap-10 lg:grid-cols-12">
+      <div class="lg:col-span-4" data-reveal>
+        <h2 class="section-title">Sin exagerar</h2>
+        <p class="section-lead">Circulan muchas promesas sobre donar. Esto es lo que sí y lo que no.</p>
+      </div>
+      <ul class="grid gap-3 lg:col-span-8" data-reveal style="--reveal-delay:1">
+        <li class="flex gap-4 rounded-panel bg-surface p-5">
+          <Icon name="x-circle" class="mt-0.5 size-5 shrink-0 text-accent-ink" />
+          <p class="leading-relaxed text-ink-2"><strong class="font-semibold text-ink">Donar no "limpia" la sangre ni hace adelgazar.</strong> Tu cuerpo simplemente repone lo que se extrajo.</p>
+        </li>
+        <li class="flex gap-4 rounded-panel bg-surface p-5">
+          <Icon name="warning-circle" class="mt-0.5 size-5 shrink-0 text-warn" />
+          <p class="leading-relaxed text-ink-2"><strong class="font-semibold text-ink">Los beneficios para el corazón no están demostrados.</strong> Algunos estudios ven menos problemas en donantes habituales, pero en parte porque quien dona ya suele estar sano.</p>
+        </li>
+        <li class="flex gap-4 rounded-panel bg-surface p-5">
+          <Icon name="check-circle" class="mt-0.5 size-5 shrink-0 text-ok" />
+          <p class="leading-relaxed text-ink-2"><strong class="font-semibold text-ink">El beneficio mayor es para quien la recibe.</strong> Y el tuyo más concreto es conocer tus valores y tu tipo de sangre.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+</InfoLayout>
+
+<style>
+  /* Reparto de la donación */
+  .split-path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: split-draw 1100ms var(--ease-out) both;
+    animation-delay: calc(500ms + var(--i) * 180ms);
+  }
+  @keyframes split-draw {
+    to { stroke-dashoffset: 0; }
+  }
+  .split-dest {
+    opacity: 0;
+    animation: split-dest 600ms var(--ease-out) both;
+    animation-delay: calc(1300ms + var(--i) * 180ms);
+  }
+  @keyframes split-dest {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .split-pulse {
+    transform-origin: 74px 150px;
+    animation: split-pulse 2.4s ease-out infinite;
+  }
+  @keyframes split-pulse {
+    from { transform: scale(1); opacity: 0.9; }
+    to { transform: scale(1.35); opacity: 0; }
+  }
+
+  .checkup-item {
+    transition: transform 300ms var(--ease-out), background-color 300ms ease;
+  }
+  @media (hover: hover) {
+    .checkup-item:hover { transform: translateY(-2px); background: rgb(255 255 255 / 0.08); }
+  }
+
+  /* Calculadora */
+  .impact-grid { grid-template-columns: repeat(20, minmax(0, 1fr)); }
+  @media (min-width: 640px) { .impact-grid { grid-template-columns: repeat(24, minmax(0, 1fr)); } }
+  .impact-dot {
+    background: var(--line);
+    transition: background-color 300ms ease, transform 400ms var(--ease-out);
+    transition-delay: calc(var(--d, 0) * 1ms);
+  }
+  .impact-dot.is-on {
+    background: var(--accent);
+    transform: scale(1.08);
+  }
+
+  .range {
+    appearance: none;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--line) var(--fill, 50%));
+    cursor: pointer;
+  }
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    box-shadow: 0 2px 8px hsl(var(--shadow-tint) / 0.25);
+    transition: transform 160ms var(--ease-out);
+  }
+  .range::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--surface);
+    border: 2px solid var(--accent);
+  }
+  .range:active::-webkit-slider-thumb { transform: scale(1.12); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .split-path { animation: none; stroke-dashoffset: 0; }
+    .split-dest { animation: none; opacity: 1; }
+    .split-pulse { animation: none; opacity: 0; }
+    .impact-dot { transition-delay: 0ms; }
+  }
+</style>
+
+<script>
+  // Sin movimiento continuo si la persona lo prefiere.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelector<SVGSVGElement>('svg.split')?.pauseAnimations();
+    document.querySelectorAll<SVGElement>('.split-dot').forEach((dot) => (dot.style.display = 'none'));
+  }
+
+  // ----- Calculadora de impacto -----
+  const impact = document.querySelector<HTMLElement>('[data-impact]');
+  if (impact) {
+    const perYear = impact.querySelector<HTMLInputElement>('#impact-per-year');
+    const years = impact.querySelector<HTMLInputElement>('#impact-years');
+    const out = (key: string) => impact.querySelector<HTMLElement>(`[data-out="${key}"]`);
+    const dots = Array.from(impact.querySelectorAll<HTMLElement>('.impact-dot'));
+    let shown = 0;
+    let raf = 0;
+
+    const fill = (input: HTMLInputElement) => {
+      const pct = ((Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100;
+      input.style.setProperty('--fill', `${pct}%`);
+    };
+
+    const countTo = (target: number) => {
+      cancelAnimationFrame(raf);
+      const from = shown;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - start) / 500);
+        shown = Math.round(from + (target - from) * (1 - Math.pow(1 - t, 3)));
+        const el = out('people');
+        if (el) el.textContent = String(shown);
+        if (t < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    };
+
+    const update = () => {
+      if (!perYear || !years) return;
+      const donations = Number(perYear.value) * Number(years.value);
+      const people = donations * 3;
+      const perYearOut = out('perYear');
+      const yearsOut = out('years');
+      const donationsOut = out('donations');
+      if (perYearOut) perYearOut.textContent = perYear.value;
+      if (yearsOut) yearsOut.textContent = years.value;
+      if (donationsOut) donationsOut.textContent = String(donations);
+      fill(perYear);
+      fill(years);
+      countTo(people);
+
+      const previous = dots.filter((d) => d.classList.contains('is-on')).length;
+      dots.forEach((dot, i) => {
+        const on = i < people;
+        // Solo se escalonan los puntos que cambian.
+        dot.style.setProperty('--d', String(Math.max(0, (on ? i - previous : previous - i)) * 3));
+        dot.classList.toggle('is-on', on);
+      });
+    };
+
+    perYear?.addEventListener('input', update);
+    years?.addEventListener('input', update);
+    update();
+  }
+</script>
