@@ -1,14 +1,18 @@
-// POST /api/chat - Bluddie, el asistente de BLUD, con Gemini 2.5 Flash-Lite.
+// POST /api/chat - Bluddie, el asistente de BLUD, con Gemini 3.1 Flash-Lite.
 // Se ejecuta en el servidor para que la clave de Gemini nunca llegue al navegador.
 import type { APIRoute } from 'astro';
 import { GEMINI_API_KEY } from 'astro:env/server';
 import { centers, hoursLabel, prettyBloodType } from '../../data/centers';
 import { infoTopics, infoHref } from '../../data/info';
+import { questions } from '../../data/eligibility';
 
 export const prerender = false;
 
-const MODEL = 'gemini-2.5-flash-lite';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// El Flash-Lite más barato disponible para cuentas nuevas (retiro anunciado: 7 may 2027).
+// Google a veces responde 503 (saturado): se reintenta una vez y luego se usa el siguiente Flash-Lite.
+const ATTEMPTS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
+const endpoint = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const MAX_MESSAGES = 16;
 const MAX_CHARS = 800;
@@ -20,6 +24,18 @@ const centerLines = centers
   })
   .join('\n');
 
+// Mismos criterios que el test de /elegibilidad, para que Bluddie no se contradiga con él.
+const eligibilityLines = questions
+  .map((q) => {
+    const deferrals = q.options
+      .filter((o) => !o.eligible && o.timeframe)
+      .map((o) => `${o.label}: ${o.timeframe}`)
+      .join(' / ');
+    return deferrals ? `- ${q.title} ${deferrals}` : null;
+  })
+  .filter(Boolean)
+  .join('\n');
+
 const topicLines = infoTopics.map((t) => `- ${t.title}: ${infoHref(t.slug)}`).join('\n');
 
 const SYSTEM_PROMPT = `Eres Bluddie, el asistente de BLUD, una red de donación de sangre en Maracaibo y San Francisco (Zulia, Venezuela).
@@ -29,7 +45,7 @@ Tu trabajo: resolver dudas sobre donación de sangre, requisitos, preparación, 
 Reglas:
 - Responde siempre en español, con tono cercano y claro, en 2 a 5 frases. Usa listas cortas con guiones solo si ayudan.
 - Escribe texto plano: sin Markdown, sin asteriscos ni encabezados.
-- No diagnosticas ni reemplazas al personal médico. Sobre si alguien puede donar, orienta con criterios generales (18 a 65 años, más de 50 kg, buena salud, haber comido y dormido) y aclara que la decisión final la toma el banco de sangre.
+- No diagnosticas ni reemplazas al personal médico. Sobre si alguien puede donar, usa los criterios de abajo, sé coherente (si hay que esperar, dilo claramente sin decir "sí puedes") y aclara que la decisión final la toma el banco de sangre. Sugiere el test de /elegibilidad cuando ayude.
 - Ante una emergencia médica, indica llamar al 911 o acudir al centro más cercano.
 - Si preguntan algo ajeno a la donación de sangre o a BLUD, dilo con amabilidad y vuelve al tema.
 - No inventes centros, horarios ni teléfonos: usa solo los datos de abajo.
@@ -39,6 +55,9 @@ Páginas útiles del sitio:
 - Mapa de centros y agenda de citas («Agendar aquí»): /centros
 - Crear cuenta: /register · Iniciar sesión: /login
 ${topicLines}
+
+Criterios de elegibilidad (pregunta del test y plazos de espera):
+${eligibilityLines}
 
 Centros de la red:
 ${centerLines}`;
@@ -88,37 +107,52 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   } catch {}
   if (!messages) return json({ error: 'Mensaje no válido.' }, 400);
 
-  try {
-    const res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
-        generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
+  const payload = JSON.stringify({
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+    generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+  });
 
-    if (!res.ok) {
-      console.error('Gemini respondió', res.status, await res.text());
-      const busy = res.status === 429;
-      return json(
-        { error: busy ? 'Bluddie está atendiendo a mucha gente. Inténtalo en un minuto.' : 'No pude responder ahora. Inténtalo de nuevo.' },
-        busy ? 429 : 502
-      );
+  let lastStatus = 0;
+  for (const [i, model] of ATTEMPTS.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 600));
+    try {
+      const res = await fetch(endpoint(model), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY,
+          // Sin compresión: evita respuestas gzip que algunos entornos no descomprimen.
+          'Accept-Encoding': 'identity',
+        },
+        body: payload,
+        signal: AbortSignal.timeout(15_000),
+      });
+
+      if (!res.ok) {
+        lastStatus = res.status;
+        console.error(`Gemini (${model}) respondió`, res.status, await res.text());
+        // Solo vale la pena probar otro modelo si este está saturado o no disponible.
+        if ([404, 429, 500, 503].includes(res.status)) continue;
+        break;
+      }
+
+      const data = await res.json();
+      const reply: string = (data?.candidates?.[0]?.content?.parts ?? [])
+        .map((p: { text?: string }) => p.text ?? '')
+        .join('')
+        .trim();
+
+      if (!reply) return json({ error: 'No tengo una respuesta para eso. ¿Puedes reformular la pregunta?' }, 502);
+      return json({ reply });
+    } catch (error) {
+      console.error(`Error al llamar a Gemini (${model})`, error);
     }
-
-    const data = await res.json();
-    const reply: string = (data?.candidates?.[0]?.content?.parts ?? [])
-      .map((p: { text?: string }) => p.text ?? '')
-      .join('')
-      .trim();
-
-    if (!reply) return json({ error: 'No tengo una respuesta para eso. ¿Puedes reformular la pregunta?' }, 502);
-    return json({ reply });
-  } catch (error) {
-    console.error('Error al llamar a Gemini', error);
-    return json({ error: 'No pude responder ahora. Inténtalo de nuevo.' }, 502);
   }
+
+  const busy = lastStatus === 429 || lastStatus === 503;
+  return json(
+    { error: busy ? 'Bluddie está atendiendo a mucha gente. Inténtalo en un minuto.' : 'No pude responder ahora. Inténtalo de nuevo.' },
+    busy ? 429 : 502
+  );
 };
