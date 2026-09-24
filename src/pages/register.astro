@@ -18,7 +18,7 @@ const pretty = (t: string) => t.replace('-', '−');
       class="mb-6 hidden items-start gap-3 rounded-control bg-ok-soft px-4 py-3 text-sm font-medium text-ok"
     >
       <Icon name="check-circle" class="mt-0.5 size-5 shrink-0" />
-      <span>Cuenta creada. Te avisaremos cuando un centro cercano necesite tu tipo de sangre.</span>
+      <span data-success-text>Cuenta creada. Te avisaremos cuando un centro cercano necesite tu tipo de sangre.</span>
     </div>
 
     <form id="register-form" novalidate class="flex flex-col gap-6">
@@ -132,7 +132,7 @@ const pretty = (t: string) => t.replace('-', '−');
 
     <p class="mt-10 border-t border-line pt-6 text-ink-2">
       ¿Ya tienes cuenta?
-      <a href="/login" class="link-arrow ml-1">
+      <a href="/login" class="link-arrow ml-1" data-keep-next>
         Iniciar sesión
         <Icon name="arrow-right" class="size-4" />
       </a>
@@ -156,6 +156,7 @@ const pretty = (t: string) => t.replace('-', '−');
     validateEmailField,
     withSubmitting,
   } from '../lib/forms';
+  import { emailExists, register, safeNext } from '../lib/auth';
 
   const form = document.getElementById('register-form') as HTMLFormElement | null;
   const successBanner = document.getElementById('form-success');
@@ -190,7 +191,14 @@ const pretty = (t: string) => t.replace('-', '−');
       return true;
     }
 
-    const validateEmail = () => validateEmailField(emailInput, emailError);
+    function validateEmail(): boolean {
+      if (!validateEmailField(emailInput, emailError)) return false;
+      if (emailExists(emailInput.value)) {
+        setError(emailInput, emailError, 'Ya existe una cuenta con este correo. Inicia sesión.');
+        return false;
+      }
+      return true;
+    }
 
     function validatePassword(): boolean {
       const value = passwordInput.value;
@@ -273,14 +281,41 @@ const pretty = (t: string) => t.replace('-', '−');
       if (firstInvalid) return firstInvalid.input.focus();
       if (!submit) return;
 
-      withSubmitting(submit, () => {
+      const bloodType = (new FormData(form).get('bloodType') as string | null) ?? '';
+
+      withSubmitting(submit, async () => {
+        const result = await register({
+          name: nameInput.value,
+          email: emailInput.value,
+          password: passwordInput.value,
+          bloodType,
+        });
+        if (!result.ok) {
+          submit.disabled = false;
+          setError(emailInput, emailError, result.error);
+          emailInput.focus();
+          return;
+        }
+        const firstName = result.user.name.split(/\s+/)[0];
+        const text = successBanner?.querySelector('[data-success-text]');
+        if (text) text.textContent = `¡Te damos la bienvenida, ${firstName}! Tu cuenta está lista y ya iniciaste sesión.`;
         successBanner?.classList.remove('hidden');
         successBanner?.classList.add('flex');
         form.classList.add('opacity-60', 'pointer-events-none');
         successBanner?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const next = safeNext(new URLSearchParams(location.search).get('next'));
+        window.setTimeout(() => location.assign(next), 1600);
       });
     });
 
     bindPasswordToggles(form);
+  }
+
+  // Conserva el destino (?next=) al cambiar entre registro e inicio de sesión.
+  const nextParam = new URLSearchParams(location.search).get('next');
+  if (nextParam) {
+    document.querySelectorAll<HTMLAnchorElement>('[data-keep-next]').forEach((link) => {
+      link.href = `${link.pathname}?next=${encodeURIComponent(nextParam)}`;
+    });
   }
 </script>

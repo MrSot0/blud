@@ -244,7 +244,7 @@ const notifications = [
 
       <div class="lg:col-span-6">
         <div class="notify-stage relative mx-auto max-w-md" aria-label="Ejemplo de avisos que recibirías" role="img">
-          <div class="absolute -inset-8 -z-10 rounded-[2rem] bg-[radial-gradient(60%_60%_at_50%_40%,color-mix(in_srgb,var(--accent)_14%,transparent),transparent)]" aria-hidden="true"></div>
+          <div class="absolute -inset-x-4 -inset-y-8 -z-10 rounded-[2rem] sm:-inset-8 bg-[radial-gradient(60%_60%_at_50%_40%,color-mix(in_srgb,var(--accent)_14%,transparent),transparent)]" aria-hidden="true"></div>
           <ul class="grid gap-3" aria-hidden="true">
             {notifications.map((n, i) => (
               <li class="notify-card flex gap-3.5 rounded-panel border border-line bg-surface/95 p-4 shadow-[0_18px_40px_-24px_hsl(var(--shadow-tint)/0.45)] backdrop-blur" style={`--i:${i}`}>

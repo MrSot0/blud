@@ -13,11 +13,9 @@ const slides = [
 const src = (id: string, w: number) => `https://images.unsplash.com/${id}?q=72&w=${w}&auto=format&fit=crop`;
 const srcset = (id: string) => `${src(id, 768)} 768w, ${src(id, 1280)} 1280w, ${src(id, 1920)} 1920w`;
 
-const facts = [
-  { value: "3", unit: "personas", text: "pueden recibir ayuda de una sola donación." },
-  { value: "450", unit: "ml", text: "se extraen. Tu cuerpo repone ese volumen en pocas semanas." },
-  { value: "10", unit: "min", text: "dura la extracción. La visita completa toma cerca de una hora." },
-];
+// Segunda línea del titular: rota entre el lema y datos de la donación.
+// Frases cortas a propósito: caben en una línea desde 375px, así el titular no deja hueco.
+const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
 ---
 
 <section id="inicio" class="hero relative isolate overflow-hidden bg-blud-shadow-grey text-white" data-hero>
@@ -50,14 +48,23 @@ const facts = [
     <div class="grain absolute inset-0"></div>
   </div>
 
-  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] items-center pb-36 pt-20 lg:grid-cols-12 lg:pb-40">
+  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] items-center pb-32 pt-20 lg:grid-cols-12">
     <div class="lg:col-span-9 xl:col-span-8">
       <h1
         class="hero-in text-[clamp(2.625rem,1.3rem+4.2vw,4.5rem)] font-extrabold leading-[0.98] tracking-[-0.045em]"
         style="--i:0"
       >
         <span class="lg:whitespace-nowrap">Conectando donantes,</span>
-        <span class="block text-[#F2605A]">salvando vidas.</span>
+        <span class="sr-only">salvando vidas.</span>
+        <span class="hero-rotator grid text-[#F2605A]" aria-hidden="true" data-rotator>
+          {phrases.map((phrase, i) => (
+            <span class="hero-phrase" data-state={i === 0 ? 'active' : ''}>
+              {phrase.split(' ').map((word, w) => (
+                <Fragment><span class="hero-word" style={`--w:${w}`}>{word}</span>{' '}</Fragment>
+              ))}
+            </span>
+          ))}
+        </span>
       </h1>
 
       <p class="hero-in mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
@@ -79,51 +86,20 @@ const facts = [
     </div>
   </div>
 
-  <!-- Controles del fondo: pausa y selección de imagen -->
-  <div class="container-blud pointer-events-none absolute inset-x-0 bottom-28 flex justify-end lg:bottom-32">
-    <div class="hero-in pointer-events-auto flex items-center gap-3" style="--i:3">
-      <div class="flex items-center gap-1.5" role="group" aria-label="Imágenes de fondo">
-        {slides.map((_, i) => (
-          <button
-            type="button"
-            class="hero-bar group relative h-6 w-7 sm:w-9"
-            data-go={i}
-            aria-label={`Ver imagen ${i + 1} de ${slides.length}`}
-            aria-current={i === 0 ? 'true' : undefined}
-          >
-            <span class="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 overflow-hidden rounded-full bg-white/25 transition-colors group-hover:bg-white/40">
-              <span class="hero-bar-fill absolute inset-0 origin-left rounded-full bg-white"></span>
-            </span>
-          </button>
-        ))}
-      </div>
-      <button
-        type="button"
-        id="hero-toggle"
-        class="grid size-9 place-items-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
-        aria-label="Pausar imágenes de fondo"
-      >
-        <span data-icon-pause><Icon name="pause" class="size-3.5" /></span>
-        <span data-icon-play class="hidden"><Icon name="play" class="size-3.5" /></span>
-      </button>
-    </div>
+  <!-- Pausa: detiene el cambio de fondo y del titular (WCAG 2.2.2) -->
+  <div class="container-blud pointer-events-none absolute inset-x-0 bottom-24 flex justify-end">
+    <button
+      type="button"
+      id="hero-toggle"
+      class="hero-in pointer-events-auto grid size-9 place-items-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+      style="--i:3"
+      aria-label="Pausar animaciones del encabezado"
+    >
+      <span data-icon-pause><Icon name="pause" class="size-3.5" /></span>
+      <span data-icon-play class="hidden"><Icon name="play" class="size-3.5" /></span>
+    </button>
   </div>
 </section>
-
-<!-- Datos clave: solapan el borde inferior del hero -->
-<div class="container-blud relative z-10 -mt-20">
-  <ul class="panel grid divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0" aria-label="Datos sobre la donación">
-    {facts.map((fact, i) => (
-      <li class="flex flex-col gap-3 p-6 lg:p-8" data-reveal style={`--reveal-delay:${i}`}>
-        <p class="flex items-baseline gap-1.5 text-ink">
-          <span class="text-5xl font-bold tracking-[-0.05em] tabular">{fact.value}</span>
-          <span class="font-mono text-sm font-medium uppercase text-accent-ink">{fact.unit}</span>
-        </p>
-        <p class="max-w-[28ch] text-[0.9375rem] leading-relaxed text-ink-2">{fact.text}</p>
-      </li>
-    ))}
-  </ul>
-</div>
 
 <style>
   .hero {
@@ -158,21 +134,36 @@ const facts = [
     to { transform: scale(1.01) translate3d(0, 0, 0); }
   }
 
-  .hero-bar-fill {
-    transform: scaleX(0);
+  /* Titular rotativo: todas las frases ocupan la misma celda, así la altura
+     es la de la frase más larga y el contenido de abajo nunca salta. */
+  .hero-phrase {
+    grid-area: 1 / 1;
   }
-  .hero-bar[aria-current="true"] .hero-bar-fill {
-    animation: hero-progress var(--slide-duration) linear both;
+  .hero-word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(0.45em);
+    filter: blur(8px);
   }
-  .hero-bar.is-done .hero-bar-fill {
-    transform: scaleX(1);
+  .hero-phrase[data-state="active"] .hero-word {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+    transition:
+      opacity 420ms ease,
+      transform 640ms var(--ease-out),
+      filter 520ms ease;
+    transition-delay: calc(var(--w) * 60ms);
   }
-  .hero.is-paused .hero-bar-fill {
-    animation-play-state: paused;
-  }
-  @keyframes hero-progress {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
+  .hero-phrase[data-state="leaving"] .hero-word {
+    opacity: 0;
+    transform: translateY(-0.3em);
+    filter: blur(6px);
+    transition:
+      opacity 240ms ease,
+      transform 300ms ease-in,
+      filter 240ms ease;
+    transition-delay: calc(var(--w) * 25ms);
   }
 
   .hero-in {
@@ -187,7 +178,7 @@ const facts = [
   @media (prefers-reduced-motion: reduce) {
     .hero-slide { transition-duration: 300ms; }
     .hero-slide img, .hero-slide[data-state] img { animation: none; transform: none; }
-    .hero-bar[aria-current="true"] .hero-bar-fill { animation: none; transform: scaleX(1); }
+    .hero-word { transform: none !important; filter: none !important; }
     .hero-in { animation: none; }
   }
 </style>
@@ -197,19 +188,45 @@ const facts = [
 
   if (hero) {
     const slides = Array.from(hero.querySelectorAll<HTMLElement>('.hero-slide'));
-    const bars = Array.from(hero.querySelectorAll<HTMLButtonElement>('[data-go]'));
+    const phrases = Array.from(hero.querySelectorAll<HTMLElement>('.hero-phrase'));
     const toggle = hero.querySelector<HTMLButtonElement>('#hero-toggle');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Duración de cada imagen; se comparte con el CSS (barra de progreso y zoom).
-    const DURATION = 6500;
-    hero.style.setProperty('--slide-duration', `${DURATION}ms`);
+    // Duración de cada imagen (se comparte con el zoom del CSS) y de cada frase del titular.
+    const SLIDE_MS = 6500;
+    const PHRASE_MS = 3200;
+    hero.style.setProperty('--slide-duration', `${SLIDE_MS}ms`);
 
-    let index = 0;
-    let timer = 0;
-    let remaining = DURATION;
-    let startedAt = 0;
     let userPaused = reduceMotion;
     let onScreen = true;
+    const isRunning = () => !userPaused && onScreen && !document.hidden;
+
+    /** Temporizador que se puede pausar y reanudar conservando el tiempo restante. */
+    const createTicker = (duration: number, onTick: () => void) => {
+      let timer = 0;
+      let remaining = duration;
+      let startedAt = 0;
+      return {
+        start() {
+          if (timer) return;
+          startedAt = performance.now();
+          timer = window.setTimeout(() => {
+            timer = 0;
+            remaining = duration;
+            onTick();
+            if (isRunning()) this.start();
+          }, remaining);
+        },
+        stop() {
+          if (!timer) return;
+          clearTimeout(timer);
+          timer = 0;
+          remaining = Math.max(0, remaining - (performance.now() - startedAt));
+        },
+      };
+    };
+
+    // ----- Imágenes de fondo -----
+    let slideIndex = 0;
 
     const loadSlide = (i: number): Promise<void> => {
       const img = slides[i]?.querySelector('img');
@@ -223,78 +240,58 @@ const facts = [
       return img.decode().catch(() => undefined);
     };
 
-    const isRunning = () => !userPaused && onScreen && !document.hidden;
-
-    const updateBars = () => {
-      bars.forEach((bar, i) => {
-        bar.classList.toggle('is-done', i < index);
-        if (i === index) {
-          // Reinicia la animación de progreso de la barra activa.
-          bar.removeAttribute('aria-current');
-          void bar.offsetWidth;
-          bar.setAttribute('aria-current', 'true');
-        } else {
-          bar.removeAttribute('aria-current');
-        }
-      });
-    };
-
-    const stopTimer = () => {
-      if (!timer) return;
-      clearTimeout(timer);
-      timer = 0;
-      remaining = Math.max(0, remaining - (performance.now() - startedAt));
-    };
-
-    const startTimer = () => {
-      clearTimeout(timer);
-      startedAt = performance.now();
-      timer = window.setTimeout(() => {
-        timer = 0;
-        goTo(index + 1);
-      }, remaining);
-    };
-
-    const sync = () => {
-      hero.classList.toggle('is-paused', !isRunning());
-      if (isRunning()) {
-        if (!timer) startTimer();
-      } else {
-        stopTimer();
-      }
-    };
-
-    const goTo = async (target: number) => {
-      const next = (target + slides.length) % slides.length;
-      if (next === index) return;
+    const nextSlide = async () => {
+      const next = (slideIndex + 1) % slides.length;
       await loadSlide(next);
 
-      const prev = slides[index];
+      const prev = slides[slideIndex];
       prev.dataset.state = 'leaving';
       window.setTimeout(() => {
         if (prev.dataset.state === 'leaving') prev.dataset.state = '';
       }, 1500);
 
-      index = next;
-      slides[index].dataset.state = 'active';
-      remaining = DURATION;
-      updateBars();
-      clearTimeout(timer);
-      timer = 0;
-      sync();
-      loadSlide((index + 1) % slides.length);
+      slideIndex = next;
+      slides[slideIndex].dataset.state = 'active';
+      loadSlide((slideIndex + 1) % slides.length);
+    };
+
+    // ----- Titular rotativo -----
+    let phraseIndex = 0;
+
+    const showPhrase = (next: number) => {
+      const prev = phrases[phraseIndex];
+      prev.dataset.state = 'leaving';
+      window.setTimeout(() => {
+        if (prev.dataset.state === 'leaving') prev.dataset.state = '';
+      }, 500);
+
+      phraseIndex = next;
+      phrases[phraseIndex].dataset.state = 'active';
+    };
+
+    const slideTicker = createTicker(SLIDE_MS, nextSlide);
+    const phraseTicker = createTicker(PHRASE_MS, () => showPhrase((phraseIndex + 1) % phrases.length));
+
+    const sync = () => {
+      hero.classList.toggle('is-paused', !isRunning());
+      if (isRunning()) {
+        slideTicker.start();
+        phraseTicker.start();
+      } else {
+        slideTicker.stop();
+        phraseTicker.stop();
+      }
     };
 
     const setPaused = (paused: boolean) => {
       userPaused = paused;
-      toggle?.setAttribute('aria-label', paused ? 'Reanudar imágenes de fondo' : 'Pausar imágenes de fondo');
+      toggle?.setAttribute('aria-label', paused ? 'Reanudar animaciones del encabezado' : 'Pausar animaciones del encabezado');
       toggle?.querySelector('[data-icon-pause]')?.classList.toggle('hidden', paused);
       toggle?.querySelector('[data-icon-play]')?.classList.toggle('hidden', !paused);
       sync();
     };
 
     toggle?.addEventListener('click', () => setPaused(!userPaused));
-    bars.forEach((bar) => bar.addEventListener('click', () => goTo(Number(bar.dataset.go))));
     document.addEventListener('visibilitychange', sync);
 
     if ('IntersectionObserver' in window) {

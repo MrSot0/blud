@@ -1,58 +1,27 @@
 ---
-// Map.astro - Centros de salud registrados en BLUD (Leaflet + enlaces reales a Google Maps).
+// Map.astro - Vista previa de los centros de salud en la portada.
+// El mapa completo, con filtros y distancia, vive en /centros.
 // Leaflet se carga solo cuando el mapa está por entrar en pantalla.
 import Icon from '../Icon.astro';
-
-interface HealthCenter {
-  id: string;
-  name: string;
-  type: string;
-  address: string;
-  coords: [number, number];
-  phone: string;
-  mapsUrl: string;
-}
-
-const centersData: HealthCenter[] = [
-  {
-    id: "c1",
-    name: "Banco de Sangre del Zulia",
-    type: "Banco de sangre principal",
-    address: "Av. 22 con Calle 67, Maracaibo",
-    coords: [10.6698, -71.6285],
-    phone: "+58 261-7000001",
-    mapsUrl: "https://maps.app.goo.gl/PA9nwY6t9VGKSuiE6",
-  },
-  {
-    id: "c2",
-    name: "Hospital Universitario de Maracaibo",
-    type: "Hospital general",
-    address: "Av. 16 (Goajira), Maracaibo",
-    coords: [10.6831, -71.6322],
-    phone: "+58 261-7000002",
-    mapsUrl: "https://maps.app.goo.gl/z1jzD6CASFry3Sfi7",
-  },
-  {
-    id: "c3",
-    name: "Policlínica Amado",
-    type: "Clínica privada aliada",
-    address: "Av. 5 de Julio, Maracaibo",
-    coords: [10.6625, -71.6150],
-    phone: "+58 261-7000003",
-    mapsUrl: "https://maps.app.goo.gl/4oMLgab81CbtjLyx7",
-  },
-];
-
-const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
+import CenterCard from '../centers/CenterCard.astro';
+import ScheduleDialog from '../centers/ScheduleDialog.astro';
+import { centers, featuredCenters } from '../../data/centers';
+import '../../styles/map.css';
 ---
 
-<section id="centros" class="border-y border-line bg-sunken py-24 lg:py-32" data-centers={JSON.stringify(centersData)}>
+<section id="centros" class="border-y border-line bg-sunken py-24 lg:py-32" data-centers={JSON.stringify(featuredCenters)}>
   <div class="container-blud">
-    <div class="max-w-3xl" data-reveal>
-      <h2 class="section-title">Centros de salud conectados</h2>
-      <p class="section-lead">
-        Hospitales, bancos de sangre y clínicas integradas en BLUD. Elige uno para ubicarlo en el mapa.
-      </p>
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
+      <div class="max-w-3xl">
+        <h2 class="section-title">Centros de salud conectados</h2>
+        <p class="section-lead">
+          Hospitales, bancos de sangre y clínicas integradas en BLUD. Elige uno para ubicarlo en el mapa.
+        </p>
+      </div>
+      <a href="/centros" class="btn btn-secondary shrink-0 self-start lg:self-auto">
+        <Icon name="map-trifold" class="size-5" />
+        Ver mapa completo
+      </a>
     </div>
 
     <div class="mt-12 grid gap-5 lg:grid-cols-12 lg:gap-6" data-reveal>
@@ -70,46 +39,14 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
           />
         </div>
 
-        <div class="mt-5 flex items-center justify-between text-sm">
-          <p class="font-semibold text-ink" aria-live="polite">
-            <span id="center-count" class="tabular">{centersData.length}</span> centros
-          </p>
-        </div>
+        <p class="mt-5 text-sm font-semibold text-ink" aria-live="polite">
+          <span id="center-count" class="tabular">{featuredCenters.length}</span> centros
+        </p>
 
         <ul id="centers-list" class="mt-4 flex flex-col gap-2">
-          {centersData.map((c) => (
+          {featuredCenters.map((c) => (
             <li data-center-item={c.id} data-search={`${c.name} ${c.type} ${c.address}`.toLowerCase()}>
-              <div class="center-card rounded-control border border-line transition-colors duration-200 hover:border-line-strong">
-                <button
-                  type="button"
-                  data-center-id={c.id}
-                  aria-pressed="false"
-                  class="w-full rounded-t-control px-4 pb-3 pt-4 text-left"
-                >
-                  <span class="block font-semibold leading-snug text-ink">{c.name}</span>
-                  <span class="mt-1 block text-sm text-ink-3">{c.type}</span>
-                  <span class="mt-2 flex items-center gap-1.5 text-sm text-ink-2">
-                    <Icon name="map-pin" class="size-4 shrink-0 text-ink-3" />
-                    {c.address}
-                  </span>
-                </button>
-                <div class="flex items-center gap-4 border-t border-line px-4 py-2.5 text-sm">
-                  <a href={tel(c.phone)} class="inline-flex items-center gap-1.5 font-mono text-xs text-ink-2 hover:text-ink">
-                    <Icon name="phone" class="size-4" />
-                    {c.phone}
-                  </a>
-                  <a
-                    href={c.mapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="link-arrow ml-auto text-sm"
-                  >
-                    Cómo llegar
-                    <Icon name="arrow-up-right" class="size-4" />
-                    <span class="sr-only">(abre Google Maps en otra pestaña)</span>
-                  </a>
-                </div>
-              </div>
+              <CenterCard center={c} />
             </li>
           ))}
         </ul>
@@ -119,11 +56,16 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
           <p class="mt-1 text-sm text-ink-3">Prueba con el nombre del hospital o la avenida.</p>
           <button type="button" id="centers-clear" class="btn btn-secondary btn-sm mt-4">Limpiar búsqueda</button>
         </div>
+
+        <a href="/centros" class="link-arrow mt-5 self-start text-sm">
+          Ver los {centers.length} centros de la red
+          <Icon name="arrow-right" class="size-4" />
+        </a>
       </div>
 
       <!-- Mapa -->
       <div class="relative order-1 isolate h-[340px] overflow-hidden rounded-panel border border-line bg-sunken sm:h-[420px] lg:order-2 lg:col-span-7 lg:h-auto lg:min-h-[540px] xl:col-span-8">
-        <div id="blud-map" class="absolute inset-0" role="region" aria-label="Mapa de centros de salud en Maracaibo"></div>
+        <div id="blud-map" class="blud-map absolute inset-0" role="region" aria-label="Mapa de centros de salud en Maracaibo"></div>
         <div id="map-skeleton" class="skeleton absolute inset-0 grid place-items-center" aria-hidden="true">
           <span class="inline-flex items-center gap-2 rounded-control bg-surface px-4 py-2 text-sm font-medium text-ink-2 shadow-sm">
             <Icon name="map-trifold" class="size-4" />
@@ -133,7 +75,7 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
         <div id="map-error" class="absolute inset-0 hidden place-items-center p-8 text-center">
           <div>
             <p class="font-semibold text-ink">No pudimos cargar el mapa</p>
-            <p class="mt-1 text-sm text-ink-3">Usa el enlace «Cómo llegar» de cada centro para abrirlo en Google Maps.</p>
+            <p class="mt-1 text-sm text-ink-3">Usa el botón «Cómo llegar» de cada centro para abrirlo en Google Maps.</p>
           </div>
         </div>
       </div>
@@ -141,105 +83,11 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
   </div>
 </section>
 
-<style is:global>
-  #blud-map { font-family: var(--font-sans); background: var(--sunken); }
-
-  .center-card:has([aria-pressed="true"]) {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
-  }
-
-  .blud-pin {
-    display: grid;
-    place-items: center;
-  }
-  .blud-pin span {
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    border: 3px solid #fff;
-    box-shadow: 0 4px 10px rgb(15 23 42 / 0.35);
-    transition: transform 220ms var(--ease-out);
-  }
-  .blud-pin span { background: #CA2B2B; }
-  .is-selected .blud-pin span { transform: scale(1.35); }
-
-  #blud-map .leaflet-popup-content-wrapper {
-    border-radius: 14px;
-    background: var(--surface);
-    color: var(--ink);
-    box-shadow: 0 16px 40px -12px rgb(15 23 42 / 0.35);
-    border: 1px solid var(--line);
-  }
-  #blud-map .leaflet-popup-tip { background: var(--surface); border: 1px solid var(--line); }
-  #blud-map .leaflet-popup-content { margin: 14px 16px; font-size: 13px; line-height: 1.45; color: var(--ink); }
-  #blud-map a.leaflet-popup-close-button { color: var(--ink-3); top: 4px; right: 4px; }
-  #blud-map a.leaflet-popup-close-button:hover { color: var(--ink); }
-  .blud-popup h4 { margin: 0 20px 0 0; font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--ink); }
-  #blud-map .blud-popup p { margin: 3px 0 0; color: var(--ink-2); }
-  .blud-popup .blud-popup-phone { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; color: var(--ink-2); }
-  #blud-map .blud-popup a.blud-popup-cta {
-    display: inline-flex;
-    margin-top: 10px;
-    padding: 7px 12px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    text-decoration: none;
-  }
-  #blud-map .blud-popup a.blud-popup-cta:hover { background: var(--accent-strong); }
-
-  .leaflet-bar {
-    border: 1px solid var(--line) !important;
-    border-radius: 12px !important;
-    overflow: hidden;
-    box-shadow: 0 6px 16px -8px rgb(15 23 42 / 0.3) !important;
-  }
-  .leaflet-bar a {
-    background: var(--surface) !important;
-    color: var(--ink) !important;
-    border-color: var(--line) !important;
-  }
-  .leaflet-bar a:hover { background: var(--sunken) !important; }
-  .leaflet-control-attribution {
-    background: color-mix(in srgb, var(--surface) 85%, transparent) !important;
-    color: var(--ink-3) !important;
-  }
-  .leaflet-control-attribution a { color: var(--ink-2) !important; }
-
-  /* Mapa en tema oscuro: se invierten solo las teselas. */
-  :root[data-theme="dark"] #blud-map .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) #blud-map .leaflet-tile-pane {
-      filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.55);
-    }
-  }
-</style>
+<ScheduleDialog />
 
 <script>
-  interface HealthCenter {
-    id: string;
-    name: string;
-    type: string;
-    address: string;
-    coords: [number, number];
-    phone: string;
-    mapsUrl: string;
-  }
-
-  declare const L: any;
-
-  const LEAFLET_CSS = {
-    href: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-    integrity: 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=',
-  };
-  const LEAFLET_JS = {
-    src: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    integrity: 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=',
-  };
+  import { centerIcon, createMap, loadLeaflet, popupHtml, popupOptions, whenNearViewport } from '../../lib/map';
+  import type { HealthCenter } from '../../data/centers';
 
   const section = document.getElementById('centros');
   const centers: HealthCenter[] = JSON.parse(section?.dataset.centers || '[]');
@@ -256,29 +104,6 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
   let map: any = null;
   const markers: Record<string, any> = {};
 
-  const escapeHtml = (s: string) =>
-    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
-
-  function loadLeaflet(): Promise<void> {
-    if (typeof L !== 'undefined') return Promise.resolve();
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = LEAFLET_CSS.href;
-    css.integrity = LEAFLET_CSS.integrity;
-    css.crossOrigin = '';
-    document.head.appendChild(css);
-
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = LEAFLET_JS.src;
-      script.integrity = LEAFLET_JS.integrity;
-      script.crossOrigin = '';
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Leaflet no cargó'));
-      document.head.appendChild(script);
-    });
-  }
-
   function setSelected(id: string | null) {
     buttons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.centerId === id)));
     Object.entries(markers).forEach(([markerId, marker]) => {
@@ -286,36 +111,14 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
     });
   }
 
-  function initMap() {
+  function initMap(L: any) {
     if (!mapEl) return;
-    map = L.map(mapEl, { scrollWheelZoom: false, zoomControl: true }).setView([10.672, -71.625], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    }).addTo(map);
-
-    // La rueda del ratón solo hace zoom después de interactuar con el mapa.
-    map.once('focus click', () => map.scrollWheelZoom.enable());
+    map = createMap(L, mapEl);
+    map.setView([10.672, -71.625], 13);
 
     centers.forEach((center) => {
-      const icon = L.divIcon({
-        className: '',
-        html: `<div class="blud-pin"><span></span></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-        popupAnchor: [0, -10],
-      });
-
-      const marker = L.marker(center.coords, { icon, title: center.name, alt: center.name }).addTo(map);
-      marker.bindPopup(`
-        <div class="blud-popup">
-          <h4>${escapeHtml(center.name)}</h4>
-          <p>${escapeHtml(center.type)}</p>
-          <p class="blud-popup-phone">${escapeHtml(center.phone)}</p>
-          <a class="blud-popup-cta" href="${center.mapsUrl}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>
-        </div>
-      `, { minWidth: 220, maxWidth: 280 });
+      const marker = L.marker(center.coords, { icon: centerIcon(L), title: center.name, alt: center.name }).addTo(map);
+      marker.bindPopup(popupHtml(center), popupOptions);
       marker.on('click', () => setSelected(center.id));
       markers[center.id] = marker;
     });
@@ -369,31 +172,17 @@ const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
   });
 
   if (mapEl) {
-    const start = () =>
+    whenNearViewport(mapEl, () =>
       loadLeaflet()
-        .then(() => {
-          initMap();
+        .then((L) => {
+          initMap(L);
           filter();
         })
         .catch(() => {
           skeleton?.classList.add('hidden');
           errorBox?.classList.remove('hidden');
           errorBox?.classList.add('grid');
-        });
-
-    if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            io.disconnect();
-            start();
-          }
-        },
-        { rootMargin: '400px 0px' }
-      );
-      io.observe(mapEl);
-    } else {
-      start();
-    }
+        })
+    );
   }
 </script>

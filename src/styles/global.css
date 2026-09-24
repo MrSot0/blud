@@ -305,6 +305,14 @@ html.theme-vt::view-transition-new(root) {
   }
 }
 
+/* ===== Sesión =====
+   El script del <head> marca <html data-auth="in"> antes de pintar;
+   así los bloques de cada estado no parpadean al cargar. */
+html:not([data-auth="in"]) [data-auth-in],
+html[data-auth="in"] [data-auth-out] {
+  display: none !important;
+}
+
 /* ===== Revelado al hacer scroll =====
    Solo se oculta si hay JS (clase .js en <html>), así el contenido
    nunca queda invisible si el script falla. */

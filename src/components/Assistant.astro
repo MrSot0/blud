@@ -1,0 +1,203 @@
+---
+// Assistant.astro - Botón flotante del asistente de IA ("Bluddie").
+// De momento solo abre la ventana de presentación: aún no responde mensajes.
+import Icon from './Icon.astro';
+
+const examples = [
+  '¿Puedo donar si me hice un tatuaje?',
+  '¿Qué centro está abierto cerca de mí?',
+  '¿Qué debo comer antes de donar?',
+];
+---
+
+<div class="assistant" data-assistant>
+  <div
+    id="assistant-panel"
+    class="assistant-panel panel fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] right-4 z-30 flex max-h-[min(34rem,calc(100dvh-10rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden sm:bottom-[6.5rem] sm:right-6"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="assistant-title"
+    data-open="false"
+    inert
+  >
+    <header class="flex items-center gap-3 border-b border-line px-4 py-3.5">
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft">
+        <svg class="size-7" viewBox="0 0 48 48" aria-hidden="true">
+          <use href="#bluddie" />
+        </svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p id="assistant-title" class="font-bold leading-tight text-ink">Bluddie</p>
+        <p class="text-xs text-ink-3">Asistente de BLUD</p>
+      </div>
+      <span class="rounded-full bg-warn-soft px-2 py-0.5 text-[0.6875rem] font-semibold text-warn">Próximamente</span>
+      <button
+        type="button"
+        data-assistant-close
+        class="-mr-1.5 grid size-9 shrink-0 place-items-center rounded-control text-ink-2 transition-colors hover:bg-sunken hover:text-ink"
+        aria-label="Cerrar asistente"
+      >
+        <Icon name="x" class="size-5" />
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto bg-canvas px-4 py-5">
+      <div class="flex items-end gap-2">
+        <svg class="size-7 shrink-0" viewBox="0 0 48 48" aria-hidden="true"><use href="#bluddie" /></svg>
+        <div class="max-w-[85%] rounded-[16px] rounded-bl-[6px] border border-line bg-surface px-3.5 py-2.5 text-sm leading-relaxed text-ink">
+          ¡Hola! Soy Bluddie. Muy pronto podré resolver tus dudas sobre donación, requisitos y centros cercanos.
+        </div>
+      </div>
+
+      <p class="mt-5 text-xs font-semibold uppercase tracking-wide text-ink-3">Podrás preguntarme cosas como</p>
+      <ul class="mt-2 grid gap-1.5">
+        {examples.map((example) => (
+          <li class="rounded-control border border-dashed border-line-strong px-3 py-2 text-sm text-ink-2">{example}</li>
+        ))}
+      </ul>
+    </div>
+
+    <form class="flex items-center gap-2 border-t border-line p-3" onsubmit="return false">
+      <label for="assistant-input" class="sr-only">Mensaje para Bluddie</label>
+      <input
+        id="assistant-input"
+        type="text"
+        disabled
+        placeholder="Muy pronto podrás escribirme…"
+        class="field min-h-11 flex-1 cursor-not-allowed text-sm disabled:opacity-70"
+      />
+      <button type="submit" disabled class="btn btn-primary size-11 shrink-0 px-0" aria-label="Enviar">
+        <Icon name="arrow-right" class="size-5" />
+      </button>
+    </form>
+  </div>
+
+  <button
+    type="button"
+    id="assistant-trigger"
+    class="assistant-trigger fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-30 grid size-[3.75rem] place-items-center rounded-full border border-line bg-surface sm:bottom-6 sm:right-6"
+    aria-expanded="false"
+    aria-controls="assistant-panel"
+    aria-label="Abrir el asistente de BLUD"
+  >
+    <svg class="bluddie size-10" viewBox="0 0 48 48" aria-hidden="true"><use href="#bluddie" /></svg>
+  </button>
+
+  <!-- Bluddie: gota de sangre con carita. Se reutiliza con <use href="#bluddie">. -->
+  <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="bluddie-shade" cx="35%" cy="35%" r="75%">
+        <stop offset="0" stop-color="#E5484D" />
+        <stop offset="1" stop-color="#B42121" />
+      </radialGradient>
+    </defs>
+    <symbol id="bluddie" viewBox="0 0 48 48">
+      <path d="M24 3.5c-1.2 1.6-14 17-14 27.2A14 14 0 0 0 24 44.7a14 14 0 0 0 14-14C38 20.5 25.2 5.1 24 3.5Z" fill="url(#bluddie-shade)" />
+      <ellipse cx="17.6" cy="20" rx="2.4" ry="4.2" transform="rotate(28 17.6 20)" fill="#fff" opacity="0.35" />
+      <g class="bluddie-eyes" fill="#1A202C">
+        <ellipse cx="19" cy="29.5" rx="2" ry="2.7" />
+        <ellipse cx="29" cy="29.5" rx="2" ry="2.7" />
+      </g>
+      <circle cx="15.6" cy="34" r="2" fill="#FF9A9A" opacity="0.55" />
+      <circle cx="32.4" cy="34" r="2" fill="#FF9A9A" opacity="0.55" />
+      <path d="M20.5 35.2c1.9 2.2 5.1 2.2 7 0" fill="none" stroke="#1A202C" stroke-width="1.9" stroke-linecap="round" />
+    </symbol>
+  </svg>
+</div>
+
+<style>
+  .assistant-trigger {
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-tint) / 0.08),
+      0 14px 30px -12px hsl(var(--shadow-tint) / 0.45);
+    transition:
+      transform 220ms var(--ease-out),
+      box-shadow 220ms ease;
+  }
+  .assistant-trigger:active {
+    transform: scale(0.94);
+  }
+  @media (hover: hover) {
+    .assistant-trigger:hover {
+      transform: translateY(-2px);
+    }
+    .assistant-trigger:hover .bluddie {
+      animation: bluddie-wiggle 700ms var(--ease-out);
+    }
+  }
+  .bluddie {
+    transform-origin: 50% 90%;
+  }
+  @keyframes bluddie-wiggle {
+    0%, 100% { transform: rotate(0); }
+    30% { transform: rotate(-9deg); }
+    60% { transform: rotate(6deg); }
+  }
+
+  /* Parpadeo ocasional (se aplica a todas las copias del símbolo). */
+  .bluddie-eyes {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: bluddie-blink 5s infinite;
+  }
+  @keyframes bluddie-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.1); }
+  }
+
+  .assistant-panel {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+    transform-origin: bottom right;
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease,
+      visibility 0s linear 150ms;
+  }
+  .assistant-panel[data-open="true"] {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 200ms ease,
+      transform 260ms var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bluddie-eyes { animation: none; }
+    .assistant-panel,
+    .assistant-panel[data-open="true"] { transform: none; }
+  }
+</style>
+
+<script>
+  const trigger = document.getElementById('assistant-trigger');
+  const panel = document.getElementById('assistant-panel');
+  const root = document.querySelector<HTMLElement>('[data-assistant]');
+
+  if (trigger && panel && root) {
+    const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
+    const setOpen = (open: boolean) => {
+      trigger.setAttribute('aria-expanded', String(open));
+      trigger.setAttribute('aria-label', open ? 'Cerrar el asistente de BLUD' : 'Abrir el asistente de BLUD');
+      panel.dataset.open = String(open);
+      panel.inert = !open;
+    };
+
+    trigger.addEventListener('click', () => setOpen(!isOpen()));
+    panel.querySelector('[data-assistant-close]')?.addEventListener('click', () => {
+      setOpen(false);
+      trigger.focus();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) {
+        setOpen(false);
+        trigger.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (isOpen() && !root.contains(e.target as Node)) setOpen(false);
+    });
+  }
+</script>

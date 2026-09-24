@@ -2,6 +2,7 @@
 // src/layouts/Layout.astro
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import Assistant from '../components/Assistant.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -40,6 +41,10 @@ const ogImage = new URL('/og-image.jpg', base).href;
         var mq = window.matchMedia('(prefers-color-scheme: dark)');
         var theme = saved === 'light' || saved === 'dark' ? saved : mq.matches ? 'dark' : 'light';
         root.setAttribute('data-theme', theme);
+        // Sesión de demostración (ver src/lib/auth.ts).
+        try {
+          if (localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session')) root.dataset.auth = 'in';
+        } catch (e) {}
         mq.addEventListener('change', function (e) {
           var stored = null;
           try { stored = localStorage.getItem('blud-theme'); } catch (err) {}
@@ -88,6 +93,8 @@ const ogImage = new URL('/og-image.jpg', base).href;
     </main>
 
     <Footer />
+
+    <Assistant />
 
     <script>
       // Revelado progresivo: los elementos con [data-reveal] aparecen al entrar en pantalla.

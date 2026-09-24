@@ -5,6 +5,7 @@ import AuthShell from '../components/auth/AuthShell.astro';
 import PasswordInput from '../components/auth/PasswordInput.astro';
 import SubmitButton from '../components/auth/SubmitButton.astro';
 import Icon from '../components/Icon.astro';
+import { demoUsers } from '../lib/auth';
 ---
 
 <Layout title="BLUD | Iniciar sesión">
@@ -15,7 +16,16 @@ import Icon from '../components/Icon.astro';
       class="mb-6 hidden items-start gap-3 rounded-control bg-ok-soft px-4 py-3 text-sm font-medium text-ok"
     >
       <Icon name="check-circle" class="mt-0.5 size-5 shrink-0" />
-      <span>Sesión iniciada correctamente.</span>
+      <span data-success-text>Sesión iniciada correctamente.</span>
+    </div>
+
+    <div
+      id="form-error"
+      role="alert"
+      class="mb-6 hidden items-start gap-3 rounded-control bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink"
+    >
+      <Icon name="warning-circle" class="mt-0.5 size-5 shrink-0" />
+      <span data-error-text></span>
     </div>
 
     <form id="login-form" novalidate class="flex flex-col gap-6">
@@ -35,7 +45,7 @@ import Icon from '../components/Icon.astro';
       </div>
 
       <div>
-        <div class="mb-2 flex items-center justify-between gap-4">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <label for="login-password" class="block text-sm font-semibold text-ink">Contraseña</label>
           <a href="/recuperar" class="text-sm font-medium text-accent-ink underline-offset-4 hover:underline">
             ¿Olvidaste tu contraseña?
@@ -58,9 +68,37 @@ import Icon from '../components/Icon.astro';
       <SubmitButton label="Iniciar sesión" loadingLabel="Iniciando sesión" />
     </form>
 
+    <!-- Cuentas de prueba (demo sin backend) -->
+    <div class="mt-8 rounded-panel border border-dashed border-line-strong p-4 sm:p-5">
+      <p class="flex items-center gap-2 text-sm font-semibold text-ink">
+        <Icon name="info" class="size-4 text-ink-3" />
+        Cuentas de prueba
+      </p>
+      <p class="mt-1 text-sm text-ink-3">Úsalas para probar el acceso. Las cuentas nuevas se guardan en este navegador.</p>
+      <ul class="mt-4 grid gap-2">
+        {demoUsers.map((user) => (
+          <li class="flex items-center gap-3 rounded-control bg-sunken px-3 py-2.5">
+            <div class="min-w-0 flex-1 font-mono text-xs leading-relaxed text-ink-2">
+              <p class="truncate"><span class="text-ink-3">correo</span> {user.email}</p>
+              <p class="truncate"><span class="text-ink-3">clave&nbsp;</span> {user.password}</p>
+            </div>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm shrink-0 pointer-coarse:min-h-11"
+              data-demo-email={user.email}
+              data-demo-password={user.password}
+            >
+              Usar
+              <span class="sr-only">la cuenta de {user.name}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+
     <p class="mt-10 border-t border-line pt-6 text-ink-2">
       ¿No tienes cuenta?
-      <a href="/register" class="link-arrow ml-1">
+      <a href="/register" class="link-arrow ml-1" data-keep-next>
         Quiero ser donante
         <Icon name="arrow-right" class="size-4" />
       </a>
@@ -77,16 +115,20 @@ import Icon from '../components/Icon.astro';
     validateEmailField,
     withSubmitting,
   } from '../lib/forms';
+  import { login, safeNext } from '../lib/auth';
 
   const form = document.getElementById('login-form') as HTMLFormElement | null;
   const successBanner = document.getElementById('form-success');
+  const errorBanner = document.getElementById('form-error');
 
   if (form) {
     const emailInput = document.getElementById('login-email') as HTMLInputElement;
     const passwordInput = document.getElementById('login-password') as HTMLInputElement;
+    const rememberInput = document.getElementById('login-remember') as HTMLInputElement;
     const emailError = document.getElementById('login-email-error') as HTMLElement;
     const passwordError = document.getElementById('login-password-error') as HTMLElement;
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const next = safeNext(new URLSearchParams(location.search).get('next'));
 
     const validateEmail = () => validateEmailField(emailInput, emailError);
 
@@ -104,12 +146,32 @@ import Icon from '../components/Icon.astro';
       return true;
     }
 
+    const showFormError = (message: string | null) => {
+      if (!errorBanner) return;
+      errorBanner.querySelector('[data-error-text]')!.textContent = message ?? '';
+      errorBanner.classList.toggle('hidden', !message);
+      errorBanner.classList.toggle('flex', Boolean(message));
+    };
+
     emailInput.addEventListener('blur', () => { if (emailInput.value) validateEmail(); });
-    emailInput.addEventListener('input', () => { if (isShowingError(emailError)) validateEmail(); });
-    passwordInput.addEventListener('input', () => { if (isShowingError(passwordError)) validatePassword(); });
+    emailInput.addEventListener('input', () => { if (isShowingError(emailError)) validateEmail(); showFormError(null); });
+    passwordInput.addEventListener('input', () => { if (isShowingError(passwordError)) validatePassword(); showFormError(null); });
+
+    // Rellena el formulario con una cuenta de prueba.
+    document.querySelectorAll<HTMLButtonElement>('[data-demo-email]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        emailInput.value = btn.dataset.demoEmail ?? '';
+        passwordInput.value = btn.dataset.demoPassword ?? '';
+        clearError(emailInput, emailError);
+        clearError(passwordInput, passwordError);
+        showFormError(null);
+        submit?.focus();
+      })
+    );
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+      showFormError(null);
       const emailOk = validateEmail();
       const passwordOk = validatePassword();
 
@@ -117,13 +179,32 @@ import Icon from '../components/Icon.astro';
       if (!passwordOk) return passwordInput.focus();
       if (!submit) return;
 
-      withSubmitting(submit, () => {
+      withSubmitting(submit, async () => {
+        const result = await login(emailInput.value, passwordInput.value, rememberInput.checked);
+        if (!result.ok) {
+          submit.disabled = false;
+          showFormError(result.error);
+          passwordInput.select();
+          return;
+        }
+        const firstName = result.user.name.split(/\s+/)[0];
+        const text = successBanner?.querySelector('[data-success-text]');
+        if (text) text.textContent = `¡Hola, ${firstName}! Sesión iniciada. Te llevamos de vuelta…`;
         successBanner?.classList.remove('hidden');
         successBanner?.classList.add('flex');
         form.classList.add('opacity-60', 'pointer-events-none');
+        window.setTimeout(() => location.assign(next), 1100);
       });
     });
 
     bindPasswordToggles(form);
+  }
+
+  // Conserva el destino (?next=) al cambiar entre inicio de sesión y registro.
+  const nextParam = new URLSearchParams(location.search).get('next');
+  if (nextParam) {
+    document.querySelectorAll<HTMLAnchorElement>('[data-keep-next]').forEach((link) => {
+      link.href = `${link.pathname}?next=${encodeURIComponent(nextParam)}`;
+    });
   }
 </script>

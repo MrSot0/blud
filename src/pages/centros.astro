@@ -1,0 +1,535 @@
+---
+// centros.astro - Mapa completo de los centros de la red: búsqueda, filtros,
+// orden por distancia y agenda. En móvil alterna entre lista y mapa.
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import CenterCard from '../components/centers/CenterCard.astro';
+import ScheduleDialog from '../components/centers/ScheduleDialog.astro';
+import { centerKinds, centers } from '../data/centers';
+import '../styles/map.css';
+
+const sorted = [...centers].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+const chipClass =
+  'chip inline-flex h-9 shrink-0 cursor-pointer whitespace-nowrap items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3.5 text-sm font-medium text-ink-2 transition-colors duration-150 hover:border-ink-3 hover:text-ink';
+---
+
+<Layout
+  title="BLUD | Mapa de centros de donación"
+  description="Encuentra bancos de sangre, hospitales y clínicas de la red BLUD en Maracaibo y San Francisco. Mira cuáles están abiertos, cómo llegar y agenda tu donación."
+>
+  <section id="centros-app" class="centros-app" data-view="list" data-centers={JSON.stringify(centers)}>
+    <!-- Encabezado y filtros (columna izquierda en escritorio) -->
+    <div class="centros-head border-b border-line bg-surface px-4 pb-4 pt-6 sm:px-6 lg:border-r">
+      <div class="flex items-start justify-between gap-4">
+        <h1 class="text-[1.75rem] font-bold leading-tight tracking-[-0.035em] text-ink">Centros de donación</h1>
+        <button type="button" id="locate-btn" class="btn btn-secondary btn-sm shrink-0 pointer-coarse:min-h-11">
+          <span data-locate-icon><Icon name="map-pin" class="size-4" /></span>
+          <span data-locate-spinner class="hidden"><Icon name="spinner-gap" class="spin size-4" /></span>
+          Cerca de mí
+        </button>
+      </div>
+      <p class="mt-1 text-sm text-ink-3">Maracaibo y San Francisco, Zulia</p>
+
+      <label for="centros-search" class="sr-only">Buscar centro</label>
+      <div class="relative mt-5">
+        <Icon name="magnifying-glass" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-3" />
+        <input
+          type="search"
+          id="centros-search"
+          placeholder="Nombre, tipo o dirección"
+          autocomplete="off"
+          class="field pl-12"
+        />
+      </div>
+
+      <div class="chip-row relative -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar centros">
+        <label class="shrink-0">
+          <input type="radio" name="kind" value="all" class="sr-only" checked />
+          <span class={chipClass}>Todos</span>
+        </label>
+        {centerKinds.map((kind) => (
+          <label class="shrink-0">
+            <input type="radio" name="kind" value={kind.id} class="sr-only" />
+            <span class={chipClass}>{kind.label}</span>
+          </label>
+        ))}
+        <label class="shrink-0">
+          <input type="checkbox" name="open" id="open-now" class="sr-only" />
+          <span class={chipClass}>
+            <span class="size-2 rounded-full bg-ok" aria-hidden="true"></span>
+            Abiertos ahora
+          </span>
+        </label>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between gap-3 text-sm">
+        <p class="font-semibold text-ink" aria-live="polite">
+          <span id="centros-count" class="tabular">{centers.length}</span>{' '}
+          <span id="centros-count-label">centros</span>
+        </p>
+        <div class="segmented" role="group" aria-label="Ordenar">
+          <button type="button" data-sort="name" aria-pressed="true">Nombre</button>
+          <button type="button" data-sort="distance" aria-pressed="false">Distancia</button>
+        </div>
+      </div>
+      <p id="locate-status" class="mt-3 hidden rounded-control px-3 py-2 text-sm" role="status"></p>
+    </div>
+
+    <!-- Cambio de vista (solo móvil): fijo bajo el header en lista y en mapa -->
+    <div class="view-switch sticky top-16 z-20 border-b border-line bg-surface/90 px-4 py-2.5 backdrop-blur-lg sm:px-6 lg:hidden">
+      <div class="segmented segmented-full" role="group" aria-label="Vista">
+        <button type="button" data-view-btn="list" aria-pressed="true">
+          <Icon name="list" class="size-4" />
+          Lista
+        </button>
+        <button type="button" data-view-btn="map" aria-pressed="false">
+          <Icon name="map-trifold" class="size-4" />
+          Mapa
+        </button>
+      </div>
+    </div>
+
+    <div class="list-pane px-4 py-4 sm:px-6 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:border-r lg:border-line lg:bg-surface">
+      <ul id="centros-list" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+        {sorted.map((c) => (
+          <li
+            data-center-item={c.id}
+            data-kind={c.kind}
+            data-name={c.name}
+            data-search={`${c.name} ${c.type} ${c.address} ${c.city}`.toLowerCase()}
+          >
+            <CenterCard center={c} detailed />
+          </li>
+        ))}
+      </ul>
+
+      <div id="centros-empty" class="hidden py-12 text-center">
+        <p class="font-semibold text-ink">Ningún centro coincide con los filtros</p>
+        <p class="mt-1 text-sm text-ink-3">Prueba con otro nombre o quita «Abiertos ahora».</p>
+        <button type="button" id="centros-clear" class="btn btn-secondary btn-sm mt-4">Quitar filtros</button>
+      </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="map-pane relative isolate bg-sunken">
+      <div id="centros-map" class="blud-map absolute inset-0" role="region" aria-label="Mapa de centros de donación"></div>
+      <div id="centros-skeleton" class="skeleton absolute inset-0 grid place-items-center" aria-hidden="true">
+        <span class="inline-flex items-center gap-2 rounded-control bg-surface px-4 py-2 text-sm font-medium text-ink-2 shadow-sm">
+          <Icon name="map-trifold" class="size-4" />
+          Cargando mapa
+        </span>
+      </div>
+      <div id="centros-map-error" class="absolute inset-0 hidden place-items-center p-8 text-center">
+        <div>
+          <p class="font-semibold text-ink">No pudimos cargar el mapa</p>
+          <p class="mt-1 text-sm text-ink-3">Usa el botón «Cómo llegar» de cada centro para abrirlo en Google Maps.</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        id="fit-all"
+        class="absolute right-3 top-3 z-[500] inline-flex h-10 items-center gap-2 rounded-control border border-line bg-surface px-3.5 text-sm font-semibold text-ink shadow-[0_6px_16px_-8px_rgb(15_23_42/0.3)] transition-colors hover:bg-sunken"
+      >
+        <Icon name="map-trifold" class="size-4 text-ink-3" />
+        Ver todos
+      </button>
+    </div>
+  </section>
+
+  <ScheduleDialog />
+</Layout>
+
+<style>
+  /* Escritorio: panel lateral + mapa a la altura de la ventana. */
+  @media (min-width: 1024px) {
+    .centros-app {
+      display: grid;
+      grid-template-columns: minmax(22rem, 27rem) 1fr;
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas:
+        "head map"
+        "list map";
+      height: calc(100dvh - 4rem);
+    }
+    .centros-head { grid-area: head; }
+    .list-pane { grid-area: list; }
+    .map-pane { grid-area: map; }
+  }
+
+  /* Móvil y tableta: una vista a la vez. El mapa ocupa lo que queda bajo el selector. */
+  @media (max-width: 1023px) {
+    .map-pane {
+      height: calc(100dvh - 4rem - 3.75rem);
+      min-height: 22rem;
+    }
+    .centros-app[data-view="list"] .map-pane {
+      position: absolute;
+      left: -200vw;
+      width: 100vw;
+      visibility: hidden;
+    }
+    .centros-app[data-view="map"] .list-pane {
+      display: none;
+    }
+  }
+
+  .chip-row {
+    scrollbar-width: none;
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+  input:checked + :global(.chip) {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--canvas);
+  }
+  input:focus-visible + :global(.chip) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Control segmentado (orden y vista). */
+  .segmented {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: var(--radius-control);
+    background: var(--sunken);
+    border: 1px solid var(--line);
+  }
+  .segmented-full {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+  .segmented button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 9px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink-3);
+    transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  }
+  .segmented-full button {
+    min-height: 2.5rem;
+    font-size: 0.875rem;
+  }
+  .segmented button:hover {
+    color: var(--ink);
+  }
+  .segmented button[aria-pressed="true"] {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 2px hsl(var(--shadow-tint) / 0.12), 0 0 0 1px var(--line);
+  }
+
+  /* Estado de apertura en las tarjetas. */
+  :global([data-open-status])::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--ink-3);
+  }
+  :global([data-open-status][data-open="true"]) {
+    color: var(--ok);
+  }
+  :global([data-open-status][data-open="true"])::before {
+    background: var(--ok);
+  }
+  :global([data-open-status]:empty)::before {
+    display: none;
+  }
+
+  .centros-app :global(li[data-center-item]) {
+    scroll-margin-block: 1rem;
+  }
+</style>
+
+<script>
+  import {
+    centerIcon,
+    createMap,
+    distanceKm,
+    formatKm,
+    loadLeaflet,
+    openStatus,
+    popupHtml,
+    popupOptions,
+    userIcon,
+  } from '../lib/map';
+  import type { HealthCenter } from '../data/centers';
+
+  const app = document.getElementById('centros-app') as HTMLElement;
+  const centers: HealthCenter[] = JSON.parse(app.dataset.centers || '[]');
+  const byId = new Map(centers.map((c) => [c.id, c]));
+
+  const list = document.getElementById('centros-list') as HTMLUListElement;
+  const items = Array.from(list.querySelectorAll<HTMLElement>('[data-center-item]'));
+  const search = document.getElementById('centros-search') as HTMLInputElement;
+  const openNow = document.getElementById('open-now') as HTMLInputElement;
+  const countEl = document.getElementById('centros-count')!;
+  const countLabel = document.getElementById('centros-count-label')!;
+  const emptyState = document.getElementById('centros-empty')!;
+  const locateBtn = document.getElementById('locate-btn') as HTMLButtonElement;
+  const locateStatus = document.getElementById('locate-status')!;
+  const sortButtons = document.querySelectorAll<HTMLButtonElement>('[data-sort]');
+  const viewButtons = document.querySelectorAll<HTMLButtonElement>('[data-view-btn]');
+  const mapEl = document.getElementById('centros-map') as HTMLElement;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const isDesktop = window.matchMedia('(min-width: 1024px)');
+
+  let map: any = null;
+  let L: any = null;
+  let userMarker: any = null;
+  let userCoords: [number, number] | null = null;
+  let sortMode: 'name' | 'distance' = 'name';
+  const markers: Record<string, any> = {};
+
+  // ----- Estado de apertura (hora local del visitante) -----
+  const openState: Record<string, boolean> = {};
+  function refreshOpenStatus() {
+    items.forEach((item) => {
+      const center = byId.get(item.dataset.centerItem || '');
+      const el = item.querySelector<HTMLElement>('[data-open-status]');
+      if (!center || !el) return;
+      const status = openStatus(center);
+      openState[center.id] = status.open;
+      el.textContent = status.label;
+      el.dataset.open = String(status.open);
+    });
+  }
+
+  // ----- Filtros -----
+  const selectedKind = () => (document.querySelector<HTMLInputElement>('input[name="kind"]:checked')?.value ?? 'all');
+
+  function visibleIds(): string[] {
+    const query = search.value.toLowerCase().trim();
+    const kind = selectedKind();
+    return items
+      .filter((item) => {
+        const matchesText = (item.dataset.search || '').includes(query);
+        const matchesKind = kind === 'all' || item.dataset.kind === kind;
+        const matchesOpen = !openNow.checked || openState[item.dataset.centerItem || ''];
+        return matchesText && matchesKind && matchesOpen;
+      })
+      .map((item) => item.dataset.centerItem as string);
+  }
+
+  function applyFilters({ fit = true } = {}) {
+    const ids = new Set(visibleIds());
+    items.forEach((item) => {
+      const id = item.dataset.centerItem as string;
+      const show = ids.has(id);
+      item.classList.toggle('hidden', !show);
+      const marker = markers[id];
+      if (marker && map) {
+        if (show && !map.hasLayer(marker)) map.addLayer(marker);
+        if (!show && map.hasLayer(marker)) map.removeLayer(marker);
+      }
+    });
+    countEl.textContent = String(ids.size);
+    countLabel.textContent = ids.size === 1 ? 'centro' : 'centros';
+    emptyState.classList.toggle('hidden', ids.size > 0);
+    if (fit) fitTo([...ids]);
+  }
+
+  // ----- Orden -----
+  function applySort() {
+    const ordered = [...items].sort((a, b) => {
+      if (sortMode === 'distance' && userCoords) {
+        const ca = byId.get(a.dataset.centerItem || '')!;
+        const cb = byId.get(b.dataset.centerItem || '')!;
+        return distanceKm(userCoords, ca.coords) - distanceKm(userCoords, cb.coords);
+      }
+      return (a.dataset.name || '').localeCompare(b.dataset.name || '', 'es');
+    });
+    ordered.forEach((item) => list.appendChild(item));
+    sortButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.sort === sortMode)));
+  }
+
+  function setStatus(message: string, tone: 'ok' | 'warn' | null) {
+    locateStatus.textContent = message;
+    locateStatus.classList.toggle('hidden', !tone);
+    locateStatus.classList.toggle('bg-ok-soft', tone === 'ok');
+    locateStatus.classList.toggle('text-ok', tone === 'ok');
+    locateStatus.classList.toggle('bg-warn-soft', tone === 'warn');
+    locateStatus.classList.toggle('text-warn', tone === 'warn');
+  }
+
+  function setLocating(busy: boolean) {
+    locateBtn.disabled = busy;
+    locateBtn.querySelector('[data-locate-icon]')?.classList.toggle('hidden', busy);
+    locateBtn.querySelector('[data-locate-spinner]')?.classList.toggle('hidden', !busy);
+  }
+
+  function locate() {
+    if (!('geolocation' in navigator)) {
+      setStatus('Tu navegador no permite obtener la ubicación.', 'warn');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        userCoords = [pos.coords.latitude, pos.coords.longitude];
+        items.forEach((item) => {
+          const center = byId.get(item.dataset.centerItem || '')!;
+          const el = item.querySelector<HTMLElement>('[data-distance]');
+          if (el) el.textContent = formatKm(distanceKm(userCoords!, center.coords));
+        });
+        sortMode = 'distance';
+        applySort();
+        const nearest = byId.get(list.querySelector<HTMLElement>('[data-center-item]:not(.hidden)')?.dataset.centerItem || '');
+        setStatus(nearest ? `El más cercano es ${nearest.name}.` : 'Ubicación encontrada.', 'ok');
+        if (map && L) {
+          userMarker?.remove();
+          userMarker = L.marker(userCoords, { icon: userIcon(L), title: 'Tu ubicación', keyboard: false, zIndexOffset: 1000 }).addTo(map);
+          fitTo(visibleIds(), true);
+        }
+      },
+      (err) => {
+        setLocating(false);
+        setStatus(
+          err.code === err.PERMISSION_DENIED
+            ? 'No diste permiso para usar tu ubicación. Puedes activarlo en los ajustes del navegador.'
+            : 'No pudimos obtener tu ubicación. Inténtalo de nuevo.',
+          'warn'
+        );
+        if (sortMode === 'distance' && !userCoords) {
+          sortMode = 'name';
+          applySort();
+        }
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  }
+
+  // ----- Mapa -----
+  function setSelected(id: string | null) {
+    items.forEach((item) => {
+      item.querySelector('[data-center-id]')?.setAttribute('aria-pressed', String(item.dataset.centerItem === id));
+    });
+    Object.entries(markers).forEach(([markerId, marker]) => {
+      marker.getElement()?.classList.toggle('is-selected', markerId === id);
+    });
+  }
+
+  function fitTo(ids: string[], includeUser = false) {
+    if (!map || !L) return;
+    const points = ids.map((id) => byId.get(id)!.coords);
+    if (includeUser && userCoords) points.push(userCoords);
+    if (!points.length) return;
+    if (points.length === 1) map.setView(points[0], 15, { animate: !reduceMotion.matches });
+    else map.fitBounds(L.latLngBounds(points), { padding: [48, 48], maxZoom: 15, animate: !reduceMotion.matches });
+  }
+
+  function focusCenter(id: string) {
+    const center = byId.get(id);
+    setSelected(id);
+    if (!center || !map || !markers[id]) return;
+    map.flyTo(center.coords, 15, { duration: reduceMotion.matches ? 0 : 0.9 });
+    markers[id].openPopup();
+  }
+
+  function initMap() {
+    map = createMap(L, mapEl, { zoom: 12, attribution: 'bottomleft' });
+    centers.forEach((center) => {
+      const marker = L.marker(center.coords, { icon: centerIcon(L), title: center.name, alt: center.name }).addTo(map);
+      marker.bindPopup(popupHtml(center), popupOptions);
+      marker.on('click', () => {
+        setSelected(center.id);
+        // En escritorio, lleva la tarjeta a la vista dentro de la lista.
+        if (isDesktop.matches) {
+          list.querySelector(`[data-center-item="${center.id}"]`)?.scrollIntoView({
+            behavior: reduceMotion.matches ? 'auto' : 'smooth',
+            block: 'nearest',
+          });
+        }
+      });
+      markers[center.id] = marker;
+    });
+    map.on('popupclose', () => setSelected(null));
+    document.getElementById('centros-skeleton')?.classList.add('hidden');
+    applyFilters();
+  }
+
+  // ----- Vista (móvil) -----
+  function setView(view: 'list' | 'map') {
+    app.dataset.view = view;
+    viewButtons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.viewBtn === view)));
+    if (view === 'map') {
+      // El mapa estaba oculto: Leaflet necesita recalcular su tamaño.
+      requestAnimationFrame(() => map?.invalidateSize());
+      document.querySelector('.view-switch')?.scrollIntoView({ block: 'start', behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    }
+  }
+
+  // ----- Eventos -----
+  search.addEventListener('input', () => applyFilters());
+  document.querySelectorAll('input[name="kind"], #open-now').forEach((input) =>
+    input.addEventListener('change', () => applyFilters())
+  );
+  document.getElementById('centros-clear')?.addEventListener('click', () => {
+    search.value = '';
+    openNow.checked = false;
+    const all = document.querySelector<HTMLInputElement>('input[name="kind"][value="all"]');
+    if (all) all.checked = true;
+    applyFilters();
+    search.focus();
+  });
+
+  sortButtons.forEach((btn) =>
+    btn.addEventListener('click', () => {
+      if (btn.dataset.sort === 'distance' && !userCoords) {
+        sortMode = 'distance';
+        locate();
+        return;
+      }
+      sortMode = btn.dataset.sort as 'name' | 'distance';
+      applySort();
+    })
+  );
+  locateBtn.addEventListener('click', locate);
+  document.getElementById('fit-all')?.addEventListener('click', () => fitTo(visibleIds(), true));
+  viewButtons.forEach((btn) => btn.addEventListener('click', () => setView(btn.dataset.viewBtn as 'list' | 'map')));
+
+  items.forEach((item) => {
+    const id = item.dataset.centerItem as string;
+    item.querySelector('[data-center-id]')?.addEventListener('click', () => {
+      if (!isDesktop.matches) setView('map');
+      // Tras cambiar de vista, espera a que el mapa tenga tamaño.
+      requestAnimationFrame(() => focusCenter(id));
+    });
+    // Al pasar el ratón por una tarjeta se resalta su marcador.
+    item.addEventListener('pointerenter', () => markers[id]?.getElement()?.classList.add('is-hovered'));
+    item.addEventListener('pointerleave', () => markers[id]?.getElement()?.classList.remove('is-hovered'));
+  });
+
+  isDesktop.addEventListener('change', () => requestAnimationFrame(() => map?.invalidateSize()));
+
+  refreshOpenStatus();
+  applyFilters({ fit: false });
+  // El estado "abierto" cambia con la hora: se revisa cada minuto.
+  window.setInterval(() => {
+    refreshOpenStatus();
+    if (openNow.checked) applyFilters({ fit: false });
+  }, 60000);
+
+  loadLeaflet()
+    .then((leaflet) => {
+      L = leaflet;
+      initMap();
+    })
+    .catch(() => {
+      document.getElementById('centros-skeleton')?.classList.add('hidden');
+      const error = document.getElementById('centros-map-error');
+      error?.classList.remove('hidden');
+      error?.classList.add('grid');
+    });
+</script>
