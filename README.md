@@ -23,7 +23,7 @@ src/
 │   ├── eligibility/   # Test de elegibilidad (20 preguntas)
 │   ├── info/          # Plantilla de las páginas de Infórmate
 │   ├── landing/       # Secciones de la página principal
-│   ├── Assistant.astro # Botón flotante del asistente de IA (aún sin funcionalidad)
+│   ├── Assistant.astro # Chat de Bluddie, el asistente de IA
 │   ├── Icon.astro     # Íconos Phosphor (ver src/lib/icons.ts)
 │   ├── LegalPage.astro
 │   ├── Logo.astro
@@ -39,7 +39,7 @@ src/
 │   ├── icons.ts       # Registro de íconos
 │   └── map.ts         # Utilidades de Leaflet compartidas
 ├── layouts/Layout.astro
-├── pages/             # index, centros, elegibilidad, informate/*, login, register, recuperar, privacidad, terminos, 404
+├── pages/             # api/chat (servidor), index, centros, elegibilidad, informate/*, login, register, recuperar, privacidad, terminos, 404
 └── styles/global.css  # Tokens de diseño (tema claro y oscuro)
 ```
 
@@ -51,6 +51,16 @@ src/
 - **Radios:** controles (botones, inputs, chips) `rounded-control` (12px); paneles e imágenes `rounded-panel` (20px).
 - **Componentes base:** `.btn` + `.btn-primary` / `.btn-secondary` / `.btn-on-night`, `.field`, `.panel`, `.section-title`, `.section-lead`, `.link-arrow`.
 - **Movimiento:** añade `data-reveal` para que un elemento aparezca al entrar en pantalla. Todo respeta `prefers-reduced-motion`.
+
+## Asistente Bluddie (Gemini)
+
+Bluddie responde con **Gemini 2.5 Flash-Lite** a través de `src/pages/api/chat.ts`, que se ejecuta en Vercel para que la clave nunca llegue al navegador. El resto del sitio sigue siendo estático.
+
+1. Crea una clave en [Google AI Studio](https://aistudio.google.com/apikey).
+2. En local, copia `.env.example` a `.env` y pega la clave en `GEMINI_API_KEY`.
+3. En Vercel, añade la variable `GEMINI_API_KEY` (Settings → Environment Variables) y vuelve a desplegar.
+
+Sin clave, el chat muestra un aviso en lugar de fallar.
 
 ## Cuentas de prueba
 
@@ -66,5 +76,4 @@ Las cuentas creadas en `/register` y las citas agendadas desde «Agendar aquí»
 ## Pendiente
 
 - Las solicitudes urgentes, los centros (teléfonos ficticios, coordenadas aproximadas), el acceso y las citas usan datos de ejemplo; falta conectarlos a la API.
-- El asistente de IA solo muestra su ventana de presentación.
 - Los textos de privacidad y términos son un borrador para revisión legal.
