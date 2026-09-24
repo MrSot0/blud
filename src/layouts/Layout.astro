@@ -3,6 +3,8 @@
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import Assistant from '../components/Assistant.astro';
+import ScrollTop from '../components/ScrollTop.astro';
+import CustomCursor from '../components/CustomCusor.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -95,6 +97,8 @@ const ogImage = new URL('/og-image.jpg', base).href;
     <Footer />
 
     <Assistant />
+    <ScrollTop />
+    <CustomCursor />
 
     <script>
       // Revelado progresivo: los elementos con [data-reveal] aparecen al entrar en pantalla.

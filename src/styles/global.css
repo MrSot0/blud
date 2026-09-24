@@ -56,6 +56,8 @@
 
 :root {
   color-scheme: light;
+  --header-h: 4.5rem;
+  --header-offset: var(--header-h);
   --canvas: #F6F7F9;
   --surface: #FFFFFF;
   --sunken: #EDEFF3;
@@ -72,7 +74,6 @@
   --ok-soft: #E3F4E8;
   --warn: #975400;
   --warn-soft: #FCF0DC;
-  /* La noche es la superficie de marca (hero y footer); no cambia de tema. */
   --night: #1A202C;
   --night-2: #232B3A;
   --shadow-tint: 220 30% 20%;
@@ -126,13 +127,15 @@
   --shadow-tint: 220 40% 2%;
 }
 
+:root[data-header="hidden"] {
+  --header-offset: 0px;
+}
+
 /* ===== Base ===== */
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 5rem;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line-strong) var(--canvas);
+    scroll-padding-top: calc(var(--header-h) + 1rem);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -144,6 +147,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ocultación global forzada del cursor nativo en dispositivos con puntero (mouse) */
+  @media (pointer: fine) {
+    html,
+    body,
+    *,
+    *::before,
+    *::after {
+      cursor: none !important;
+    }
   }
 
   h1, h2, h3, h4 {
@@ -169,8 +183,7 @@
   html { scroll-behavior: auto; }
 }
 
-/* Cambio de tema: el nuevo tema se revela en círculo desde el botón.
-   Las coordenadas (--vt-x, --vt-y, --vt-r) las fija el script del Navbar. */
+/* Transición de Tema */
 html.theme-vt::view-transition-old(root),
 html.theme-vt::view-transition-new(root) {
   animation: none;
@@ -207,7 +220,6 @@ html.theme-vt::view-transition-new(root) {
     font-size: 0.9375rem;
     line-height: 1;
     white-space: nowrap;
-    cursor: pointer;
     user-select: none;
     transition:
       transform 160ms var(--ease-out),
@@ -237,7 +249,6 @@ html.theme-vt::view-transition-new(root) {
   }
   .btn-secondary:hover { background: var(--sunken); border-color: var(--ink-3); }
 
-  /* Botón claro sobre superficies "night" (hero y footer). */
   .btn-on-night {
     background: rgb(255 255 255 / 0.08);
     color: #fff;
@@ -296,6 +307,14 @@ html.theme-vt::view-transition-new(root) {
     letter-spacing: -0.035em;
     color: var(--ink);
   }
+  .section-head {
+    max-width: 48rem;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .section-head .section-lead {
+    margin-inline: auto;
+  }
   .section-lead {
     margin-top: 1rem;
     max-width: 60ch;
@@ -305,17 +324,13 @@ html.theme-vt::view-transition-new(root) {
   }
 }
 
-/* ===== Sesión =====
-   El script del <head> marca <html data-auth="in"> antes de pintar;
-   así los bloques de cada estado no parpadean al cargar. */
+/* ===== Sesión ===== */
 html:not([data-auth="in"]) [data-auth-in],
 html[data-auth="in"] [data-auth-out] {
   display: none !important;
 }
 
-/* ===== Revelado al hacer scroll =====
-   Solo se oculta si hay JS (clase .js en <html>), así el contenido
-   nunca queda invisible si el script falla. */
+/* ===== Revelado al hacer scroll ===== */
 .js [data-reveal] {
   opacity: 0;
   transform: translateY(14px);
@@ -342,8 +357,6 @@ html[data-auth="in"] [data-auth-out] {
 }
 
 /* ===== Utilidades de marca ===== */
-
-/* Grano fino fijo: rompe lo plano sin repintar al hacer scroll. */
 .grain::after {
   content: "";
   position: absolute;
@@ -392,7 +405,35 @@ html[data-auth="in"] [data-auth-out] {
 @keyframes blud-spin { to { transform: rotate(360deg); } }
 .spin { animation: blud-spin 0.9s linear infinite; }
 
-/* En tema oscuro, los paneles "night" se separan del fondo con un filo sutil. */
 :root[data-theme="dark"] .rounded-panel.bg-night {
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+
+/* ===== Custom Scrollbar Adaptativa con Tokens BLUD ===== */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 65%, var(--line-strong)) var(--sunken);
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 50%, var(--line-strong));
+  border-radius: 999px;
+  border: 2px solid var(--canvas);
+  transition: background-color 200ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }

@@ -76,7 +76,7 @@ const chipClass =
     </div>
 
     <!-- Cambio de vista (solo móvil): fijo bajo el header en lista y en mapa -->
-    <div class="view-switch sticky top-16 z-20 border-b border-line bg-surface/90 px-4 py-2.5 backdrop-blur-lg sm:px-6 lg:hidden">
+    <div class="view-switch sticky top-(--header-offset) z-20 transition-[top] duration-300 ease-(--ease-out) border-b border-line bg-surface/90 px-4 py-2.5 backdrop-blur-lg sm:px-6 lg:hidden">
       <div class="segmented segmented-full" role="group" aria-label="Vista">
         <button type="button" data-view-btn="list" aria-pressed="true">
           <Icon name="list" class="size-4" />
@@ -149,7 +149,7 @@ const chipClass =
       grid-template-areas:
         "head map"
         "list map";
-      height: calc(100dvh - 4rem);
+      height: calc(100dvh - var(--header-h));
     }
     .centros-head { grid-area: head; }
     .list-pane { grid-area: list; }
@@ -159,7 +159,7 @@ const chipClass =
   /* Móvil y tableta: una vista a la vez. El mapa ocupa lo que queda bajo el selector. */
   @media (max-width: 1023px) {
     .map-pane {
-      height: calc(100dvh - 4rem - 3.75rem);
+      height: calc(100dvh - var(--header-h) - 3.75rem);
       min-height: 22rem;
     }
     .centros-app[data-view="list"] .map-pane {

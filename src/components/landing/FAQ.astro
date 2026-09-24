@@ -1,4 +1,5 @@
 ---
+import DropField from '../DropField.astro';
 // FAQ.astro - Preguntas frecuentes de la plataforma BLUD
 import Icon from '../Icon.astro';
 
@@ -43,18 +44,20 @@ const faqs = [
 ];
 ---
 
-<section id="faq" class="border-t border-line bg-sunken py-24 lg:py-32">
-  <div class="container-blud">
+<section id="faq" class="relative isolate border-t border-line py-24 lg:py-32 dot-pattern-section">
+  <DropField seed={6} />
+  
+  <div class="container-blud relative z-10">
     <!-- Encabezado con búsqueda -->
-    <div class="grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-12" data-reveal>
-      <div class="lg:col-span-7">
-        <h2 class="section-title">Preguntas frecuentes</h2>
+    <div class="flex flex-col items-center gap-8" data-reveal>
+      <div class="section-head">
+        <h2 class="section-title">Preguntas <span class="text-accent">frecuentes</span></h2>
         <p class="section-lead">
           Cómo funciona BLUD, qué necesitas para donar y cómo trabajamos con los centros de salud.
         </p>
       </div>
 
-      <div class="lg:col-span-5">
+      <div class="w-full max-w-xl text-left">
         <label for="faq-search-input" class="sr-only">Buscar en preguntas frecuentes</label>
         <div class="relative">
           <Icon name="magnifying-glass" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-3" />
@@ -67,7 +70,7 @@ const faqs = [
           />
         </div>
 
-        <div class="mt-3 flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
+        <div class="mt-3 flex flex-wrap justify-center gap-2" role="group" aria-label="Filtrar por categoría">
           {categories.map((cat) => (
             <button
               type="button"
@@ -108,7 +111,7 @@ const faqs = [
         <button type="button" id="faq-clear" class="btn btn-secondary btn-sm mt-4">Limpiar filtros</button>
       </div>
 
-      <div class="mt-10 flex flex-col items-start justify-between gap-5 rounded-panel bg-surface p-6 sm:flex-row sm:items-center sm:p-7">
+      <div class="mt-10 flex flex-col items-start justify-between gap-5 rounded-panel bg-surface p-6 sm:flex-row sm:items-center sm:p-7 shadow-sm">
         <div>
           <h3 class="font-semibold text-ink">¿Tienes otra pregunta?</h3>
           <p class="mt-1 text-sm text-ink-2">Nuestro equipo de soporte responde en horario laboral.</p>
@@ -156,6 +159,23 @@ const faqs = [
   }
   @media (prefers-reduced-motion: reduce) {
     .faq-item::details-content { transition: none; }
+  }
+
+  /* Patrón de puntos optimizado para verse perfectamente */
+  .dot-pattern-section {
+    position: relative;
+    background-color: var(--sunken, #f7f9fa);
+  }
+
+  .dot-pattern-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(color-mix(in srgb, var(--accent) 35%, #000000 15%) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+    background-position: center;
   }
 </style>
 

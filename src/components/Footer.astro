@@ -23,20 +23,20 @@ const legalLinks = [
 ];
 ---
 
-<footer class="relative isolate overflow-hidden bg-night text-white">
+<footer class="relative isolate overflow-hidden bg-[color-mix(in_srgb,var(--accent)_86%,black)] text-white">
   <div class="grain absolute inset-0 -z-10" aria-hidden="true"></div>
 
   <div class="container-blud grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-6 lg:py-14">
     <div class="sm:col-span-2 lg:col-span-3">
       <Logo tone="light" />
-      <p class="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
+      <p class="mt-4 max-w-xs text-sm leading-relaxed text-white/80">
         Conectamos donantes voluntarios con pacientes y bancos de sangre en tiempo real.
       </p>
     </div>
 
     <nav class="lg:col-span-2" aria-label="Enlaces del sitio">
       <h2 class="text-sm font-semibold text-white">Plataforma</h2>
-      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/80">
         {quickLinks.map((link) => (
           <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
         ))}
@@ -45,7 +45,7 @@ const legalLinks = [
 
     <nav class="lg:col-span-3" aria-label="Infórmate">
       <h2 class="text-sm font-semibold text-white">Infórmate</h2>
-      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/80">
         {infoLinks.map((link) => (
           <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
         ))}
@@ -54,7 +54,7 @@ const legalLinks = [
 
     <nav class="lg:col-span-2" aria-label="Enlaces legales">
       <h2 class="text-sm font-semibold text-white">Legal</h2>
-      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/60">
+      <ul class="mt-3 flex flex-col gap-2 text-sm text-white/80">
         {legalLinks.map((link) => (
           <li><a href={link.href} class="transition-colors hover:text-white">{link.label}</a></li>
         ))}
@@ -67,20 +67,20 @@ const legalLinks = [
         href="mailto:soporte@blud.app"
         class="mt-3 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
       >
-        <Icon name="envelope-simple" class="size-4 text-white/50" />
+        <Icon name="envelope-simple" class="size-4 text-white/75" />
         soporte@blud.app
       </a>
-      <p class="mt-2 text-sm leading-relaxed text-white/60">
+      <p class="mt-2 text-sm leading-relaxed text-white/80">
         ¿Eres un centro de salud? Escríbenos para integrarte a la red.
       </p>
     </div>
   </div>
 
-  <div class="border-t border-white/10">
-    <div class="container-blud flex flex-col gap-3 pb-24 pt-5 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between sm:py-5 sm:pr-24">
+  <div class="border-t border-white/20">
+    <div class="container-blud flex flex-col gap-3 pb-24 pt-5 text-xs text-white/75 sm:flex-row sm:items-center sm:justify-between sm:py-5 sm:pr-24">
       <p>© {currentYear} BLUD. Todos los derechos reservados.</p>
       <p class="flex items-start gap-1.5">
-        <Icon name="first-aid-kit" class="size-4 shrink-0 text-[#F2605A]" />
+        <Icon name="first-aid-kit" class="size-4 shrink-0 text-white" />
         <span>
           Emergencia médica: acude al centro más cercano o llama al{' '}
           <a href="tel:911" class="font-semibold text-white underline underline-offset-2">911</a>

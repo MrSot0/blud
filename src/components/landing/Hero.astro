@@ -44,19 +44,19 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         )}
       </div>
     ))}
-    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgb(26_32_44/0.55)_0%,rgb(26_32_44/0.88)_55%,#1A202C_100%)] lg:bg-[linear-gradient(90deg,#1A202C_0%,rgb(26_32_44/0.94)_34%,rgb(26_32_44/0.55)_62%,rgb(0_95_115/0.25)_100%)]"></div>
+    <div class="hero-shade absolute inset-0"></div>
     <div class="grain absolute inset-0"></div>
   </div>
 
-  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] items-center pb-32 pt-20 lg:grid-cols-12">
-    <div class="lg:col-span-9 xl:col-span-8">
+  <div class="container-blud flex min-h-[calc(100dvh-var(--header-h))] flex-col items-center justify-center py-24 text-center">
+    <div class="w-full">
       <h1
         class="hero-in text-[clamp(2.625rem,1.3rem+4.2vw,4.5rem)] font-extrabold leading-[0.98] tracking-[-0.045em]"
         style="--i:0"
       >
         <span class="lg:whitespace-nowrap">Conectando donantes,</span>
         <span class="sr-only">salvando vidas.</span>
-        <span class="hero-rotator grid text-[#F2605A]" aria-hidden="true" data-rotator>
+        <span class="hero-rotator grid text-accent" aria-hidden="true" data-rotator>
           {phrases.map((phrase, i) => (
             <span class="hero-phrase" data-state={i === 0 ? 'active' : ''}>
               {phrase.split(' ').map((word, w) => (
@@ -67,14 +67,14 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         </span>
       </h1>
 
-      <p class="hero-in mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
+      <p class="hero-in mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
         Encuentra centros cercanos, atiende solicitudes de emergencia o agenda tu cita en minutos.
       </p>
 
-      <div class="hero-in mt-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-7" style="--i:2">
+      <div class="hero-in mt-10 flex flex-col items-center justify-center gap-5 sm:flex-row sm:gap-7" style="--i:2">
         <a href="/register" class="btn btn-primary btn-lg group">
           Quiero ser donante
-          <Icon name="arrow-right" class="size-5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" />
+          <Icon name="drop-fill" class="size-5 transition-transform duration-300 ease-out group-hover:-translate-y-0.5 group-hover:scale-110" />
         </a>
         <a
           href="/elegibilidad"
@@ -85,25 +85,23 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
       </div>
     </div>
   </div>
-
-  <!-- Pausa: detiene el cambio de fondo y del titular (WCAG 2.2.2) -->
-  <div class="container-blud pointer-events-none absolute inset-x-0 bottom-24 flex justify-end">
-    <button
-      type="button"
-      id="hero-toggle"
-      class="hero-in pointer-events-auto grid size-9 place-items-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
-      style="--i:3"
-      aria-label="Pausar animaciones del encabezado"
-    >
-      <span data-icon-pause><Icon name="pause" class="size-3.5" /></span>
-      <span data-icon-play class="hidden"><Icon name="play" class="size-3.5" /></span>
-    </button>
-  </div>
 </section>
 
 <style>
   .hero {
     --slide-duration: 6500ms;
+  }
+
+  /* Sombras en los bordes: el centro queda casi limpio y el oscurecimiento crece hacia las orillas. */
+  .hero-shade {
+    background:
+      linear-gradient(180deg, rgb(26 32 44 / 0.6) 0%, rgb(26 32 44 / 0) 24%, rgb(26 32 44 / 0) 70%, rgb(26 32 44 / 0.75) 100%),
+      radial-gradient(ellipse 90% 80% at 50% 50%, rgb(26 32 44 / 0.3) 0%, rgb(26 32 44 / 0.42) 55%, rgb(26 32 44 / 0.8) 100%);
+  }
+  /* Sombra suave para que el texto siga leyéndose sobre la parte más clara de la foto. */
+  .hero h1,
+  .hero p {
+    text-shadow: 0 2px 28px rgb(0 0 0 / 0.35);
   }
 
   .hero-slide {
@@ -189,16 +187,14 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
   if (hero) {
     const slides = Array.from(hero.querySelectorAll<HTMLElement>('.hero-slide'));
     const phrases = Array.from(hero.querySelectorAll<HTMLElement>('.hero-phrase'));
-    const toggle = hero.querySelector<HTMLButtonElement>('#hero-toggle');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Duración de cada imagen (se comparte con el zoom del CSS) y de cada frase del titular.
     const SLIDE_MS = 6500;
     const PHRASE_MS = 3200;
     hero.style.setProperty('--slide-duration', `${SLIDE_MS}ms`);
 
-    let userPaused = reduceMotion;
     let onScreen = true;
-    const isRunning = () => !userPaused && onScreen && !document.hidden;
+    const isRunning = () => !reduceMotion && onScreen && !document.hidden;
 
     /** Temporizador que se puede pausar y reanudar conservando el tiempo restante. */
     const createTicker = (duration: number, onTick: () => void) => {
@@ -283,15 +279,6 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
       }
     };
 
-    const setPaused = (paused: boolean) => {
-      userPaused = paused;
-      toggle?.setAttribute('aria-label', paused ? 'Reanudar animaciones del encabezado' : 'Pausar animaciones del encabezado');
-      toggle?.querySelector('[data-icon-pause]')?.classList.toggle('hidden', paused);
-      toggle?.querySelector('[data-icon-play]')?.classList.toggle('hidden', !paused);
-      sync();
-    };
-
-    toggle?.addEventListener('click', () => setPaused(!userPaused));
     document.addEventListener('visibilitychange', sync);
 
     if ('IntersectionObserver' in window) {
@@ -301,7 +288,7 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
       }).observe(hero);
     }
 
-    setPaused(userPaused);
+    sync();
     // Precarga la segunda imagen cuando el navegador esté libre.
     if ('requestIdleCallback' in window) window.requestIdleCallback(() => loadSlide(1));
     else setTimeout(() => loadSlide(1), 1200);

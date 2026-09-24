@@ -1,0 +1,145 @@
+---
+// CustomCursor.astro
+---
+
+<div id="cursor-dot" class="cursor-dot" aria-hidden="true"></div>
+<div id="cursor-ring" class="cursor-ring" aria-hidden="true"></div>
+
+<style is:global>
+  /* Ocultar cursor nativo */
+  @media (pointer: fine) {
+    html,
+    body,
+    *,
+    *::before,
+    *::after {
+      cursor: none !important;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .cursor-dot,
+    .cursor-ring {
+      display: none !important;
+    }
+  }
+
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent, #e53e3e);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    will-change: transform;
+    transition: background-color 0.2s ease-out;
+  }
+
+  .cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    border: 2px solid color-mix(in srgb, var(--accent, #e53e3e) 50%, transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    will-change: transform, width, height;
+    transition:
+      width 0.2s ease-out,
+      height 0.2s ease-out,
+      border-color 0.2s ease-out,
+      background-color 0.2s ease-out;
+  }
+
+  /* Estado Hover (sobre botones / enlaces) */
+  body.cursor-hover .cursor-dot {
+    transform: scale(1.5);
+  }
+
+  body.cursor-hover .cursor-ring {
+    width: 48px;
+    height: 48px;
+    border-color: var(--accent, #e53e3e);
+    background-color: color-mix(in srgb, var(--accent, #e53e3e) 15%, transparent);
+  }
+
+  /* Estado Blanco (sobre fondor rojo u oscuro) */
+  body.cursor-white .cursor-dot {
+    background-color: #ffffff !important;
+  }
+
+  body.cursor-white .cursor-ring {
+    border-color: #ffffff !important;
+  }
+
+  body.cursor-white.cursor-hover .cursor-ring {
+    border-color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.2) !important;
+  }
+</style>
+
+<script>
+  function initCustomCursor() {
+    const dot = document.getElementById('cursor-dot');
+    const ring = document.getElementById('cursor-ring');
+
+    if (!dot || !ring || !window.matchMedia('(pointer: fine)').matches) return;
+
+    let mouseX = -100;
+    let mouseY = -100;
+    let ringX = -100;
+    let ringY = -100;
+
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+    });
+
+    function render() {
+      ringX += (mouseX - ringX) * 0.2;
+      ringY += (mouseY - ringY) * 0.2;
+      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
+    // Detección de elementos interactivos y zonas de fondo rojo
+    const clickableSelector = 'a, button, input, select, textarea, [role="button"], label, details, .type-tile, .dropdown-option, .matrix-btn';
+    const redBgSelector = '.bg-accent, .bg-accent-strong, .bg-red-500, .bg-red-600, [data-cursor-white]';
+
+    document.addEventListener('mouseover', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      if (target.closest(clickableSelector)) {
+        document.body.classList.add('cursor-hover');
+      }
+
+      if (target.closest(redBgSelector)) {
+        document.body.classList.add('cursor-white');
+      }
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      if (target.closest(clickableSelector)) {
+        document.body.classList.remove('cursor-hover');
+      }
+
+      if (target.closest(redBgSelector)) {
+        document.body.classList.remove('cursor-white');
+      }
+    });
+  }
+
+  initCustomCursor();
+  document.addEventListener('astro:page-load', initCustomCursor);
+</script>

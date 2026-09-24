@@ -1,4 +1,5 @@
 ---
+import DropField from '../DropField.astro';
 import Icon from '../Icon.astro';
 
 const labPhoto = "https://images.unsplash.com/photo-1579154204601-01588f351e67";
@@ -9,10 +10,13 @@ const previewTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 const pretty = (t: string) => t.replace('-', '−');
 ---
 
-<section id="que-es" class="relative pb-24 pt-24 lg:pb-32 lg:pt-32">
-  <div class="container-blud">
-    <div class="max-w-3xl" data-reveal>
-      <h2 class="section-title">¿Qué es BLUD?</h2>
+<section id="que-es" class="relative isolate pb-24 pt-24 lg:pb-32 lg:pt-32 stripe-pattern-section">
+  <!-- Fondo decorativo de íconos -->
+  <DropField seed={1} />
+
+  <div class="container-blud relative z-10">
+    <div class="section-head" data-reveal>
+      <h2 class="section-title">¿Qué es <span class="text-accent">BLUD</span>?</h2>
       <p class="section-lead">
         Un ecosistema digital para que donar sangre sea más rápido y más claro: reduce los tiempos de
         respuesta en situaciones críticas y coordina a donantes y centros médicos en una sola red.
@@ -22,7 +26,7 @@ const pretty = (t: string) => t.replace('-', '−');
     <div class="mt-14 grid gap-4 lg:mt-16 lg:grid-cols-12 lg:grid-rows-[auto_auto] lg:gap-5">
       <!-- Red de bancos de sangre: foto real -->
       <article
-        class="group relative isolate flex min-h-[26rem] flex-col justify-end overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-7 lg:row-span-2 lg:min-h-[34rem] lg:p-10"
+        class="group relative isolate flex min-h-[26rem] flex-col justify-end overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-7 lg:row-span-2 lg:min-h-[34rem] lg:p-10 shadow-sm"
         data-reveal
       >
         <img
@@ -52,7 +56,7 @@ const pretty = (t: string) => t.replace('-', '−');
 
       <!-- Conexión inmediata: patrón de ondas en tono de marca -->
       <article
-        class="relative isolate overflow-hidden rounded-panel border border-accent/15 bg-accent-soft p-7 lg:col-span-5 lg:p-9"
+        class="relative isolate overflow-hidden rounded-panel border border-accent/15 bg-accent-soft p-7 lg:col-span-5 lg:p-9 shadow-sm"
         data-reveal
         style="--reveal-delay:1"
       >
@@ -69,7 +73,7 @@ const pretty = (t: string) => t.replace('-', '−');
 
       <!-- Compatibilidad: vista previa real de la matriz -->
       <article
-        class="rounded-panel border border-line bg-surface p-7 lg:col-span-5 lg:p-9"
+        class="rounded-panel border border-line bg-surface p-7 lg:col-span-5 lg:p-9 shadow-sm"
         data-reveal
         style="--reveal-delay:2"
       >
@@ -113,5 +117,26 @@ const pretty = (t: string) => t.replace('-', '−');
       transparent 1px 22px
     );
     mask-image: radial-gradient(circle at center, #000 30%, transparent 70%);
+  }
+
+  /* Fondo blanco con patrón de líneas diagonales claramente visible */
+  .stripe-pattern-section {
+    position: relative;
+    background-color: #ffffff;
+  }
+
+  .stripe-pattern-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      color-mix(in srgb, var(--accent) 12%, transparent) 2px,
+      transparent 2px,
+      transparent 18px
+    );
   }
 </style>

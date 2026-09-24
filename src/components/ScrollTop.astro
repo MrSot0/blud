@@ -1,0 +1,111 @@
+---
+// ScrollTop.astro - Botón flotante «Volver arriba».
+// Se apila justo encima del botón del asistente (Assistant.astro), alineado a su centro.
+---
+
+<button
+  type="button"
+  id="scroll-to-top"
+  class="scroll-top group fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.5rem)] right-[1.375rem] z-30 grid size-12 place-items-center rounded-full border border-white/60 bg-accent text-white outline-offset-2 hover:bg-accent-strong sm:bottom-24 sm:right-[1.875rem]"
+  aria-label="Volver arriba"
+  data-visible="false"
+>
+  <svg
+    class="size-5 transition-transform duration-300 ease-(--ease-out) group-hover:-translate-y-0.5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path>
+  </svg>
+
+  <!-- Etiqueta al pasar el mouse o al enfocar con teclado -->
+  <span
+    class="pointer-events-none absolute right-14 whitespace-nowrap rounded-control bg-surface px-3 py-1.5 text-xs font-semibold text-ink opacity-0 shadow-md ring-1 ring-line transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+    aria-hidden="true"
+  >
+    Volver arriba
+  </span>
+</button>
+
+<style>
+  .scroll-top {
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-tint) / 0.08),
+      0 14px 30px -12px hsl(var(--shadow-tint) / 0.45);
+    transition:
+      opacity 300ms ease,
+      transform 300ms var(--ease-out),
+      background-color 200ms ease,
+      visibility 0s linear 300ms;
+  }
+  .scroll-top[data-visible="false"] {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(1rem);
+  }
+  .scroll-top[data-visible="true"] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+  }
+  .scroll-top[data-visible="true"]:active {
+    transform: scale(0.94);
+  }
+  @media (hover: hover) {
+    .scroll-top[data-visible="true"]:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* No estorba con la ventana del asistente ni con el menú móvil abiertos. */
+  :global(body:has(#assistant-panel[data-open="true"])) .scroll-top,
+  :global(html.menu-open) .scroll-top {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-top,
+    .scroll-top[data-visible] {
+      transform: none;
+      transition-duration: 1ms;
+    }
+  }
+</style>
+
+<script>
+  const button = document.getElementById('scroll-to-top');
+
+  if (button) {
+    const SHOW_AFTER = 400; // px de scroll antes de mostrar el botón
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      button.dataset.visible = String(window.scrollY > SHOW_AFTER);
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(update);
+      },
+      { passive: true }
+    );
+
+    button.addEventListener('click', () => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      // Devuelve el foco al contenido para quien navega con teclado.
+      document.getElementById('contenido')?.focus({ preventScroll: true });
+    });
+
+    update();
+  }
+</script>

@@ -1,4 +1,5 @@
 ---
+import DropField from '../DropField.astro';
 // Map.astro - Vista previa de los centros de salud en la portada.
 // El mapa completo, con filtros y distancia, vive en /centros.
 // Leaflet se carga solo cuando el mapa está por entrar en pantalla.
@@ -9,16 +10,18 @@ import { centers, featuredCenters } from '../../data/centers';
 import '../../styles/map.css';
 ---
 
-<section id="centros" class="border-y border-line bg-sunken py-24 lg:py-32" data-centers={JSON.stringify(featuredCenters)}>
-  <div class="container-blud">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
-      <div class="max-w-3xl">
-        <h2 class="section-title">Centros de salud conectados</h2>
+<section id="centros" class="relative isolate border-y border-line py-24 lg:py-32 dot-pattern-section" data-centers={JSON.stringify(featuredCenters)}>
+  <DropField seed={4} />
+
+  <div class="container-blud relative z-10">
+    <div class="flex flex-col items-center gap-6 text-center" data-reveal>
+      <div class="section-head">
+        <h2 class="section-title">Centros de salud <span class="text-accent">conectados</span></h2>
         <p class="section-lead">
           Hospitales, bancos de sangre y clínicas integradas en BLUD. Elige uno para ubicarlo en el mapa.
         </p>
       </div>
-      <a href="/centros" class="btn btn-secondary shrink-0 self-start lg:self-auto">
+      <a href="/centros" class="btn btn-secondary shrink-0">
         <Icon name="map-trifold" class="size-5" />
         Ver mapa completo
       </a>
@@ -26,7 +29,7 @@ import '../../styles/map.css';
 
     <div class="mt-12 grid gap-5 lg:grid-cols-12 lg:gap-6" data-reveal>
       <!-- Lista -->
-      <div class="panel order-2 flex flex-col p-5 sm:p-6 lg:order-1 lg:col-span-5 xl:col-span-4">
+      <div class="panel order-2 flex flex-col p-5 sm:p-6 lg:order-1 lg:col-span-5 xl:col-span-4 shadow-sm">
         <label for="search-center-input" class="sr-only">Buscar centro</label>
         <div class="relative">
           <Icon name="magnifying-glass" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-3" />
@@ -64,7 +67,7 @@ import '../../styles/map.css';
       </div>
 
       <!-- Mapa -->
-      <div class="relative order-1 isolate h-[340px] overflow-hidden rounded-panel border border-line bg-sunken sm:h-[420px] lg:order-2 lg:col-span-7 lg:h-auto lg:min-h-[540px] xl:col-span-8">
+      <div class="relative order-1 isolate h-[340px] overflow-hidden rounded-panel border border-line bg-sunken sm:h-[420px] lg:order-2 lg:col-span-7 lg:h-auto lg:min-h-[540px] xl:col-span-8 shadow-sm">
         <div id="blud-map" class="blud-map absolute inset-0" role="region" aria-label="Mapa de centros de salud en Maracaibo"></div>
         <div id="map-skeleton" class="skeleton absolute inset-0 grid place-items-center" aria-hidden="true">
           <span class="inline-flex items-center gap-2 rounded-control bg-surface px-4 py-2 text-sm font-medium text-ink-2 shadow-sm">
@@ -84,6 +87,25 @@ import '../../styles/map.css';
 </section>
 
 <ScheduleDialog />
+
+<style>
+  /* Patrón de puntos optimizado para el fondo */
+  .dot-pattern-section {
+    position: relative;
+    background-color: var(--sunken, #f7f9fa);
+  }
+
+  .dot-pattern-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(color-mix(in srgb, var(--accent) 35%, #000000 15%) 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+    background-position: center;
+  }
+</style>
 
 <script>
   import { centerIcon, createMap, loadLeaflet, popupHtml, popupOptions, whenNearViewport } from '../../lib/map';

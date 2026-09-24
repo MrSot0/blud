@@ -1,13 +1,16 @@
 ---
+import DropField from '../DropField.astro';
 // Acceso a la sección Infórmate desde la portada.
 import Icon from '../Icon.astro';
 import { infoTopics, infoHref } from '../../data/info';
 ---
 
-<section id="informate" class="py-24 lg:py-32">
-  <div class="container-blud grid gap-12 lg:grid-cols-12">
-    <div class="lg:col-span-4" data-reveal>
-      <h2 class="section-title">Infórmate antes de donar</h2>
+<section id="informate" class="relative isolate py-24 lg:py-32 stripe-pattern-section">
+  <DropField seed={5} />
+
+  <div class="container-blud relative z-10 flex flex-col gap-12">
+    <div class="section-head" data-reveal>
+      <h2 class="section-title">Infórmate antes de <span class="text-accent">donar</span></h2>
       <p class="section-lead">Cinco lecturas cortas para llegar con calma a tu primera donación y entender a dónde va tu sangre.</p>
       <a href="/informate" class="link-arrow mt-6">
         Ver todos los temas
@@ -15,7 +18,7 @@ import { infoTopics, infoHref } from '../../data/info';
       </a>
     </div>
 
-    <ol class="border-t border-line-strong lg:col-span-8">
+    <ol class="mx-auto w-full max-w-4xl border-t border-line-strong">
       {infoTopics.map((topic, i) => (
         <li class="border-b border-line-strong" data-reveal style={`--reveal-delay:${i}`}>
           <a href={infoHref(topic.slug)} class="teaser-row group grid grid-cols-[auto_1fr_auto] items-center gap-5 py-5 sm:gap-6 sm:py-6">
@@ -42,5 +45,26 @@ import { infoTopics, infoHref } from '../../data/info';
   }
   @media (hover: hover) {
     .teaser-row:hover .teaser-arrow :global(svg) { transform: translateX(2px) rotate(-45deg); }
+  }
+
+  /* Fondo blanco con patrón de líneas diagonales (stripes) */
+  .stripe-pattern-section {
+    position: relative;
+    background-color: #ffffff;
+  }
+
+  .stripe-pattern-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      color-mix(in srgb, var(--accent) 12%, transparent),
+      color-mix(in srgb, var(--accent) 12%, transparent) 2px,
+      transparent 2px,
+      transparent 18px
+    );
   }
 </style>
