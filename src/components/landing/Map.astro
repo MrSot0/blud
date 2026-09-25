@@ -1,188 +1,120 @@
 ---
-// Map.astro - Vista previa de los centros de salud en la portada.
-// El mapa completo, con filtros y distancia, vive en /centros.
-// Leaflet se carga solo cuando el mapa está por entrar en pantalla.
+// Map.astro - Vista previa de los centros en la portada: franja de mapa estática
+// con una tarjeta encima. Todo lleva a /centros, donde vive el mapa interactivo.
+// Leaflet se carga solo cuando la franja está por entrar en pantalla.
 import Icon from '../Icon.astro';
-import CenterCard from '../centers/CenterCard.astro';
-import ScheduleDialog from '../centers/ScheduleDialog.astro';
-import { centers, featuredCenters } from '../../data/centers';
+import { centers } from '../../data/centers';
 import '../../styles/map.css';
+
+const cities = new Set(centers.map((c) => c.city)).size;
 ---
 
-<section id="centros" class="border-y border-line bg-sunken py-24 lg:py-32" data-centers={JSON.stringify(featuredCenters)}>
+<section id="centros" data-centers={JSON.stringify(centers)}>
   <div class="container-blud">
-    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
-      <div class="max-w-3xl">
-        <h2 class="section-title">Centros de salud conectados</h2>
-        <p class="section-lead">
-          Hospitales, bancos de sangre y clínicas integradas en BLUD. Elige uno para ubicarlo en el mapa.
-        </p>
-      </div>
-      <a href="/centros" class="btn btn-secondary shrink-0 self-start lg:self-auto">
-        <Icon name="map-trifold" class="size-5" />
-        Ver mapa completo
-      </a>
-    </div>
-
-    <div class="mt-12 grid gap-5 lg:grid-cols-12 lg:gap-6" data-reveal>
-      <!-- Lista -->
-      <div class="panel order-2 flex flex-col p-5 sm:p-6 lg:order-1 lg:col-span-5 xl:col-span-4">
-        <label for="search-center-input" class="sr-only">Buscar centro</label>
-        <div class="relative">
-          <Icon name="magnifying-glass" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-3" />
-          <input
-            type="search"
-            id="search-center-input"
-            placeholder="Nombre, tipo o dirección"
-            autocomplete="off"
-            class="field pl-12"
-          />
-        </div>
-
-        <p class="mt-5 text-sm font-semibold text-ink" aria-live="polite">
-          <span id="center-count" class="tabular">{featuredCenters.length}</span> centros
-        </p>
-
-        <ul id="centers-list" class="mt-4 flex flex-col gap-2">
-          {featuredCenters.map((c) => (
-            <li data-center-item={c.id} data-search={`${c.name} ${c.type} ${c.address}`.toLowerCase()}>
-              <CenterCard center={c} />
-            </li>
-          ))}
-        </ul>
-
-        <div id="centers-empty" class="hidden py-8 text-center">
-          <p class="font-semibold text-ink">Ningún centro coincide con tu búsqueda</p>
-          <p class="mt-1 text-sm text-ink-3">Prueba con el nombre del hospital o la avenida.</p>
-          <button type="button" id="centers-clear" class="btn btn-secondary btn-sm mt-4">Limpiar búsqueda</button>
-        </div>
-
-        <a href="/centros" class="link-arrow mt-5 self-start text-sm">
-          Ver los {centers.length} centros de la red
-          <Icon name="arrow-right" class="size-4" />
-        </a>
+    <div class="centers-preview group relative isolate overflow-hidden rounded-panel border border-line bg-sunken" data-reveal>
+      <!-- Mapa de fondo, solo decorativo: sin zoom ni arrastre -->
+      <div class="relative h-56 sm:absolute sm:inset-0 sm:h-auto" aria-hidden="true">
+        <div id="blud-map" class="blud-map pointer-events-none absolute inset-0"></div>
+        <div id="map-skeleton" class="skeleton absolute inset-0"></div>
       </div>
 
-      <!-- Mapa -->
-      <div class="relative order-1 isolate h-[340px] overflow-hidden rounded-panel border border-line bg-sunken sm:h-[420px] lg:order-2 lg:col-span-7 lg:h-auto lg:min-h-[540px] xl:col-span-8">
-        <div id="blud-map" class="blud-map absolute inset-0" role="region" aria-label="Mapa de centros de salud en Maracaibo"></div>
-        <div id="map-skeleton" class="skeleton absolute inset-0 grid place-items-center" aria-hidden="true">
-          <span class="inline-flex items-center gap-2 rounded-control bg-surface px-4 py-2 text-sm font-medium text-ink-2 shadow-sm">
-            <Icon name="map-trifold" class="size-4" />
-            Cargando mapa
-          </span>
-        </div>
-        <div id="map-error" class="absolute inset-0 hidden place-items-center p-8 text-center">
-          <div>
-            <p class="font-semibold text-ink">No pudimos cargar el mapa</p>
-            <p class="mt-1 text-sm text-ink-3">Usa el botón «Cómo llegar» de cada centro para abrirlo en Google Maps.</p>
-          </div>
+      <!-- Toda la franja lleva a /centros; el botón de la tarjeta es el enlace accesible -->
+      <a href="/centros" class="absolute inset-0 z-[450]" tabindex="-1" aria-hidden="true"></a>
+
+      <!-- Tarjeta -->
+      <div class="pointer-events-none relative z-[500] p-4 sm:flex sm:min-h-[22rem] sm:items-center sm:p-8 lg:min-h-[24rem] lg:p-10">
+        <div class="preview-card panel p-6 sm:max-w-sm sm:p-7">
+          <h2 class="text-2xl font-bold leading-tight tracking-[-0.03em] text-ink sm:text-[1.75rem]">
+            {centers.length} centros de donación
+          </h2>
+          <p class="mt-2 leading-relaxed text-ink-2">
+            Bancos de sangre, hospitales y clínicas en {cities === 2 ? 'Maracaibo y San Francisco' : 'la región'}.
+            Mira cuáles están abiertos, cómo llegar y agenda tu cita.
+          </p>
+          <p class="mt-4 flex items-center gap-2 text-sm font-medium text-ok" data-open-count hidden>
+            <span class="live-dot" aria-hidden="true"></span>
+            <span></span>
+          </p>
+          <a href="/centros" class="btn btn-primary pointer-events-auto mt-6 w-full sm:w-auto">
+            Ver mapa completo
+            <Icon name="arrow-right" class="preview-arrow size-5" />
+          </a>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<ScheduleDialog />
+<style>
+  .centers-preview {
+    transition: border-color 200ms ease;
+  }
+  .preview-card {
+    transition: transform 300ms var(--ease-out), box-shadow 300ms ease;
+  }
+  .preview-card :global(.preview-arrow) {
+    transition: transform 200ms var(--ease-out);
+  }
+  @media (hover: hover) {
+    .centers-preview:hover {
+      border-color: var(--line-strong);
+    }
+    .centers-preview:hover .preview-card {
+      transform: translateY(-3px);
+    }
+    .centers-preview:hover .preview-card :global(.preview-arrow) {
+      transform: translateX(3px);
+    }
+  }
+  /* Los controles de Leaflet no hacen falta en una vista previa. */
+  .centers-preview :global(.leaflet-control-container .leaflet-top) {
+    display: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .centers-preview:hover .preview-card { transform: none; }
+  }
+</style>
 
 <script>
-  import { centerIcon, createMap, loadLeaflet, popupHtml, popupOptions, whenNearViewport } from '../../lib/map';
+  import { centerIcon, createMap, loadLeaflet, openStatus, whenNearViewport } from '../../lib/map';
   import type { HealthCenter } from '../../data/centers';
 
   const section = document.getElementById('centros');
   const centers: HealthCenter[] = JSON.parse(section?.dataset.centers || '[]');
   const mapEl = document.getElementById('blud-map');
   const skeleton = document.getElementById('map-skeleton');
-  const errorBox = document.getElementById('map-error');
-  const searchInput = document.getElementById('search-center-input') as HTMLInputElement | null;
-  const countEl = document.getElementById('center-count');
-  const emptyState = document.getElementById('centers-empty');
-  const clearBtn = document.getElementById('centers-clear');
-  const items = document.querySelectorAll<HTMLElement>('[data-center-item]');
-  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-center-id]');
+  const openCount = section?.querySelector<HTMLElement>('[data-open-count]');
 
-  let map: any = null;
-  const markers: Record<string, any> = {};
-
-  function setSelected(id: string | null) {
-    buttons.forEach((btn) => btn.setAttribute('aria-pressed', String(btn.dataset.centerId === id)));
-    Object.entries(markers).forEach(([markerId, marker]) => {
-      marker.getElement()?.classList.toggle('is-selected', markerId === id);
-    });
+  // Cuántos centros están abiertos según la hora local del visitante.
+  if (openCount) {
+    const open = centers.filter((c) => openStatus(c).open).length;
+    openCount.querySelector('span:last-child')!.textContent =
+      open === 1 ? '1 abierto ahora' : `${open} abiertos ahora`;
+    openCount.hidden = open === 0;
   }
-
-  function initMap(L: any) {
-    if (!mapEl) return;
-    map = createMap(L, mapEl);
-    map.setView([10.672, -71.625], 13);
-
-    centers.forEach((center) => {
-      const marker = L.marker(center.coords, { icon: centerIcon(L), title: center.name, alt: center.name }).addTo(map);
-      marker.bindPopup(popupHtml(center), popupOptions);
-      marker.on('click', () => setSelected(center.id));
-      markers[center.id] = marker;
-    });
-
-    skeleton?.classList.add('hidden');
-  }
-
-  function focusCenter(id: string) {
-    const center = centers.find((c) => c.id === id);
-    setSelected(id);
-    if (!center || !map || !markers[id]) return;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    map.flyTo(center.coords, 15, { duration: reduce ? 0 : 1.1 });
-    markers[id].openPopup();
-  }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.centerId;
-      if (!id) return;
-      focusCenter(id);
-      // En móvil el mapa está arriba: lo traemos a la vista.
-      if (window.matchMedia('(max-width: 1023px)').matches) {
-        mapEl?.parentElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-  });
-
-  function filter() {
-    const query = (searchInput?.value || '').toLowerCase().trim();
-    let visible = 0;
-    items.forEach((item) => {
-      const match = (item.dataset.search || '').includes(query);
-      item.classList.toggle('hidden', !match);
-      const marker = markers[item.dataset.centerItem || ''];
-      if (marker && map) {
-        if (match && !map.hasLayer(marker)) map.addLayer(marker);
-        if (!match && map.hasLayer(marker)) map.removeLayer(marker);
-      }
-      if (match) visible++;
-    });
-    if (countEl) countEl.textContent = String(visible);
-    emptyState?.classList.toggle('hidden', visible > 0);
-  }
-
-  searchInput?.addEventListener('input', filter);
-  clearBtn?.addEventListener('click', () => {
-    if (searchInput) searchInput.value = '';
-    filter();
-    searchInput?.focus();
-  });
 
   if (mapEl) {
     whenNearViewport(mapEl, () =>
       loadLeaflet()
         .then((L) => {
-          initMap(L);
-          filter();
+          const map = createMap(L, mapEl, { zoom: 12 });
+          [map.dragging, map.touchZoom, map.doubleClickZoom, map.scrollWheelZoom, map.boxZoom, map.keyboard].forEach(
+            (handler) => handler?.disable()
+          );
+          map.off('focus click');
+          centers.forEach((c) => L.marker(c.coords, { icon: centerIcon(L), keyboard: false, interactive: false }).addTo(map));
+
+          // En pantallas anchas la tarjeta tapa la izquierda: los pines se centran a la derecha.
+          const wide = window.matchMedia('(min-width: 640px)').matches;
+          map.fitBounds(L.latLngBounds(centers.map((c) => c.coords)), {
+            paddingTopLeft: [wide ? Math.min(mapEl.clientWidth * 0.45, 460) : 24, 32],
+            paddingBottomRight: [32, 32],
+            maxZoom: 14,
+            animate: false,
+          });
+          skeleton?.remove();
         })
-        .catch(() => {
-          skeleton?.classList.add('hidden');
-          errorBox?.classList.remove('hidden');
-          errorBox?.classList.add('grid');
-        })
+        .catch(() => skeleton?.classList.remove('skeleton'))
     );
   }
 </script>
