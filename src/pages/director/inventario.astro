@@ -1,0 +1,179 @@
+---
+// src/pages/director/inventario.astro
+import Layout from '../../layouts/LayoutD.astro';
+import Icon from '../../components/Icon.astro';
+
+const hemocomponentes = [
+  { din: "DIN-2026-0091", tipo: "Glóbulos Rojos", grupo: "O+", vol: "320 mL", estado: "Cuarentena", vencimiento: "2026-11-05", alerta: false },
+  { din: "DIN-2026-0084", tipo: "Plaquetas", grupo: "A-", vol: "250 mL", estado: "Disponible", vencimiento: "2026-09-30", alerta: true },
+  { din: "DIN-2026-0072", tipo: "Plasma Fresco", grupo: "B+", vol: "500 mL", estado: "Reservado", vencimiento: "2027-03-12", alerta: false },
+  { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", alerta: false },
+];
+
+const recentMovements = [
+  { type: 'Ingreso', code: 'INS-6436', name: 'Plaquetas', lot: 'LOT-1029', qty: '+50', area: 'Stock Principal', user: 'Pedro Castro', time: '10:15 AM' },
+  { type: 'Egreso', code: 'INS-4326', name: 'Glóbulos Rojos', lot: 'LOT-9345', qty: '-5', area: 'Hematología y Coagulación', user: 'Ana Castro', time: '09:30 AM' },
+  { type: 'Egreso', code: 'INS-0284', name: 'Plasma', lot: 'LOT-7732', qty: '-2', area: 'Microbiología', user: 'Pedro Castro', time: '08:45 AM' },
+];
+---
+
+<Layout title="BLUD | Inventario de Hemoderivados">
+  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
+    <div class="container-blud space-y-6">
+      
+      <!-- Encabezado con acciones -->
+      <div class="panel p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-ink">Control de Inventario de Hemoderivados</h1>
+          <p class="text-sm text-ink-3">Trazabilidad en tiempo real, alertas de vencimiento y gestión de fraccionamiento.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="bg-accent-soft text-accent-ink text-xs px-3 py-2 rounded-control font-semibold flex items-center gap-1.5 border border-accent/20">
+            Alerta Vencimiento Próximo (≤ 48h)
+          </span>
+        </div>
+      </div>
+
+      <!-- Resumen rápido de stock -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="panel p-4 border-l-4 border-l-accent">
+          <p class="text-xs text-accent-ink font-bold uppercase">Glóbulos Rojos</p>
+          <p class="text-2xl font-extrabold text-ink mt-1">42 <span class="text-xs font-normal text-ink-3">unidades</span></p>
+          <p class="text-[11px] text-ink-3 mt-1">Vida útil: 35-42 días</p>
+        </div>
+        <div class="panel p-4 border-l-4 border-l-warn">
+          <p class="text-xs text-warn font-bold uppercase">Plaquetas</p>
+          <p class="text-2xl font-extrabold text-ink mt-1">12 <span class="text-xs font-normal text-ink-3">unidades</span></p>
+          <p class="text-[11px] text-ink-3 mt-1">Vida útil: 5-7 días (Agitación)</p>
+        </div>
+        <div class="panel p-4 border-l-4 border-l-ok">
+          <p class="text-xs text-ok font-bold uppercase">Plasma Fresco (PFC)</p>
+          <p class="text-2xl font-extrabold text-ink mt-1">85 <span class="text-xs font-normal text-ink-3">unidades</span></p>
+          <p class="text-[11px] text-ink-3 mt-1">Congelado: 1-3 años</p>
+        </div>
+        <div class="panel p-4 border-l-4 border-l-ink-2">
+          <p class="text-xs text-ink-2 font-bold uppercase">Crioprecipitados</p>
+          <p class="text-2xl font-extrabold text-ink mt-1">29 <span class="text-xs font-normal text-ink-3">unidades</span></p>
+          <p class="text-[11px] text-ink-3 mt-1">Factor VIII y Fibrinógeno</p>
+        </div>
+      </div>
+
+      <!-- Tabla de Hemocomponentes -->
+      <div class="panel p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <h2 class="text-lg font-bold text-ink">Unidades Sanguíneas Registradas</h2>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <input type="text" placeholder="Buscar por código DIN..." class="field text-xs py-1.5 px-3" />
+            <select class="field text-xs py-1.5 px-3 max-w-[140px]">
+              <option value="">Todos los grupos</option>
+              <option value="O+">O+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="AB+">AB+</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-ink">
+            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
+              <tr>
+                <th class="p-3 rounded-l-control">Código DIN</th>
+                <th class="p-3">Hemocomponente</th>
+                <th class="p-3">Grupo Sanguíneo</th>
+                <th class="p-3">Volumen</th>
+                <th class="p-3">Estado Trazable</th>
+                <th class="p-3">Vencimiento</th>
+                <th class="p-3 text-right rounded-r-control">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {hemocomponentes.map((item) => (
+                <tr class="hover:bg-sunken/50 transition-colors">
+                  <td class="p-3 font-mono font-bold text-ink">{item.din}</td>
+                  <td class="p-3 font-medium">{item.tipo}</td>
+                  <td class="p-3">
+                    <span class="font-bold text-accent-ink bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
+                      {item.grupo}
+                    </span>
+                  </td>
+                  <td class="p-3 text-ink-2">{item.vol}</td>
+                  <td class="p-3">
+                    <span class={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                      item.estado === 'Disponible' ? 'bg-ok-soft text-ok border-ok/30' :
+                      item.estado === 'Cuarentena' ? 'bg-warn-soft text-warn border-warn/30' :
+                      item.estado === 'Reservado' ? 'bg-sunken text-ink-2 border-line-strong' : 
+                      'bg-accent-soft text-accent-ink border-accent/30'
+                    }`}>
+                      {item.estado}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <span class={item.alerta ? "text-accent-ink font-bold animate-pulse" : "text-ink-2"}>
+                      {item.vencimiento}
+                    </span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <select class="text-xs bg-sunken hover:bg-line text-ink font-semibold px-2 py-1 rounded border border-line cursor-pointer">
+                      <option class="bg-white " disabled selected>Cambiar Estado</option>
+                      <option class="bg-white " value="disponible">Aprobar (Disponible)</option>
+                      <option class="bg-white " value="reservado">Reservar para Paciente</option>
+                      <option class="bg-white " value="cuarentena">Pasar a Cuarentena</option>
+                      <option class="bg-white " value="descartado">Descartar / Mermas</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Historial de Movimientos -->
+      <div class="panel p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-bold text-ink">Últimos Movimientos Registrados</h2>
+          <a href="/director/reportes" class="text-xs font-semibold text-accent-ink hover:underline">Ver Bitácora Completa</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-ink">
+            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
+              <tr>
+                <th class="p-3 rounded-l-control">Tipo</th>
+                <th class="p-3">Insumo / Lote</th>
+                <th class="p-3">Cantidad</th>
+                <th class="p-3">Origen / Destino</th>
+                <th class="p-3">Usuario</th>
+                <th class="p-3 rounded-r-control">Hora</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {recentMovements.map(m => (
+                <tr class="hover:bg-sunken/50 transition-colors">
+                  <td class="p-3">
+                    <span class={`inline-block px-2 py-0.5 text-xs font-bold rounded-control ${
+                      m.type === 'Ingreso' ? 'bg-ok-soft text-ok' : 'bg-sunken text-ink-2'
+                    }`}>
+                      {m.type}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <p class="font-semibold text-ink">{m.name}</p>
+                    <p class="text-xs text-ink-3">{m.code} | {m.lot}</p>
+                  </td>
+                  <td class={`p-3 font-mono font-bold tabular ${m.type === 'Ingreso' ? 'text-ok' : 'text-accent-ink'}`}>
+                    {m.qty}
+                  </td>
+                  <td class="p-3 text-ink-2">{m.area}</td>
+                  <td class="p-3 text-ink font-medium">{m.user}</td>
+                  <td class="p-3 text-xs text-ink-3 font-mono tabular">{m.time}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</Layout>

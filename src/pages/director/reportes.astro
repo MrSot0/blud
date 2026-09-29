@@ -1,0 +1,124 @@
+---
+// src/pages/director/reportes.astro
+import Layout from '../../layouts/LayoutD.astro';
+import Icon from '../../components/Icon.astro';
+
+const hemocomponentes = [
+  { din: "DIN-2026-0091", tipo: "Glóbulos Rojos", grupo: "O+", vol: "320 mL", estado: "Cuarentena", vencimiento: "2026-11-05", alerta: false },
+  { din: "DIN-2026-0084", tipo: "Plaquetas", grupo: "A-", vol: "250 mL", estado: "Disponible", vencimiento: "2026-09-30", alerta: true },
+  { din: "DIN-2026-0072", tipo: "Plasma Fresco", grupo: "B+", vol: "500 mL", estado: "Reservado", vencimiento: "2027-03-12", alerta: false },
+  { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", alerta: false },
+];
+---
+
+<Layout title="BLUD | Reportes Consolidados">
+  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
+    <div class="container-blud space-y-8">
+      
+      <!-- Encabezado -->
+      <div class="border-b border-line pb-6">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Reportes Consolidados</h1>
+        <p class="text-sm text-ink-2 mt-1">Generación de informes de hemovigilancia, mermas, descartes serológicos y trazabilidad inter-hospitalaria.</p>
+      </div>
+
+      <!-- Configuración del Reporte -->
+      <div class="panel p-6 space-y-4">
+        <h2 class="text-xs font-bold text-ink-3 uppercase tracking-wider">Parámetros del Reporte</h2>
+        <form class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4" onsubmit="event.preventDefault();">
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de Reporte</label>
+            <select class="field">
+              <option>Hemovigilancia y Reacciones Adversas</option>
+              <option>Inventario y Mermas (Descartes FIFO)</option>
+              <option>Rechazos y Serología Reactiva</option>
+              <option>Solicitudes Inter-Hospitalarias</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Inicio</label>
+            <input type="date" class="field" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Fin</label>
+            <input type="date" class="field" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Formato de Exportación</label>
+            <select class="field">
+              <option>Documento PDF (.pdf)</option>
+              <option>Hoja de Cálculo Excel (.xlsx)</option>
+              <option>Vista Previa en pantalla</option>
+            </select>
+          </div>
+          <div class="md:col-span-4 flex justify-end gap-2 pt-2">
+            <button type="submit" class="btn btn-primary text-sm">
+              <Icon name="caret-down" class="size-4 -rotate-90" />
+              Generar Reporte
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Vista previa sintética de datos -->
+      <div class="panel p-6 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-lg font-bold text-ink">Vista Previa: Stock Actual y Trazable</h2>
+          <button type="button" class="btn btn-secondary text-xs">
+            Exportar esta vista
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-ink">
+            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
+              <tr>
+                <th class="p-3 rounded-l-control">Código DIN</th>
+                <th class="p-3">Hemocomponente</th>
+                <th class="p-3">Grupo Sanguíneo</th>
+                <th class="p-3">Volumen</th>
+                <th class="p-3">Estado Trazable</th>
+                <th class="p-3">Vencimiento</th>
+                <th class="p-3 text-right rounded-r-control">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {hemocomponentes.map((item) => (
+                <tr class="hover:bg-sunken/50 transition-colors">
+                  <td class="p-3 font-mono font-bold text-ink">{item.din}</td>
+                  <td class="p-3">{item.tipo}</td>
+                  <td class="p-3">
+                    <span class="font-bold text-accent-ink bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
+                      {item.grupo}
+                    </span>
+                  </td>
+                  <td class="p-3 text-ink-2">{item.vol}</td>
+                  <td class="p-3">
+                    <span class={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                      item.estado === 'Disponible' ? 'bg-ok-soft text-ok border-ok/30' :
+                      item.estado === 'Cuarentena' ? 'bg-warn-soft text-warn border-warn/30' :
+                      item.estado === 'Reservado' ? 'bg-sunken text-ink-2 border-line-strong' : 
+                      'bg-accent-soft text-accent-ink border-accent/30'
+                    }`}>
+                      {item.estado}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <span class={item.alerta ? "text-accent-ink font-bold animate-pulse" : "text-ink-2"}>
+                      {item.vencimiento}
+                    </span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button class="btn btn-secondary text-xs py-1 px-2">
+                      Ver Historial
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</Layout>

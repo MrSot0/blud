@@ -1,0 +1,106 @@
+---
+// src/pages/director/operadores.astro
+import Layout from '../../layouts/LayoutD.astro';
+import Icon from '../../components/Icon.astro';
+
+const operadores = [
+  { id: 1, nombre: "Dra. María Elena Pérez", cedula: "V-14.892.301", rol: "Médico", correo: "m.perez@hospital.org", estado: "Activo" },
+  { id: 2, nombre: "Lic. Carlos Mendoza", cedula: "V-18.432.109", rol: "Laboratorio", correo: "c.mendoza@hospital.org", estado: "Activo" },
+  { id: 3, nombre: "Enf. Ana Beatriz Lugo", cedula: "V-21.093.844", rol: "Enfermero", correo: "a.lugo@hospital.org", estado: "Inactivo" },
+];
+---
+
+<Layout title="BLUD | Gestión de Operadores">
+  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
+    <div class="container-blud space-y-6">
+      
+      <!-- Encabezado -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-line pb-6">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Gestión de Operadores</h1>
+          <p class="text-sm text-ink-2 mt-1">Administración de credenciales, roles y permisos de acceso del personal del banco de sangre.</p>
+        </div>
+      </div>
+
+      <!-- Formulario Registrar / Editar -->
+      <div class="panel p-6 space-y-4">
+        <h2 class="text-base font-bold text-ink border-b border-line pb-2">Registrar o Modificar Operador</h2>
+        <form class="grid grid-cols-1 md:grid-cols-3 gap-4" onsubmit="event.preventDefault();">
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombre Completo</label>
+            <input type="text" placeholder="Ej. Dr. Juan Reyes" class="field" required />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cédula de Identidad</label>
+            <input type="text" placeholder="Ej. V-12345678" class="field" required />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Correo Electrónico</label>
+            <input type="email" placeholder="usuario@bancodesangre.org" class="field" required />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Rol / Cargo</label>
+            <select class="field">
+              <option>Médico / Evaluador</option>
+              <option>Laboratorio / Bioanalista</option>
+              <option>Enfermero(a)</option>
+              <option>Técnico de Banco de Sangre</option>
+              <option>Director / Administrador</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Colegiatura / Registro Médico</label>
+            <input type="text" placeholder="Ej. MPPS-123456" class="field" />
+          </div>
+          <div class="flex items-end gap-2">
+            <button type="submit" class="btn btn-primary w-full justify-center">
+              Registrar Operador
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tabla de Registros -->
+      <div class="panel p-6 space-y-4">
+        <h2 class="text-base font-bold text-ink">Personal Autorizado en la Plataforma</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-ink">
+            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
+              <tr>
+                <th class="p-3 rounded-l-control">Operador</th>
+                <th class="p-3">Cédula</th>
+                <th class="p-3">Rol</th>
+                <th class="p-3">Estado</th>
+                <th class="p-3 text-right rounded-r-control">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {operadores.map((op) => (
+                <tr class="hover:bg-sunken/50 transition-colors">
+                  <td class="p-3 font-medium text-ink">
+                    {op.nombre}
+                    <span class="block text-xs text-ink-3">{op.correo}</span>
+                  </td>
+                  <td class="p-3 font-mono text-xs">{op.cedula}</td>
+                  <td class="p-3">{op.rol}</td>
+                  <td class="p-3">
+                    <span class={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                      op.estado === 'Activo' ? 'bg-ok-soft text-ok border-ok/30' : 'bg-sunken text-ink-3 border-line'
+                    }`}>
+                      {op.estado}
+                    </span>
+                  </td>
+                  <td class="p-3 text-right space-x-2">
+                    <button class="text-xs font-semibold text-accent-ink hover:underline">Editar</button>
+                    <button class="text-xs font-semibold text-warn hover:underline">Inactivar</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</Layout>
