@@ -8,12 +8,12 @@ const view = Astro.url.searchParams.get('view') === 'history' ? 'history' : 'pen
 const pendingCount = solicitudesIniciales.filter((request) => request.status === 'Pendiente').length;
 ---
 
-<Layout title="BLUD | Solicitudes">
+<Layout title="BLUD | Solicitudes externas">
 	<section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
 		<div class="container-blud space-y-6">
 			<header class="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Mis solicitudes</h1>
+					<h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Solicitudes</h1>
 				</div>
 				<a href="/director/solicitudes/registro" class="btn btn-primary text-sm">
 					<Icon name="caret-down" class="size-4 -rotate-90" />
@@ -21,8 +21,27 @@ const pendingCount = solicitudesIniciales.filter((request) => request.status ===
 				</a>
 			</header>
 
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+				<div class="panel flex items-center justify-between p-4">
+					<div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Pendientes</p><p id="pending-count" class="mt-1 text-2xl font-extrabold tabular">{pendingCount}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-warn-soft text-warn"><Icon name="calendar-check" class="size-5" /></span>
+				</div>
+				<div class="panel flex items-center justify-between p-4">
+					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Resueltas</p><p id="resolved-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length - pendingCount}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-ok-soft text-ok"><Icon name="arrow-right" class="size-5" /></span>
+				</div>
+				<div class="panel flex items-center justify-between p-4">
+					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Total registradas</p><p id="total-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-sunken text-ink-2"><Icon name="first-aid-kit" class="size-5" /></span>
+				</div>
+			</div>
+
 			<section class="panel space-y-4 p-4 sm:p-6" aria-label="Listado de solicitudes">
 				<div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+					<nav class="flex gap-1" aria-label="Vistas de solicitudes">
+						<a href="/director/solicitudes/historial" aria-current={view === 'pending' ? 'page' : undefined} class="request-tab">Pendientes</a>
+						<a href="/director/solicitudes/historial?view=history" aria-current={view === 'history' ? 'page' : undefined} class="request-tab">Historial de solicitudes</a>
+					</nav>
 					<div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto]">
 						<label class="sr-only" for="request-search">Buscar solicitudes</label>
 						<input id="request-search" type="search" class="field text-sm" placeholder="Buscar por folio, centro o solicitante" />
@@ -63,8 +82,8 @@ const pendingCount = solicitudesIniciales.filter((request) => request.status ===
 									<td class="p-3"><SolicitudEstado status={request.status} /></td>
 									<td class="p-3 text-right"><div class="flex justify-end gap-2">
 										{request.status === 'Pendiente' ? <>
-											<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id={request.id}>Editar</button>
-											<button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id={request.id}>Eliminar</button>
+											<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id={request.id}>Aprobar</button>
+											<button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id={request.id}>Rechazar</button>
 										</> : <span class="text-xs text-ink-3">Sin acciones</span>}
 									</div></td>
 								</tr>
