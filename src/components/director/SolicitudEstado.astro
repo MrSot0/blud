@@ -1,0 +1,16 @@
+---
+interface Props {
+  status: 'Pendiente' | 'Aprobada' | 'Rechazada';
+}
+
+const { status } = Astro.props;
+const styles = {
+  Pendiente: 'border-warn/30 bg-warn-soft text-warn',
+  Aprobada: 'border-ok/30 bg-ok-soft text-ok',
+  Rechazada: 'border-accent/30 bg-accent-soft text-accent-ink',
+};
+---
+
+<span class={`inline-flex items-center rounded-control border px-2.5 py-1 text-xs font-bold ${styles[status]}`}>
+  {status}
+</span>

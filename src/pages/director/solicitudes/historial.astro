@@ -1,0 +1,185 @@
+---
+import Layout from '../../../layouts/LayoutD.astro';
+import Icon from '../../../components/Icon.astro';
+import SolicitudEstado from '../../../components/director/SolicitudEstado.astro';
+import { solicitudesIniciales } from '../../../data/solicitudes';
+
+const view = Astro.url.searchParams.get('view') === 'history' ? 'history' : 'pending';
+const pendingCount = solicitudesIniciales.filter((request) => request.status === 'Pendiente').length;
+---
+
+<Layout title="BLUD | Solicitudes externas">
+	<section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
+		<div class="container-blud space-y-6">
+			<header class="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+				<div>
+					<h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Solicitudes</h1>
+				</div>
+				<a href="/director/solicitudes/registro" class="btn btn-primary text-sm">
+					<Icon name="caret-down" class="size-4 -rotate-90" />
+					Registrar solicitud
+				</a>
+			</header>
+
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+				<div class="panel flex items-center justify-between p-4">
+					<div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Pendientes</p><p id="pending-count" class="mt-1 text-2xl font-extrabold tabular">{pendingCount}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-warn-soft text-warn"><Icon name="calendar-check" class="size-5" /></span>
+				</div>
+				<div class="panel flex items-center justify-between p-4">
+					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Resueltas</p><p id="resolved-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length - pendingCount}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-ok-soft text-ok"><Icon name="arrow-right" class="size-5" /></span>
+				</div>
+				<div class="panel flex items-center justify-between p-4">
+					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Total registradas</p><p id="total-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length}</p></div>
+					<span class="grid size-10 place-items-center rounded-control bg-sunken text-ink-2"><Icon name="first-aid-kit" class="size-5" /></span>
+				</div>
+			</div>
+
+			<section class="panel space-y-4 p-4 sm:p-6" aria-label="Listado de solicitudes">
+				<div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+					<nav class="flex gap-1" aria-label="Vistas de solicitudes">
+						<a href="/director/solicitudes/historial" aria-current={view === 'pending' ? 'page' : undefined} class="request-tab">Pendientes</a>
+						<a href="/director/solicitudes/historial?view=history" aria-current={view === 'history' ? 'page' : undefined} class="request-tab">Historial de solicitudes</a>
+					</nav>
+					<div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto]">
+						<label class="sr-only" for="request-search">Buscar solicitudes</label>
+						<input id="request-search" type="search" class="field text-sm" placeholder="Buscar por folio, centro o solicitante" />
+						<label class="sr-only" for="priority-filter">Filtrar por prioridad</label>
+						<select id="priority-filter" class="field text-sm sm:w-40">
+							<option value="">Todas las prioridades</option>
+							<option value="Crítica">Crítica</option>
+							<option value="Urgente">Urgente</option>
+							<option value="Normal">Normal</option>
+						</select>
+					</div>
+				</div>
+
+				<p id="request-feedback" class="sr-only" role="status" aria-live="polite"></p>
+				<div class="overflow-x-auto">
+					  <table class="w-full min-w-225 text-left text-sm">
+						<thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
+							<tr>
+								<th class="rounded-l-control p-3">Folio / Fecha</th>
+								<th class="p-3">Hemocomponente</th>
+								<th class="p-3">Cantidad</th>
+								<th class="p-3">Centro</th>
+								<th class="p-3">Solicitante</th>
+								<th class="p-3">Prioridad</th>
+								<th class="p-3">Estado</th>
+								<th class="rounded-r-control p-3 text-right">Acciones</th>
+							</tr>
+						</thead>
+						<tbody id="request-rows" class="divide-y divide-line">
+							  {solicitudesIniciales.map((request) => (
+								<tr class="hover:bg-sunken/50" data-request-row data-status={request.status} data-priority={request.priority}>
+									<td class="p-3"><p class="font-mono font-bold">{request.id}</p><p class="text-xs text-ink-3">{new Date(request.createdAt).toLocaleDateString('es-VE')}</p></td>
+									<td class="p-3"><p class="font-semibold">{request.component}</p><span class="mt-1 inline-block rounded border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent-ink">{request.group}</span></td>
+									<td class="p-3 font-mono font-bold">{request.quantity} unidades</td>
+									<td class="p-3 text-ink-2">{request.center}</td>
+									<td class="p-3">{request.requester}</td>
+									<td class="p-3"><span class={`priority-badge priority-${request.priority.toLowerCase()}`}>{request.priority}</span></td>
+									<td class="p-3"><SolicitudEstado status={request.status} /></td>
+									<td class="p-3 text-right"><div class="flex justify-end gap-2">
+										{request.status === 'Pendiente' ? <>
+											<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id={request.id}>Aprobar</button>
+											<button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id={request.id}>Rechazar</button>
+										</> : <span class="text-xs text-ink-3">Sin acciones</span>}
+									</div></td>
+								</tr>
+							))}
+							<tr id="empty-row" hidden><td colspan="8" class="p-10 text-center text-sm text-ink-3">No hay solicitudes para mostrar con estos filtros.</td></tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.request-tab { border-bottom: 2px solid transparent; padding: .65rem .8rem; color: var(--ink-2); font-size: .875rem; font-weight: 650; }
+	.request-tab:hover, .request-tab[aria-current="page"] { border-color: var(--accent); color: var(--accent-ink); }
+	.priority-badge { display: inline-block; border: 1px solid var(--line); border-radius: .375rem; padding: .2rem .5rem; font-size: .75rem; font-weight: 700; }
+	.priority-critica { border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-soft); color: var(--accent-ink); }
+	.priority-urgente { border-color: color-mix(in srgb, var(--warn) 30%, transparent); background: var(--warn-soft); color: var(--warn); }
+	.priority-normal { background: var(--sunken); color: var(--ink-2); }
+</style>
+
+<script>
+	import { solicitudesIniciales, type Solicitud } from '../../../data/solicitudes';
+
+	type RequestItem = Solicitud;
+	type RequestStatus = Solicitud['status'];
+
+	const storageKey = 'blud-director-solicitudes';
+	const root = document.querySelector<HTMLElement>('#request-rows');
+	const search = document.querySelector<HTMLInputElement>('#request-search');
+	const priorityFilter = document.querySelector<HTMLSelectElement>('#priority-filter');
+	const emptyRow = document.querySelector<HTMLElement>('#empty-row');
+	const feedback = document.querySelector<HTMLElement>('#request-feedback');
+	function readRequests(): RequestItem[] {
+		try {
+			const stored = localStorage.getItem(storageKey);
+			if (stored) return JSON.parse(stored) as RequestItem[];
+		} catch {}
+		return solicitudesIniciales;
+	}
+
+	let requests = readRequests();
+	const activeView = new URLSearchParams(location.search).get('view') === 'history' ? 'history' : 'pending';
+	document.querySelectorAll<HTMLAnchorElement>('.request-tab').forEach((link) => {
+		const isHistoryLink = new URL(link.href).searchParams.get('view') === 'history';
+		link.setAttribute('aria-current', String(isHistoryLink === (activeView === 'history')));
+	});
+	const escapeHTML = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character);
+	const statusClass = (status: RequestStatus) => status === 'Aprobada' ? 'border-ok/30 bg-ok-soft text-ok' : status === 'Rechazada' ? 'border-accent/30 bg-accent-soft text-accent-ink' : 'border-warn/30 bg-warn-soft text-warn';
+	const priorityClass = (priority: string) => priority === 'Crítica' ? 'priority-critica' : priority === 'Urgente' ? 'priority-urgente' : 'priority-normal';
+	const dateLabel = (date: string) => new Date(date).toLocaleDateString('es-VE');
+
+	function saveRequests() {
+		try { localStorage.setItem(storageKey, JSON.stringify(requests)); } catch {}
+	}
+
+	function render() {
+		if (!root || !emptyRow) return;
+		const query = search?.value.trim().toLocaleLowerCase('es') ?? '';
+		const filtered = requests.filter((request) => {
+			const belongsToView = activeView === 'pending' ? request.status === 'Pendiente' : request.status !== 'Pendiente';
+			const matchesText = `${request.id} ${request.component} ${request.center} ${request.requester}`.toLocaleLowerCase('es').includes(query);
+			return belongsToView && matchesText && (!priorityFilter?.value || request.priority === priorityFilter.value);
+		});
+		root.querySelectorAll('[data-request-row]').forEach((row) => row.remove());
+		const rows = filtered.map((request) => {
+			const pendingActions = request.status === 'Pendiente'
+				? `<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id="${escapeHTML(request.id)}">Aprobar</button><button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id="${escapeHTML(request.id)}">Rechazar</button>`
+				: '<span class="text-xs text-ink-3">Sin acciones</span>';
+			const row = document.createElement('tr');
+			row.dataset.requestRow = '';
+			row.className = 'hover:bg-sunken/50';
+			row.innerHTML = `<td class="p-3"><p class="font-mono font-bold">${escapeHTML(request.id)}</p><p class="text-xs text-ink-3">${dateLabel(request.createdAt)}</p></td><td class="p-3"><p class="font-semibold">${escapeHTML(request.component)}</p><span class="mt-1 inline-block rounded border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent-ink">${escapeHTML(request.group)}</span></td><td class="p-3 font-mono font-bold">${request.quantity} unidades</td><td class="p-3 text-ink-2">${escapeHTML(request.center)}</td><td class="p-3">${escapeHTML(request.requester)}</td><td class="p-3"><span class="priority-badge ${priorityClass(request.priority)}">${escapeHTML(request.priority)}</span></td><td class="p-3"><span class="inline-flex items-center rounded-control border px-2.5 py-1 text-xs font-bold ${statusClass(request.status)}">${request.status}</span></td><td class="p-3 text-right"><div class="flex justify-end gap-2">${pendingActions}</div></td>`;
+			return row;
+		});
+		rows.forEach((row) => root.insertBefore(row, emptyRow));
+		emptyRow.hidden = rows.length > 0;
+		const pending = requests.filter((request) => request.status === 'Pendiente').length;
+		const resolved = requests.length - pending;
+		document.querySelector('#pending-count')!.textContent = String(pending);
+		document.querySelector('#resolved-count')!.textContent = String(resolved);
+		document.querySelector('#total-count')!.textContent = String(requests.length);
+	}
+
+	search?.addEventListener('input', render);
+	priorityFilter?.addEventListener('change', render);
+	root?.addEventListener('click', (event) => {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]');
+		if (!button) return;
+		const request = requests.find((item) => item.id === button.dataset.id);
+		if (!request || request.status !== 'Pendiente') return;
+		request.status = button.dataset.action === 'approve' ? 'Aprobada' : 'Rechazada';
+		saveRequests();
+		render();
+		if (feedback) feedback.textContent = `Solicitud ${request.id}: ${request.status.toLocaleLowerCase('es')}.`;
+	});
+	render();
+</script>
