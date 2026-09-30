@@ -29,24 +29,23 @@
             label: 'Transacciones',
             icon: 'caret-down',
             children: [
-            { label: 'Registrar ingreso', href: '/director/inventario' },
-            { label: 'Registrar egreso', href: '/director/inventario' },
-            { label: 'Requisiciones pendientes', href: '/director/dashboard' },
-            { label: 'Historial de movimientos', href: '/director/inventario' }
+            { label: 'Requisiciones pendientes', href: '/director/inventario/#requesiciones' },
+            { label: 'Historial de movimientos', href: '/director/inventario/#movimientos' }
             ]
         },
         {
             label: 'Reportes',
             icon: 'caret-down',
             children: [
-            { label: 'Stock de hemocomponentes', href: '/director/reportes' },
-            { label: 'Balance de Stock', href: '/director/reportes' }            ]
+            { label: 'Stock de hemocomponentes', href: '/director/reportes' }
+            
+        ]
         },
         {
             label: 'Administración',
             icon: 'caret-down',
             children: [
-            { label: 'Usuarios y Operadores', href: '/director/operadores' },
+            { label: 'Usuarios y Operadores', href: '/director/operadores/#registro' },
             { label: 'Perfil', href: '/director/perfil' }
 
             ]
@@ -55,9 +54,9 @@
             label: 'Solicitudes',
             icon: 'caret-down',
             children: [
-            { label: 'Registrar solicitud', href: '/director/solicitudes' },
-            { label: 'Solicitudes pendientes', href: '/director/solicitudes' },
-            { label: 'Historial de solicitudes', href: '/director/solicitudes' }
+            { label: 'Registrar solicitud', href: '/director/solicitudes/registro' },
+            { label: 'Solicitudes pendientes', href: '/director/solicitudes/solicitudes' },
+            { label: 'Historial de solicitudes', href: '/director/solicitudes/solicitudes?view=history' }
             ]
         }
         ]
@@ -67,8 +66,16 @@
     // Página activa (los href '#' nunca cuentan como activos)
     const normalize = (p: string) => p.replace(/\/$/, '') || '/';
     const currentPath = normalize(Astro.url.pathname);
-    const isActive = (href?: string) =>
-    !!href && href !== '#' && normalize(href.split('#')[0]) === currentPath;
+    const isActive = (href?: string) => {
+    if (!href || href === '#') return false;
+    const target = new URL(href, Astro.url);
+    if (normalize(target.pathname) !== currentPath) return false;
+    const targetView = target.searchParams.get('view');
+    const currentView = Astro.url.searchParams.get('view');
+    if (targetView) return targetView === currentView;
+    if (currentPath === '/director/solicitudes/solicitudes' && currentView) return currentView === 'pending';
+    return true;
+    };
 
     const activeClass =
     'aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink';

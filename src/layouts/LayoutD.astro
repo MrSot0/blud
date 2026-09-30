@@ -81,14 +81,14 @@ const ogImage = new URL('/og-image.jpg', base).href;
   <body class="flex min-h-dvh flex-col bg-canvas text-ink antialiased">
     <a
       href="#contenido"
-      class="btn btn-primary btn-sm fixed left-4 top-3 z-[70] -translate-y-20 focus:translate-y-0"
+      class="btn btn-primary btn-sm fixed left-4 top-3 z-70 -translate-y-20 focus:translate-y-0"
     >
       Saltar al contenido
     </a>
 
     <Navbar />
 
-    <main id="contenido" class="flex-grow focus:outline-none" tabindex="-1">
+    <main id="contenido" class="grow focus:outline-none" tabindex="-1">
       <slot />
     </main>
 

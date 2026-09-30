@@ -10,6 +10,12 @@ const hemocomponentes = [
   { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", alerta: false },
 ];
 
+const pendingRequisitions = [
+  { id: "REQ-2026-042", tipo: "Glóbulos Rojos", grupo: "O+", cant: "4 unidades", centro: "Hospital Central - UCI", solicitante: "Dr. Roberto Silva", prioridad: "Urgente", fecha: "Hoy, 11:20 AM" },
+  { id: "REQ-2026-039", tipo: "Plaquetas", grupo: "A-", cant: "2 unidades", centro: "Clínica San José", solicitante: "Dra. María Morales", prioridad: "Normal", fecha: "Hoy, 09:15 AM" },
+  { id: "REQ-2026-035", tipo: "Plasma Fresco", grupo: "B+", cant: "5 unidades", centro: "Pabellón Quirúrgico", solicitante: "Dr. Carlos Gómez", prioridad: "Crítica", fecha: "Ayer, 04:45 PM" },
+];
+
 const recentMovements = [
   { type: 'Ingreso', code: 'INS-6436', name: 'Plaquetas', lot: 'LOT-1029', qty: '+50', area: 'Stock Principal', user: 'Pedro Castro', time: '10:15 AM' },
   { type: 'Egreso', code: 'INS-4326', name: 'Glóbulos Rojos', lot: 'LOT-9345', qty: '-5', area: 'Hematología y Coagulación', user: 'Ana Castro', time: '09:30 AM' },
@@ -64,7 +70,7 @@ const recentMovements = [
           <h2 class="text-lg font-bold text-ink">Unidades Sanguíneas Registradas</h2>
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <input type="text" placeholder="Buscar por código DIN..." class="field text-xs py-1.5 px-3" />
-            <select class="field text-xs py-1.5 px-3 max-w-[140px]">
+            <select class="field text-xs py-1.5 px-3 max-w-35">
               <option value="">Todos los grupos</option>
               <option value="O+">O+</option>
               <option value="A-">A-</option>
@@ -115,11 +121,11 @@ const recentMovements = [
                   </td>
                   <td class="p-3 text-right">
                     <select class="text-xs bg-sunken hover:bg-line text-ink font-semibold px-2 py-1 rounded border border-line cursor-pointer">
-                      <option class="bg-white " disabled selected>Cambiar Estado</option>
-                      <option class="bg-white " value="disponible">Aprobar (Disponible)</option>
-                      <option class="bg-white " value="reservado">Reservar para Paciente</option>
-                      <option class="bg-white " value="cuarentena">Pasar a Cuarentena</option>
-                      <option class="bg-white " value="descartado">Descartar / Mermas</option>
+                      <option class="bg-white" disabled selected>Cambiar Estado</option>
+                      <option class="bg-white" value="disponible">Aprobar (Disponible)</option>
+                      <option class="bg-white" value="reservado">Reservar para Paciente</option>
+                      <option class="bg-white" value="cuarentena">Pasar a Cuarentena</option>
+                      <option class="bg-white" value="descartado">Descartar / Mermas</option>
                     </select>
                   </td>
                 </tr>
@@ -129,8 +135,74 @@ const recentMovements = [
         </div>
       </div>
 
+      <!-- Requisiciones Pendientes -->
+      <div class="panel p-6 space-y-4" id="requesiciones">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold text-ink">Requisiciones Pendientes</h2>
+            <span class="bg-accent-soft text-accent-ink text-xs font-bold px-2 py-0.5 rounded-full border border-accent/20">
+              {pendingRequisitions.length}
+            </span>
+          </div>
+          <a href="/director/requisiciones" class="text-xs font-semibold text-accent-ink hover:underline">Ver Solicitudes Anteriores</a>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-ink">
+            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
+              <tr>
+                <th class="p-3 rounded-l-control">N° Requisición</th>
+                <th class="p-3">Componente / Grupo</th>
+                <th class="p-3">Cantidad</th>
+                <th class="p-3">Origen / Destino</th>
+                <th class="p-3">Solicitante</th>
+                <th class="p-3">Prioridad</th>
+                <th class="p-3 text-right rounded-r-control">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              {pendingRequisitions.map(req => (
+                <tr class="hover:bg-sunken/50 transition-colors">
+                  <td class="p-3 font-mono font-bold text-ink">
+                    <p>{req.id}</p>
+                    <p class="text-[11px] font-normal text-ink-3">{req.fecha}</p>
+                  </td>
+                  <td class="p-3">
+                    <p class="font-semibold text-ink">{req.tipo}</p>
+                    <span class="inline-block text-[10px] font-bold text-accent-ink bg-accent-soft px-1.5 py-0.5 rounded border border-accent/20 mt-0.5">
+                      {req.grupo}
+                    </span>
+                  </td>
+                  <td class="p-3 font-mono font-bold text-ink">{req.cant}</td>
+                  <td class="p-3 text-ink-2">{req.centro}</td>
+                  <td class="p-3 text-ink font-medium">{req.solicitante}</td>
+                  <td class="p-3">
+                    <span class={`inline-block px-2 py-0.5 text-xs font-bold rounded-control border ${
+                      req.prioridad === 'Crítica' ? 'bg-accent-soft text-accent-ink border-accent/30 animate-pulse' :
+                      req.prioridad === 'Urgente' ? 'bg-warn-soft text-warn border-warn/30' :
+                      'bg-sunken text-ink-2 border-line'
+                    }`}>
+                      {req.prioridad}
+                    </span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="px-2.5 py-1 text-xs font-semibold bg-ok-soft hover:bg-ok/20 text-ok border border-ok/30 rounded-control transition-colors">
+                        Aprobar
+                      </button>
+                      <button class="px-2.5 py-1 text-xs font-semibold bg-accent-soft hover:bg-accent/20 text-accent-ink border border-accent/30 rounded-control transition-colors">
+                        Rechazar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Historial de Movimientos -->
-      <div class="panel p-6 space-y-4">
+      <div class="panel p-6 space-y-4" id="movimientos">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-bold text-ink">Últimos Movimientos Registrados</h2>
           <a href="/director/reportes" class="text-xs font-semibold text-accent-ink hover:underline">Ver Bitácora Completa</a>
