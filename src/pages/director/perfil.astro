@@ -43,12 +43,12 @@ import Icon from '../../components/Icon.astro';
             <span class="absolute bottom-1 right-1 size-4 rounded-full bg-ok border-2 border-surface" title="Cuenta activa"></span>
           </div>
 
-          <h2 class="text-xl font-bold text-ink">Dra. María Fernández</h2>
-          <p class="text-sm font-medium text-ink-3 mt-0.5">Director Médico / Banco de Sangre</p>
+          <p class="truncate font-bold text-ink" data-user-name></p>
+          <p class="text-sm font-medium text-ink-3 mt-0.5"  data-user-cargo></p>
           
           <div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent-soft text-accent-ink text-xs font-semibold">
             <Icon name="first-aid-kit" class="size-3.5" />
-            Hospital Central Maracaibo
+          <p data-user-sede></p>
           </div>
 
           <hr class="w-full border-line my-6" />
@@ -105,7 +105,7 @@ import Icon from '../../components/Icon.astro';
                   type="text"
                   id="firstname"
                   class="field"
-                  value="María Alexandra"
+                  data-user-firstname
                 />
               </div>
 
@@ -117,7 +117,7 @@ import Icon from '../../components/Icon.astro';
                   type="text"
                   id="lastname"
                   class="field"
-                  value="Fernández Rincón"
+                  data-user-lastname
                 />
               </div>
             </div>
@@ -131,7 +131,7 @@ import Icon from '../../components/Icon.astro';
                   type="email"
                   id="email"
                   class="field"
-                  value="maria.fernandez@hospitalcentral.org"
+                  data-user-email
                 />
               </div>
 
@@ -143,7 +143,7 @@ import Icon from '../../components/Icon.astro';
                   type="tel"
                   id="phone"
                   class="field"
-                  value="+58 414 1234567"
+                  data-user-telefono
                 />
               </div>
             </div>
@@ -157,7 +157,7 @@ import Icon from '../../components/Icon.astro';
                   type="text"
                   id="mpps"
                   class="field"
-                  value="MPPS-84920"
+                  data-user-colegiado
                 />
               </div>
 
@@ -169,7 +169,7 @@ import Icon from '../../components/Icon.astro';
                   type="text"
                   id="cargo"
                   class="field"
-                  value="Director General de Banco de Sangre"
+                  data-user-cargo
                 />
               </div>
             </div>
@@ -215,3 +215,36 @@ import Icon from '../../components/Icon.astro';
     </div>
   </div>
 </LayoutD>
+
+<script>
+  
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) {
+      if (v === undefined || v === null) return;
+      document.querySelectorAll(sel).forEach(function (el) {
+        if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+          el.value = v;
+        } else {
+          el.textContent = v;
+        }
+      });
+    };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-firstname]', s.firstname||parts[0]||'');
+      set('[data-user-lastname]', s.lastname||parts.slice(1).join(' ')||'');
+    set('[data-user-email]', s.email);
+    set('[data-user-telefono]', s.telefono);
+    set('[data-user-colegiado]', s.colegiado);
+    set('[data-user-cargo]', s.cargo);
+    set('[data-user-sede]', s.sede);
+
+  })();
+
+
+</script>

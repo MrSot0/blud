@@ -11,13 +11,8 @@ const pageLinks = [
   { href: '/director/reportes', label: 'Reportes' },
 ];
 
-// Página activa (los href '#' nunca cuentan como activos)
 const normalize = (p: string) => p.replace(/\/$/, '') || '/';
 const currentPath = normalize(Astro.url.pathname);
-const isActive = (href: string) =>
-  href !== '#' && normalize(href.split('#')[0]) === currentPath;
-
-
 ---
 
 <header
@@ -26,7 +21,7 @@ const isActive = (href: string) =>
 >
   <div class="container-blud flex h-(--header-h) items-center justify-between gap-6">
     <div class="flex items-center gap-3">
-      <!-- Botón de Hamburguesa (aria-expanded / aria-controls los gestiona Sidebar.astro) -->
+      <!-- Botón de Hamburguesa -->
       <button
         type="button"
         id="desktop-sidebar-btn"
@@ -39,16 +34,14 @@ const isActive = (href: string) =>
         <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
       </button>
 
-      <a href="#" aria-label="BLUD, ir al inicio">
+      <a href="/director/dashboard" aria-label="BLUD, ir al inicio">
         <Logo size="lg" />
       </a>
     </div>
 
-
-
     <div class="flex items-center gap-1.5">
       <!-- Menú Dropdown Perfil -->
-      <div class="relative mr-1 hidden lg:block" id="account-dropdown-wrapper">
+      <div class="relative mr-1 hidden lg:block" id="account-dropdown-wrapper" data-auth-in data-account-menu>
         <button
           type="button"
           id="account-trigger"
@@ -57,9 +50,10 @@ const isActive = (href: string) =>
           aria-controls="account-panel"
           class="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-ink transition-colors hover:bg-sunken cursor-pointer"
         >
-          <span class="grid size-9 place-items-center rounded-full bg-accent text-[0.875rem] font-bold text-white">MF</span>
-          <span class="max-w-36 truncate text-base font-medium">María</span>
+          <span class="grid size-9 place-items-center rounded-full bg-accent text-[0.875rem] font-bold text-white" data-user-initials></span>
+          <span class="max-w-[9rem] truncate text-base font-medium" data-user-first></span>
           <Icon name="caret-down" class="account-caret size-3.5 text-ink-3 transition-transform duration-200" />
+          <span class="sr-only">Abrir menú de la cuenta</span>
         </button>
 
         <div
@@ -69,16 +63,17 @@ const isActive = (href: string) =>
         >
           <div class="panel w-72 rounded-panel border border-line bg-surface p-2 shadow-xl">
             <div class="flex items-center gap-3 p-3">
-              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-white">MF</span>
+              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-white" data-user-initials></span>
               <div class="min-w-0">
-                <p class="truncate font-semibold text-ink">María Fernández</p>
-                <p class="truncate text-sm text-ink-3">maria@ejemplo.com</p>
+                <p class="truncate font-semibold text-ink" data-user-name></p>
+                <p class="truncate text-sm text-ink-3" data-user-email></p>
               </div>
             </div>
 
             <button
               type="button"
-              class="flex w-full items-center rounded-control border-t border-line px-3 py-2.5 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
+              data-logout
+              class="flex w-full items-center gap-2 rounded-control border-t border-line px-3 py-2.5 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
             >
               Cerrar sesión
             </button>
@@ -86,6 +81,7 @@ const isActive = (href: string) =>
         </div>
       </div>
 
+      <!-- Toggle Modo Oscuro -->
       <button
         type="button"
         id="theme-toggle"
@@ -102,6 +98,21 @@ const isActive = (href: string) =>
 
 <Sidebar links={pageLinks} />
 
+<script is:inline>
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-name]', s.name);
+    set('[data-user-email]', s.email || '');
+  })();
+</script>
+
 <style>
   #account-trigger[aria-expanded="true"] .account-caret {
     transform: rotate(180deg);
@@ -114,9 +125,7 @@ const isActive = (href: string) =>
   .menu-icon > span:first-child { top: 2px; }
   .menu-icon > span:last-child { top: 10px; }
 
-
-
-    .theme-icon {
+  .theme-icon {
     position: absolute;
     inset: 0;
     display: grid;
@@ -144,17 +153,46 @@ const isActive = (href: string) =>
   }
   @media (prefers-reduced-motion: reduce) {
     .theme-icon { transition: opacity 150ms ease; transform: none !important; }
-    .info-panel, .info-panel[data-open="true"] { transform: translate(-50%, 0); }
-    .account-panel, .info-item, .menu-item { transform: none !important; }
   }
 </style>
 
 <script>
-  import { appointmentLabel, getSession, initials, logout, nextAppointment } from '../lib/auth';
+  import { getSession, initials, logout } from '../../lib/auth';
 
   const root = document.documentElement;
 
-  // ----- Tema claro / oscuro -----
+  // ----- Estado de Autenticación -----
+  const fill = (selector: string, value: string) =>
+    document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
+
+  function renderAuth() {
+    const user = getSession();
+    if (!user) {
+      delete root.dataset.auth;
+      return;
+    }
+    root.dataset.auth = 'in';
+    fill('[data-user-initials]', initials(user.name));
+    fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
+    fill('[data-user-name]', user.name);
+    fill('[data-user-email]', user.email || '');
+  }
+
+  // Cierre de Sesión
+  document.querySelectorAll('[data-logout]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      logout();
+      window.location.href = '/login';
+    })
+  );
+
+  renderAuth();
+  window.addEventListener('blud:auth', renderAuth);
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key.startsWith('blud-')) renderAuth();
+  });
+
+  // ----- Tema Claro / Oscuro -----
   const themeBtn = document.getElementById('theme-toggle');
 
   const currentTheme = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
@@ -201,19 +239,14 @@ const isActive = (href: string) =>
   syncThemeLabel();
   new MutationObserver(syncThemeLabel).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
-
-
-
+  // ----- Desplegable de Cuenta -----
   function initNavbar() {
     const w = window as unknown as { __bludNavbarCtl?: AbortController };
 
-    // Idempotente: evita listeners duplicados al re-inicializar.
     w.__bludNavbarCtl?.abort();
     const ctl = new AbortController();
     w.__bludNavbarCtl = ctl;
     const { signal } = ctl;
-
-    // El botón de hamburguesa lo maneja Sidebar.astro (un único dueño del estado).
 
     const accountTrigger = document.getElementById('account-trigger');
     const accountPanel = document.getElementById('account-panel');
@@ -230,7 +263,6 @@ const isActive = (href: string) =>
 
     accountTrigger.addEventListener('click', () => setAccountOpen(!isOpen()), { signal });
 
-    // Clic fuera del menú de cuenta (fase de captura: no depende de stopPropagation)
     document.addEventListener(
       'click',
       (e) => {
@@ -254,5 +286,8 @@ const isActive = (href: string) =>
   }
 
   initNavbar();
-  document.addEventListener('astro:page-load', initNavbar);
+  document.addEventListener('astro:page-load', () => {
+    initNavbar();
+    renderAuth();
+  });
 </script>

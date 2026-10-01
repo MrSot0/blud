@@ -5,6 +5,10 @@ export interface Session {
   email: string;
   name: string;
   bloodType: string;
+  telefono:string;
+  colegiado:string;
+  cargo:string;
+  sede:string;
 }
 
 interface StoredUser extends Session {
@@ -30,8 +34,8 @@ const APPOINTMENTS_KEY = 'blud-appointments';
 
 /** Cuentas de prueba: siempre disponibles para demostrar el acceso. */
 export const demoUsers: (Session & { password: string })[] = [
-  { name: 'María Fernández', email: 'maria@blud.app', password: 'Donante2026', bloodType: 'O+' },
-  { name: 'Carlos Pérez', email: 'carlos@blud.app', password: 'Sangre2026', bloodType: 'A-' },
+  { name: 'María Fernández', email: 'maria@blud.app', password: 'Donante2026', bloodType: 'O+', telefono:'+58 414 1234567',colegiado:'MPPS-84920', cargo:'Director General de Banco de Sangre', sede: 'Hospital Central Maracaibo'},
+  { name: 'Carlos Pérez', email: 'carlos@blud.app', password: 'Sangre2026', bloodType: 'A-', telefono:'+58 414 1234567',colegiado:'MPPS-84920', cargo:'Director General de Banco de Sangre', sede: 'Hospital Central Maracaibo' },
 ];
 
 // ---------- Almacenamiento seguro (puede fallar en modo privado) ----------
@@ -96,7 +100,7 @@ export function getSession(): Session | null {
 }
 
 function startSession(user: Session, remember: boolean) {
-  const data: Session = { email: user.email, name: user.name, bloodType: user.bloodType };
+  const data: Session = { email: user.email, name: user.name, bloodType: user.bloodType, telefono:user.telefono, colegiado:user.colegiado, sede:user.sede, cargo:user.cargo};
   remove(local(), SESSION_KEY);
   remove(session(), SESSION_KEY);
   write(remember ? local() : session(), SESSION_KEY, data);

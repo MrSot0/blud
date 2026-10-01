@@ -1,403 +1,432 @@
-    ---
-    // src/components/director/Sidebar.astro
-    import Icon from '../Icon.astro';
+---
+// src/components/director/Sidebar.astro
+import Icon from '../Icon.astro';
 
-    interface MenuItem {
-    label: string;
-    href?: string;
-    icon?: string;
-    children?: { label: string; href: string; icon?: string }[];
-    }
+interface MenuItem {
+  label: string;
+  href?: string;
+  icon?: string;
+  children?: { label: string; href: string; icon?: string }[];
+}
 
-    interface MenuSection {
-    title: string;
-    items: MenuItem[];
-    }
+interface MenuSection {
+  title: string;
+  items: MenuItem[];
+}
 
-    interface Props {
-    /** Enlaces del Navbar: se muestran aquí solo en pantallas < lg, donde el Navbar los oculta. */
-    links?: { href: string; label: string }[];
-    }
+interface Props {
+  /** Enlaces del Navbar: se muestran aquí solo en pantallas < lg, donde el Navbar los oculta. */
+  links?: { href: string; label: string }[];
+}
 
-    const { links = [] } = Astro.props;
+const { links = [] } = Astro.props;
 
-    const menuSections: MenuSection[] = [
-    {
-        title: 'GESTIÓN DE INSUMOS',
-        items: [
-        {
-            label: 'Transacciones',
-            icon: 'caret-down',
-            children: [
-            { label: 'Requisiciones pendientes', href: '/director/inventario/#requesiciones' },
-            { label: 'Historial de movimientos', href: '/director/inventario/#movimientos' }
-            ]
-        },
-        {
-            label: 'Reportes',
-            icon: 'caret-down',
-            children: [
-            { label: 'Stock de hemocomponentes', href: '/director/reportes' }
-            
+const menuSections: MenuSection[] = [
+  {
+    title: 'GESTIÓN DE INSUMOS',
+    items: [
+      {
+        label: 'Transacciones',
+        icon: 'caret-down',
+        children: [
+          { label: 'Requisiciones pendientes', href: '/director/inventario/#requesiciones' },
+          { label: 'Historial de movimientos', href: '/director/inventario/#movimientos' }
         ]
-        },
-        {
-            label: 'Administración',
-            icon: 'caret-down',
-            children: [
-            { label: 'Usuarios y Operadores', href: '/director/operadores/#registro' },
-            { label: 'Perfil', href: '/director/perfil' }
-
-            ]
-        },
-        {
-            label: 'Solicitudes',
-            icon: 'caret-down',
-            children: [
-            { label: 'Registrar solicitud', href: '/director/solicitudes/registro' },
-            { label: 'Solicitudes pendientes', href: '/director/solicitudes/historial' },
-            { label: 'Historial de solicitudes', href: '/director/solicitudes/historial?view=history' },
-            { label: 'Mis solicitudes', href: '/director/solicitudes/solicitudes' }
-
-            ]
-        }
+      },
+      {
+        label: 'Reportes',
+        icon: 'caret-down',
+        children: [
+          { label: 'Stock de hemocomponentes', href: '/director/reportes' }
         ]
-    }
-    ];
+      },
+      {
+        label: 'Administración',
+        icon: 'caret-down',
+        children: [
+          { label: 'Usuarios y Operadores', href: '/director/operadores/#registro' },
+          { label: 'Perfil', href: '/director/perfil' }
+        ]
+      },
+      {
+        label: 'Solicitudes',
+        icon: 'caret-down',
+        children: [
+          { label: 'Registrar solicitud', href: '/director/solicitudes/registro' },
+          { label: 'Solicitudes pendientes', href: '/director/solicitudes/historial' },
+          { label: 'Historial de solicitudes', href: '/director/solicitudes/historial?view=history' },
+          { label: 'Mis solicitudes', href: '/director/solicitudes/solicitudes' }
+        ]
+      }
+    ]
+  }
+];
 
-    // Página activa (los href '#' nunca cuentan como activos)
-    const normalize = (p: string) => p.replace(/\/$/, '') || '/';
-    const currentPath = normalize(Astro.url.pathname);
-    const isActive = (href?: string) => {
-    if (!href || href === '#') return false;
-    const target = new URL(href, Astro.url);
-    if (normalize(target.pathname) !== currentPath) return false;
-    const targetView = target.searchParams.get('view');
-    const currentView = Astro.url.searchParams.get('view');
-    if (targetView) return targetView === currentView;
-    if (currentPath === '/director/solicitudes/solicitudes' && currentView) return currentView === 'pending';
-    return true;
-    };
+// Página activa (los href '#' nunca cuentan como activos)
+const normalize = (p: string) => p.replace(/\/$/, '') || '/';
+const currentPath = normalize(Astro.url.pathname);
+const isActive = (href?: string) => {
+  if (!href || href === '#') return false;
+  const target = new URL(href, Astro.url);
+  if (normalize(target.pathname) !== currentPath) return false;
+  const targetView = target.searchParams.get('view');
+  const currentView = Astro.url.searchParams.get('view');
+  if (targetView) return targetView === currentView;
+  if (currentPath === '/director/solicitudes/solicitudes' && currentView) return currentView === 'pending';
+  return true;
+};
 
-    const activeClass =
-    'aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink';
-    const childLinkClass =
-    `block px-3 py-2 text-sm font-medium text-ink-2 rounded-control hover:bg-sunken hover:text-ink transition-colors ${activeClass}`;
-    const topLinkClass =
-    `flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-ink rounded-control hover:bg-sunken transition-colors ${activeClass}`;
-    const sectionTitleClass = 'px-3 text-xs font-bold uppercase tracking-wider text-ink-3';
-    ---
+const activeClass =
+  'aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink';
+const childLinkClass =
+  `block px-3 py-2 text-sm font-medium text-ink-2 rounded-control hover:bg-sunken hover:text-ink transition-colors ${activeClass}`;
+const topLinkClass =
+  `flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-ink rounded-control hover:bg-sunken transition-colors ${activeClass}`;
+const sectionTitleClass = 'px-3 text-xs font-bold uppercase tracking-wider text-ink-3';
+---
 
-    <!-- Fondo oscuro traslúcido debajo del Navbar (z-30). Estado controlado por data-open. -->
-    <div
-    id="sidebar-overlay"
-    data-open="false"
-    aria-hidden="true"
-    ></div>
+<!-- Fondo oscuro traslúcido debajo del Navbar (z-30). Estado controlado por data-open. -->
+<div
+  id="sidebar-overlay"
+  data-open="false"
+  aria-hidden="true"
+></div>
 
-    <!-- Menú lateral por debajo del Navbar (z-40) -->
-    <aside
-    id="sidebar-drawer"
-    data-open="false"
-    inert
-    aria-label="Navegación principal de gestión"
+<!-- Menú lateral por debajo del Navbar (z-40) -->
+<aside
+  id="sidebar-drawer"
+  data-open="false"
+  inert
+  aria-label="Navegación principal de gestión"
+>
+  <!-- Encabezado simplificado dentro del Sidebar -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="grid size-9 place-items-center rounded-control bg-accent/10 text-accent-ink">
+        <Icon name="first-aid-kit" class="size-5" />
+      </div>
+      <span class="font-extrabold text-sm tracking-tight uppercase text-ink">
+        Control Interno
+      </span>
+    </div>
+    <button
+      type="button"
+      id="sidebar-close-btn"
+      class="grid size-8 place-items-center rounded-control text-ink-3 hover:bg-sunken hover:text-ink transition-colors cursor-pointer"
+      aria-label="Cerrar menú lateral"
     >
-    <!-- Encabezado simplificado dentro del Sidebar -->
-    <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
-        <div class="flex items-center gap-3">
-        <div class="grid size-9 place-items-center rounded-control bg-accent/10 text-accent-ink">
-            <Icon name="first-aid-kit" class="size-5" />
-        </div>
-        <span class="font-extrabold text-sm tracking-tight uppercase text-ink">
-            Control Interno
-        </span>
-        </div>
-        <button
-        type="button"
-        id="sidebar-close-btn"
-        class="grid size-8 place-items-center rounded-control text-ink-3 hover:bg-sunken hover:text-ink transition-colors cursor-pointer"
-        aria-label="Cerrar menú lateral"
-        >
-        <span class="caret-close" aria-hidden="true"><Icon name="caret-down" class="size-4" /></span>
-        </button>
-    </div>
+      <span class="caret-close" aria-hidden="true"><Icon name="caret-down" class="size-4" /></span>
+    </button>
+  </div>
 
-    <!-- Contenido con desplazamiento independiente -->
-    <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
-        {links.length > 0 && (
-        <div class="space-y-2 ">
-            <p class={sectionTitleClass}>NAVEGACIÓN</p>
-            <ul class="space-y-1">
-            {links.map((link) => (
-                <li>
-                <a
-                    href={link.href}
-                    class={topLinkClass}
-                    aria-current={isActive(link.href) ? 'page' : undefined}
+  <!-- Contenido con desplazamiento independiente -->
+  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
+    {links.length > 0 && (
+      <div class="space-y-2 lg:hidden">
+        <p class={sectionTitleClass}>NAVEGACIÓN</p>
+        <ul class="space-y-1">
+          {links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class={topLinkClass}
+                aria-current={isActive(link.href) ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {menuSections.map((section) => (
+      <div class="space-y-2">
+        <p class={sectionTitleClass}>
+          {section.title}
+        </p>
+        <ul class="space-y-1">
+          {section.items.map((item) => (
+            <li>
+              {item.children ? (
+                <details
+                  class="group [&_summary::-webkit-details-marker]:hidden"
+                  open={item.children.some((c) => isActive(c.href))}
                 >
-                    {link.label}
+                  <summary class="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-ink rounded-control hover:bg-sunken cursor-pointer transition-colors select-none">
+                    <span class="flex items-center gap-2.5">
+                      {item.icon && <Icon name={item.icon} class="size-4 text-ink-2" />}
+                      {item.label}
+                    </span>
+                  </summary>
+                  <ul class="mt-1 ml-4 pl-3 border-l border-line space-y-1">
+                    {item.children.map((child) => (
+                      <li>
+                        <a
+                          href={child.href}
+                          class={childLinkClass}
+                          aria-current={isActive(child.href) ? 'page' : undefined}
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : (
+                <a
+                  href={item.href}
+                  class={topLinkClass}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                >
+                  {item.icon && <Icon name={item.icon} class="size-4 text-accent-ink" />}
+                  {item.label}
                 </a>
-                </li>
-            ))}
-            </ul>
-        </div>
-        )}
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
 
-        {menuSections.map((section) => (
-        <div class="space-y-2">
-            <p class={sectionTitleClass}>
-            {section.title}
-            </p>
-            <ul class="space-y-1">
-            {section.items.map((item) => (
-                <li>
-                {item.children ? (
-                    <details
-                    class="group [&_summary::-webkit-details-marker]:hidden"
-                    open={item.children.some((c) => isActive(c.href))}
-                    >
-                    <summary class="flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-ink rounded-control hover:bg-sunken cursor-pointer transition-colors select-none">
-                        <span class="flex items-center gap-2.5">
-                        {item.icon && <Icon name={item.icon} class="size-4 text-ink-2" />}
-                        {item.label}
-                        </span>
-                    </summary>
-                    <ul class="mt-1 ml-4 pl-3 border-l border-line space-y-1">
-                        {item.children.map((child) => (
-                        <li>
-                            <a
-                            href={child.href}
-                            class={childLinkClass}
-                            aria-current={isActive(child.href) ? 'page' : undefined}
-                            >
-                            {child.label}
-                            </a>
-                        </li>
-                        ))}
-                    </ul>
-                    </details>
-                ) : (
-                    <a
-                    href={item.href}
-                    class={topLinkClass}
-                    aria-current={isActive(item.href) ? 'page' : undefined}
-                    >
-                    {item.icon && <Icon name={item.icon} class="size-4 text-accent-ink" />}
-                    {item.label}
-                    </a>
-                )}
-                </li>
-            ))}
-            </ul>
-        </div>
-        ))}
+  <!-- Cuenta en responsive (< lg) -->
+  <div class="shrink-0 border-t border-line p-4 lg:hidden">
+    <div class="flex items-center gap-3 px-2 pb-3">
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-white" data-user-initials></span>
+      <div class="min-w-0">
+        <p class="truncate font-semibold text-ink" data-user-name></p>
+        <p class="truncate text-sm text-ink-3" data-user-email></p>
+      </div>
     </div>
+    <button
+      type="button"
+      data-logout
+      class="flex w-full items-center gap-2 rounded-control px-3 py-2.5 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
+    >
+      Cerrar sesión
+    </button>
+  </div>
+</aside>
 
-    <!-- Cuenta: el dropdown del Navbar está oculto en < lg, así que se replica aquí -->
-    <div class="shrink-0 border-t border-line p-4 lg:hidden">
-        <div class="flex items-center gap-3 px-2 pb-3">
-        <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-white">MF</span>
-        <div class="min-w-0">
-            <p class="truncate text-sm font-semibold text-ink">María Fernández</p>
-            <p class="truncate text-xs text-ink-3">maria@ejemplo.com</p>
-        </div>
-        </div>
-        <button
-        type="button"
-        class="flex w-full items-center rounded-control px-3 py-2.5 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
-        >
-        Cerrar sesión
-        </button>
-    </div>
-    </aside>
+<script is:inline>
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-name]', s.name);
+    set('[data-user-email]', s.email || '');
+  })();
+</script>
 
-    <style>
-    /* Posición, apertura y cierre en CSS plano (no dependen de utilidades de Tailwind).
-        El sidebar va pegado a la izquierda, justo debajo del Navbar y hasta el borde inferior. */
-    #sidebar-overlay {
-        position: fixed;
-        top: var(--header-h, 4.5rem);
-        right: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 30;
-        background: rgb(0 0 0 / 0.4);
-        -webkit-backdrop-filter: blur(4px);
-        backdrop-filter: blur(4px);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 300ms ease;
-    }
-    #sidebar-overlay[data-open="true"] {
-        opacity: 1;
-        pointer-events: auto;
-    }
+<style>
+  #sidebar-overlay {
+    position: fixed;
+    top: var(--header-h, 4.5rem);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    background: rgb(0 0 0 / 0.4);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+  }
+  #sidebar-overlay[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-    #sidebar-drawer {
-        position: fixed;
-        top: var(--header-h, 4.5rem);
-        bottom: 0;
-        left: 0;
-        z-index: 40;
-        display: flex;
-        flex-direction: column;
-        width: 20rem;
-        max-width: 85vw;
-        background: var(--surface);
-        border-right: 1px solid var(--line);
-        box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-        transform: translateX(-100%);
-        visibility: hidden; /* cerrado = invisible aunque falle la transformación */
-        transition: transform 300ms ease-in-out, visibility 0s linear 300ms;
-    }
+  #sidebar-drawer {
+    position: fixed;
+    top: var(--header-h, 4.5rem);
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    width: 20rem;
+    max-width: 85vw;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 300ms ease-in-out, visibility 0s linear 300ms;
+  }
+  #sidebar-drawer[data-open="true"] {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 300ms ease-in-out, visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #sidebar-overlay,
+    #sidebar-drawer,
     #sidebar-drawer[data-open="true"] {
-        transform: translateX(0);
-        visibility: visible;
-        transition: transform 300ms ease-in-out, visibility 0s;
+      transition: none;
     }
+  }
 
-    @media (prefers-reduced-motion: reduce) {
-        #sidebar-overlay,
-        #sidebar-drawer,
-        #sidebar-drawer[data-open="true"] {
-        transition: none;
-        }
-    }
+  .caret-close,
+  .caret-group {
+    display: inline-grid;
+    place-items: center;
+  }
+  .caret-close { transform: rotate(90deg); }
+  .caret-group { transition: transform 200ms ease; }
+  details[open] > summary .caret-group { transform: rotate(180deg); }
+</style>
 
-    .caret-close,
-    .caret-group {
-        display: inline-grid;
-        place-items: center;
-    }
-    .caret-close { transform: rotate(90deg); }
-    .caret-group { transition: transform 200ms ease; }
-    details[open] > summary .caret-group { transform: rotate(180deg); }
-    </style>
+<script>
+  import { getSession, initials, logout } from '../../lib/auth';
 
-    <script>
-    const FOCUSABLE = 'a[href], button:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+  const FOCUSABLE = 'a[href], button:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
-    function initSidebar() {
-        const w = window as unknown as { __bludSidebarCtl?: AbortController };
+  const fill = (selector: string, value: string) =>
+    document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
 
-        // Idempotente: si ya se inicializó (carga inicial + astro:page-load, o navegación
-        // con ClientRouter), se cancelan TODOS los listeners anteriores antes de crear los nuevos.
-        w.__bludSidebarCtl?.abort();
-        const ctl = new AbortController();
-        w.__bludSidebarCtl = ctl;
-        const { signal } = ctl;
+  function renderSidebarAuth() {
+    const user = getSession();
+    if (!user) return;
+    fill('[data-user-initials]', initials(user.name));
+    fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
+    fill('[data-user-name]', user.name);
+    fill('[data-user-email]', user.email || '');
+  }
 
-        const root = document.documentElement;
-        const sidebar = document.getElementById('sidebar-drawer');
-        const overlay = document.getElementById('sidebar-overlay');
-        const closeBtn = document.getElementById('sidebar-close-btn');
-        const toggleBtn = document.getElementById('desktop-sidebar-btn');
+  function initSidebar() {
+    const w = window as unknown as { __bludSidebarCtl?: AbortController };
 
-        const unlockScroll = () => {
-        root.style.overflow = '';
-        root.style.paddingRight = '';
-        };
+    w.__bludSidebarCtl?.abort();
+    const ctl = new AbortController();
+    w.__bludSidebarCtl = ctl;
+    const { signal } = ctl;
+
+    const root = document.documentElement;
+    const sidebar = document.getElementById('sidebar-drawer');
+    const overlay = document.getElementById('sidebar-overlay');
+    const closeBtn = document.getElementById('sidebar-close-btn');
+    const toggleBtn = document.getElementById('desktop-sidebar-btn');
+
+    const unlockScroll = () => {
+      root.style.overflow = '';
+      root.style.paddingRight = '';
+    };
+    unlockScroll();
+    signal.addEventListener('abort', unlockScroll);
+
+    if (!sidebar || !overlay) return;
+
+    toggleBtn?.setAttribute('aria-controls', 'sidebar-drawer');
+    toggleBtn?.setAttribute('aria-expanded', 'false');
+
+    let isOpen = false;
+
+    function setOpen(next: boolean, restoreFocus = true) {
+      if (next === isOpen || !sidebar || !overlay) return;
+      isOpen = next;
+
+      const hadFocusInside = sidebar.contains(document.activeElement);
+
+      sidebar.dataset.open = String(next);
+      overlay.dataset.open = String(next);
+      toggleBtn?.setAttribute('aria-expanded', String(next));
+
+      if (next) {
+        const gap = window.innerWidth - root.clientWidth;
+        root.style.overflow = 'hidden';
+        if (gap > 0) root.style.paddingRight = `${gap}px`;
+        sidebar.removeAttribute('inert');
+        closeBtn?.focus({ preventScroll: true });
+      } else {
         unlockScroll();
-        signal.addEventListener('abort', unlockScroll);
-
-        if (!sidebar || !overlay) return;
-
-        toggleBtn?.setAttribute('aria-controls', 'sidebar-drawer');
-        toggleBtn?.setAttribute('aria-expanded', 'false');
-
-        let isOpen = false;
-
-        function setOpen(next: boolean, restoreFocus = true) {
-        if (next === isOpen || !sidebar || !overlay) return;
-        isOpen = next;
-
-        const hadFocusInside = sidebar.contains(document.activeElement);
-
-        sidebar.dataset.open = String(next);
-        overlay.dataset.open = String(next);
-        toggleBtn?.setAttribute('aria-expanded', String(next));
-
-        if (next) {
-            // Bloquea el scroll del fondo sin que la página "salte" por la barra de scroll
-            const gap = window.innerWidth - root.clientWidth;
-            root.style.overflow = 'hidden';
-            if (gap > 0) root.style.paddingRight = `${gap}px`;
-            sidebar.removeAttribute('inert');
-            closeBtn?.focus({ preventScroll: true });
-        } else {
-            unlockScroll();
-            sidebar.setAttribute('inert', '');
-            if (restoreFocus && hadFocusInside) toggleBtn?.focus({ preventScroll: true });
-        }
-        }
-
-        // Botón de hamburguesa del Navbar
-        toggleBtn?.addEventListener('click', () => setOpen(!isOpen), { signal });
-
-        // API por evento (por si otro componente quiere abrir/cerrar el menú)
-        window.addEventListener('blud:toggle-sidebar', () => setOpen(!isOpen), { signal });
-
-        // Botón interno de cerrar
-        closeBtn?.addEventListener('click', () => setOpen(false), { signal });
-
-        // Navegar desde el menú lo cierra
-        sidebar.addEventListener(
-        'click',
-        (e) => {
-            if ((e.target as HTMLElement).closest('a[href]')) setOpen(false, false);
-        },
-        { signal }
-        );
-
-        // Clic en cualquier lugar fuera del sidebar y del botón de hamburguesa (overlay, Navbar, página).
-        // En fase de captura para que ningún stopPropagation de otro componente lo bloquee.
-        document.addEventListener(
-        'click',
-        (e) => {
-            if (!isOpen) return;
-            const target = e.target as Node;
-            if (sidebar.contains(target) || toggleBtn?.contains(target)) return;
-            setOpen(false, false);
-        },
-        { capture: true, signal }
-        );
-
-        document.addEventListener(
-        'keydown',
-        (e) => {
-            if (!isOpen) return;
-
-            if (e.key === 'Escape') {
-            e.preventDefault();
-            setOpen(false);
-            return;
-            }
-
-            // Mantiene el foco dentro del menú mientras está abierto
-            if (e.key === 'Tab') {
-            const items = Array.from(sidebar.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-                (el) => el.offsetParent !== null
-            );
-            if (items.length === 0) return;
-            const first = items[0];
-            const last = items[items.length - 1];
-            const active = document.activeElement;
-            if (e.shiftKey && (active === first || !sidebar.contains(active))) {
-                e.preventDefault();
-                last.focus();
-            } else if (!e.shiftKey && (active === last || !sidebar.contains(active))) {
-                e.preventDefault();
-                first.focus();
-            }
-            }
-        },
-        { signal }
-        );
-
-        // Antes de cambiar de página (Astro ClientRouter) se cierra y se libera el scroll
-        document.addEventListener('astro:before-swap', () => setOpen(false, false), { signal });
+        sidebar.setAttribute('inert', '');
+        if (restoreFocus && hadFocusInside) toggleBtn?.focus({ preventScroll: true });
+      }
     }
 
+    toggleBtn?.addEventListener('click', () => setOpen(!isOpen), { signal });
+    window.addEventListener('blud:toggle-sidebar', () => setOpen(!isOpen), { signal });
+    closeBtn?.addEventListener('click', () => setOpen(false), { signal });
+
+    sidebar.addEventListener(
+      'click',
+      (e) => {
+        if ((e.target as HTMLElement).closest('a[href]')) setOpen(false, false);
+      },
+      { signal }
+    );
+
+    document.addEventListener(
+      'click',
+      (e) => {
+        if (!isOpen) return;
+        const target = e.target as Node;
+        if (sidebar.contains(target) || toggleBtn?.contains(target)) return;
+        setOpen(false, false);
+      },
+      { capture: true, signal }
+    );
+
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (!isOpen) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setOpen(false);
+          return;
+        }
+
+        if (e.key === 'Tab') {
+          const items = Array.from(sidebar.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+            (el) => el.offsetParent !== null
+          );
+          if (items.length === 0) return;
+          const first = items[0];
+          const last = items[items.length - 1];
+          const active = document.activeElement;
+          if (e.shiftKey && (active === first || !sidebar.contains(active))) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && (active === last || !sidebar.contains(active))) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      },
+      { signal }
+    );
+
+    document.addEventListener('astro:before-swap', () => setOpen(false, false), { signal });
+  }
+
+  // Cierre de sesión centralizado
+  document.querySelectorAll('[data-logout]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      logout();
+      window.location.href = '/login';
+    })
+  );
+
+  renderSidebarAuth();
+  window.addEventListener('blud:auth', renderSidebarAuth);
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key.startsWith('blud-')) renderSidebarAuth();
+  });
+
+  initSidebar();
+  document.addEventListener('astro:page-load', () => {
     initSidebar();
-    document.addEventListener('astro:page-load', initSidebar);
-    </script>
+    renderSidebarAuth();
+  });
+</script>
