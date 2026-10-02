@@ -1,0 +1,364 @@
+---
+import Layout from '../../../layouts/LayoutD.astro';
+import Icon from '../../../components/Icon.astro';
+import SolicitudEstado from '../../../components/director/SolicitudEstado.astro';
+---
+
+<Layout title="BLUD | Registrar solicitud de transfusión">
+    <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
+        <div class="container-blud max-w-5xl space-y-6">
+            <header class="border-b border-line pb-6">
+                <a href="/director/solicitudes/solicitudes" class="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-ink-2 hover:text-accent-ink">
+                    <Icon name="caret-down" class="size-4 rotate-90" />
+                    Volver a solicitudes
+                </a>
+                <h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Solicitud de Transfusión</h1>
+                <p class="mt-1 text-sm text-ink-2">Formulario oficial de registro y requisición de hemocomponentes.</p>
+            </header>
+
+            <div id="form-panel" class="panel p-5 sm:p-7">
+                <form id="request-form" class="space-y-7">
+                    
+                    <!-- ENCABEZADO DE UBICACIÓN Y FECHA -->
+                    <fieldset class="space-y-4">
+                        <legend class="text-sm font-bold text-ink">Datos de Ubicación y Fecha</legend>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <label for="hospital" class="text-xs font-bold uppercase tracking-wider text-ink-2">Hospital / Centro</label>
+									<select class="field">
+									<option>Hospital Central</option>
+									<option>Hospital Chiquinquira</option>
+									<option>Policlinica Maracaibo</option>
+									<option>Hospital Regional</option>
+									</select>
+								</div>
+                            <div class="space-y-1.5">
+                                <label for="request-date" class="text-xs font-bold uppercase tracking-wider text-ink-2">Fecha</label>
+                                <input id="request-date" name="requestDate" type="date" class="field" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="request-time" class="text-xs font-bold uppercase tracking-wider text-ink-2">Hora</label>
+                                <input id="request-time" name="requestTime" type="time" class="field" required />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- DATOS DEL PACIENTE -->
+                    <fieldset class="space-y-4 border-t border-line pt-6">
+                        <legend class="text-sm font-bold text-ink">Datos del Paciente</legend>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <label for="patient-name" class="text-xs font-bold uppercase tracking-wider text-ink-2">Nombre del Paciente</label>
+                                <input id="patient-name" name="patientName" class="field" placeholder="Nombre completo" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="patient-ci" class="text-xs font-bold uppercase tracking-wider text-ink-2">C.I.</label>
+                                <input id="patient-ci" name="patientCi" class="field" placeholder="Cédula de Identidad" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="patient-age" class="text-xs font-bold uppercase tracking-wider text-ink-2">Edad</label>
+                                <input id="patient-age" name="patientAge" type="number" class="field" min="0" placeholder="Años" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="patient-weight" class="text-xs font-bold uppercase tracking-wider text-ink-2">Peso (kg)</label>
+                                <input id="patient-weight" name="patientWeight" type="number" step="0.1" class="field" placeholder="kg" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="patient-gender" class="text-xs font-bold uppercase tracking-wider text-ink-2">Género</label>
+                                <select id="patient-gender" name="patientGender" class="field" required>
+                                    <option value="">Seleccione</option>
+                                    <option value="F">Femenino (F)</option>
+                                    <option value="M">Masculino (M)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="entry-date" class="text-xs font-bold uppercase tracking-wider text-ink-2">Fecha de Ingreso</label>
+                                <input id="entry-date" name="entryDate" type="date" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="history-no" class="text-xs font-bold uppercase tracking-wider text-ink-2">Nº Historia</label>
+                                <input id="history-no" name="historyNo" class="field" placeholder="Nº de Historia" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="service" class="text-xs font-bold uppercase tracking-wider text-ink-2">Servicio</label>
+                                <input id="service" name="service" class="field" placeholder="Ej. UCI" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="room" class="text-xs font-bold uppercase tracking-wider text-ink-2">Sala</label>
+                                <input id="room" name="room" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="bed" class="text-xs font-bold uppercase tracking-wider text-ink-2">Cama</label>
+                                <input id="bed" name="bed" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="blood-group" class="text-xs font-bold uppercase tracking-wider text-ink-2">Grupo Sanguíneo y Rh</label>
+                                <select id="blood-group" name="bloodGroup" class="field" required>
+                                    <option value="">Selecciona grupo</option>
+                                    <option>A POS</option><option>A NEG</option>
+                                    <option>B POS</option><option>B NEG</option>
+                                    <option>AB POS</option><option>AB NEG</option>
+                                    <option>O POS</option><option>O NEG</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5 sm:col-span-2 lg:col-span-4">
+                                <label for="diagnosis" class="text-xs font-bold uppercase tracking-wider text-ink-2">Diagnóstico</label>
+                                <input id="diagnosis" name="diagnosis" class="field" placeholder="Diagnóstico del paciente" required />
+                            </div>
+                        </div>
+
+                        <!-- ANTECEDENTES Y PARÁMETROS -->
+                        <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-3 lg:grid-cols-6">
+                            <div class="space-y-1.5">
+                                <label for="previous-transfusions" class="text-xs font-bold uppercase tracking-wider text-ink-2">Transf. Previas</label>
+                                <select id="previous-transfusions" name="previousTransfusions" class="field">
+                                    <option value="NO">NO</option>
+                                    <option value="SI">SI</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <label for="reactions" class="text-xs font-bold uppercase tracking-wider text-ink-2">Reacciones</label>
+                                <input id="reactions" name="reactions" class="field" placeholder="Si aplicó, especificar" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="previous-gestas" class="text-xs font-bold uppercase tracking-wider text-ink-2">Nº Gestas Previas</label>
+                                <input id="previous-gestas" name="previousGestas" type="number" min="0" class="field" />
+                            </div>
+                        </div>
+
+                        <!-- VALORES DE LABORATORIO -->
+                        <div class="grid grid-cols-2 gap-4 pt-2 sm:grid-cols-5">
+                            <div class="space-y-1.5">
+                                <label for="hb" class="text-xs font-bold uppercase tracking-wider text-ink-2">Hb (gr/dL)</label>
+                                <input id="hb" name="hb" type="number" step="0.1" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="hcto" class="text-xs font-bold uppercase tracking-wider text-ink-2">Hcto (%)</label>
+                                <input id="hcto" name="hcto" type="number" step="0.1" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="platelets" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plaquetas (10⁹/L)</label>
+                                <input id="platelets" name="platelets" type="number" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="tp" class="text-xs font-bold uppercase tracking-wider text-ink-2">TP (ség.)</label>
+                                <input id="tp" name="tp" type="number" step="0.1" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="tpp" class="text-xs font-bold uppercase tracking-wider text-ink-2">TPP (ség.)</label>
+                                <input id="tpp" name="tpp" type="number" step="0.1" class="field" />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- RAZONES DE SU INDICACIÓN -->
+                    <fieldset class="space-y-4 border-t border-line pt-6">
+                        <legend class="text-sm font-bold text-ink">Razones de su Indicación (Marque todas las que apliquen)</legend>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Corregir hipovolemia" /> Corregir hipovolemia</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Detener sangrado activo" /> Detener sangrado activo</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Mejorar entrega de oxígeno" /> Mejorar entrega de oxígeno</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Corregir PT/PTT" /> Corregir PT/PTT</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Aumentar cifra de Hb/Hcto" /> Aumentar cifra de Hb/Hcto</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Pre-procedimiento invasivo / Indicación pre-operatoria" /> Pre-procedimiento invasivo / Indicación pre-operatoria</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Aumentar cifra de plaquetas" /> Aumentar cifra de plaquetas</label>
+                            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" name="reasons" value="Evitar sangrado" /> Evitar sangrado</label>
+                        </div>
+                        <div class="space-y-1.5 pt-2">
+                            <label for="other-reasons" class="text-xs font-bold uppercase tracking-wider text-ink-2">Otras razones (indicar)</label>
+                            <input id="other-reasons" name="otherReasons" class="field" placeholder="Otras indicaciones clínicas" />
+                        </div>
+                    </fieldset>
+
+                    <!-- CARÁCTER DE LA TRANSFUSIÓN -->
+                    <fieldset class="space-y-4 border-t border-line pt-6">
+                        <legend class="text-sm font-bold text-ink">Carácter de la Transfusión</legend>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-sm font-semibold text-ink">
+                                    <input type="radio" name="transfusionCharacter" value="Extrema Urgencia" required />
+                                    Extrema Urgencia (Sin prueba de compatibilidad)
+                                </label>
+                                <label class="flex items-center gap-2 text-sm font-semibold text-ink">
+                                    <input type="radio" name="transfusionCharacter" value="Urgente" />
+                                    Urgente
+                                </label>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-sm font-semibold text-ink">
+                                    <input type="radio" name="transfusionCharacter" value="Tratamiento" />
+                                    Tratamiento
+                                </label>
+                                <label class="flex items-center gap-2 text-sm font-semibold text-ink">
+                                    <input type="radio" name="transfusionCharacter" value="Acto Operatorio" />
+                                    Acto Operatorio o Procedimiento Invasivo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <label for="procedure-date" class="text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Programada</label>
+                                <input id="procedure-date" name="procedureDate" type="date" class="field" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="procedure-time" class="text-xs font-bold uppercase tracking-wider text-ink-2">Hora Programada</label>
+                                <input id="procedure-time" name="procedureTime" type="time" class="field" />
+                            </div>
+                            <div class="space-y-1.5 sm:col-span-1 lg:col-span-1">
+                                <label for="intervention-type" class="text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de Intervención</label>
+                                <input id="intervention-type" name="interventionType" class="field" placeholder="En caso de acto operatorio" />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- COMPONENTES REQUERIDOS -->
+                    <fieldset class="space-y-4 border-t border-line pt-6">
+                        <legend class="text-sm font-bold text-ink">Componentes Requeridos (Unidades o Volumen)</legend>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="space-y-1.5">
+                                <label for="units-whole-blood" class="text-xs font-bold uppercase tracking-wider text-ink-2">Sangre Total (≈ 450 mL)</label>
+                                <input id="units-whole-blood" name="unitsWholeBlood" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-red-cells" class="text-xs font-bold uppercase tracking-wider text-ink-2">Glóbulos Rojos (≈ 280 mL)</label>
+                                <input id="units-red-cells" name="unitsRedCells" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-leukoreduced" class="text-xs font-bold uppercase tracking-wider text-ink-2">G. Rojos Leucorreducidos (≈ 250 mL)</label>
+                                <input id="units-leukoreduced" name="unitsLeukoreduced" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-platelets" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plaquetas (≈ 50 mL)</label>
+                                <input id="units-platelets" name="unitsPlatelets" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-apheresis" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plaquetas por Aféresis</label>
+                                <input id="units-apheresis" name="unitsApheresis" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-ffp" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plasma Fresco Congelado (150-200 mL)</label>
+                                <input id="units-ffp" name="unitsFfp" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-cryo-supernatant" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plasma Sobrenadante Criop. (≈ 180 mL)</label>
+                                <input id="units-cryo-supernatant" name="unitsCryoSupernatant" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-simple-plasma" class="text-xs font-bold uppercase tracking-wider text-ink-2">Plasma Simple (≈ 200 mL)</label>
+                                <input id="units-simple-plasma" name="unitsSimplePlasma" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="units-cryo" class="text-xs font-bold uppercase tracking-wider text-ink-2">Crioprecipitado (≈ 15 mL)</label>
+                                <input id="units-cryo" name="unitsCryo" type="number" min="0" class="field" placeholder="Nº de unidades" />
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- MÉDICO SOLICITANTE -->
+                    <fieldset class="space-y-4 border-t border-line pt-6">
+                        <legend class="text-sm font-bold text-ink">Médico Solicitante</legend>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="space-y-1.5">
+                                <label for="doctor-name" class="text-xs font-bold uppercase tracking-wider text-ink-2">Nombre del Médico Solicitante</label>
+                                <input id="doctor-name" name="doctorName" class="field" placeholder="Nombre y Apellido" required />
+                            </div>
+                            <div class="space-y-1.5">
+                                <label for="mpps-no" class="text-xs font-bold uppercase tracking-wider text-ink-2">Nº MPPS</label>
+                                <input id="mpps-no" name="mppsNo" class="field" placeholder="Número de registro MPPS" required />
+                            </div>
+                        </div>
+
+					<div class="space-y-1.5">
+						<label for="consent" class="text-xs font-bold uppercase tracking-wider text-ink-2">
+							Consentimiento Informado
+						</label>
+						<div class="relative flex items-center">
+							<input 
+								id="consent" 
+								name="consent" 
+								type="file" 
+								accept="image/*,application/pdf" 
+								capture="environment"
+								class="field file:mr-3 file:rounded-md file:border-0 file:bg-accent-soft file:px-2.5 file:py-1 file:text-xs file:font-semibold file:text-accent-ink hover:file:bg-accent-soft/80 cursor-pointer" 
+								required 
+							/>
+						</div>
+						<p class="text-[11px] text-ink-3">Formato PNG, JPG o PDF (máx. 5 MB).</p>
+					</div>
+                    </fieldset>
+
+                    <!-- BOTÓN DE ENVÍO -->
+                    <div class="flex flex-col-reverse gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+                        <p class="max-w-xl text-xs leading-relaxed text-ink-3">Es imprescindible completar toda la información solicitada y garantizar la legibilidad del documento.</p>
+                        <button type="submit" class="btn btn-primary text-sm">
+                            <Icon name="first-aid-kit" class="size-4" />
+                            Enviar solicitud
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- PANEL DE ÉXITO -->
+            <section id="request-success" class="panel hidden border border-ok/30 p-6" role="status" aria-live="polite">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    <span class="grid size-11 shrink-0 place-items-center rounded-control bg-ok-soft text-ok">
+                        <Icon name="arrow-right" class="size-5" />
+                    </span>
+                    <div class="flex-1">
+                        <h2 class="text-lg font-bold">Solicitud registrada</h2>
+                        <p class="mt-1 text-sm text-ink-2">Folio <strong id="created-request-id" class="font-mono text-ink"></strong> · <SolicitudEstado status="Pendiente" /></p>
+                        <p class="mt-2 text-sm text-ink-2">La solicitud de transfusión ha sido registrada exitosamente en el sistema.</p>
+                        <a href="/director/solicitudes/solicitudes" class="btn btn-secondary mt-5 text-sm">Ver solicitudes</a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </section>
+</Layout>
+
+<script>
+    import { solicitudesIniciales, type Solicitud } from '../../../data/solicitudes';
+
+    type RequestItem = Solicitud;
+    const storageKey = 'blud-director-solicitudes';
+    const form = document.querySelector<HTMLFormElement>('#request-form');
+
+    form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        const formData = new FormData(form);
+        let requests: RequestItem[] = solicitudesIniciales.map((request) => ({ ...request }));
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) requests = JSON.parse(saved) as RequestItem[];
+        } catch {}
+        
+        const id = `REQ-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+        
+        const selectedReasons = formData.getAll('reasons').join(', ');
+
+        const request: any = {
+            id,
+            hospital: String(formData.get('hospital')),
+            patientName: String(formData.get('patientName')),
+            patientCi: String(formData.get('patientCi')),
+            group: String(formData.get('bloodGroup')),
+            priority: String(formData.get('transfusionCharacter')),
+            createdAt: new Date().toISOString(),
+            status: 'Pendiente',
+            service: String(formData.get('service')),
+            reasons: selectedReasons,
+            doctorName: String(formData.get('doctorName')),
+            mppsNo: String(formData.get('mppsNo')),
+        };
+
+        requests.unshift(request);
+        try { localStorage.setItem(storageKey, JSON.stringify(requests)); } catch {}
+        
+        document.querySelector('#created-request-id')!.textContent = id;
+        document.querySelector('#form-panel')?.classList.add('hidden');
+        document.querySelector('#request-success')?.classList.remove('hidden');
+        document.querySelector('#request-success')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+</script>

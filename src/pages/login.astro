@@ -187,13 +187,17 @@ import { demoUsers } from '../lib/auth';
           passwordInput.select();
           return;
         }
+        const params = new URLSearchParams(window.location.search);
+        const targetUrl = params.get('next') || '/director/dashboard';
+
         const firstName = result.user.name.split(/\s+/)[0];
         const text = successBanner?.querySelector('[data-success-text]');
         if (text) text.textContent = `¡Hola, ${firstName}! Sesión iniciada. Te llevamos de vuelta…`;
         successBanner?.classList.remove('hidden');
         successBanner?.classList.add('flex');
         form.classList.add('opacity-60', 'pointer-events-none');
-        window.setTimeout(() => location.assign(next), 1100);
+        window.setTimeout(() => location.assign(targetUrl), 1100);
+
       });
     });
 
