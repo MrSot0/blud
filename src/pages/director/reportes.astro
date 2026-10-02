@@ -72,11 +72,16 @@ const cambios = [
           <div class="space-y-1">
             <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de Reporte</label>
             <select class="field">
-              <option>Hemovigilancia y Reacciones Adversas</option>
-              <option>Inventario y Mermas (Descartes FIFO)</option>
-              <option>Rechazos y Serología Reactiva</option>
-              <option>Solicitudes Inter-Hospitalarias</option>
+              <option>Ingreso de unidades</option>
+              <option>Unidades vencidas</option>
+              <option>Unidades egresadas</option>
+              <option>Descartes de unidades</option>
+              <option>Descarte de transfusiones</option>
+              <option>Eliminacion de transfusiones</option>
+              <option>Transfusiones</option>
               <option>Historial de Cambios</option>
+              <option>Donantes</option>
+
             </select>
           </div>
           <div class="space-y-1">
@@ -86,6 +91,27 @@ const cambios = [
           <div class="space-y-1">
             <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Fin</label>
             <input type="date" class="field" />
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Producto</label>
+            <select class="field">
+              <option>Sangre total</option>
+              <option>Plasma rico en plaquetas</option>
+              <option>Concentrado de hemacias</option>
+              <option>Concentrada de plaquetas</option>
+              <option>Plasma fresco congelado</option>
+              <option>Crioprecipitado</option>
+              <option>Plasma de 24 horas</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Grupo Sanguíneo</label>
+            <select class="field">
+              <option>Grupo A</option>
+              <option>Grupo B</option>
+              <option>Grupo AB</option>
+              <option>Grupo O</option>
+            </select>          
           </div>
           <div class="space-y-1">
             <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Formato de Exportación</label>

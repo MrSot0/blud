@@ -133,7 +133,7 @@ const pendingCount = solicitudesIniciales.filter((request) => request.status ===
 		root.querySelectorAll('[data-request-row]').forEach((row) => row.remove());
 		const rows = filtered.map((request) => {
 			const pendingActions = request.status === 'Pendiente'
-				? `<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id="${escapeHTML(request.id)}">Aprobar</button><button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id="${escapeHTML(request.id)}">Rechazar</button>`
+				? `<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id="${escapeHTML(request.id)}">Editar</button><button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id="${escapeHTML(request.id)}">Eliminar</button>`
 				: '<span class="text-xs text-ink-3">Sin acciones</span>';
 			const row = document.createElement('tr');
 			row.dataset.requestRow = '';

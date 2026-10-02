@@ -4,12 +4,6 @@ import Logo from './../Logo.astro';
 import Icon from './../Icon.astro';
 import Sidebar from './Sidebar.astro';
 
-const pageLinks = [
-  { href: '/director/dashboard', label: 'Dashboard' },
-  { href: '/director/inventario', label: 'Inventario' },
-  { href: '/director/reportes/#historial-cambios', label: 'Historial de cambios' },
-  { href: '/director/reportes', label: 'Reportes' },
-];
 
 const normalize = (p: string) => p.replace(/\/$/, '') || '/';
 const currentPath = normalize(Astro.url.pathname);
@@ -96,7 +90,7 @@ const currentPath = normalize(Astro.url.pathname);
   </div>
 </header>
 
-<Sidebar links={pageLinks} />
+<Sidebar />
 
 <script is:inline>
   (function () {

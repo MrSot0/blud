@@ -14,15 +14,19 @@ interface MenuSection {
   items: MenuItem[];
 }
 
-interface Props {
-  /** Enlaces del Navbar: se muestran aquí solo en pantallas < lg, donde el Navbar los oculta. */
-  links?: { href: string; label: string }[];
-}
 
-const { links = [] } = Astro.props;
 
 const menuSections: MenuSection[] = [
   {
+    title: 'NAVEGACIÓN',
+    items:[
+      { label: 'Dashboard', href: '/director/dashboard'},
+      { label: 'Inventario', href: '/director/inventario' },
+      { label: 'Registro de cambios', href: '/director/reportes/#historial-cambios' },
+    ]},
+    {
+
+
     title: 'GESTIÓN DE INSUMOS',
     items: [
       {
@@ -121,24 +125,7 @@ const sectionTitleClass = 'px-3 text-xs font-bold uppercase tracking-wider text-
 
   <!-- Contenido con desplazamiento independiente -->
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
-    {links.length > 0 && (
-      <div class="space-y-2 lg:hidden">
-        <p class={sectionTitleClass}>NAVEGACIÓN</p>
-        <ul class="space-y-1">
-          {links.map((link) => (
-            <li>
-              <a
-                href={link.href}
-                class={topLinkClass}
-                aria-current={isActive(link.href) ? 'page' : undefined}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
+
 
     {menuSections.map((section) => (
       <div class="space-y-2">
