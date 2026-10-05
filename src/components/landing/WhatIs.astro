@@ -119,10 +119,10 @@ const pretty = (t: string) => t.replace('-', '−');
     mask-image: radial-gradient(circle at center, #000 30%, transparent 70%);
   }
 
-  /* Fondo blanco con patrón de líneas diagonales claramente visible */
+  /* El patrón decorativo conserva el fondo semántico del tema. */
   .stripe-pattern-section {
     position: relative;
-    background-color: #ffffff;
+    background-color: var(--surface);
   }
 
   .stripe-pattern-section::before {

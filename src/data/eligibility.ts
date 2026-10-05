@@ -40,7 +40,6 @@ export const questions: Question[] = [
     title: "¿Cuál es tu edad actual?",
     description: "Parámetro establecido para garantizar la madurez cardiovascular del donante.",
     options: [
-      { label: "Tengo entre 18 y 65 años", eligible: true },
       {
         label: "Tengo menos de 18 años",
         eligible: false,
@@ -48,6 +47,8 @@ export const questions: Question[] = [
         medicalReason: "El sistema circulatorio y la masa sanguínea total en personas menores de 18 años continúan en fase de desarrollo. La extracción de volumen estándar puede provocar hipotensión grave.",
         timeframe: "Diferido hasta cumplir los 18 años de edad.",
       },
+            { label: "Tengo entre 18 y 65 años", eligible: true },
+
       {
         label: "Tengo más de 65 años",
         eligible: false,
@@ -63,7 +64,6 @@ export const questions: Question[] = [
     title: "¿Cuál es tu peso corporal aproximado?",
     description: "Determina si el volumen de sangre extraído es proporcionalmente seguro para tu organismo.",
     options: [
-      { label: "Peso 50 kg (110 lbs) o más", eligible: true },
       {
         label: "Peso menos de 50 kg (110 lbs)",
         eligible: false,
@@ -71,6 +71,8 @@ export const questions: Question[] = [
         medicalReason: "La bolsa de donación recolecta un volumen estándar de 450 ml. En personas de menos de 50 kg, este volumen representa un porcentaje elevado de su volemia total, incrementando el riesgo de desmayo o shock hipovolémico.",
         timeframe: "Diferido hasta alcanzar el peso mínimo regulatorio.",
       },
+            { label: "Peso 50 kg (110 lbs) o más", eligible: true },
+
     ],
   },
   {
