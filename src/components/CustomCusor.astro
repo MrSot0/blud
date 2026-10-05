@@ -47,7 +47,7 @@
     border: 2px solid color-mix(in srgb, var(--accent, #e53e3e) 50%, transparent);
     border-radius: 50%;
     pointer-events: none;
-    z-index: 99998;
+    z-index: 99999;
     will-change: transform, width, height;
     transition:
       width 0.2s ease-out,
@@ -89,6 +89,29 @@
     const ring = document.getElementById('cursor-ring');
 
     if (!dot || !ring || !window.matchMedia('(pointer: fine)').matches) return;
+
+  const observer = new MutationObserver(() => {
+    const openDialog = document.querySelector('dialog[open]');
+    if (openDialog) {
+      // Si hay un diálogo abierto, movemos el cursor dentro del diálogo
+      if (dot.parentElement !== openDialog) {
+        openDialog.appendChild(dot);
+        openDialog.appendChild(ring);
+      }
+    } else {
+      // Si no hay diálogos abiertos, devolvemos el cursor al <body>
+      if (dot.parentElement !== document.body) {
+        document.body.appendChild(dot);
+        document.body.appendChild(ring);
+      }
+    }
+  });
+
+  observer.observe(document.body, {
+    attributes: true,
+    subtree: true,
+    attributeFilter: ['open']
+  });
 
     let mouseX = -100;
     let mouseY = -100;

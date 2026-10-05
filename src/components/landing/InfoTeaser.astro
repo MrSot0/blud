@@ -47,10 +47,10 @@ import { infoTopics, infoHref } from '../../data/info';
     .teaser-row:hover .teaser-arrow :global(svg) { transform: translateX(2px) rotate(-45deg); }
   }
 
-  /* Fondo blanco con patrón de líneas diagonales (stripes) */
+  /* El patrón decorativo conserva el fondo semántico del tema. */
   .stripe-pattern-section {
     position: relative;
-    background-color: #ffffff;
+    background-color: var(--surface);
   }
 
   .stripe-pattern-section::before {
