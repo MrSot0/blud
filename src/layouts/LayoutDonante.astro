@@ -1,0 +1,44 @@
+---
+// src/layouts/LayoutDonante.astro
+import '../styles/global.css'; // ajusta la ruta si tu CSS global está en otro lado
+import Navbar from '../components/Navbar.astro';
+import CustomCursor from '../components/CustomCusor.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = 'BLUD | Donante', description = 'Tu espacio de donante en BLUD.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+
+    <!-- Aplica el tema antes de pintar para evitar el parpadeo (mismo key que usa el Navbar) -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('blud-theme');
+          if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body class="min-h-dvh antialiased">
+    <CustomCursor />
+    <Navbar />
+    <main id="main">
+      <slot />
+    </main>
+  </body>
+</html>

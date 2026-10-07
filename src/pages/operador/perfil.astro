@@ -1,0 +1,91 @@
+---
+// src/pages/operador/perfil.astro
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+---
+
+<LayoutOperador title="BLUD | Perfil de Operador">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
+          Perfil de Operador <span class="text-accent-ink">🏥</span>
+        </h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Administra tus datos del centro de salud y la seguridad de tu cuenta.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      <!-- Datos Personales / Asignación -->
+      <section class="panel p-6 sm:p-8 space-y-4">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Información Profesional</h2>
+        <form id="form-perfil-op" class="space-y-4">
+          <div>
+            <label for="op-nombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre Completo</label>
+            <input type="text" id="op-nombre" class="field" value="Dra. María Colina" required />
+          </div>
+          <div>
+            <label for="op-email" class="block text-xs font-bold uppercase text-ink-2 mb-1">Correo Institucional</label>
+            <input type="email" id="op-email" class="field" value="mcolina@bancodesangre.org" required />
+          </div>
+          <div>
+            <label for="op-centro" class="block text-xs font-bold uppercase text-ink-2 mb-1">Centro / Banco de Sangre Asignado</label>
+            <input type="text" id="op-centro" class="field bg-sunken" value="Banco de Sangre del Zulia" readonly />
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Guardar Cambios</button>
+        </form>
+      </section>
+
+      <!-- Seguridad / Cambio de Contraseña -->
+      <section class="panel p-6 sm:p-8 space-y-4">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Seguridad y Credenciales</h2>
+        <form id="form-clave-op" class="space-y-4">
+          <div>
+            <label for="pass-actual" class="block text-xs font-bold uppercase text-ink-2 mb-1">Contraseña Actual</label>
+            <input type="password" id="pass-actual" class="field" placeholder="••••••••" required />
+          </div>
+          <div>
+            <label for="pass-nueva" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nueva Contraseña</label>
+            <input type="password" id="pass-nueva" class="field" placeholder="Mínimo 8 caracteres" minlength="8" required />
+          </div>
+          <div>
+            <label for="pass-confirmar" class="block text-xs font-bold uppercase text-ink-2 mb-1">Confirmar Nueva Contraseña</label>
+            <input type="password" id="pass-confirmar" class="field" placeholder="Repite la contraseña" required />
+          </div>
+          <button type="submit" class="btn btn-secondary w-full">Actualizar Contraseña</button>
+        </form>
+      </section>
+
+    </div>
+  </div>
+</LayoutOperador>
+
+<script>
+  import { toast } from '../../lib/operador';
+
+  function init() {
+    const formPerfil = document.getElementById('form-perfil-op') as HTMLFormElement;
+    const formClave = document.getElementById('form-clave-op') as HTMLFormElement;
+
+    formPerfil?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      toast('¡Datos de perfil actualizados!');
+    });
+
+    formClave?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const n1 = (document.getElementById('pass-nueva') as HTMLInputElement).value;
+      const n2 = (document.getElementById('pass-confirmar') as HTMLInputElement).value;
+
+      if (n1 !== n2) {
+        return toast('Las contraseñas no coinciden.');
+      }
+
+      toast('¡Contraseña actualizada con éxito!');
+      formClave.reset();
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -149,17 +149,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Ocultación global forzada del cursor nativo en dispositivos con puntero (mouse) */
-  @media (pointer: fine) {
-    html,
-    body,
-    *,
-    *::before,
-    *::after {
-      cursor: none !important;
-    }
-  }
-
   h1, h2, h3, h4 {
     text-wrap: balance;
     letter-spacing: -0.02em;

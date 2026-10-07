@@ -1,0 +1,32 @@
+---
+// src/layouts/LayoutOperador.astro
+import Navbar from '../components/Navbar.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = 'BLUD | Panel de Operador', description = 'Gestión del banco de sangre y hemocomponentes' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="min-h-screen bg-canvas text-ink antialiased">
+    <Navbar />
+    
+    <main id="contenido" class="min-h-[calc(100vh-var(--header-h,4.5rem))]">
+      <slot />
+    </main>
+
+    <script>
+      import '../styles/global.css';
+    </script>
+  </body>
+</html>

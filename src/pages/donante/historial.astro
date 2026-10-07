@@ -1,0 +1,170 @@
+---
+// src/pages/donante/historial.astro
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+---
+
+<LayoutDonante title="BLUD | Mi historial">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="reveal flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-line" style="--d:0ms">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Mi historial</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Cada donación cuenta. Aquí está la tuya.</p>
+      </div>
+      <a href="/donante/donar" class="btn btn-primary self-start sm:self-auto">Agendar donación</a>
+    </div>
+
+    <!-- Próxima cita -->
+    <section id="cita" class="reveal hidden cita-card p-6 sm:p-8" style="--d:60ms" aria-label="Próxima cita">
+      <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div class="flex items-center gap-4">
+          <span class="grid size-14 shrink-0 place-items-center rounded-full bg-white/20 pulse" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-white/75">Tu próxima cita</p>
+            <p class="text-xl font-extrabold leading-tight" id="cita-fecha"></p>
+            <p class="text-sm text-white/85" id="cita-centro"></p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="/donante/donar" class="cita-btn">Cambiar</a>
+          <button type="button" id="cita-cancel" class="cita-btn cita-btn-ghost">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estadísticas -->
+    <div id="stats" class="reveal grid grid-cols-1 sm:grid-cols-3 gap-4 text-center" style="--d:120ms">
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular" data-stat="n">0</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Donaciones</span>
+      </div>
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular"><span data-stat="litros">0</span> L</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Sangre donada</span>
+      </div>
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular" data-stat="ultima">—</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Última donación</span>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <section class="reveal panel p-6 sm:p-8" style="--d:180ms" aria-labelledby="h-lista">
+      <h2 id="h-lista" class="text-lg font-bold text-ink border-b border-line pb-4">Donaciones pasadas</h2>
+
+      <ol id="lista" class="relative mt-6 space-y-5"></ol>
+
+      <div id="vacio" class="hidden py-10 text-center space-y-3">
+        <span class="mx-auto grid size-16 place-items-center rounded-full bg-accent-soft text-accent-ink drop-float" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+        </span>
+        <p class="font-bold text-ink">Aún no tienes donaciones registradas</p>
+        <p class="text-sm text-ink-3 max-w-sm mx-auto">Cuando hagas tu primera donación aparecerá aquí con su fecha y centro.</p>
+        <a href="/donante/donar" class="btn btn-primary inline-flex">Agendar mi primera donación</a>
+      </div>
+    </section>
+  </div>
+</LayoutDonante>
+
+<style>
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise 600ms var(--ease-out, ease-out) forwards; animation-delay: var(--d, 0ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .cita-card {
+    position: relative; overflow: hidden; border-radius: 1.5rem; color: #fff;
+    background: linear-gradient(135deg, var(--color-blud-flag-red), var(--color-blud-oxblood));
+    box-shadow: 0 20px 40px -18px rgb(0 0 0 / 0.4);
+  }
+  .cita-card::after { content: ''; position: absolute; width: 14rem; height: 14rem; right: -4rem; top: -6rem; border-radius: 9999px; background: rgb(255 255 255 / 0.1); }
+  .cita-btn {
+    display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.1rem; border-radius: 9999px;
+    font-size: 0.875rem; font-weight: 700; background: #fff; color: var(--color-blud-flag-red); cursor: pointer; transition: transform 150ms;
+  }
+  .cita-btn:hover { transform: translateY(-2px); }
+  .cita-btn-ghost { background: rgb(255 255 255 / 0.18); color: #fff; }
+
+  .pulse { animation: pulse 2s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0.5); } 70%, 100% { box-shadow: 0 0 0 14px rgb(255 255 255 / 0); } }
+  .drop-float { animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+
+  /* Línea de tiempo (elementos creados por JS => :global) */
+  #lista::before { content: ''; position: absolute; left: 1.375rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: var(--line); }
+  #lista :global(.item) { position: relative; display: flex; gap: 1rem; opacity: 0; transform: translateX(-12px); animation: slide 450ms var(--ease-out, ease-out) forwards; animation-delay: calc(var(--i) * 90ms + 250ms); }
+  @keyframes slide { to { opacity: 1; transform: none; } }
+  #lista :global(.dot) { position: relative; z-index: 1; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; box-shadow: 0 0 0 4px var(--surface); }
+  #lista :global(.card) { flex: 1; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); transition: transform 200ms, box-shadow 200ms; }
+  #lista :global(.card:hover) { transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.35); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, #lista :global(.item) { animation: none; opacity: 1; transform: none; }
+    .pulse, .drop-float { animation: none; }
+  }
+</style>
+
+<script>
+  import { centroById, getCita, cancelCita, getHistorial, seedDemo, fmtFecha, esc, toast } from '../../lib/donante';
+
+  function init() {
+    const lista = document.getElementById('lista');
+    if (!lista || lista.dataset.ready) return;
+    lista.dataset.ready = '1';
+
+    const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+    // /donante/historial?demo=1 carga 3 donaciones de ejemplo para probar el diseño
+    if (new URLSearchParams(location.search).get('demo') === '1') seedDemo();
+
+    function renderCita() {
+      const cita = getCita();
+      const box = $('#cita');
+      if (!cita) return box.classList.add('hidden');
+      box.classList.remove('hidden');
+      $('#cita-fecha').textContent = `${fmtFecha(cita.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${cita.hora}`;
+      $('#cita-centro').textContent = centroById(cita.centroId)?.nombre ?? '';
+    }
+
+    function renderLista() {
+      // TODO: reemplazar getHistorial() por la consulta a la API
+      const hist = getHistorial();
+      const litros = (hist.reduce((a, d) => a + d.ml, 0) / 1000).toFixed(2).replace(/\.?0+$/, '') || '0';
+      $('[data-stat="n"]').textContent = String(hist.length);
+      $('[data-stat="litros"]').textContent = litros;
+      $('[data-stat="ultima"]').textContent = hist[0] ? fmtFecha(hist[0].fecha, { day: 'numeric', month: 'short' }) : '—';
+      $('#vacio').classList.toggle('hidden', hist.length > 0);
+
+      lista!.innerHTML = hist
+        .map((d, i) => `
+          <li class="item" style="--i:${i}">
+            <span class="dot" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="size-5" fill="currentColor"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+            </span>
+            <div class="card">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-bold text-ink">${esc(centroById(d.centroId)?.nombre ?? 'Centro de donación')}</p>
+                <span class="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-ink">${esc(d.sangre)}</span>
+              </div>
+              <p class="mt-0.5 text-sm text-ink-3">${esc(fmtFecha(d.fecha))} · ${d.ml} ml</p>
+              <p class="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-ok">✓ Completada</p>
+            </div>
+          </li>`)
+        .join('');
+    }
+
+    $('#cita-cancel').addEventListener('click', () => {
+      if (!confirm('¿Seguro que quieres cancelar tu cita?')) return;
+      // TODO: DELETE /api/citas/:id
+      cancelCita();
+      renderCita();
+      toast('Cita cancelada. Cuando quieras, agenda otra 💙');
+    });
+
+    renderCita();
+    renderLista();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

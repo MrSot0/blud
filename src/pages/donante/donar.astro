@@ -1,0 +1,326 @@
+---
+// src/pages/donante/donar.astro
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+import { centers } from '../../data/centers';
+
+const slots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'];
+const checks = [
+  'Tengo entre 18 y 65 años.',
+  'Peso 50 kg o más.',
+  'Hoy me siento bien: sin fiebre, gripe ni malestar.',
+  'He dormido y comido bien.',
+  'Han pasado más de 3 meses desde mi última donación (o es mi primera vez).',
+];
+---
+
+<LayoutDonante title="BLUD | Donar sangre">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="reveal pb-6 border-b border-line" style="--d:0ms">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
+        Donar sangre <span class="drop-emoji" aria-hidden="true">🩸</span>
+      </h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Agenda tu cita en un par de pasos. Es rápido y puede salvar hasta 3 vidas.</p>
+    </div>
+
+    <!-- Cita existente -->
+    <div id="cita-actual" class="reveal hidden panel p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style="--d:40ms">
+      <p class="text-sm text-ink-2">Ya tienes una cita el <strong class="text-ink" id="cita-actual-txt"></strong>. Si confirmas una nueva, reemplaza a esa.</p>
+      <a href="/donante/historial" class="btn btn-secondary self-start sm:self-auto text-sm">Ver mi cita</a>
+    </div>
+
+    <div id="form-view" class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+      <div class="lg:col-span-3 space-y-6">
+
+        <!-- 1. Centro de Donación -->
+        <section class="reveal panel p-6 sm:p-8 space-y-4" style="--d:80ms" aria-labelledby="h-centro">
+          <div class="flex items-center justify-between">
+            <h2 id="h-centro" class="flex items-center gap-3 text-lg font-bold text-ink">
+              <span class="num">1</span> Centro de donación
+            </h2>
+            <button type="button" id="btn-cambiar-centro" class="hidden text-xs font-semibold text-accent-ink underline cursor-pointer">
+              Cambiar centro
+            </button>
+          </div>
+
+          <!-- Tarjeta compacta (Centro Precargado) -->
+          <div id="centro-locked-card" class="hidden p-4 rounded-xl border-2 border-accent bg-accent-soft flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-white font-bold">
+                📍
+              </span>
+              <div class="min-w-0">
+                <p class="font-bold text-ink leading-tight truncate" id="locked-centro-nombre">—</p>
+                <p class="text-xs text-ink-2 mt-0.5" id="locked-centro-direccion">—</p>
+              </div>
+            </div>
+            <span class="shrink-0 rounded-full bg-accent px-2.5 py-1 text-[0.7rem] font-extrabold text-white">
+              ✓ Seleccionado
+            </span>
+          </div>
+
+          <!-- Selector manual (Oculto si se precargó el centro) -->
+          <div id="centro-selector-group" class="grid gap-3" role="radiogroup" aria-labelledby="h-centro">
+            {centers.map((c) => (
+              <label class="opt" data-needs={c.needs.join(',')}>
+                <input type="radio" name="centro" value={c.id} class="sr-only" />
+                <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink">
+                  <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-semibold text-ink leading-tight">{c.name}</span>
+                  <span class="block text-xs text-ink-3">{c.address} ({c.city})</span>
+                  <span class="need-badge hidden mt-1.5 w-fit rounded-full bg-accent px-2.5 py-0.5 text-[0.6875rem] font-bold text-white">¡Necesitan tu tipo de sangre!</span>
+                </span>
+                <span class="check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>
+                </span>
+              </label>
+            ))}
+          </div>
+        </section>
+
+        <!-- 2. Fecha y hora -->
+        <section class="reveal panel p-6 sm:p-8 space-y-4" style="--d:140ms" aria-labelledby="h-fecha">
+          <h2 id="h-fecha" class="flex items-center gap-3 text-lg font-bold text-ink"><span class="num">2</span> Fecha y hora</h2>
+          <div class="space-y-1.5 max-w-xs">
+            <label for="fecha" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Día</label>
+            <input type="date" id="fecha" class="field" />
+          </div>
+          <fieldset class="space-y-1.5">
+            <legend class="text-xs font-bold uppercase tracking-wider text-ink-2">Hora</legend>
+            <div class="flex flex-wrap gap-2 pt-1">
+              {slots.map((s) => (
+                <label class="chip">
+                  <input type="radio" name="hora" value={s} class="sr-only" />
+                  <span>{s}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </section>
+
+        <!-- 3. Aptitud -->
+        <section class="reveal panel p-6 sm:p-8 space-y-4" style="--d:200ms" aria-labelledby="h-apto">
+          <div>
+            <h2 id="h-apto" class="flex items-center gap-3 text-lg font-bold text-ink"><span class="num">3</span> Confirma antes de ir</h2>
+            <p class="text-xs sm:text-sm text-ink-3 mt-1.5">El personal médico hace la evaluación final el día de tu cita.</p>
+          </div>
+          <div class="space-y-3">
+            {checks.map((t) => (
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" data-apto class="size-4 mt-1 rounded text-accent border-line-strong focus:ring-accent" />
+                <span class="text-sm text-ink-2">{t}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <!-- Resumen de tu cita -->
+      <aside class="reveal lg:col-span-2 lg:sticky lg:top-[calc(var(--header-h,4.5rem)+1.5rem)]" style="--d:240ms" aria-label="Resumen de tu cita">
+        <div class="panel p-6 sm:p-8 space-y-5">
+          <h2 class="text-lg font-bold text-ink">Tu cita</h2>
+
+          <!-- Resumen del Donante -->
+          <div id="donor-summary-card" class="p-3.5 rounded-control bg-sunken space-y-1 text-xs text-ink-2">
+            <p class="font-bold text-ink text-sm flex items-center justify-between">
+              <span id="d-name">Cargando donante...</span>
+              <span id="d-blood" class="rounded-full bg-accent-soft px-2 py-0.5 text-[0.7rem] font-extrabold text-accent-ink">—</span>
+            </p>
+            <p id="d-cedula" class="text-ink-3">Cédula: —</p>
+            <a href="/donante/perfil" class="inline-block text-accent-ink font-semibold underline pt-0.5">Editar mis datos →</a>
+          </div>
+
+          <dl class="space-y-3 text-sm border-t border-line pt-3">
+            <div class="flex justify-between gap-4"><dt class="text-ink-3">Centro</dt><dd class="font-semibold text-ink text-right" id="r-centro">—</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-ink-3">Día</dt><dd class="font-semibold text-ink text-right" id="r-fecha">—</dd></div>
+            <div class="flex justify-between gap-4"><dt class="text-ink-3">Hora</dt><dd class="font-semibold text-ink text-right" id="r-hora">—</dd></div>
+          </dl>
+
+          <p id="kyc-nudge" class="hidden rounded-control bg-sunken px-3 py-2 text-xs text-ink-2">
+            Tip: <a href="/donante/perfil" class="font-semibold text-accent-ink underline">verifica tu identidad</a> para agilizar tu registro.
+          </p>
+
+          <button type="button" id="confirmar" class="btn btn-primary w-full" disabled>Confirmar cita</button>
+          <p class="text-xs text-ink-3 text-center" id="faltan">Completa los pasos para confirmar.</p>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mensaje de éxito -->
+    <div id="ok-view" class="hidden mx-auto max-w-md panel p-8 text-center space-y-4">
+      <span class="ok-badge mx-auto grid size-20 place-items-center rounded-full bg-ok text-white">
+        <svg viewBox="0 0 24 24" class="size-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ok-path" d="m5 12 5 5 9-10"/></svg>
+      </span>
+      <h2 class="text-2xl font-extrabold text-ink">¡Cita confirmada!</h2>
+      <p class="text-sm text-ink-2" id="ok-txt"></p>
+      <p class="text-xs text-ink-3">Lleva tu cédula y muestra tu carnet digital con el QR.</p>
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <a href="/donante/perfil" class="btn btn-secondary flex-1">Ver mi carnet</a>
+        <a href="/donante/historial" class="btn btn-primary flex-1">Ir a mi historial</a>
+      </div>
+    </div>
+  </div>
+</LayoutDonante>
+
+<style>
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise 600ms var(--ease-out, ease-out) forwards; animation-delay: var(--d, 0ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .drop-emoji { display: inline-block; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-4px) scale(1.08); } }
+
+  .num { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; font-size: 0.8125rem; font-weight: 800; }
+
+  .opt {
+    position: relative; display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem;
+    border: 2px solid var(--line); border-radius: 1rem; cursor: pointer; background: var(--surface);
+    transition: border-color 200ms, background 200ms, transform 200ms;
+  }
+  .opt:hover { transform: translateY(-2px); border-color: var(--line-strong, var(--line)); }
+  .opt:has(input:checked) { border-color: var(--color-blud-flag-red); background: var(--accent-soft); }
+  .check { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; transform: scale(0); transition: transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .opt:has(input:checked) .check { transform: scale(1); }
+
+  .chip span { display: block; padding: 0.5rem 1rem; border: 2px solid var(--line); border-radius: 9999px; font-size: 0.875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 200ms; }
+  .chip:hover span { border-color: var(--color-blud-flag-red); }
+  .chip:has(input:checked) span { background: var(--color-blud-flag-red); border-color: var(--color-blud-flag-red); color: #fff; transform: scale(1.05); }
+
+  .ok-badge { animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes pop { from { transform: scale(0); } }
+  .ok-path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw 500ms 350ms ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    .drop-emoji, .ok-badge, .ok-path { animation: none; stroke-dashoffset: 0; }
+    .opt, .check, .chip span { transition: none; }
+  }
+</style>
+
+<script>
+  import { centers } from '../../data/centers';
+  import { getCita, getDonor, saveCita, fmtFecha, uid, toast } from '../../lib/donante';
+
+  const centerById = (id: string) => centers.find((c) => c.id === id);
+
+  function init() {
+    const root = document.getElementById('form-view');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+
+    const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
+    const fecha = $<HTMLInputElement>('#fecha');
+    const btn = $<HTMLButtonElement>('#confirmar');
+    const aptos = Array.from(document.querySelectorAll<HTMLInputElement>('[data-apto]'));
+    const radios = (name: string) => Array.from(document.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`));
+    const picked = (name: string) => radios(name).find((r) => r.checked)?.value ?? '';
+
+    const lockedCard = $('#centro-locked-card');
+    const selectorGroup = $('#centro-selector-group');
+    const btnCambiar = $<HTMLButtonElement>('#btn-cambiar-centro');
+
+    // Cargar datos del donante
+    const donor = getDonor();
+    const donorFullName = `${donor.firstname || ''} ${donor.lastname || ''}`.trim() || 'Donante BLUD';
+    
+    $('#d-name').textContent = donorFullName;
+    $('#d-blood').textContent = donor.sangre || 'Sin tipo';
+    $('#d-cedula').textContent = donor.cedula ? `Cédula: ${donor.cedula}` : 'Cédula sin registrar';
+
+    // Rango de fechas
+    const iso = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const today = new Date();
+    const max = new Date(); max.setDate(max.getDate() + 60);
+    fecha.min = iso(today);
+    fecha.max = iso(max);
+
+    if (donor.sangre) {
+      document.querySelectorAll<HTMLElement>('.opt[data-needs]').forEach((el) => {
+        if ((el.dataset.needs ?? '').split(',').includes(donor.sangre)) {
+          el.querySelector('.need-badge')?.classList.remove('hidden');
+        }
+      });
+    }
+
+    if (donor.kyc !== 'verified') $('#kyc-nudge').classList.remove('hidden');
+
+    const actual = getCita();
+    if (actual) {
+      $('#cita-actual').classList.remove('hidden');
+      $('#cita-actual-txt').textContent = `${fmtFecha(actual.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${actual.hora}`;
+    }
+
+    // Detectar si la URL trae un centro de donación (?centro=id)
+    const pre = new URLSearchParams(location.search).get('centro');
+    if (pre && centers.some((c) => c.id === pre)) {
+      const r = radios('centro').find((x) => x.value === pre);
+      if (r) {
+        r.checked = true;
+        applyPreselectedMode(pre);
+      }
+    }
+
+    function applyPreselectedMode(centroId: string) {
+      const c = centerById(centroId);
+      if (!c) return;
+
+      $('#locked-centro-nombre').textContent = c.name;
+      $('#locked-centro-direccion').textContent = `${c.address} (${c.city})`;
+      lockedCard.classList.remove('hidden');
+      selectorGroup.classList.add('hidden');
+      btnCambiar.classList.remove('hidden');
+    }
+
+    btnCambiar.addEventListener('click', () => {
+      lockedCard.classList.add('hidden');
+      selectorGroup.classList.remove('hidden');
+      btnCambiar.classList.add('hidden');
+    });
+
+    function update() {
+      const centro = centerById(picked('centro'));
+      const hora = picked('hora');
+      const apto = aptos.every((a) => a.checked);
+      
+      $('#r-centro').textContent = centro?.name ?? '—';
+      $('#r-fecha').textContent = fecha.value ? fmtFecha(fecha.value, { weekday: 'short', day: 'numeric', month: 'short' }) : '—';
+      $('#r-hora').textContent = hora || '—';
+
+      const valid = !!centro && !!fecha.value && fecha.value >= fecha.min && fecha.value <= fecha.max && !!hora && apto;
+      btn.disabled = !valid;
+      $('#faltan').textContent = valid
+        ? '¡Todo listo!'
+        : !centro ? 'Selecciona un centro.' : !fecha.value ? 'Falta elegir el día.' : !hora ? 'Falta elegir la hora.' : 'Confirma los puntos del paso 3.';
+    }
+
+    root.addEventListener('change', update);
+    fecha.addEventListener('input', update);
+    update();
+
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      const centro = centerById(picked('centro'))!;
+      const hora = picked('hora');
+
+      saveCita({
+        id: uid(),
+        centroId: centro.id,
+        fecha: fecha.value,
+        hora,
+        creada: new Date().toISOString()
+      });
+
+      $('#ok-txt').textContent = `${centro.name} · ${fmtFecha(fecha.value, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${hora}.`;
+      root.classList.add('hidden');
+      $('#cita-actual').classList.add('hidden');
+      $('#ok-view').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast('¡Cita agendada con éxito! 💪');
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

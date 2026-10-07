@@ -1,0 +1,159 @@
+---
+// src/pages/operador/prescribir.astro
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+
+const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const componentes: string[] = ['Sangre Total', 'Concentrado Globular', 'Plaquetas', 'Plasma Fresco Congelado', 'Crioprecipitado'];
+---
+
+<LayoutDonante title="BLUD | Prescribir & Cargar Orden Médica">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Prescribir / Orden Médica</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Escanea una orden física para extraer datos automáticamente y agilizar el registro.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+      
+      <!-- Zona de Escaneo / Carga de Foto -->
+      <section class="lg:col-span-2 space-y-4">
+        <div class="panel p-6 space-y-4">
+          <h2 class="text-lg font-bold text-ink">1. Foto de la orden médica</h2>
+          <label id="upload-zone" class="drop flex flex-col items-center justify-center min-h-[260px] border-2 dashed border-line rounded-2xl cursor-pointer hover:border-accent transition-colors relative overflow-hidden bg-sunken">
+            <img id="preview-img" class="hidden absolute inset-0 w-full h-full object-contain bg-canvas" alt="Vista previa de orden médica" />
+            <div id="drop-text" class="text-center p-6 space-y-2">
+              <span class="text-3xl">📄</span>
+              <p class="font-bold text-sm text-ink">Sube o toma foto de la orden</p>
+              <p class="text-xs text-ink-3">Formatos PNG, JPG hasta 10MB</p>
+            </div>
+            <input type="file" id="orden-file" accept="image/*" capture="environment" class="sr-only" />
+          </label>
+
+          <button type="button" id="btn-scan" class="btn btn-primary w-full" disabled>
+            <span id="scan-label">🤖 Escanear y extraer datos</span>
+            <span id="scan-spinner" class="hidden">Procesando imagen con IA...</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Formulario Pre-llenado -->
+      <section class="lg:col-span-3">
+        <form id="prescribir-form" class="panel p-6 sm:p-8 space-y-5">
+          <h2 class="text-lg font-bold text-ink border-b border-line pb-3">2. Datos extraídos de la solicitud</h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="pacienteNombre" class="block text-xs font-bold uppercase text-ink-2">Nombre Paciente</label>
+              <input type="text" id="pacienteNombre" class="field" placeholder="Ej. Roberto Gómez" required />
+            </div>
+            <div class="space-y-1.5">
+              <label for="pacienteCedula" class="block text-xs font-bold uppercase text-ink-2">Cédula Paciente</label>
+              <input type="text" id="pacienteCedula" class="field" placeholder="V-12345678" required />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="tipoSangre" class="block text-xs font-bold uppercase text-ink-2">Tipo de Sangre Requerido</label>
+              <select id="tipoSangre" class="field" required>
+                <option value="">Selecciona...</option>
+                {bloodTypes.map((t) => <option value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label for="hemocomponente" class="block text-xs font-bold uppercase text-ink-2">Hemocomponente Requerido</label>
+              <select id="hemocomponente" class="field" required>
+                <option value="">Selecciona...</option>
+                {componentes.map((c) => <option value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label for="unidades" class="block text-xs font-bold uppercase text-ink-2">Unidades (Bolsas)</label>
+              <input type="number" id="unidades" min="1" max="10" class="field" value="1" required />
+            </div>
+            <div class="space-y-1.5">
+              <label for="hospitalDestino" class="block text-xs font-bold uppercase text-ink-2">Centro / Hospital Solicitante</label>
+              <input type="text" id="hospitalDestino" class="field" placeholder="Ej. Hospital Universitario" required />
+            </div>
+          </div>
+
+          <div class="pt-2 flex gap-3">
+            <button type="submit" class="btn btn-primary flex-1">Procesar Entrega / Solicitud</button>
+          </div>
+        </form>
+      </section>
+
+    </div>
+  </div>
+</LayoutDonante>
+
+<script>
+  import { saveEntregaOp, uid, toast } from '../../lib/operador';
+
+  function init() {
+    const fileInput = document.getElementById('orden-file') as HTMLInputElement;
+    const btnScan = document.getElementById('btn-scan') as HTMLButtonElement;
+    const previewImg = document.getElementById('preview-img') as HTMLImageElement;
+    const dropText = document.getElementById('drop-text');
+    const form = document.getElementById('prescribir-form') as HTMLFormElement;
+
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      previewImg.src = url;
+      previewImg.classList.remove('hidden');
+      dropText?.classList.add('hidden');
+      btnScan.disabled = false;
+    });
+
+    // Simulación de OCR para extraer datos de la foto
+    btnScan?.addEventListener('click', async () => {
+      btnScan.disabled = true;
+      document.getElementById('scan-label')!.classList.add('hidden');
+      document.getElementById('scan-spinner')!.classList.remove('hidden');
+
+      await new Promise((r) => setTimeout(r, 1200));
+
+      // Datos auto-completados por el escáner
+      (document.getElementById('pacienteNombre') as HTMLInputElement).value = 'María Elena Delgado';
+      (document.getElementById('pacienteCedula') as HTMLInputElement).value = 'V-18765432';
+      (document.getElementById('tipoSangre') as HTMLSelectElement).value = 'O+';
+      (document.getElementById('hemocomponente') as HTMLSelectElement).value = 'Concentrado Globular';
+      (document.getElementById('unidades') as HTMLInputElement).value = '2';
+      (document.getElementById('hospitalDestino') as HTMLInputElement).value = 'Hospital Central Maracaibo';
+
+      document.getElementById('scan-label')!.classList.remove('hidden');
+      document.getElementById('scan-spinner')!.classList.add('hidden');
+      btnScan.disabled = false;
+      toast('¡Datos extraídos con éxito de la orden! 📋');
+    });
+
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveEntregaOp({
+        id: uid(),
+        pacienteNombre: (document.getElementById('pacienteNombre') as HTMLInputElement).value,
+        pacienteCedula: (document.getElementById('pacienteCedula') as HTMLInputElement).value,
+        tipoSangre: (document.getElementById('tipoSangre') as HTMLSelectElement).value,
+        tipoHemocomponente: (document.getElementById('hemocomponente') as HTMLSelectElement).value as any,
+        unidades: Number((document.getElementById('unidades') as HTMLInputElement).value),
+        hospitalDestino: (document.getElementById('hospitalDestino') as HTMLInputElement).value,
+        fecha: new Date().toISOString().slice(0, 10),
+        operadorId: 'op-actual'
+      });
+
+      toast('¡Prescripción y entrega registrada! 🩸');
+      window.location.href = '/operador/entregas';
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

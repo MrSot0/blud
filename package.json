@@ -17,7 +17,9 @@
     "@fontsource-variable/schibsted-grotesk": "^5.3.0",
     "@phosphor-icons/core": "^2.1.1",
     "@tailwindcss/vite": "^4.3.3",
+    "@types/qrcode": "^1.5.6",
     "astro": "^7.3.4",
+    "qrcode": "^1.5.4",
     "tailwindcss": "^4.3.3"
   },
   "allowScripts": {

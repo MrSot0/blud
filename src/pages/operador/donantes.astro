@@ -1,0 +1,186 @@
+---
+// src/pages/operador/donantes.astro
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+
+const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+---
+
+<LayoutOperador title="BLUD | Gestión de Donantes">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Gestión de Donantes</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Valida usuarios pre-registrados en la app o añade nuevos donantes al banco de sangre.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+      
+      <!-- Búsqueda y Registro Rápido -->
+      <section class="lg:col-span-2 space-y-6">
+        
+        <!-- Búsqueda / Verificación -->
+        <div class="panel p-6 space-y-4">
+          <h2 class="text-lg font-bold text-ink">Verificar Donante Pre-registrado</h2>
+          <div class="space-y-3">
+            <div class="relative">
+              <input type="text" id="buscar-cedula" class="field pl-10" placeholder="Ingresa cédula (ej. V-12345678)" />
+              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3">🔍</span>
+            </div>
+            <button type="button" id="btn-verificar" class="btn btn-primary w-full">Verificar Cédula / QR</button>
+          </div>
+
+          <!-- Resultado de búsqueda simulado -->
+          <div id="resultado-busqueda" class="hidden p-4 rounded-xl bg-sunken space-y-3 border border-line">
+            <div class="flex justify-between items-start">
+              <div>
+                <p id="res-nombre" class="font-bold text-ink text-sm">—</p>
+                <p id="res-cedula" class="text-xs text-ink-3">—</p>
+              </div>
+              <span id="res-sangre" class="blood-chip">—</span>
+            </div>
+            <p id="res-status" class="text-xs text-ink-2">Estado: <span class="font-bold text-ok">Pre-registrado en App</span></p>
+            <button type="button" id="btn-confirmar-pre" class="btn btn-primary btn-sm w-full text-xs">Aprobar y Registrar</button>
+          </div>
+        </div>
+
+        <!-- Registro Manual Directo -->
+        <div class="panel p-6 space-y-4">
+          <h2 class="text-lg font-bold text-ink">Nuevo Registro Manual</h2>
+          <form id="form-nuevo-donante" class="space-y-3">
+            <div>
+              <label for="reg-cedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula</label>
+              <input type="text" id="reg-cedula" class="field" placeholder="V-12345678" required />
+            </div>
+            <div>
+              <label for="reg-nombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre Completo</label>
+              <input type="text" id="reg-nombre" class="field" placeholder="Nombres y Apellidos" required />
+            </div>
+            <div>
+              <label for="reg-sangre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de Sangre</label>
+              <select id="reg-sangre" class="field" required>
+                <option value="">Seleccionar</option>
+                {bloodTypes.map(t => <option value={t}>{t}</option>)}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-secondary w-full">Guardar Donante</button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- Lista de Donantes Gestionados -->
+      <section class="lg:col-span-3 panel p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink">Donantes Registrados</h2>
+          <input type="search" id="filtro-lista" class="field max-w-xs py-1.5 text-xs" placeholder="Filtrar por nombre o cédula…" />
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+              <tr>
+                <th class="py-2">Donante</th>
+                <th class="py-2">Sangre</th>
+                <th class="py-2">Estado</th>
+                <th class="py-2">Fecha Registro</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-donantes" class="divide-y divide-line">
+              <!-- Carga dinámica -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</LayoutOperador>
+
+<script>
+  import { getDonantesOp, saveDonanteOp, uid, toast } from '../../lib/operador';
+
+  function renderTabla(filtro = '') {
+    const lista = getDonantesOp();
+    const tbody = document.getElementById('tabla-donantes');
+    if (!tbody) return;
+
+    const filtrados = lista.filter(d => 
+      !filtro || 
+      d.nombreCompleto.toLowerCase().includes(filtro.toLowerCase()) || 
+      d.cedula.toLowerCase().includes(filtro.toLowerCase())
+    );
+
+    tbody.innerHTML = filtrados.map(d => `
+      <tr>
+        <td class="py-3 font-semibold text-ink">${d.nombreCompleto}<br><span class="text-xs text-ink-3 font-normal">${d.cedula}</span></td>
+        <td class="py-3"><span class="blood-chip">${d.sangre}</span></td>
+        <td class="py-3"><span class="rounded-full bg-ok-soft px-2 py-0.5 text-xs font-bold text-ok">Verificado</span></td>
+        <td class="py-3 text-ink-3 text-xs">${d.fechaRegistro}</td>
+      </tr>
+    `).join('');
+  }
+
+  function init() {
+    renderTabla();
+
+    const inputCedula = document.getElementById('buscar-cedula') as HTMLInputElement;
+    const btnVerificar = document.getElementById('btn-verificar');
+    const resBox = document.getElementById('resultado-busqueda');
+    const formNuevo = document.getElementById('form-nuevo-donante') as HTMLFormElement;
+    const filtroInput = document.getElementById('filtro-lista') as HTMLInputElement;
+
+    let preDonanteEncontrado: any = null;
+
+    btnVerificar?.addEventListener('click', () => {
+      const ced = inputCedula.value.trim();
+      if (!ced) return toast('Ingresa una cédula válida para consultar.');
+
+      // Simulación de respuesta de búsqueda de pre-registro
+      preDonanteEncontrado = {
+        id: uid(),
+        cedula: ced.toUpperCase(),
+        nombreCompleto: 'Jesús Soto',
+        sangre: 'O+',
+        fechaRegistro: new Date().toISOString().slice(0, 10),
+        estado: 'verificado' as const
+      };
+
+      document.getElementById('res-nombre')!.textContent = preDonanteEncontrado.nombreCompleto;
+      document.getElementById('res-cedula')!.textContent = preDonanteEncontrado.cedula;
+      document.getElementById('res-sangre')!.textContent = preDonanteEncontrado.sangre;
+      resBox?.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-confirmar-pre')?.addEventListener('click', () => {
+      if (preDonanteEncontrado) {
+        saveDonanteOp(preDonanteEncontrado);
+        toast('¡Donante verificado y guardado!');
+        resBox?.classList.add('hidden');
+        inputCedula.value = '';
+        renderTabla();
+      }
+    });
+
+    formNuevo?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nuevo = {
+        id: uid(),
+        cedula: (document.getElementById('reg-cedula') as HTMLInputElement).value.toUpperCase(),
+        nombreCompleto: (document.getElementById('reg-nombre') as HTMLInputElement).value,
+        sangre: (document.getElementById('reg-sangre') as HTMLSelectElement).value,
+        fechaRegistro: new Date().toISOString().slice(0, 10),
+        estado: 'verificado' as const
+      };
+      saveDonanteOp(nuevo);
+      toast('¡Donante registrado exitosamente!');
+      formNuevo.reset();
+      renderTabla();
+    });
+
+    filtroInput?.addEventListener('input', () => renderTabla(filtroInput.value));
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

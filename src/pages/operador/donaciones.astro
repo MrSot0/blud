@@ -1,0 +1,123 @@
+---
+// src/pages/operador/donaciones.astro
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+
+const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const componentes = ['Sangre Total', 'Concentrado Globular', 'Plaquetas', 'Plasma Fresco Congelado', 'Crioprecipitado'];
+---
+
+<LayoutDonante title="BLUD | Registro e Historial de Donaciones">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-ink">Registro de Donaciones</h1>
+        <p class="text-ink-2 text-sm mt-1">Registra la extracción física por tipo de hemocomponente y consulta el historial.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+      
+      <!-- Formulario de Extracción -->
+      <section class="lg:col-span-2 panel p-6 space-y-4">
+        <h2 class="text-lg font-bold text-ink">Registrar Nueva Donación</h2>
+        <form id="donacion-form" class="space-y-4">
+          <div>
+            <label for="donanteCedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula del Donante</label>
+            <input type="text" id="donanteCedula" class="field" placeholder="V-12345678" required />
+          </div>
+          <div>
+            <label for="donanteNombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre Completo</label>
+            <input type="text" id="donanteNombre" class="field" placeholder="Nombre y Apellido" required />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="tipoSangre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de Sangre</label>
+              <select id="tipoSangre" class="field" required>
+                <option value="">Seleccionar</option>
+                {bloodTypes.map(t => <option value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label for="volumenMl" class="block text-xs font-bold uppercase text-ink-2 mb-1">Volumen (ml)</label>
+              <input type="number" id="volumenMl" class="field" value="450" required />
+            </div>
+          </div>
+          <div>
+            <label for="tipoHemocomponente" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hemocomponente Extraído</label>
+            <select id="tipoHemocomponente" class="field" required>
+              {componentes.map(c => <option value={c}>{c}</option>)}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Guardar Donación</button>
+        </form>
+      </section>
+
+      <!-- Historial de Donaciones Extraídas -->
+      <section class="lg:col-span-3 panel p-6 space-y-4">
+        <h2 class="text-lg font-bold text-ink">Historial de Extracciones</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+              <tr>
+                <th class="py-2">Donante</th>
+                <th class="py-2">Sangre</th>
+                <th class="py-2">Componente</th>
+                <th class="py-2">Vol.</th>
+                <th class="py-2">Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-donaciones" class="divide-y divide-line">
+              <!-- Renderizado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</LayoutDonante>
+
+<script>
+  import { getDonacionesOp, saveDonacionOp, uid, toast } from '../../lib/operador';
+
+  function renderTabla() {
+    const lista = getDonacionesOp();
+    const tbody = document.getElementById('tabla-donaciones');
+    if (!tbody) return;
+
+    tbody.innerHTML = lista.map(d => `
+      <tr>
+        <td class="py-3 font-semibold text-ink">${d.donanteNombre}<br><span class="text-xs text-ink-3 font-normal">${d.donanteCedula}</span></td>
+        <td class="py-3"><span class="blood-chip">${d.tipoSangre}</span></td>
+        <td class="py-3 text-ink-2">${d.tipoHemocomponente}</td>
+        <td class="py-3 font-mono">${d.volumenMl} ml</td>
+        <td class="py-3 text-ink-3 text-xs">${d.fecha}</td>
+      </tr>
+    `).join('');
+  }
+
+  function init() {
+    renderTabla();
+    const form = document.getElementById('donacion-form') as HTMLFormElement;
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      saveDonacionOp({
+        id: uid(),
+        donanteId: uid(),
+        donanteNombre: (document.getElementById('donanteNombre') as HTMLInputElement).value,
+        donanteCedula: (document.getElementById('donanteCedula') as HTMLInputElement).value,
+        tipoSangre: (document.getElementById('tipoSangre') as HTMLSelectElement).value,
+        tipoHemocomponente: (document.getElementById('tipoHemocomponente') as HTMLSelectElement).value as any,
+        volumenMl: Number((document.getElementById('volumenMl') as HTMLInputElement).value),
+        fecha: new Date().toISOString().slice(0, 10),
+        operadorId: 'op-actual'
+      });
+      toast('¡Donación registrada exitosamente!');
+      form.reset();
+      renderTabla();
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
