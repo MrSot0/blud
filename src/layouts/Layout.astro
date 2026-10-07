@@ -8,11 +8,14 @@ import '../styles/global.css';
 interface Props {
   title?: string;
   description?: string;
+  /** Pie de página de una línea para páginas de pantalla completa (p. ej. /centros). */
+  compactFooter?: boolean;
 }
 
 const {
   title = "BLUD | Red de Donación de Sangre en Tiempo Real",
-  description = "Conectamos donantes voluntarios con pacientes y bancos de sangre. Encuentra solicitudes urgentes, comprueba tu elegibilidad y salva vidas cerca de ti."
+  description = "Conectamos donantes voluntarios con pacientes y bancos de sangre. Encuentra solicitudes urgentes, comprueba tu elegibilidad y salva vidas cerca de ti.",
+  compactFooter = false,
 } = Astro.props;
 
 const base = Astro.site ?? Astro.url;
@@ -92,7 +95,7 @@ const ogImage = new URL('/og-image.jpg', base).href;
       <slot />
     </main>
 
-    <Footer />
+    <Footer compact={compactFooter} />
 
     <Assistant />
 

@@ -44,19 +44,20 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         )}
       </div>
     ))}
-    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgb(26_32_44/0.55)_0%,rgb(26_32_44/0.88)_55%,#1A202C_100%)] lg:bg-[linear-gradient(90deg,#1A202C_0%,rgb(26_32_44/0.94)_34%,rgb(26_32_44/0.55)_62%,rgb(0_95_115/0.25)_100%)]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgb(26_32_44/0.62)_0%,rgb(26_32_44/0.74)_45%,rgb(26_32_44/0.9)_80%,#1A202C_100%)]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_46%,rgb(26_32_44/0.55),transparent_75%)]"></div>
     <div class="grain absolute inset-0"></div>
   </div>
 
-  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] items-center pb-32 pt-20 lg:grid-cols-12">
-    <div class="lg:col-span-9 xl:col-span-8">
+  <div class="container-blud grid min-h-[min(calc(100dvh-4rem),50rem)] place-items-center pb-32 pt-20 text-center">
+    <div class="mx-auto max-w-4xl">
       <h1
         class="hero-in text-[clamp(2.625rem,1.3rem+4.2vw,4.5rem)] font-extrabold leading-[0.98] tracking-[-0.045em]"
         style="--i:0"
       >
         <span class="lg:whitespace-nowrap">Conectando donantes,</span>
         <span class="sr-only">salvando vidas.</span>
-        <span class="hero-rotator grid text-[#F2605A]" aria-hidden="true" data-rotator>
+        <span class="hero-rotator grid justify-items-center text-[#F2605A]" aria-hidden="true" data-rotator>
           {phrases.map((phrase, i) => (
             <span class="hero-phrase" data-state={i === 0 ? 'active' : ''}>
               {phrase.split(' ').map((word, w) => (
@@ -67,11 +68,11 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         </span>
       </h1>
 
-      <p class="hero-in mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
+      <p class="hero-in mx-auto mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
         Encuentra centros cercanos, atiende solicitudes de emergencia o agenda tu cita en minutos.
       </p>
 
-      <div class="hero-in mt-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-7" style="--i:2">
+      <div class="hero-in mt-10 flex flex-col items-center justify-center gap-5 sm:flex-row sm:gap-7" style="--i:2">
         <a href="/register" class="btn btn-primary btn-lg group">
           Quiero ser donante
           <Icon name="arrow-right" class="size-5 transition-transform duration-200 ease-out group-hover:translate-x-0.5" />

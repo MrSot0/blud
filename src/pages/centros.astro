@@ -14,6 +14,7 @@ const chipClass =
 ---
 
 <Layout
+  compactFooter
   title="BLUD | Mapa de centros de donación"
   description="Encuentra bancos de sangre, hospitales y clínicas de la red BLUD en Maracaibo y San Francisco. Mira cuáles están abiertos, cómo llegar y agenda tu donación."
 >
@@ -150,7 +151,8 @@ const chipClass =
       grid-template-areas:
         "head map"
         "list map";
-      height: calc(100dvh - 4rem);
+      /* Ventana menos la barra superior (con su borde) y el pie compacto: todo cabe sin desplazar la página. */
+      height: calc(100dvh - 4rem - 1px - var(--footer-compact-h, 3.25rem));
     }
     .centros-head { grid-area: head; }
     .list-pane { grid-area: list; }
