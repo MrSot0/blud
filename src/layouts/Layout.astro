@@ -100,6 +100,18 @@ const ogImage = new URL('/og-image.jpg', base).href;
     <Assistant />
 
     <script>
+      // Barra de desplazamiento en rojo de marca mientras la página se mueve.
+      let scrollTimer = 0;
+      window.addEventListener(
+        'scroll',
+        () => {
+          document.documentElement.classList.add('is-scrolling');
+          clearTimeout(scrollTimer);
+          scrollTimer = window.setTimeout(() => document.documentElement.classList.remove('is-scrolling'), 900);
+        },
+        { passive: true }
+      );
+
       // Revelado progresivo: los elementos con [data-reveal] aparecen al entrar en pantalla.
       const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
       if ('IntersectionObserver' in window) {

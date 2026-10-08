@@ -133,6 +133,7 @@
     scroll-padding-top: 5rem;
     scrollbar-width: thin;
     scrollbar-color: var(--line-strong) var(--canvas);
+    transition: scrollbar-color 300ms ease;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
@@ -167,6 +168,50 @@
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+}
+
+/* ===== Barra de desplazamiento con acento =====
+   Fina y gris en reposo; roja de marca mientras se usa: la página al desplazarse
+   (html.is-scrolling, lo pone el Layout) y los paneles internos al pasar el ratón. */
+html.is-scrolling {
+  scrollbar-color: var(--accent) var(--canvas);
+}
+:where(body *) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+:where(body *):hover {
+  scrollbar-color: var(--accent) transparent;
+}
+/* Respaldo para navegadores sin scrollbar-color (Safari antiguo). */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--line-strong) padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--accent); }
+
+/* ===== Cursores contextuales =====
+   Cada cursor dice qué va a pasar: mano en lo clicable, "no permitido" en lo
+   desactivado y espera mientras algo se procesa. */
+@layer base {
+  button:not(:disabled),
+  [role="button"],
+  summary,
+  select,
+  label:has(> input[type="radio"]:not(:disabled)),
+  label:has(> input[type="checkbox"]:not(:disabled)) {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  [aria-busy="true"] {
+    cursor: progress;
+  }
 }
 
 /* Cambio de tema: el nuevo tema se revela en círculo desde el botón.

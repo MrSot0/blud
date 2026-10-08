@@ -171,6 +171,15 @@ const examples = [
     95% { transform: scaleY(0.1); }
   }
 
+  /* Cursor de gota de marca solo mientras Bluddie está abierto (el campo de texto conserva el suyo). */
+  .assistant:has(.assistant-panel[data-open="true"]) :is(.assistant-panel, .assistant-trigger),
+  .assistant:has(.assistant-panel[data-open="true"]) :is(.assistant-panel, .assistant-trigger) :is(button:not(:disabled), a, li) {
+    cursor: url('/cursors/gota.svg') 12 2, pointer;
+  }
+  .assistant-panel :global(input) {
+    cursor: text;
+  }
+
   .assistant-panel {
     visibility: hidden;
     opacity: 0;

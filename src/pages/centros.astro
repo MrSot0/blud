@@ -176,21 +176,9 @@ const chipClass =
     }
   }
 
-  /* Barra de desplazamiento fina y visible bajo los filtros. */
+  /* La barra fina con acento viene de global.css; aquí solo el arrastre. */
   .chip-row {
-    scrollbar-width: thin;
-    scrollbar-color: var(--line-strong) transparent;
     cursor: grab;
-  }
-  .chip-row::-webkit-scrollbar {
-    height: 6px;
-  }
-  .chip-row::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: var(--line-strong);
-  }
-  .chip-row::-webkit-scrollbar-track {
-    background: transparent;
   }
   .chip-row.is-dragging {
     cursor: grabbing;
