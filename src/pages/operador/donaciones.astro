@@ -1,121 +1,216 @@
 ---
 // src/pages/operador/donaciones.astro
-import LayoutDonante from '../../layouts/LayoutDonante.astro';
-
-const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-const componentes = ['Sangre Total', 'Concentrado Globular', 'Plaquetas', 'Plasma Fresco Congelado', 'Crioprecipitado'];
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
-<LayoutDonante title="BLUD | Registro e Historial de Donaciones">
+<LayoutOperador title="BLUD | Registro de donaciones">
   <div class="container-blud py-8 space-y-8">
-    <div class="pb-6 border-b border-line flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-ink">Registro de Donaciones</h1>
-        <p class="text-ink-2 text-sm mt-1">Registra la extracción física por tipo de hemocomponente y consulta el historial.</p>
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Registro de donaciones</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Registra la extracción por hemocomponente. Solo pueden donar personas ya verificadas.</p>
+      </div>
+      <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="registro" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+          Registrar donación
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="historial" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Historial de extracciones <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="historial">0</span>
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-      
-      <!-- Formulario de Extracción -->
-      <section class="lg:col-span-2 panel p-6 space-y-4">
-        <h2 class="text-lg font-bold text-ink">Registrar Nueva Donación</h2>
-        <form id="donacion-form" class="space-y-4">
-          <div>
-            <label for="donanteCedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula del Donante</label>
-            <input type="text" id="donanteCedula" class="field" placeholder="V-12345678" required />
-          </div>
-          <div>
-            <label for="donanteNombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre Completo</label>
-            <input type="text" id="donanteNombre" class="field" placeholder="Nombre y Apellido" required />
-          </div>
-          <div class="grid grid-cols-2 gap-3">
+    <!-- Vista: Registro (una sola caja: formulario arriba, últimas 5 abajo) -->
+    <div data-frame="registro">
+      <div class="panel p-6 sm:p-8 space-y-6 w-full">
+        <div class="space-y-4">
+          <h2 class="text-lg font-bold text-ink">Registrar nueva donación</h2>
+          <form id="form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_9rem_9rem_1.2fr_auto] gap-4 items-end" novalidate>
+            <div class="sm:col-span-2 lg:col-span-1">
+              <label for="cedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula o ID del donante</label>
+              <input type="text" id="cedula" class="field" placeholder="V-12345678" autocomplete="off" required />
+            </div>
             <div>
-              <label for="tipoSangre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de Sangre</label>
-              <select id="tipoSangre" class="field" required>
+              <label for="tipo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de sangre</label>
+              <select id="tipo" class="field" required>
                 <option value="">Seleccionar</option>
-                {bloodTypes.map(t => <option value={t}>{t}</option>)}
+                {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label for="volumenMl" class="block text-xs font-bold uppercase text-ink-2 mb-1">Volumen (ml)</label>
-              <input type="number" id="volumenMl" class="field" value="450" required />
+              <label for="vol" class="block text-xs font-bold uppercase text-ink-2 mb-1">Volumen (ml)</label>
+              <input type="number" id="vol" class="field" value="450" min="50" max="600" required />
             </div>
-          </div>
-          <div>
-            <label for="tipoHemocomponente" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hemocomponente Extraído</label>
-            <select id="tipoHemocomponente" class="field" required>
-              {componentes.map(c => <option value={c}>{c}</option>)}
-            </select>
-          </div>
-          <button type="submit" class="btn btn-primary w-full">Guardar Donación</button>
-        </form>
-      </section>
+            <div class="sm:col-span-2 lg:col-span-1">
+              <label for="comp" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hemocomponente extraído</label>
+              <select id="comp" class="field" required>
+                {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary w-full sm:col-span-2 lg:col-span-1 lg:w-auto lg:px-8 min-h-12">Guardar donación</button>
 
-      <!-- Historial de Donaciones Extraídas -->
-      <section class="lg:col-span-3 panel p-6 space-y-4">
-        <h2 class="text-lg font-bold text-ink">Historial de Extracciones</h2>
+            <div id="donante" class="hidden sm:col-span-2 lg:col-span-5 rounded-control border border-line bg-sunken p-3 text-sm space-y-1">
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-bold text-ink" id="d-nombre"></p>
+                <span class="rounded-full px-2 py-0.5 text-xs font-bold" id="d-estado"></span>
+              </div>
+              <p class="text-xs text-ink-3" id="d-extra"></p>
+              <a href="/operador/donantes" id="d-link" class="hidden link-arrow text-xs">Ir a verificar</a>
+            </div>
+            <p id="error" class="hidden sm:col-span-2 lg:col-span-5 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          </form>
+        </div>
+
+        <div class="space-y-4 border-t border-line pt-6">
+          <div class="flex items-center justify-between border-b border-line pb-3">
+            <h2 class="text-lg font-bold text-ink">Últimas extracciones</h2>
+            <span class="text-xs font-semibold text-ink-3">Máx. 5</span>
+          </div>
+          <ul id="ultimas" class="divide-y divide-line"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista: Historial completo (oculta hasta que se pide) -->
+    <div data-frame="historial" class="hidden">
+      <div class="panel p-6 sm:p-8 space-y-4 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink">Historial de extracciones <span class="text-ink-3 text-sm font-semibold">(<span id="n">0</span>)</span></h2>
+          <input type="search" id="filtro" class="field sm:w-72" placeholder="Filtrar por donante, cédula o tipo…" aria-label="Filtrar extracciones" />
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
-              <tr>
-                <th class="py-2">Donante</th>
-                <th class="py-2">Sangre</th>
-                <th class="py-2">Componente</th>
-                <th class="py-2">Vol.</th>
-                <th class="py-2">Fecha</th>
-              </tr>
+              <tr><th class="py-2">Donante</th><th class="py-2">Sangre</th><th class="py-2">Componente</th><th class="py-2">Vol.</th><th class="py-2">Fecha</th></tr>
             </thead>
-            <tbody id="tabla-donaciones" class="divide-y divide-line">
-              <!-- Renderizado dinámico -->
-            </tbody>
+            <tbody id="tabla" class="divide-y divide-line"></tbody>
           </table>
         </div>
-      </section>
-
+        <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">Todavía no hay extracciones registradas.</p>
+      </div>
     </div>
   </div>
-</LayoutDonante>
+</LayoutOperador>
 
 <script>
-  import { getDonacionesOp, saveDonacionOp, uid, toast } from '../../lib/operador';
+  import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, registrarDonacionOp, toast } from '../../lib/operador';
+  import type { Hemocomponente } from '../../lib/operador';
 
-  function renderTabla() {
-    const lista = getDonacionesOp();
-    const tbody = document.getElementById('tabla-donaciones');
-    if (!tbody) return;
-
-    tbody.innerHTML = lista.map(d => `
-      <tr>
-        <td class="py-3 font-semibold text-ink">${d.donanteNombre}<br><span class="text-xs text-ink-3 font-normal">${d.donanteCedula}</span></td>
-        <td class="py-3"><span class="blood-chip">${d.tipoSangre}</span></td>
-        <td class="py-3 text-ink-2">${d.tipoHemocomponente}</td>
-        <td class="py-3 font-mono">${d.volumenMl} ml</td>
-        <td class="py-3 text-ink-3 text-xs">${d.fecha}</td>
-      </tr>
-    `).join('');
-  }
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
   function init() {
-    renderTabla();
-    const form = document.getElementById('donacion-form') as HTMLFormElement;
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveDonacionOp({
-        id: uid(),
-        donanteId: uid(),
-        donanteNombre: (document.getElementById('donanteNombre') as HTMLInputElement).value,
-        donanteCedula: (document.getElementById('donanteCedula') as HTMLInputElement).value,
-        tipoSangre: (document.getElementById('tipoSangre') as HTMLSelectElement).value,
-        tipoHemocomponente: (document.getElementById('tipoHemocomponente') as HTMLSelectElement).value as any,
-        volumenMl: Number((document.getElementById('volumenMl') as HTMLInputElement).value),
-        fecha: new Date().toISOString().slice(0, 10),
-        operadorId: 'op-actual'
+    const form = $<HTMLFormElement>('#form');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+
+    const cedula = $<HTMLInputElement>('#cedula');
+    const tipo = $<HTMLSelectElement>('#tipo');
+
+    // Vistas: Registro (formulario + últimas 5) e Historial (completo, oculto hasta pedirlo)
+    type Vista = 'registro' | 'historial';
+    const frames = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const botones = [...document.querySelectorAll<HTMLButtonElement>('[data-vista]')];
+    let vista: Vista = 'registro';
+    const setVista = (v: Vista) => {
+      vista = v;
+      frames.forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
+      botones.forEach((b) => {
+        const on = b.dataset.vista === v;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('btn-primary', on);
+        b.classList.toggle('btn-secondary', !on);
       });
-      toast('¡Donación registrada exitosamente!');
+      if (v === 'historial') $('#filtro').focus({ preventScroll: true });
+      else cedula.focus({ preventScroll: true });
+    };
+    // Pulsar "Historial" estando en él vuelve al registro
+    botones.forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.vista as Vista;
+      setVista(v === 'historial' && vista === 'historial' ? 'registro' : v);
+    }));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && vista === 'historial' && !document.querySelector('dialog[open]')) setVista('registro'); });
+    setVista('registro');
+
+    // Al escribir la cédula/ID se busca el donante y se completa su tipo de sangre
+    const lookup = () => {
+      const box = $('#donante');
+      const q = cedula.value.trim();
+      if (q.length < 5) return box.classList.add('hidden');
+      const d = buscarDonante(q);
+      box.classList.remove('hidden');
+      const estado = $('#d-estado');
+      if (!d) {
+        $('#d-nombre').textContent = 'Donante no encontrado';
+        $('#d-extra').textContent = 'Regístralo primero en Gestión de donantes.';
+        estado.textContent = 'Sin registro';
+        estado.className = 'rounded-full px-2 py-0.5 text-xs font-bold bg-warn-soft text-warn';
+        $('#d-link').classList.remove('hidden');
+        return;
+      }
+      const ver = d.estado === 'verificado';
+      $('#d-nombre').textContent = d.nombreCompleto;
+      $('#d-extra').textContent = `${d.cedula} · tipo ${d.sangre || 'sin confirmar'}`;
+      estado.textContent = ver ? 'Verificado' : 'Sin verificar';
+      estado.className = `rounded-full px-2 py-0.5 text-xs font-bold ${ver ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`;
+      $('#d-link').classList.toggle('hidden', ver);
+      if (d.sangre) tipo.value = d.sangre;
+    };
+    cedula.addEventListener('input', lookup);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const err = $('#error');
+      const r = registrarDonacionOp({
+        cedula: cedula.value,
+        tipoSangre: tipo.value,
+        tipoHemocomponente: $<HTMLSelectElement>('#comp').value as Hemocomponente,
+        volumenMl: Number($<HTMLInputElement>('#vol').value),
+      });
+      if (!r.ok) {
+        err.textContent = r.motivo;
+        err.classList.remove('hidden');
+        return;
+      }
+      err.classList.add('hidden');
+      toast(`¡Donación de ${r.data.donanteNombre} registrada! 🩸`);
       form.reset();
-      renderTabla();
+      $('#vol').setAttribute('value', '450');
+      $('#donante').classList.add('hidden');
     });
+
+    const render = () => {
+      const f = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
+      const all = getDonacionesOp();
+      const vis = all.filter((d) => !f || `${d.donanteNombre} ${d.donanteCedula} ${d.tipoSangre} ${d.tipoHemocomponente}`.toLowerCase().includes(f));
+      $('#n').textContent = String(all.length);
+      $('[data-cuenta="historial"]').textContent = String(all.length);
+      $('#vacia').classList.toggle('hidden', all.length > 0);
+      $('#tabla').innerHTML = vis.map((d) => `<tr>
+        <td class="py-3 font-semibold text-ink">${esc(d.donanteNombre)}<br><span class="text-xs font-normal text-ink-3">${esc(d.donanteCedula)}</span></td>
+        <td class="py-3"><span class="blood-chip">${esc(d.tipoSangre)}</span></td>
+        <td class="py-3 text-ink-2">${esc(d.tipoHemocomponente)}</td>
+        <td class="py-3 font-mono">${d.volumenMl} ml</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+
+      // Últimas 5 (la más reciente arriba; a igual fecha, la última registrada)
+      const ult = all
+        .map((d, i) => ({ d, i }))
+        .sort((x, y) => y.d.fecha.localeCompare(x.d.fecha) || y.i - x.i)
+        .slice(0, 5)
+        .map((x) => x.d);
+      $('#ultimas').innerHTML = ult.length
+        ? ult.map((d) => `<li class="flex items-center justify-between gap-3 py-3">
+            <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(d.donanteNombre)}</p>
+            <p class="text-xs text-ink-3">${esc(d.donanteCedula)} · ${esc(d.tipoHemocomponente)} · ${d.volumenMl} ml · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))}</p></div>
+            <span class="blood-chip">${esc(d.tipoSangre)}</span></li>`).join('')
+        : '<li class="py-6 text-center text-sm text-ink-3">Todavía no has registrado extracciones.</li>';
+    };
+    $('#filtro').addEventListener('input', render);
+    render();
+    onDb(render);
   }
 
   init();

@@ -1,27 +1,32 @@
 // src/lib/donante.ts
-// Utilidades compartidas del módulo de donante (centros, citas, historial, toast).
-// Todo se guarda en localStorage por ahora; cada función marcada con TODO es el punto de cambio al backend.
+// Módulo de donante: perfil, citas, historial y ajustes.
+// Se apoya en lib/db: el perfil alimenta el registro de donantes (lo que el operador verifica)
+// y el historial incluye las donaciones que el operador registra a nombre de este donante.
 
-export interface Centro {
+import { centers } from '../data/centers';
+import { donaciones, normCedula, registro, upsertDesdePerfil } from './db';
+
+export { uid, esc, toast, fmtFecha, hoyISO, sumarDias, diasDesde } from './ui';
+
+export const centroById = (id: string) => centers.find((c) => c.id === id);
+export const SANGRES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+export type Kyc = 'none' | 'review' | 'verified';
+
+export interface Donor {
   id: string;
-  nombre: string;
-  zona: string;
-  lat: number;
-  lng: number;
-  horario: string;
-  /** Tipos de sangre que el centro necesita con urgencia */
-  necesita: string[];
+  firstname: string;
+  lastname: string;
+  email: string;
+  telefono: string;
+  cedula: string;
+  nacimiento: string; // YYYY-MM-DD
+  sangre: string;
+  ciudad: string;
+  since: string; // YYYY-MM-DD
+  kyc: Kyc;
+  donaciones: number;
 }
-
-// DATOS DE EJEMPLO: reemplazar por la misma fuente que usa el componente Map (nombres, coordenadas y horarios reales).
-export const CENTROS: Centro[] = [
-  { id: 'hcm', nombre: 'Hospital Central Maracaibo', zona: 'Maracaibo, Zulia', lat: 10.6606, lng: -71.6165, horario: 'Lun–Vie · 7:00 a 15:00', necesita: ['O-', 'A-'] },
-  { id: 'hum', nombre: 'Hospital Universitario de Maracaibo', zona: 'Maracaibo, Zulia', lat: 10.6667, lng: -71.6081, horario: 'Lun–Sáb · 7:00 a 14:00', necesita: ['O+', 'B-'] },
-  { id: 'hchiq', nombre: 'Hospital Chiquinquirá', zona: 'Maracaibo, Zulia', lat: 10.6736, lng: -71.6224, horario: 'Lun–Vie · 8:00 a 16:00', necesita: ['AB-'] },
-  { id: 'hcor', nombre: 'Hospital Coromoto', zona: 'Maracaibo, Zulia', lat: 10.6512, lng: -71.6358, horario: 'Lun–Vie · 7:30 a 15:30', necesita: [] },
-];
-
-export const centroById = (id: string) => CENTROS.find((c) => c.id === id);
 
 export interface Cita {
   id: string;
@@ -34,14 +39,22 @@ export interface Cita {
 export interface Donacion {
   id: string;
   centroId: string;
+  centroNombre?: string;
   fecha: string; // YYYY-MM-DD
   sangre: string;
   ml: number;
 }
 
+export interface Settings {
+  recordatorios: boolean;
+  urgencias: boolean;
+  novedades: boolean;
+}
+
 const K_DONOR = 'blud-donor';
 const K_CITA = 'blud-donor-cita';
 const K_HIST = 'blud-donor-historial';
+const K_SET = 'blud-donor-settings';
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -51,78 +64,127 @@ function read<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
+
 function write(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  // Cada vez que se guarda el perfil, el registro de donantes (lo que ve el operador) se actualiza
+  if (key === K_DONOR) { try { upsertDesdePerfil(value as Donor); } catch {} }
+  try { window.dispatchEvent(new Event('blud:donor')); } catch {}
 }
 
-export const uid = () => Math.random().toString(36).slice(2, 10);
+// ---------- Perfil del donante ----------
+function readSession(): Record<string, any> {
+  try {
+    return JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null') ?? {};
+  } catch {
+    return {};
+  }
+}
 
-// ---- Donante (lo escribe /donante/perfil) ----
-export const getDonor = () => read<Record<string, any>>(K_DONOR, {});
+/** Historial propio + donaciones que los operadores registraron a su nombre (por ID o por cédula). */
+function historialDe(id: string, cedula: string): Donacion[] {
+  const local = read<Donacion[]>(K_HIST, []);
+  const ced = normCedula(cedula);
+  const reg = registro.get(id) ?? (ced ? registro.find((r) => r.cedula === ced) : undefined);
+  const delOperador: Donacion[] = donaciones.all()
+    .filter((d) => d.donanteId === id || (reg && d.donanteId === reg.id) || (ced && normCedula(d.donanteCedula) === ced))
+    .map((d) => ({ id: d.id, centroId: d.centroId ?? '', centroNombre: d.centroNombre, fecha: d.fecha, sangre: d.tipoSangre, ml: d.volumenMl }));
+  const vistos = new Set(local.map((x) => x.id));
+  return [...local, ...delOperador.filter((x) => !vistos.has(x.id))].sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
 
-// ---- Cita ---- TODO: reemplazar por API
+/** Perfil guardado + datos de la sesión como valores iniciales + sello de verificación del operador. */
+export function loadDonor(): Donor {
+  const s = readSession();
+  const parts = String(s.name ?? '').split(/\s+/).filter(Boolean);
+  const bloodFromSession = String(s.bloodType ?? '').replace('−', '-');
+  const base: Donor = {
+    id: 'BLD-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
+    firstname: s.firstname ?? parts[0] ?? '',
+    lastname: s.lastname ?? parts.slice(1).join(' '),
+    email: s.email ?? '',
+    telefono: s.telefono ?? '',
+    cedula: '',
+    nacimiento: '',
+    sangre: SANGRES.includes(bloodFromSession) ? bloodFromSession : '',
+    ciudad: '',
+    since: new Date().toISOString().slice(0, 10),
+    kyc: 'none',
+    donaciones: 0,
+  };
+  const saved = read<Partial<Donor>>(K_DONOR, {});
+  const donor: Donor = { ...base, ...saved };
+  if (!saved.id) write(K_DONOR, donor); // fija el ID desde la primera visita
+
+  const ced = normCedula(donor.cedula);
+  const reg = registro.get(donor.id) ?? (ced ? registro.find((r) => r.cedula === ced) : undefined);
+  if (reg?.estado === 'verificado') donor.kyc = 'verified';
+  donor.donaciones = historialDe(donor.id, donor.cedula).length || donor.donaciones;
+  return donor;
+}
+
+// TODO: reemplazar por PATCH /api/donante
+export function saveDonor(patch: Partial<Donor>): Donor {
+  const donor = { ...loadDonor(), ...patch };
+  write(K_DONOR, donor);
+  return donor;
+}
+
+/** Compatibilidad con las páginas que solo necesitan leer el perfil. */
+export const getDonor = () => loadDonor();
+
+// ---------- Cita ---------- (TODO: conectar con el agendado real de lib/auth)
 export const getCita = () => read<Cita | null>(K_CITA, null);
 export const saveCita = (c: Cita) => write(K_CITA, c);
-export const cancelCita = () => { try { localStorage.removeItem(K_CITA); } catch {} };
+export const cancelCita = () => {
+  try { localStorage.removeItem(K_CITA); } catch {}
+  try { window.dispatchEvent(new Event('blud:donor')); } catch {}
+};
 
-// ---- Historial ---- TODO: reemplazar por API
-export const getHistorial = () =>
-  read<Donacion[]>(K_HIST, []).sort((a, b) => b.fecha.localeCompare(a.fecha));
+// ---------- Historial ----------
+export function getHistorial(): Donacion[] {
+  const d = read<Partial<Donor>>(K_DONOR, {});
+  return historialDe(d.id ?? '', d.cedula ?? '');
+}
 
 export function saveHistorial(list: Donacion[]) {
   write(K_HIST, list);
-  // Mantiene sincronizado el contador del carnet en /donante/perfil
-  write(K_DONOR, { ...getDonor(), donaciones: list.length });
+  write(K_DONOR, { ...loadDonor(), donaciones: list.length }); // contador del carnet
 }
 
 export function seedDemo() {
-  const d = getDonor();
+  const d = loadDonor();
   const sangre = d.sangre || 'O+';
-  const mk = (fecha: string, centroId: string): Donacion => ({ id: uid(), fecha, centroId, sangre, ml: 450 });
-  saveHistorial([mk('2026-06-12', 'hcm'), mk('2026-02-20', 'hum'), mk('2025-10-03', 'hcm')]);
+  const a = centers[0]?.id ?? '';
+  const b = centers[1]?.id ?? a;
+  const mk = (id: string, fecha: string, centroId: string): Donacion => ({ id, fecha, centroId, sangre, ml: 450 });
+  saveHistorial([mk('seed-1', '2026-06-12', a), mk('seed-2', '2026-02-20', b), mk('seed-3', '2025-10-03', a)]);
 }
 
-// ---- Formato ----
-export function fmtFecha(iso: string, opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' }) {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('es-VE', opts);
+// ---------- Ajustes ----------
+const DEFAULT_SETTINGS: Settings = { recordatorios: true, urgencias: true, novedades: false };
+export const getSettings = (): Settings => ({ ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(K_SET, {}) });
+export const saveSettings = (s: Settings) => write(K_SET, s);
+
+export function exportMisDatos() {
+  return { perfil: loadDonor(), cita: getCita(), historial: getHistorial(), ajustes: getSettings(), exportado: new Date().toISOString() };
 }
 
-export const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-
-export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
-  const R = 6371;
-  const rad = (x: number) => (x * Math.PI) / 180;
-  const dLat = rad(b.lat - a.lat);
-  const dLng = rad(b.lng - a.lng);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-// ---- Toast ----
-let toastTimer: number | undefined;
-export function toast(msg: string) {
-  let el = document.getElementById('blud-toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'blud-toast';
-    el.setAttribute('role', 'status');
-    el.setAttribute('aria-live', 'polite');
-    el.style.cssText =
-      'position:fixed;left:50%;bottom:1.5rem;z-index:80;padding:.75rem 1.25rem;border-radius:9999px;' +
-      'background:var(--ink);color:var(--surface);font-size:.875rem;font-weight:600;pointer-events:none;' +
-      'box-shadow:0 12px 30px -10px rgb(0 0 0/.5);transition:transform 300ms ease,opacity 300ms ease;' +
-      'transform:translate(-50%,20px);opacity:0';
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  requestAnimationFrame(() => {
-    el!.style.transform = 'translate(-50%,0)';
-    el!.style.opacity = '1';
+export function borrarDatosLocales() {
+  [K_DONOR, K_CITA, K_HIST, K_SET, 'blud-donar-draft'].forEach((k) => {
+    try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch {}
   });
-  clearTimeout(toastTimer);
-  toastTimer = window.setTimeout(() => {
-    el!.style.transform = 'translate(-50%,20px)';
-    el!.style.opacity = '0';
-  }, 3200);
+  try { window.dispatchEvent(new Event('blud:donor')); } catch {}
+}
+
+// ---------- Fechas ----------
+export function edadDe(iso: string): number | null {
+  if (!iso) return null;
+  const b = new Date(iso + 'T00:00:00');
+  if (isNaN(b.getTime())) return null;
+  const t = new Date();
+  let a = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+  return a;
 }

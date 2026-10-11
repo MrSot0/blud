@@ -74,13 +74,13 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
 
   .cita-card {
     position: relative; overflow: hidden; border-radius: 1.5rem; color: #fff;
-    background: linear-gradient(135deg, var(--color-blud-flag-red), var(--color-blud-oxblood));
+    background: linear-gradient(135deg, var(--color-blud-flag-red, #CA2B2B), var(--color-blud-oxblood, #A30008));
     box-shadow: 0 20px 40px -18px rgb(0 0 0 / 0.4);
   }
   .cita-card::after { content: ''; position: absolute; width: 14rem; height: 14rem; right: -4rem; top: -6rem; border-radius: 9999px; background: rgb(255 255 255 / 0.1); }
   .cita-btn {
     display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.1rem; border-radius: 9999px;
-    font-size: 0.875rem; font-weight: 700; background: #fff; color: var(--color-blud-flag-red); cursor: pointer; transition: transform 150ms;
+    font-size: 0.875rem; font-weight: 700; background: #fff; color: var(--color-blud-flag-red, #CA2B2B); cursor: pointer; transition: transform 150ms;
   }
   .cita-btn:hover { transform: translateY(-2px); }
   .cita-btn-ghost { background: rgb(255 255 255 / 0.18); color: #fff; }
@@ -94,7 +94,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
   #lista::before { content: ''; position: absolute; left: 1.375rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: var(--line); }
   #lista :global(.item) { position: relative; display: flex; gap: 1rem; opacity: 0; transform: translateX(-12px); animation: slide 450ms var(--ease-out, ease-out) forwards; animation-delay: calc(var(--i) * 90ms + 250ms); }
   @keyframes slide { to { opacity: 1; transform: none; } }
-  #lista :global(.dot) { position: relative; z-index: 1; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; box-shadow: 0 0 0 4px var(--surface); }
+  #lista :global(.dot) { position: relative; z-index: 1; display: grid; place-items: center; width: 2.75rem; height: 2.75rem; flex-shrink: 0; border-radius: 9999px; background: var(--color-blud-flag-red, #CA2B2B); color: #fff; box-shadow: 0 0 0 4px var(--surface); }
   #lista :global(.card) { flex: 1; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); transition: transform 200ms, box-shadow 200ms; }
   #lista :global(.card:hover) { transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.35); }
 
@@ -123,7 +123,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       if (!cita) return box.classList.add('hidden');
       box.classList.remove('hidden');
       $('#cita-fecha').textContent = `${fmtFecha(cita.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${cita.hora}`;
-      $('#cita-centro').textContent = centroById(cita.centroId)?.nombre ?? '';
+      $('#cita-centro').textContent = centroById(cita.centroId)?.name ?? '';
     }
 
     function renderLista() {
@@ -143,7 +143,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
             </span>
             <div class="card">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <p class="font-bold text-ink">${esc(centroById(d.centroId)?.nombre ?? 'Centro de donación')}</p>
+                <p class="font-bold text-ink">${esc(d.centroNombre ?? centroById(d.centroId)?.name ?? 'Centro de donación')}</p>
                 <span class="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-ink">${esc(d.sangre)}</span>
               </div>
               <p class="mt-0.5 text-sm text-ink-3">${esc(fmtFecha(d.fecha))} · ${d.ml} ml</p>

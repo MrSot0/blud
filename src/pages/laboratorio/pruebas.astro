@@ -1,0 +1,243 @@
+---
+// src/pages/laboratorio/pruebas.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+import { BLOOD_TYPES, PRUEBAS } from '../../lib/db';
+
+const opciones = [
+  { v: 'no_reactivo', label: 'No reactivo' },
+  { v: 'reactivo', label: 'Reactivo' },
+  { v: 'indeterminado', label: 'Indeterminado' },
+];
+---
+
+<LayoutLaboratorio title="BLUD | Pruebas de tamizaje">
+  <div class="container-blud py-8 space-y-8">
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Pruebas de tamizaje</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Registra los resultados de cada donación. Si todo es negativo, la unidad se libera al stock; si hay un reactivo, se descarta y se abre un caso.</p>
+      </div>
+      <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="registrar" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Registrar resultados
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="historial" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+          Pruebas registradas <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="pruebas">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vista: Registrar resultados -->
+    <div data-frame="registrar">
+      <section class="panel p-6 sm:p-8 space-y-6 w-full">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Registrar resultados</h2>
+        <form id="form" class="space-y-4" novalidate>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="donacion" class="block text-xs font-bold uppercase text-ink-2 mb-1">Donación (código)</label>
+              <select id="donacion" class="field" required></select>
+              <p id="sin-pendientes" class="hidden mt-1 text-xs text-ink-3">No hay donaciones por analizar.</p>
+            </div>
+            <div>
+              <label for="grupo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Grupo sanguíneo confirmado (ABO/Rh)</label>
+              <select id="grupo" class="field" required>
+                <option value="">Seleccionar</option>
+                {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <fieldset class="space-y-2">
+            <legend class="text-xs font-bold uppercase text-ink-2 mb-1">Tamizaje</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {PRUEBAS.map((p) => (
+                <div class="rounded-control border border-line p-3 space-y-2" data-prueba={p.id}>
+                  <p class="text-sm font-semibold text-ink">{p.nombre}</p>
+                  <div class="flex flex-wrap gap-2">
+                    {opciones.map((o) => (
+                      <label class="seg" data-v={o.v}>
+                        <input type="radio" name={`r-${p.id}`} value={o.v} class="sr-only" />
+                        <span>{o.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="lote" class="block text-xs font-bold uppercase text-ink-2 mb-1">Lote de reactivos</label>
+              <input type="text" id="lote" class="field" placeholder="Opcional" />
+            </div>
+            <div>
+              <label for="obs" class="block text-xs font-bold uppercase text-ink-2 mb-1">Observaciones</label>
+              <input type="text" id="obs" class="field" placeholder="Opcional" />
+            </div>
+          </div>
+
+          <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Guardar resultados</button>
+          <p class="text-xs text-ink-3">Un resultado reactivo de tamizaje requiere prueba confirmatoria. El resultado guardado no se puede editar.</p>
+        </form>
+      </section>
+    </div>
+
+    <!-- Vista: Pruebas registradas -->
+    <div data-frame="historial" class="hidden">
+      <section class="panel p-6 sm:p-8 space-y-4 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink">Pruebas registradas <span class="text-ink-3 text-sm font-semibold">(<span id="n">0</span>)</span></h2>
+          <input type="search" id="filtro" class="field sm:max-w-xs" placeholder="Buscar por código o grupo…" />
+        </div>
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar por resultado">
+          <button type="button" class="chip" data-res="todos" aria-pressed="true">Todas</button>
+          <button type="button" class="chip" data-res="negativo" aria-pressed="false">Negativas</button>
+          <button type="button" class="chip" data-res="positivo" aria-pressed="false">Reactivas</button>
+          <button type="button" class="chip" data-res="indeterminado" aria-pressed="false">Indeterminadas</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+              <tr><th class="py-2">Código</th><th class="py-2">Grupo</th><th class="py-2">Resultado</th><th class="py-2">Reactivas</th><th class="py-2">Fecha</th></tr>
+            </thead>
+            <tbody id="tabla" class="divide-y divide-line"></tbody>
+          </table>
+        </div>
+        <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">No hay pruebas que coincidan.</p>
+      </section>
+    </div>
+  </div>
+</LayoutLaboratorio>
+
+<style is:global>
+  .seg span { display: block; padding: 0.4rem 0.8rem; border: 2px solid var(--line); border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 160ms; }
+  .seg:hover span { border-color: var(--ink-3); }
+  .seg:has(input:focus-visible) span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .seg[data-v="no_reactivo"]:has(input:checked) span { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .seg[data-v="reactivo"]:has(input:checked) span { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .seg[data-v="indeterminado"]:has(input:checked) span { background: var(--warn); border-color: var(--warn); color: #fff; }
+  .chip { padding: 0.5rem 0.9rem; border: 2px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: 0.875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 200ms; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+
+<script>
+  import { PRUEBAS, codigoDonacion, donacionPorId, esc, fmtFecha, getPruebas, onDb, porAnalizar, registrarPruebas, toast } from '../../lib/laboratorio';
+  import type { ResultadoPrueba } from '../../lib/laboratorio';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  const CHIP = {
+    negativo: ['Negativo', 'bg-ok-soft text-ok'],
+    positivo: ['Reactivo', 'bg-accent-soft text-accent-ink'],
+    indeterminado: ['Indeterminado', 'bg-warn-soft text-warn'],
+  } as const;
+
+  function init() {
+    const form = $<HTMLFormElement>('#form');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+
+    const sel = $<HTMLSelectElement>('#donacion');
+    const grupo = $<HTMLSelectElement>('#grupo');
+    let resFiltro = 'todos';
+
+    const renderSelect = () => {
+      const actual = sel.value || new URLSearchParams(location.search).get('donacion') || '';
+      const lista = porAnalizar();
+      sel.innerHTML = '<option value="">Seleccionar</option>' + lista.map((d) =>
+        `<option value="${esc(d.id)}">${esc(codigoDonacion(d.id))} · ${esc(d.tipoSangre)} · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))}</option>`).join('');
+      if (lista.some((d) => d.id === actual)) sel.value = actual;
+      $('#sin-pendientes').classList.toggle('hidden', lista.length > 0);
+      syncGrupo();
+    };
+
+    const syncGrupo = () => { const d = sel.value ? donacionPorId(sel.value) : undefined; if (d && !grupo.value) grupo.value = d.tipoSangre; };
+    sel.addEventListener('change', () => { grupo.value = ''; syncGrupo(); });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const err = $('#error');
+      const resultados: Record<string, ResultadoPrueba> = {};
+      PRUEBAS.forEach((p) => {
+        const v = form.querySelector<HTMLInputElement>(`input[name="r-${p.id}"]:checked`)?.value;
+        if (v) resultados[p.id] = v as ResultadoPrueba;
+      });
+      if (Object.values(resultados).includes('reactivo') &&
+          !confirm('Hay al menos un resultado REACTIVO.\n\nLa donación se descartará, se abrirá un caso y el donante quedará diferido. Esta acción no se puede deshacer.\n\n¿Confirmas?')) return;
+
+      const r = registrarPruebas({ donacionId: sel.value, resultados, tipoSangre: grupo.value, lote: $<HTMLInputElement>('#lote').value, observaciones: $<HTMLInputElement>('#obs').value });
+      if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
+      err.classList.add('hidden');
+      const g = r.data.global;
+      toast(g === 'negativo' ? 'Resultados negativos: unidad liberada al stock ✅' : g === 'positivo' ? 'Resultado reactivo: unidad descartada y caso abierto' : 'Resultado indeterminado: repite la prueba');
+      form.reset();
+      history.replaceState(null, '', location.pathname);
+      renderSelect();
+    });
+
+    const render = () => {
+      const q = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
+      const todas = getPruebas();
+      const vis = todas.filter((p) => (resFiltro === 'todos' || p.resultadoGlobal === resFiltro) && (!q || `${p.codigo} ${p.tipoSangreConfirmado}`.toLowerCase().includes(q)));
+      $('#n').textContent = String(todas.length);
+      $('[data-cuenta="pruebas"]').textContent = String(todas.length);
+      $('#vacia').classList.toggle('hidden', vis.length > 0);
+      $('#tabla').innerHTML = vis.map((p) => {
+        const [txt, cls] = CHIP[p.resultadoGlobal];
+        const react = Object.values(p.resultados).filter((v) => v === 'reactivo').length;
+        return `<tr><td class="py-3 font-mono font-bold text-ink">${esc(p.codigo)}</td>
+          <td class="py-3"><span class="blood-chip">${esc(p.tipoSangreConfirmado)}</span></td>
+          <td class="py-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${txt}</span></td>
+          <td class="py-3 text-ink-2">${react || '—'}</td>
+          <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(p.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`;
+      }).join('');
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-res]').forEach((b) => b.addEventListener('click', () => {
+      resFiltro = b.dataset.res!;
+      document.querySelectorAll('[data-res]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      render();
+    }));
+    $('#filtro').addEventListener('input', render);
+
+    // Lógica de pestañas
+    type Vista = 'registrar' | 'historial';
+    const frames = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const botones = [...document.querySelectorAll<HTMLButtonElement>('[data-vista]')];
+    let vista: Vista = 'registrar';
+
+    const setVista = (v: Vista) => {
+      vista = v;
+      frames.forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
+      botones.forEach((b) => {
+        const on = b.dataset.vista === v;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('btn-primary', on);
+        b.classList.toggle('btn-secondary', !on);
+      });
+      if (v === 'registrar') sel.focus({ preventScroll: true });
+    };
+
+    botones.forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.vista as Vista;
+      setVista(v === 'registrar' && vista === 'registrar' ? 'registrar' : v);
+    }));
+
+    document.addEventListener('keydown', (e) => { 
+      if (e.key === 'Escape' && vista === 'historial' && !document.querySelector('dialog[open]')) setVista('registrar'); 
+    });
+
+    const all = () => { renderSelect(); render(); };
+    all();
+    setVista('registrar');
+    onDb(() => { render(); const keep = sel.value; renderSelect(); if (keep) sel.value = keep; });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

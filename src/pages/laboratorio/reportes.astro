@@ -1,0 +1,166 @@
+---
+// src/pages/laboratorio/reportes.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+---
+
+<LayoutLaboratorio title="BLUD | Reportes del laboratorio">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="pb-6 border-b border-line flex flex-col lg:flex-row lg:items-center justify-between gap-4 no-print">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Reportes</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Estadísticas de tamizaje, hemocomponentes y casos positivos por período.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="btn-print" class="btn btn-primary">Imprimir / guardar PDF</button>
+        <button type="button" id="csv-enf" class="btn btn-secondary">CSV pruebas</button>
+        <button type="button" id="csv-prod" class="btn btn-secondary">CSV hemocomponentes</button>
+        <button type="button" id="csv-casos" class="btn btn-secondary">CSV casos</button>
+      </div>
+    </div>
+
+    <!-- Encabezado solo para impresión -->
+    <div class="print-only">
+      <h1 class="text-2xl font-extrabold">BLUD · Reporte del laboratorio</h1>
+      <p class="text-sm" id="print-meta"></p>
+    </div>
+
+    <!-- Período -->
+    <section class="panel p-5 flex flex-col lg:flex-row lg:items-end gap-4 no-print" aria-label="Período del reporte">
+      <div class="grid grid-cols-2 gap-3 lg:w-96">
+        <div>
+          <label for="desde" class="block text-xs font-bold uppercase text-ink-2 mb-1">Desde</label>
+          <input type="date" id="desde" class="field" />
+        </div>
+        <div>
+          <label for="hasta" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hasta</label>
+          <input type="date" id="hasta" class="field" />
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Períodos rápidos">
+        <button type="button" class="chip" data-p="mes">Este mes</button>
+        <button type="button" class="chip" data-p="anterior">Mes anterior</button>
+        <button type="button" class="chip" data-p="anio">Este año</button>
+      </div>
+    </section>
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Pruebas</p><p class="mt-1 text-3xl font-extrabold text-ink tabular" data-r="pruebas">0</p></div>
+      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Negativas</p><p class="mt-1 text-3xl font-extrabold text-ok tabular" data-r="negativas">0</p></div>
+      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Reactivas</p><p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-r="positivas">0</p></div>
+      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Indeterminadas</p><p class="mt-1 text-3xl font-extrabold text-warn tabular" data-r="indeterminadas">0</p></div>
+      <div class="panel p-5 col-span-2 lg:col-span-1"><p class="text-xs font-bold uppercase text-ink-3">Positividad</p><p class="mt-1 text-3xl font-extrabold text-ink tabular"><span data-r="positividad">0</span>%</p></div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <section class="panel p-6 space-y-4">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Resultados por enfermedad</h2>
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]"><tr><th class="py-2">Prueba</th><th class="py-2">Realizadas</th><th class="py-2">Reactivas</th><th class="py-2">Tasa</th></tr></thead>
+          <tbody id="t-enf" class="divide-y divide-line"></tbody>
+        </table>
+      </section>
+
+      <section class="panel p-6 space-y-4">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Hemocomponentes obtenidos <span class="text-ink-3 text-sm font-semibold">(<span data-r="fraccionamientos">0</span> fraccionamientos)</span></h2>
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]"><tr><th class="py-2">Hemocomponente</th><th class="py-2">Unidades</th><th class="py-2">Volumen total</th></tr></thead>
+          <tbody id="t-prod" class="divide-y divide-line"></tbody>
+        </table>
+        <p id="v-prod" class="hidden py-4 text-center text-sm text-ink-3">No hay fraccionamientos en el período.</p>
+      </section>
+    </div>
+
+    <section class="panel p-6 space-y-4">
+      <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Casos positivos del período <span class="text-ink-3 text-sm font-semibold">(<span data-r="casos">0</span> · <span data-r="casosSinNotificar">0</span> sin notificar)</span></h2>
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]"><tr><th class="py-2">Código</th><th class="py-2">Enfermedad</th><th class="py-2">Fecha</th><th class="py-2">Estado</th></tr></thead>
+        <tbody id="t-casos" class="divide-y divide-line"></tbody>
+      </table>
+      <p id="v-casos" class="hidden py-4 text-center text-sm text-ink-3">No hay casos en el período.</p>
+    </section>
+
+    <p class="text-xs text-ink-3">La tasa de positividad se calcula sobre las pruebas registradas en el período. Los casos se identifican solo por código de donación.</p>
+  </div>
+</LayoutLaboratorio>
+
+<style is:global>
+  .chip { padding: 0.5rem 0.9rem; border: 2px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: 0.875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 200ms; }
+  .chip:hover { border-color: var(--accent); }
+  .print-only { display: none; }
+  @media print {
+    #site-header, #sidebar-drawer, #sidebar-overlay, .no-print, #blud-toast, .blud-cursor { display: none !important; }
+    .print-only { display: block !important; margin-bottom: 1rem; }
+    body { background: #fff !important; color: #000 !important; }
+    .panel { box-shadow: none !important; break-inside: avoid; border-color: #ccc !important; }
+    html.has-blud-cursor, html.has-blud-cursor * { cursor: auto !important; }
+  }
+</style>
+
+<script>
+  import { PRUEBAS, downloadFile, esc, fmtFecha, hoyISO, laboratoristaActual, onDb, reporte, toCSV, toast } from '../../lib/laboratorio';
+  import type { ReporteLab } from '../../lib/laboratorio';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const set = (k: string, v: string | number) => document.querySelectorAll(`[data-r="${k}"]`).forEach((el) => (el.textContent = String(v)));
+  const iso = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  function init() {
+    const desde = $<HTMLInputElement>('#desde');
+    if (desde.dataset.ready) return;
+    desde.dataset.ready = '1';
+    const hasta = $<HTMLInputElement>('#hasta');
+    let r: ReporteLab;
+
+    const periodo = (p: string) => {
+      const hoy = new Date();
+      if (p === 'mes') { desde.value = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)); hasta.value = hoyISO(); }
+      if (p === 'anterior') { desde.value = iso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1)); hasta.value = iso(new Date(hoy.getFullYear(), hoy.getMonth(), 0)); }
+      if (p === 'anio') { desde.value = iso(new Date(hoy.getFullYear(), 0, 1)); hasta.value = hoyISO(); }
+      render();
+    };
+
+    const render = () => {
+      if (!desde.value || !hasta.value || desde.value > hasta.value) return;
+      r = reporte(desde.value, hasta.value);
+      set('pruebas', r.pruebas); set('negativas', r.negativas); set('positivas', r.positivas); set('indeterminadas', r.indeterminadas);
+      set('positividad', r.positividad.toFixed(1)); set('fraccionamientos', r.fraccionamientos);
+      set('casos', r.casos.length); set('casosSinNotificar', r.casosSinNotificar);
+      $('#print-meta').textContent = `${laboratoristaActual().centro} · período ${fmtFecha(r.desde)} al ${fmtFecha(r.hasta)} · emitido el ${fmtFecha(hoyISO())}`;
+
+      $('#t-enf').innerHTML = r.porEnfermedad.map((e) => `<tr><td class="py-2.5 font-semibold text-ink">${esc(e.nombre)}</td><td class="py-2.5 tabular">${e.realizadas}</td>
+        <td class="py-2.5 tabular ${e.reactivos ? 'font-bold text-accent-ink' : ''}">${e.reactivos}</td><td class="py-2.5 tabular text-ink-2">${e.tasa.toFixed(1)}%</td></tr>`).join('');
+      $('#v-prod').classList.toggle('hidden', r.productos.length > 0);
+      $('#t-prod').innerHTML = r.productos.map((p) => `<tr><td class="py-2.5 font-semibold text-ink">${esc(p.componente)}</td><td class="py-2.5 tabular">${p.unidades}</td><td class="py-2.5 tabular text-ink-2">${p.volumenMl} ml</td></tr>`).join('');
+      $('#v-casos').classList.toggle('hidden', r.casos.length > 0);
+      $('#t-casos').innerHTML = r.casos.map((c) => `<tr><td class="py-2.5 font-mono font-bold text-ink">${esc(c.codigo)}</td><td class="py-2.5 text-ink-2">${esc(c.enfermedad)}</td>
+        <td class="py-2.5 text-xs text-ink-3">${esc(fmtFecha(c.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td><td class="py-2.5 text-xs">${c.estado === 'notificado' ? 'Notificado' : 'Sin notificar'}</td></tr>`).join('');
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-p]').forEach((b) => b.addEventListener('click', () => periodo(b.dataset.p!)));
+    desde.addEventListener('change', render);
+    hasta.addEventListener('change', render);
+    $('#btn-print').addEventListener('click', () => window.print());
+
+    const nombre = (s: string) => `blud-${s}-${r.desde}_${r.hasta}.csv`;
+    $('#csv-enf').addEventListener('click', () => {
+      if (!r?.pruebas) return toast('No hay pruebas en el período.');
+      downloadFile(nombre('pruebas'), toCSV(r.porEnfermedad.map((e) => ({ Prueba: e.nombre, Realizadas: e.realizadas, Reactivas: e.reactivos, 'Tasa %': e.tasa.toFixed(1) }))), 'text/csv');
+    });
+    $('#csv-prod').addEventListener('click', () => {
+      if (!r?.productos.length) return toast('No hay fraccionamientos en el período.');
+      downloadFile(nombre('hemocomponentes'), toCSV(r.productos.map((p) => ({ Hemocomponente: p.componente, Unidades: p.unidades, 'Volumen total ml': p.volumenMl }))), 'text/csv');
+    });
+    $('#csv-casos').addEventListener('click', () => {
+      if (!r?.casos.length) return toast('No hay casos en el período.');
+      downloadFile(nombre('casos'), toCSV(r.casos.map((c) => ({ Codigo: c.codigo, Enfermedad: c.enfermedad, Fecha: c.fecha, Estado: c.estado, NotificadoA: c.notificadoA ?? '', Referencia: c.referencia ?? '' }))), 'text/csv');
+    });
+
+    periodo('mes');
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

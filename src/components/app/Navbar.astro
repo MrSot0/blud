@@ -1,0 +1,397 @@
+---
+// src/components/app/Navbar.astro
+// Navbar de las zonas privadas (donante y operador). El contenido del menú de cuenta depende del rol.
+import Logo from '../Logo.astro';
+import Icon from '../Icon.astro';
+import Sidebar from './Sidebar.astro';
+import { MENUS } from '../../lib/menus';
+import { ROLE_HOME, ROLE_LABEL } from '../../lib/roles';
+import type { Role } from '../../lib/roles';
+
+interface Props {
+  role: Role;
+}
+
+const { role } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const current = (href: string) => (path === href ? 'page' : undefined);
+const cuenta = MENUS[role]?.cuenta ?? [];
+const home = ROLE_HOME[role];
+---
+
+<header
+  id="site-header"
+  data-role={role}
+  class="sticky top-0 z-50 w-full border-b border-line bg-surface/85 backdrop-blur-lg supports-[not(backdrop-filter:blur(0))]:bg-surface"
+>
+  <div class="container-blud flex h-(--header-h) items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <!-- Botón de menú lateral -->
+      <button
+        type="button"
+        id="desktop-sidebar-btn"
+        class="grid size-10 place-items-center rounded-control text-ink transition-colors hover:bg-sunken active:scale-95 cursor-pointer"
+        aria-label="Alternar menú lateral"
+        aria-controls="sidebar-drawer"
+        aria-expanded="false"
+        title="Menú"
+      >
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+      </button>
+
+      <a href={home} aria-label={`BLUD, ir a mi espacio de ${ROLE_LABEL[role].toLowerCase()}`}>
+        <Logo size="lg" />
+      </a>
+    </div>
+
+    <div class="flex items-center gap-1.5">
+      <!-- Menú de cuenta (escritorio). En móvil la cuenta vive en el menú lateral. -->
+      <div class="relative mr-1 hidden lg:block" data-auth-in data-account-menu>
+        <button
+          type="button"
+          id="account-trigger"
+          aria-expanded="false"
+          aria-controls="account-panel"
+          class="flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-ink transition-colors hover:bg-sunken cursor-pointer"
+        >
+          <span class="grid size-9 place-items-center rounded-full bg-accent text-[0.875rem] font-bold text-white" data-user-initials></span>
+          <span class="max-w-[9rem] truncate text-base font-medium" data-user-first></span>
+          <Icon name="caret-down" class="account-caret size-3.5 text-ink-3" />
+          <span class="sr-only">Abrir menú de la cuenta</span>
+        </button>
+
+        <div id="account-panel" class="account-panel absolute right-0 top-full z-10 pt-3" data-open="false">
+          <div class="panel w-80 p-2">
+            <div class="flex items-center gap-3 p-3">
+              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent font-bold text-white" data-user-initials></span>
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-ink" data-user-name></p>
+                <p class="truncate text-sm text-ink-3" data-user-email></p>
+              </div>
+              <span class="ml-auto shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-ink empty:hidden" data-user-blood></span>
+            </div>
+
+            {role === 'donante' && (
+              <>
+                <div class="mx-1 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="calendar-check" class="size-4 text-ink-3" />
+                    Próxima cita
+                  </p>
+                  <p class="mt-1 text-ink-2" data-next-appointment>Aún no tienes citas agendadas.</p>
+                </div>
+                <a
+                  href="/donante/donar"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Agendar una donación
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
+            {role === 'operador' && (
+              <>
+                <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                    Centro asignado
+                  </p>
+                  <p class="text-ink-2" data-op-centro>—</p>
+                  <p class="text-ink-2">
+                    <span class="font-bold text-accent-ink" data-op-pendientes>0</span> pedidos pendientes ·
+                    <span class="font-bold text-accent-ink" data-op-verificar>0</span> por verificar
+                  </p>
+                </div>
+                <a
+                  href="/operador/donaciones"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Registrar una donación
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+                <a
+                  href="/operador/entregas"
+                  class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Despachar pedidos
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
+            {cuenta.map((l) => (
+              <a
+                href={l.href}
+                aria-current={current(l.href)}
+                class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
+              >
+                {l.label}
+                <Icon name="arrow-right" class="size-4 text-ink-3" />
+              </a>
+            ))}
+
+            <button
+              type="button"
+              data-logout
+              class="flex w-full items-center rounded-control border-t border-line px-3 py-3 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle modo oscuro -->
+      <button
+        type="button"
+        id="theme-toggle"
+        class="theme-toggle relative grid size-11 place-items-center rounded-control text-ink-2 transition-colors duration-200 hover:bg-sunken hover:text-ink active:scale-95"
+        aria-label="Cambiar a modo oscuro"
+        title="Cambiar a modo oscuro"
+      >
+        <span class="theme-icon theme-icon-sun" aria-hidden="true"><Icon name="sun" class="size-[1.3rem]" /></span>
+        <span class="theme-icon theme-icon-moon" aria-hidden="true"><Icon name="moon" class="size-[1.2rem]" /></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<Sidebar role={role} />
+
+<!-- Rellena los datos de la cuenta antes del primer pintado para evitar parpadeos. -->
+<script is:inline>
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-name]', s.name);
+    set('[data-user-email]', s.email || '');
+  })();
+</script>
+
+<style>
+  /* ----- Ocultar al bajar, mostrar al subir ----- */
+  #site-header { transition: transform 320ms var(--ease-out); }
+  :global(:root[data-header="hidden"]) #site-header { transform: translateY(-100%); }
+
+  /* Hamburguesa que se convierte en X cuando el menú lateral está abierto */
+  .menu-icon { position: relative; width: 22px; height: 14px; }
+  .menu-icon > span {
+    position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px; background: currentColor;
+    transition: transform 300ms var(--ease-out), top 300ms var(--ease-out);
+  }
+  .menu-icon > span:first-child { top: 2px; }
+  .menu-icon > span:last-child { top: 10px; }
+  [aria-expanded="true"] > .menu-icon > span:first-child { top: 6px; transform: rotate(45deg); }
+  [aria-expanded="true"] > .menu-icon > span:last-child { top: 6px; transform: rotate(-45deg); }
+
+  /* Menú de cuenta: aparece desde arriba */
+  .account-panel {
+    visibility: hidden; opacity: 0;
+    transform: translateY(-6px) scale(0.98); transform-origin: top right;
+    transition: opacity 160ms ease, transform 220ms var(--ease-out), visibility 0s linear 220ms;
+  }
+  .account-panel[data-open="true"] {
+    visibility: visible; opacity: 1; transform: none;
+    transition: opacity 180ms ease, transform 260ms var(--ease-out);
+  }
+  .account-caret { transition: transform 240ms var(--ease-out); }
+  #account-trigger[aria-expanded="true"] .account-caret { transform: rotate(180deg); }
+
+  /* Botón de tema */
+  .theme-icon {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    transition: transform 520ms var(--ease-out), opacity 240ms ease;
+  }
+  .theme-icon-sun { transform: rotate(0) scale(1); opacity: 1; }
+  .theme-icon-moon { transform: rotate(-100deg) scale(0.4); opacity: 0; }
+  :global(:root[data-theme="dark"]) .theme-icon-sun { transform: rotate(100deg) scale(0.4); opacity: 0; }
+  :global(:root[data-theme="dark"]) .theme-icon-moon { transform: rotate(0) scale(1); opacity: 1; }
+
+  @media (hover: hover) {
+    .theme-toggle:hover .theme-icon-sun :global(svg) { animation: sun-spin 1.2s var(--ease-out); }
+    .theme-toggle:hover .theme-icon-moon :global(svg) { animation: moon-tilt 900ms var(--ease-out); }
+  }
+  @keyframes sun-spin { from { transform: rotate(0); } to { transform: rotate(90deg); } }
+  @keyframes moon-tilt { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-18deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    #site-header { transition: none; }
+    .theme-icon { transition: opacity 150ms ease; transform: none !important; }
+    .account-panel { transform: none; }
+  }
+</style>
+
+<script>
+  import { logout } from '../../lib/auth';
+  import { renderAccount } from '../../lib/account';
+  import { onDb } from '../../lib/db';
+
+  const root = document.documentElement;
+
+  // ----- Tema claro / oscuro -----
+  const themeBtn = document.getElementById('theme-toggle');
+  const currentTheme = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
+
+  const syncThemeLabel = () => {
+    const label = currentTheme() === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    themeBtn?.setAttribute('aria-label', label);
+    themeBtn?.setAttribute('title', label);
+  };
+
+  const applyTheme = (theme: 'light' | 'dark') => {
+    root.dataset.theme = theme;
+    try { localStorage.setItem('blud-theme', theme); } catch {}
+    syncThemeLabel();
+  };
+
+  themeBtn?.addEventListener('click', (event) => {
+    const button = event.currentTarget as HTMLElement;
+    const next = currentTheme() === 'dark' ? 'light' : 'dark';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+
+    if (!doc.startViewTransition || reduce) {
+      applyTheme(next);
+      return;
+    }
+
+    const rect = button.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    root.style.setProperty('--vt-x', `${x}px`);
+    root.style.setProperty('--vt-y', `${y}px`);
+    root.style.setProperty('--vt-r', `${r}px`);
+    root.classList.add('theme-vt');
+
+    doc.startViewTransition(() => applyTheme(next)).finished.finally(() => {
+      root.classList.remove('theme-vt');
+    });
+  });
+
+  syncThemeLabel();
+  new MutationObserver(syncThemeLabel).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ----- Estado de la sesión: una sola función compartida (lib/account) -----
+  const renderAuth = renderAccount;
+
+  document.querySelectorAll('[data-logout]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      logout();
+      window.location.href = '/login';
+    })
+  );
+
+  renderAuth();
+  window.addEventListener('blud:auth', renderAuth);
+  window.addEventListener('blud:donor', renderAuth);
+  onDb(renderAuth); // cambios hechos desde otros módulos (pedidos, verificaciones…)
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key.startsWith('blud-')) renderAuth();
+  });
+
+  // ----- Menú de cuenta (escritorio) -----
+  function initNavbar() {
+    const w = window as unknown as { __bludNavbarCtl?: AbortController };
+    w.__bludNavbarCtl?.abort();
+    const ctl = new AbortController();
+    w.__bludNavbarCtl = ctl;
+    const { signal } = ctl;
+
+    const container = document.querySelector<HTMLElement>('[data-account-menu]');
+    const trigger = document.getElementById('account-trigger');
+    const panel = document.getElementById('account-panel');
+    if (!container || !trigger || !panel) return;
+
+    const isOpen = () => trigger.getAttribute('aria-expanded') === 'true';
+    const setOpen = (open: boolean) => {
+      trigger.setAttribute('aria-expanded', String(open));
+      panel.dataset.open = String(open);
+    };
+
+    trigger.addEventListener('click', () => setOpen(!isOpen()), { signal });
+    container.addEventListener('focusout', (e) => {
+      if (!container.contains(e.relatedTarget as Node)) setOpen(false);
+    }, { signal });
+    document.addEventListener('click', (e) => {
+      if (isOpen() && !container.contains(e.target as Node)) setOpen(false);
+    }, { signal });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen()) {
+        setOpen(false);
+        trigger.focus();
+      }
+    }, { signal });
+    document.addEventListener('astro:before-swap', () => setOpen(false), { signal });
+  }
+
+  // ----- Ocultar el navbar al bajar y mostrarlo al subir -----
+  function initHideOnScroll() {
+    const w = window as unknown as { __bludHeaderCtl?: AbortController };
+    w.__bludHeaderCtl?.abort();
+    const ctl = new AbortController();
+    w.__bludHeaderCtl = ctl;
+    const { signal } = ctl;
+
+    const header = document.getElementById('site-header');
+    if (!header) return;
+
+    const THRESHOLD = 6;
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    const setHidden = (hidden: boolean) => {
+      if (hidden) root.dataset.header = 'hidden';
+      else delete root.dataset.header;
+    };
+
+    // Se queda visible con el menú lateral o el menú de cuenta abiertos, o con foco de teclado dentro
+    const keepVisible = () =>
+      header.querySelector('[aria-expanded="true"]') !== null ||
+      header.querySelector(':focus-visible') !== null;
+
+    const update = () => {
+      ticking = false;
+      const y = Math.max(window.scrollY, 0);
+      const diff = y - lastY;
+
+      if (y <= header.offsetHeight || keepVisible()) {
+        setHidden(false);
+        lastY = y;
+      } else if (diff > THRESHOLD) {
+        setHidden(true);
+        lastY = y;
+      } else if (diff < -THRESHOLD) {
+        setHidden(false);
+        lastY = y;
+      }
+    };
+
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    }, { passive: true, signal });
+
+    header.addEventListener('focusin', () => {
+      if (header.querySelector(':focus-visible')) setHidden(false);
+    }, { signal });
+
+    signal.addEventListener('abort', () => setHidden(false));
+  }
+
+  initNavbar();
+  initHideOnScroll();
+  document.addEventListener('astro:page-load', () => {
+    initNavbar();
+    initHideOnScroll();
+    renderAuth();
+  });
+</script>

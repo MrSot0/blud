@@ -1,0 +1,149 @@
+---
+// src/pages/laboratorio/positivos.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+---
+
+<LayoutLaboratorio title="BLUD | Casos positivos">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Casos positivos</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Resultados reactivos de tamizaje en enfermedades de riesgo. Regístralos como notificados cuando los reportes a la autoridad sanitaria.</p>
+      </div>
+      <button type="button" id="btn-csv" class="btn btn-secondary self-start sm:self-auto">Exportar CSV</button>
+    </div>
+
+    <div class="rounded-control border border-line bg-sunken px-4 py-3 text-sm text-ink-2">
+      <strong class="text-ink">Información confidencial.</strong> La lista usa el código de la donación, sin nombres. Un resultado reactivo de tamizaje requiere confirmación y se comunica al donante de forma personal y reservada. El donante queda diferido automáticamente.
+    </div>
+
+    <section class="panel p-6 sm:p-8 space-y-5">
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar casos">
+        <button type="button" class="chip" data-f="todos" aria-pressed="true">Todos <span class="opacity-70" data-c="todos">0</span></button>
+        <button type="button" class="chip" data-f="pendiente" aria-pressed="false">Sin notificar <span class="opacity-70" data-c="pendiente">0</span></button>
+        <button type="button" class="chip" data-f="notificado" aria-pressed="false">Notificados <span class="opacity-70" data-c="notificado">0</span></button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+            <tr><th class="py-2">Código</th><th class="py-2">Enfermedad</th><th class="py-2">Fecha</th><th class="py-2">Estado</th><th class="py-2 text-right">Acciones</th></tr>
+          </thead>
+          <tbody id="tabla" class="divide-y divide-line"></tbody>
+        </table>
+      </div>
+      <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">No hay casos en esta vista.</p>
+    </section>
+
+    <!-- Notificar -->
+    <dialog id="dlg" class="notif-dialog">
+      <form id="form-notif" method="dialog" class="p-6 space-y-4" novalidate>
+        <h2 class="text-lg font-extrabold text-ink">Registrar notificación</h2>
+        <p class="text-sm text-ink-3" id="dlg-caso"></p>
+        <div>
+          <label for="ente" class="block text-xs font-bold uppercase text-ink-2 mb-1">Notificado a</label>
+          <input type="text" id="ente" class="field" placeholder="Ej. Epidemiología regional" required />
+        </div>
+        <div>
+          <label for="ref" class="block text-xs font-bold uppercase text-ink-2 mb-1">N° de oficio / referencia</label>
+          <input type="text" id="ref" class="field" placeholder="Opcional" />
+        </div>
+        <p id="dlg-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+        <div class="flex justify-end gap-2">
+          <button type="button" id="dlg-cancel" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
+</LayoutLaboratorio>
+
+<style is:global>
+  .chip { padding: 0.5rem 0.9rem; border: 2px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: 0.875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 200ms; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .notif-dialog { width: min(28rem, calc(100vw - 2rem)); padding: 0; margin: auto; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--surface); color: var(--ink); box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.45); }
+  .notif-dialog::backdrop { background: rgb(0 0 0 / 0.5); backdrop-filter: blur(4px); }
+</style>
+
+<script>
+  import { downloadFile, donanteDeCaso, esc, fmtFecha, getCasos, notificarCaso, onDb, toCSV, toast } from '../../lib/laboratorio';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  function init() {
+    const tabla = $('#tabla');
+    if (tabla.dataset.ready) return;
+    tabla.dataset.ready = '1';
+
+    let filtro = 'todos';
+    let abierto = '';
+    const dlg = $<HTMLDialogElement>('#dlg');
+
+    const render = () => {
+      const todos = getCasos();
+      const cuenta = { todos: todos.length, pendiente: todos.filter((c) => c.estado === 'pendiente').length, notificado: todos.filter((c) => c.estado === 'notificado').length };
+      (Object.keys(cuenta) as (keyof typeof cuenta)[]).forEach((k) => (document.querySelector(`[data-c="${k}"]`)!.textContent = String(cuenta[k])));
+      const vis = todos.filter((c) => filtro === 'todos' || c.estado === filtro);
+      $('#vacia').classList.toggle('hidden', vis.length > 0);
+      tabla.innerHTML = vis.map((c) => `<tr>
+        <td class="py-3 font-mono font-bold text-ink">${esc(c.codigo)}</td>
+        <td class="py-3 text-ink-2">${esc(c.enfermedad)}</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(c.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td>
+        <td class="py-3">${c.estado === 'notificado'
+          ? `<span class="rounded-full bg-ok-soft px-2 py-0.5 text-xs font-bold text-ok">Notificado</span><span class="mt-1 block text-xs text-ink-3">${esc(c.notificadoA ?? '')}${c.referencia ? ' · ' + esc(c.referencia) : ''}</span>`
+          : '<span class="rounded-full bg-warn-soft px-2 py-0.5 text-xs font-bold text-warn">Sin notificar</span>'}</td>
+        <td class="py-3 text-right whitespace-nowrap">
+          ${c.estado === 'pendiente' ? `<button type="button" class="btn btn-primary btn-sm" data-notif="${esc(c.id)}">Notificar</button>` : ''}
+          <button type="button" class="btn btn-secondary btn-sm" data-donante="${esc(c.id)}">Ver donante</button></td></tr>`).join('');
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-f]').forEach((b) => b.addEventListener('click', () => {
+      filtro = b.dataset.f!;
+      document.querySelectorAll('[data-f]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      render();
+    }));
+
+    tabla.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const n = t.closest<HTMLElement>('[data-notif]')?.dataset.notif;
+      const v = t.closest<HTMLElement>('[data-donante]')?.dataset.donante;
+      if (n) {
+        abierto = n;
+        const c = getCasos().find((x) => x.id === n)!;
+        $('#dlg-caso').textContent = `${c.codigo} · ${c.enfermedad}`;
+        $<HTMLFormElement>('#form-notif').reset();
+        $('#dlg-error').classList.add('hidden');
+        dlg.showModal();
+      }
+      if (v) {
+        // Los datos personales solo se muestran a petición expresa
+        if (!confirm('Vas a ver datos personales de un caso confidencial. ¿Continuar?')) return;
+        const c = getCasos().find((x) => x.id === v)!;
+        const d = donanteDeCaso(c);
+        alert(d ? `${d.nombre}\n${d.cedula} · ${d.sangre || 'grupo sin confirmar'}` : 'No se encontró el donante en el registro.');
+      }
+    });
+
+    $('#dlg-cancel').addEventListener('click', () => dlg.close());
+    $<HTMLFormElement>('#form-notif').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const r = notificarCaso(abierto, { ente: $<HTMLInputElement>('#ente').value, referencia: $<HTMLInputElement>('#ref').value });
+      if (!r.ok) { $('#dlg-error').textContent = r.motivo; $('#dlg-error').classList.remove('hidden'); return; }
+      dlg.close();
+      toast('Notificación registrada ✅');
+    });
+
+    $('#btn-csv').addEventListener('click', () => {
+      const rows = getCasos().map((c) => ({ Codigo: c.codigo, Enfermedad: c.enfermedad, Fecha: c.fecha, Estado: c.estado, NotificadoA: c.notificadoA ?? '', Referencia: c.referencia ?? '', FechaNotificacion: c.fechaNotificacion ?? '' }));
+      if (!rows.length) return toast('No hay casos para exportar.');
+      downloadFile(`blud-casos-positivos-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows), 'text/csv');
+    });
+
+    render();
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

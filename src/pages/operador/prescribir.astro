@@ -1,156 +1,200 @@
 ---
 // src/pages/operador/prescribir.astro
-import LayoutDonante from '../../layouts/LayoutDonante.astro';
-
-const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
-const componentes: string[] = ['Sangre Total', 'Concentrado Globular', 'Plaquetas', 'Plasma Fresco Congelado', 'Crioprecipitado'];
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
-<LayoutDonante title="BLUD | Prescribir & Cargar Orden Médica">
+<LayoutOperador title="BLUD | Orden médica">
   <div class="container-blud py-8 space-y-8">
-    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Prescribir / Orden Médica</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Escanea una orden física para extraer datos automáticamente y agilizar el registro.</p>
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Orden médica</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Carga la solicitud de sangre de un hospital. Queda como pedido pendiente para despacharlo desde Entregas.</p>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-      
-      <!-- Zona de Escaneo / Carga de Foto -->
-      <section class="lg:col-span-2 space-y-4">
-        <div class="panel p-6 space-y-4">
-          <h2 class="text-lg font-bold text-ink">1. Foto de la orden médica</h2>
-          <label id="upload-zone" class="drop flex flex-col items-center justify-center min-h-[260px] border-2 dashed border-line rounded-2xl cursor-pointer hover:border-accent transition-colors relative overflow-hidden bg-sunken">
-            <img id="preview-img" class="hidden absolute inset-0 w-full h-full object-contain bg-canvas" alt="Vista previa de orden médica" />
-            <div id="drop-text" class="text-center p-6 space-y-2">
-              <span class="text-3xl">📄</span>
-              <p class="font-bold text-sm text-ink">Sube o toma foto de la orden</p>
-              <p class="text-xs text-ink-3">Formatos PNG, JPG hasta 10MB</p>
-            </div>
-            <input type="file" id="orden-file" accept="image/*" capture="environment" class="sr-only" />
-          </label>
+    <!-- Paso 1: foto de la orden -->
+    <section data-step="1">
+      <div class="panel p-6 sm:p-8 space-y-5 w-full">
+        <div class="border-b border-line pb-3">
+          <h2 class="text-lg font-bold text-ink">1. Foto de la orden</h2>
+          <p class="text-sm text-ink-3 mt-0.5">Sube o toma una foto para extraer los datos, o sáltate este paso y escríbelos tú.</p>
+        </div>
 
-          <button type="button" id="btn-scan" class="btn btn-primary w-full" disabled>
-            <span id="scan-label">🤖 Escanear y extraer datos</span>
-            <span id="scan-spinner" class="hidden">Procesando imagen con IA...</span>
+        <label class="flex flex-col items-center justify-center min-h-[320px] border-2 border-dashed border-line rounded-2xl cursor-pointer hover:border-accent transition-colors relative overflow-hidden bg-sunken focus-within:border-accent">
+          <img id="preview" class="hidden absolute inset-0 w-full h-full object-contain bg-canvas" alt="Vista previa de la orden médica" />
+          <div id="drop-text" class="text-center p-6 space-y-2">
+            <span class="text-4xl" aria-hidden="true">📄</span>
+            <p class="font-bold text-ink">Sube o toma una foto de la orden</p>
+            <p class="text-xs text-ink-3">PNG o JPG, hasta 10 MB</p>
+          </div>
+          <input type="file" id="archivo" accept="image/*" capture="environment" class="sr-only" />
+        </label>
+
+        <div class="flex flex-col sm:flex-row gap-3 sm:justify-end">
+          <button type="button" id="btn-manual" class="btn btn-secondary min-h-12 sm:px-8">Ingresar datos manualmente</button>
+          <button type="button" id="btn-scan" class="btn btn-primary min-h-12 sm:px-8" disabled>
+            <span id="scan-label">Extraer datos y continuar</span>
+            <span id="scan-spinner" class="hidden">Procesando…</span>
           </button>
         </div>
-      </section>
+        <p class="text-xs text-ink-3">La extracción automática es una demostración: revisa siempre los datos antes de procesar.</p>
+      </div>
+    </section>
 
-      <!-- Formulario Pre-llenado -->
-      <section class="lg:col-span-3">
-        <form id="prescribir-form" class="panel p-6 sm:p-8 space-y-5">
-          <h2 class="text-lg font-bold text-ink border-b border-line pb-3">2. Datos extraídos de la solicitud</h2>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label for="pacienteNombre" class="block text-xs font-bold uppercase text-ink-2">Nombre Paciente</label>
-              <input type="text" id="pacienteNombre" class="field" placeholder="Ej. Roberto Gómez" required />
-            </div>
-            <div class="space-y-1.5">
-              <label for="pacienteCedula" class="block text-xs font-bold uppercase text-ink-2">Cédula Paciente</label>
-              <input type="text" id="pacienteCedula" class="field" placeholder="V-12345678" required />
-            </div>
+    <!-- Paso 2: datos de la solicitud -->
+    <section data-step="2" class="hidden">
+      <form id="form" class="panel p-6 sm:p-8 space-y-6 w-full" novalidate>
+        <div class="flex items-start justify-between gap-4 border-b border-line pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-ink">2. Datos de la solicitud</h2>
+            <p id="origen" class="text-sm text-ink-3 mt-0.5">Escribe los datos de la orden.</p>
           </div>
+          <img id="mini" class="hidden size-14 shrink-0 rounded-control border border-line bg-canvas object-cover" alt="Orden adjunta" />
+        </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label for="tipoSangre" class="block text-xs font-bold uppercase text-ink-2">Tipo de Sangre Requerido</label>
-              <select id="tipoSangre" class="field" required>
-                <option value="">Selecciona...</option>
-                {bloodTypes.map((t) => <option value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div class="space-y-1.5">
-              <label for="hemocomponente" class="block text-xs font-bold uppercase text-ink-2">Hemocomponente Requerido</label>
-              <select id="hemocomponente" class="field" required>
-                <option value="">Selecciona...</option>
-                {componentes.map((c) => <option value={c}>{c}</option>)}
-              </select>
-            </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="space-y-1.5 lg:col-span-2">
+            <label for="paciente" class="block text-xs font-bold uppercase text-ink-2">Nombre del paciente</label>
+            <input type="text" id="paciente" class="field" placeholder="Ej. Roberto Gómez" required />
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label for="unidades" class="block text-xs font-bold uppercase text-ink-2">Unidades (Bolsas)</label>
-              <input type="number" id="unidades" min="1" max="10" class="field" value="1" required />
-            </div>
-            <div class="space-y-1.5">
-              <label for="hospitalDestino" class="block text-xs font-bold uppercase text-ink-2">Centro / Hospital Solicitante</label>
-              <input type="text" id="hospitalDestino" class="field" placeholder="Ej. Hospital Universitario" required />
-            </div>
+          <div class="space-y-1.5">
+            <label for="pcedula" class="block text-xs font-bold uppercase text-ink-2">Cédula del paciente</label>
+            <input type="text" id="pcedula" class="field" placeholder="V-12345678" required />
           </div>
-
-          <div class="pt-2 flex gap-3">
-            <button type="submit" class="btn btn-primary flex-1">Procesar Entrega / Solicitud</button>
+          <div class="space-y-1.5">
+            <label for="tipo" class="block text-xs font-bold uppercase text-ink-2">Tipo de sangre requerido</label>
+            <select id="tipo" class="field" required>
+              <option value="">Selecciona…</option>
+              {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
+            </select>
           </div>
-        </form>
-      </section>
+          <div class="space-y-1.5">
+            <label for="comp" class="block text-xs font-bold uppercase text-ink-2">Hemocomponente</label>
+            <select id="comp" class="field" required>
+              {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div class="space-y-1.5">
+            <label for="unidades" class="block text-xs font-bold uppercase text-ink-2">Unidades (bolsas)</label>
+            <input type="number" id="unidades" min="1" max="10" class="field" value="1" required />
+          </div>
+          <div class="space-y-1.5 sm:col-span-2 lg:col-span-3">
+            <label for="destino" class="block text-xs font-bold uppercase text-ink-2">Centro / hospital solicitante</label>
+            <input type="text" id="destino" class="field" placeholder="Ej. Hospital Universitario" required />
+          </div>
+        </div>
 
-    </div>
+        <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+        <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between">
+          <button type="button" id="btn-atras" class="btn btn-secondary min-h-12 sm:px-8">← Atrás</button>
+          <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Registrar pedido</button>
+        </div>
+      </form>
+    </section>
   </div>
-</LayoutDonante>
+</LayoutOperador>
 
 <script>
-  import { saveEntregaOp, uid, toast } from '../../lib/operador';
+  import { registrarPedido, toast } from '../../lib/operador';
+  import type { Hemocomponente } from '../../lib/operador';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const val = (id: string) => ($(`#${id}`) as HTMLInputElement).value;
+  const set = (id: string, v: string) => (($(`#${id}`) as HTMLInputElement).value = v);
 
   function init() {
-    const fileInput = document.getElementById('orden-file') as HTMLInputElement;
-    const btnScan = document.getElementById('btn-scan') as HTMLButtonElement;
-    const previewImg = document.getElementById('preview-img') as HTMLImageElement;
-    const dropText = document.getElementById('drop-text');
-    const form = document.getElementById('prescribir-form') as HTMLFormElement;
+    const form = $<HTMLFormElement>('#form');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
 
-    fileInput?.addEventListener('change', () => {
-      const file = fileInput.files?.[0];
-      if (!file) return;
+    const file = $<HTMLInputElement>('#archivo');
+    const btn = $<HTMLButtonElement>('#btn-scan');
+    let url: string | null = null;
 
-      const url = URL.createObjectURL(file);
-      previewImg.src = url;
-      previewImg.classList.remove('hidden');
-      dropText?.classList.add('hidden');
-      btnScan.disabled = false;
-    });
-
-    // Simulación de OCR para extraer datos de la foto
-    btnScan?.addEventListener('click', async () => {
-      btnScan.disabled = true;
-      document.getElementById('scan-label')!.classList.add('hidden');
-      document.getElementById('scan-spinner')!.classList.remove('hidden');
-
-      await new Promise((r) => setTimeout(r, 1200));
-
-      // Datos auto-completados por el escáner
-      (document.getElementById('pacienteNombre') as HTMLInputElement).value = 'María Elena Delgado';
-      (document.getElementById('pacienteCedula') as HTMLInputElement).value = 'V-18765432';
-      (document.getElementById('tipoSangre') as HTMLSelectElement).value = 'O+';
-      (document.getElementById('hemocomponente') as HTMLSelectElement).value = 'Concentrado Globular';
-      (document.getElementById('unidades') as HTMLInputElement).value = '2';
-      (document.getElementById('hospitalDestino') as HTMLInputElement).value = 'Hospital Central Maracaibo';
-
-      document.getElementById('scan-label')!.classList.remove('hidden');
-      document.getElementById('scan-spinner')!.classList.add('hidden');
-      btnScan.disabled = false;
-      toast('¡Datos extraídos con éxito de la orden! 📋');
-    });
-
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      saveEntregaOp({
-        id: uid(),
-        pacienteNombre: (document.getElementById('pacienteNombre') as HTMLInputElement).value,
-        pacienteCedula: (document.getElementById('pacienteCedula') as HTMLInputElement).value,
-        tipoSangre: (document.getElementById('tipoSangre') as HTMLSelectElement).value,
-        tipoHemocomponente: (document.getElementById('hemocomponente') as HTMLSelectElement).value as any,
-        unidades: Number((document.getElementById('unidades') as HTMLInputElement).value),
-        hospitalDestino: (document.getElementById('hospitalDestino') as HTMLInputElement).value,
-        fecha: new Date().toISOString().slice(0, 10),
-        operadorId: 'op-actual'
+    // ---- Pasos: solo se muestra uno a la vez
+    const pasos = [...document.querySelectorAll<HTMLElement>('[data-step]')];
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-paso]')];
+    const irA = (n: 1 | 2) => {
+      pasos.forEach((p) => p.classList.toggle('hidden', p.dataset.step !== String(n)));
+      tabs.forEach((t) => {
+        const on = t.dataset.paso === String(n);
+        const hecho = n === 2 && t.dataset.paso === '1';
+        t.classList.toggle('btn-primary', on);
+        t.classList.toggle('btn-secondary', !on);
+        if (on) t.setAttribute('aria-current', 'step'); else t.removeAttribute('aria-current');
+        const num = t.querySelector<HTMLElement>('[data-num]')!;
+        num.textContent = hecho ? '✓' : t.dataset.paso!;
+        num.className = `grid size-5 place-items-center rounded-full text-xs font-extrabold ${on ? 'bg-white/25 text-white' : hecho ? 'bg-ok-soft text-ok' : 'bg-sunken text-ink-2'}`;
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (n === 2) $('#paciente').focus({ preventScroll: true });
+    };
+    tabs.forEach((t) => t.addEventListener('click', () => irA(Number(t.dataset.paso) as 1 | 2)));
+    $('#btn-atras').addEventListener('click', () => irA(1));
+    $('#btn-manual').addEventListener('click', () => {
+      $('#origen').textContent = 'Escribe los datos de la orden.';
+      irA(2);
+    });
+    irA(1);
 
-      toast('¡Prescripción y entrega registrada! 🩸');
-      window.location.href = '/operador/entregas';
+    file.addEventListener('change', () => {
+      const f = file.files?.[0];
+      if (!f) return;
+      if (!f.type.startsWith('image/') || f.size > 10 * 1024 * 1024) {
+        file.value = '';
+        return toast('Sube una imagen de menos de 10 MB.');
+      }
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(f);
+      const img = $<HTMLImageElement>('#preview');
+      img.src = url;
+      img.classList.remove('hidden');
+      $('#drop-text').classList.add('hidden');
+      const mini = $<HTMLImageElement>('#mini');
+      mini.src = url;
+      mini.classList.remove('hidden');
+      btn.disabled = false;
+    });
+
+    // TODO: reemplazar por OCR real (API). Por ahora rellena datos de ejemplo para probar el flujo.
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      $('#scan-label').classList.add('hidden');
+      $('#scan-spinner').classList.remove('hidden');
+      await new Promise((r) => setTimeout(r, 1200));
+      set('paciente', 'María Elena Delgado');
+      set('pcedula', 'V-18765432');
+      set('tipo', 'O+');
+      set('comp', 'Concentrado Globular');
+      set('unidades', '2');
+      set('destino', 'Hospital Central Maracaibo');
+      $('#scan-label').classList.remove('hidden');
+      $('#scan-spinner').classList.add('hidden');
+      btn.disabled = false;
+      $('#origen').textContent = 'Datos extraídos de la foto (demostración): revísalos antes de registrar.';
+      toast('Datos de ejemplo cargados: revísalos antes de registrar.');
+      irA(2);
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const r = registrarPedido({
+        pacienteNombre: val('paciente'),
+        pacienteCedula: val('pcedula'),
+        tipoSangre: val('tipo'),
+        tipoHemocomponente: val('comp') as Hemocomponente,
+        unidades: Number(val('unidades')),
+        hospitalDestino: val('destino'),
+      });
+      if (!r.ok) {
+        const err = $('#error');
+        err.textContent = r.motivo;
+        err.classList.remove('hidden');
+        return;
+      }
+      toast('¡Pedido registrado! Ya puedes despacharlo.');
+      setTimeout(() => (window.location.href = '/operador/entregas'), 600);
     });
   }
 
