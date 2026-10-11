@@ -1,0 +1,12 @@
+---
+// src/pages/laboratorio/perfil.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+import StaffCard from '../../components/app/StaffCard.astro';
+---
+
+<LayoutLaboratorio title="BLUD | Mi perfil">
+  <StaffCard role="laboratorio" />
+  <div class="container-blud py-8 text-center">
+    <a href="/laboratorio/configuracion" class="link-arrow">Cambiar mis datos o contraseña</a>
+  </div>
+</LayoutLaboratorio>

@@ -1,0 +1,12 @@
+---
+// src/pages/operador/perfil.astro
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import StaffCard from '../../components/app/StaffCard.astro';
+---
+
+<LayoutOperador title="BLUD | Mi perfil">
+  <StaffCard role="operador" />
+  <div class="container-blud py-8 text-center">
+    <a href="/operador/configuracion" class="link-arrow">Cambiar mis datos o contraseña</a>
+  </div>
+</LayoutOperador>

@@ -1,0 +1,198 @@
+---
+// src/pages/donante/soporte.astro
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+
+// Edita estos datos de contacto. Si WHATSAPP queda vacío, la tarjeta no se muestra.
+const EMAIL = 'soporte@blud.app';
+const WHATSAPP = ''; // ej: '584141234567' (código de país + número, sin + ni espacios)
+
+const faqs = [
+  {
+    q: '¿Quién puede donar sangre?',
+    a: 'En general, personas de 18 a 65 años, con 50 kg o más y en buen estado de salud el día de la donación. El personal médico del centro hace la evaluación final.',
+  },
+  {
+    q: '¿Cuánto dura la donación?',
+    a: 'Entre 30 y 45 minutos en total, contando el registro, una breve revisión médica, la extracción y un pequeño descanso con refrigerio. La extracción en sí toma unos 10 minutos.',
+  },
+  {
+    q: '¿Cada cuánto puedo donar?',
+    a: 'Por lo general se recomienda esperar unos 3 meses entre donaciones de sangre total. El centro te confirma tu fecha exacta.',
+  },
+  {
+    q: '¿Qué debo llevar el día de mi cita?',
+    a: 'Tu cédula y tu carnet digital con el QR. Come algo ligero antes, toma agua y procura haber dormido bien.',
+  },
+  {
+    q: '¿Qué contiene mi QR?',
+    a: 'Solo tu ID de donante, tu nombre, tu tipo de sangre y si tu identidad está verificada. Tu cédula, teléfono y correo no viajan dentro del código.',
+  },
+  {
+    q: '¿Para qué sirve verificar mi identidad?',
+    a: 'Con la verificación (KYC) los centros confirman que eres tú y tu carnet muestra el sello de verificado. Puedes hacerla desde Mi perfil en menos de 2 minutos.',
+  },
+  {
+    q: '¿Cómo cambio o cancelo mi cita?',
+    a: 'Entra a Mi historial y usa los botones Cambiar o Cancelar de tu próxima cita.',
+  },
+  {
+    q: '¿Cómo corrijo mis datos?',
+    a: 'En Mi perfil puedes editar tus datos en cualquier momento. Si tu cédula ya fue verificada y necesitas cambiarla, escríbenos desde el formulario de abajo.',
+  },
+];
+---
+
+<LayoutDonante title="BLUD | Soporte">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="reveal pb-6 border-b border-line" style="--d:0ms">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Soporte</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Estamos para ayudarte. Mira las preguntas frecuentes o escríbenos.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+
+      <!-- FAQ -->
+      <section class="reveal lg:col-span-3 panel p-6 sm:p-8 space-y-5" style="--d:80ms" aria-labelledby="h-faq">
+        <div class="border-b border-line pb-4 space-y-3">
+          <h2 id="h-faq" class="text-lg font-bold text-ink">Preguntas frecuentes</h2>
+          <label for="faq-buscar" class="sr-only">Buscar en preguntas frecuentes</label>
+          <input type="search" id="faq-buscar" class="field" placeholder="Busca tu duda…" autocomplete="off" />
+        </div>
+
+        <div id="faq" class="space-y-3">
+          {faqs.map((f) => (
+            <details class="faq" data-text={`${f.q} ${f.a}`.toLowerCase()}>
+              <summary>
+                <span class="font-semibold text-ink">{f.q}</span>
+                <svg viewBox="0 0 24 24" class="chev size-4 shrink-0 text-ink-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </summary>
+              <p class="faq-a text-sm text-ink-2">{f.a}</p>
+            </details>
+          ))}
+        </div>
+        <p id="faq-vacio" class="hidden text-sm text-ink-3 text-center py-4">No encontramos esa duda. Escríbenos y te ayudamos 👉</p>
+      </section>
+
+      <!-- Contacto -->
+      <div class="lg:col-span-2 space-y-6 lg:sticky lg:top-[calc(var(--header-h,4.5rem)+1.5rem)]">
+
+        <section class="reveal panel p-6 sm:p-8 space-y-4" style="--d:140ms" aria-labelledby="h-contacto">
+          <h2 id="h-contacto" class="text-lg font-bold text-ink">Escríbenos</h2>
+
+          <div class="grid gap-3">
+            <a href={`mailto:${EMAIL}`} class="contact">
+              <span class="ico" aria-hidden="true">✉️</span>
+              <span class="min-w-0"><span class="block text-sm font-semibold text-ink">Correo</span><span class="block text-xs text-ink-3 truncate">{EMAIL}</span></span>
+            </a>
+            {WHATSAPP && (
+              <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer" class="contact">
+                <span class="ico" aria-hidden="true">💬</span>
+                <span class="min-w-0"><span class="block text-sm font-semibold text-ink">WhatsApp</span><span class="block text-xs text-ink-3">Respuesta rápida</span></span>
+              </a>
+            )}
+          </div>
+
+          <form id="soporte-form" class="space-y-3 pt-2 border-t border-line" novalidate>
+            <div class="space-y-1.5 pt-3">
+              <label for="asunto" class="block text-xs font-bold uppercase tracking-wider text-ink-2">¿Sobre qué es?</label>
+              <select id="asunto" class="field">
+                <option>Mi cita</option>
+                <option>Mi carnet o mi QR</option>
+                <option>Verificación de identidad</option>
+                <option>Mis datos</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label for="mensaje" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cuéntanos</label>
+              <textarea id="mensaje" rows="4" class="field resize-y" maxlength="1000" placeholder="Escribe tu mensaje…"></textarea>
+            </div>
+            <p id="s-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <button type="submit" class="btn btn-primary w-full">Enviar mensaje</button>
+          </form>
+        </section>
+
+        <p class="reveal text-xs text-ink-3 px-1" style="--d:200ms">
+          Si es una emergencia médica, acude al centro de salud más cercano. Este canal no atiende urgencias.
+        </p>
+      </div>
+    </div>
+  </div>
+</LayoutDonante>
+
+<style>
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise 600ms var(--ease-out, ease-out) forwards; animation-delay: var(--d, 0ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .faq { border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); transition: border-color 200ms, background 200ms; }
+  .faq[open] { border-color: var(--color-blud-flag-red); background: var(--accent-soft); }
+  .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; cursor: pointer; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary:focus-visible { outline: 2px solid var(--color-blud-flag-red); outline-offset: 2px; border-radius: 1rem; }
+  .chev { transition: transform 250ms ease; }
+  .faq[open] .chev { transform: rotate(180deg); color: var(--color-blud-flag-red); }
+  .faq-a { padding: 0 1.25rem 1.25rem; }
+  .faq[open] .faq-a { animation: fade 300ms ease-out; }
+  @keyframes fade { from { opacity: 0; transform: translateY(-6px); } }
+
+  .contact { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; transition: transform 200ms, border-color 200ms; }
+  .contact:hover { transform: translateY(-2px); border-color: var(--color-blud-flag-red); }
+  .ico { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--accent-soft); font-size: 1.1rem; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { animation: none; opacity: 1; transform: none; }
+    .faq[open] .faq-a { animation: none; }
+    .chev, .contact { transition: none; }
+  }
+</style>
+
+<script>
+  import { getDonor, toast } from '../../lib/donante';
+
+  function init() {
+    const faq = document.getElementById('faq');
+    if (!faq || faq.dataset.ready) return;
+    faq.dataset.ready = '1';
+
+    // Buscador de preguntas
+    const items = Array.from(faq.querySelectorAll<HTMLDetailsElement>('.faq'));
+    const vacio = document.getElementById('faq-vacio')!;
+    document.getElementById('faq-buscar')!.addEventListener('input', (e) => {
+      const t = (e.target as HTMLInputElement).value.trim().toLowerCase();
+      let n = 0;
+      items.forEach((it) => {
+        const ok = !t || (it.dataset.text ?? '').includes(t);
+        it.classList.toggle('hidden', !ok);
+        if (ok) n++;
+      });
+      vacio.classList.toggle('hidden', n > 0);
+    });
+
+    // Formulario
+    const form = document.getElementById('soporte-form') as HTMLFormElement;
+    const err = document.getElementById('s-error')!;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const asunto = (document.getElementById('asunto') as HTMLSelectElement).value;
+      const msg = (document.getElementById('mensaje') as HTMLTextAreaElement).value.trim();
+      if (msg.length < 10) {
+        err.textContent = 'Cuéntanos un poco más (mínimo 10 caracteres).';
+        err.classList.remove('hidden');
+        return;
+      }
+      err.classList.add('hidden');
+      const d = getDonor();
+
+      // TODO: enviar a tu backend (correo/ticket). Datos disponibles:
+      // { asunto, mensaje: msg, donorId: d.id, email: d.email }
+      console.debug('Soporte', { asunto, msg, donorId: d.id, email: d.email });
+
+      form.reset();
+      toast('¡Mensaje enviado! Te responderemos pronto 💙');
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

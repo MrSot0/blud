@@ -1,0 +1,111 @@
+---
+// src/pages/laboratorio/panel.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+---
+
+<LayoutLaboratorio title="BLUD | Panel del laboratorio">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Panel del laboratorio</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1" id="sede-txt">Resumen del laboratorio.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/laboratorio/pruebas" class="btn btn-primary">Registrar pruebas</a>
+        <a href="/laboratorio/fraccionamiento" class="btn btn-secondary">Fraccionar</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <a href="/laboratorio/pruebas" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Por analizar</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="porAnalizar">0</p>
+        <p class="text-xs text-ink-3">donaciones en cuarentena</p>
+      </a>
+      <a href="/laboratorio/fraccionamiento" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Por fraccionar</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="porFraccionar">0</p>
+        <p class="text-xs text-ink-3">bolsas de sangre total</p>
+      </a>
+      <a href="/laboratorio/positivos" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Casos sin notificar</p>
+        <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi="positivosSinNotificar">0</p>
+        <p class="text-xs text-ink-3">resultados reactivos</p>
+      </a>
+      <a href="/laboratorio/reportes" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Pruebas del mes</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="pruebasMes">0</p>
+        <p class="text-xs text-ink-3"><span data-kpi="fraccionesMes">0</span> fraccionamientos</p>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-an">
+        <div class="flex items-center justify-between border-b border-line pb-3">
+          <h2 id="h-an" class="text-lg font-bold text-ink">Por analizar</h2>
+          <a href="/laboratorio/pruebas" class="link-arrow text-sm">Ver todas</a>
+        </div>
+        <ul id="lista-analizar" class="divide-y divide-line"></ul>
+      </section>
+
+      <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-fr">
+        <div class="flex items-center justify-between border-b border-line pb-3">
+          <h2 id="h-fr" class="text-lg font-bold text-ink">Por fraccionar</h2>
+          <a href="/laboratorio/fraccionamiento" class="link-arrow text-sm">Ver todas</a>
+        </div>
+        <ul id="lista-fraccionar" class="divide-y divide-line"></ul>
+      </section>
+    </div>
+
+    <p class="text-xs text-ink-3">
+      ¿Quieres ver el panel con datos? <button type="button" id="btn-demo" class="font-semibold text-accent-ink underline cursor-pointer">Cargar datos de ejemplo</button>
+    </p>
+  </div>
+</LayoutLaboratorio>
+
+<script>
+  import { codigoDonacion, esc, estadoLabDe, fmtFecha, fraccionables, kpisLab, laboratoristaActual, onDb, porAnalizar, seedLabDemo, toast } from '../../lib/laboratorio';
+
+  const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
+  const fila = (d: ReturnType<typeof porAnalizar>[number], href: string, extra = '') =>
+    `<li class="flex items-center justify-between gap-3 py-3">
+      <div class="min-w-0"><p class="font-mono text-sm font-bold text-ink">${esc(codigoDonacion(d.id))}</p>
+      <p class="text-xs text-ink-3">${esc(d.tipoHemocomponente)} · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))} ${extra}</p></div>
+      <span class="blood-chip">${esc(d.tipoSangre)}</span>
+      <a href="${href}" class="btn btn-secondary btn-sm">Abrir</a></li>`;
+
+  function render() {
+    const k = kpisLab();
+    (Object.keys(k) as (keyof typeof k)[]).forEach((key) =>
+      document.querySelectorAll(`[data-kpi="${key}"]`).forEach((el) => (el.textContent = String(k[key])))
+    );
+    $('#sede-txt').textContent = `${laboratoristaActual().centro} · resumen de hoy`;
+
+    const an = porAnalizar().slice(0, 6);
+    $('#lista-analizar').innerHTML = an.length
+      ? an.map((d) => fila(d, `/laboratorio/pruebas?donacion=${encodeURIComponent(d.id)}`)).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay donaciones esperando análisis 🎉</li>';
+
+    const fr = fraccionables().slice(0, 6);
+    $('#lista-fraccionar').innerHTML = fr.length
+      ? fr.map((d) => fila(d, `/laboratorio/fraccionamiento?donacion=${encodeURIComponent(d.id)}`, estadoLabDe(d) === 'pendiente' ? '· en cuarentena' : '· liberada')).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay bolsas por fraccionar.</li>';
+  }
+
+  function init() {
+    const root = $('#lista-analizar');
+    if (root.dataset.ready) return;
+    root.dataset.ready = '1';
+    if (new URLSearchParams(location.search).get('demo') === '1') {
+      seedLabDemo();
+      history.replaceState(null, '', location.pathname);
+    }
+    $('#btn-demo').addEventListener('click', () => { seedLabDemo(); toast('Datos de ejemplo cargados.'); });
+    render();
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

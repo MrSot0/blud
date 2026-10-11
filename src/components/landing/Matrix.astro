@@ -1,5 +1,5 @@
 ---
-// Matrix.astro - Matriz de Compatibilidad con Selector Desplegable Animado (Fondo Blanco + Stripes)
+// Matrix.astro - Matriz de Compatibilidad con Selector Desplegable Animado (Fondo Adaptativo + Stripes)
 import DropField from '../DropField.astro';
 import Icon from '../Icon.astro';
 
@@ -68,7 +68,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
     <!-- Caja de Resultados Animada -->
     <div 
       id="results-box"
-      class="mt-8 rounded-3xl bg-surface border-2 border-line p-6 sm:p-8 shadow-xl shadow-slate-200/60 transition-all duration-300 relative z-10"
+      class="mt-8 rounded-3xl bg-surface border-2 border-line p-6 sm:p-8 shadow-xl transition-all duration-300 relative z-10"
       data-reveal style="--reveal-delay:2"
     >
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center pb-6 border-b-2 border-line">
@@ -130,7 +130,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
   </div>
 </section>
 
-<!-- CSS del patrón de líneas diagonales sobre fondo blanco -->
+<!-- CSS del patrón adaptativo -->
 <style>
   @keyframes pop {
     0% { transform: scale(0.85); opacity: 0; }
@@ -142,7 +142,7 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
   .stripe-pattern-section {
     position: relative;
-    background-color: #ffffff;
+    background-color: var(--canvas, #ffffff);
   }
 
   .stripe-pattern-section::before {
@@ -176,20 +176,18 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 </script>
 
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", function () {
     const dataElement = document.getElementById("compatibility-json");
     if (!dataElement) return;
     
     const matrixData = JSON.parse(dataElement.textContent || "{}");
 
-    // Elementos del Dropdown Custom
     const trigger = document.getElementById("dropdown-trigger");
     const menu = document.getElementById("dropdown-menu");
     const arrow = document.getElementById("dropdown-arrow");
     const selectedText = document.getElementById("selected-text");
-    const options = document.querySelectorAll<HTMLButtonElement>(".dropdown-option");
+    const options = document.querySelectorAll(".dropdown-option");
 
-    // Elementos de Resultados
     const resultsBox = document.getElementById("results-box");
     const resType = document.getElementById("res-type");
     const resGive = document.getElementById("res-give");
@@ -199,10 +197,11 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
     let isOpen = false;
 
-    const pretty = (t: string) => t.replace('-', '−');
+    function pretty(t) {
+      return t.replace('-', '−');
+    }
 
-    // Abrir / Cerrar Dropdown
-    function toggleDropdown(show?: boolean) {
+    function toggleDropdown(show) {
       isOpen = show !== undefined ? show : !isOpen;
 
       if (trigger) {
@@ -210,46 +209,53 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
       }
 
       if (isOpen) {
-        menu?.classList.remove("opacity-0", "scale-95", "pointer-events-none");
-        menu?.classList.add("opacity-100", "scale-100", "pointer-events-auto");
-        arrow?.classList.add("rotate-180", "text-accent");
-        trigger?.classList.add("border-accent", "ring-4", "ring-accent/15");
+        if (menu) {
+          menu.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+          menu.classList.add("opacity-100", "scale-100", "pointer-events-auto");
+        }
+        if (arrow) arrow.classList.add("rotate-180", "text-accent");
+        if (trigger) trigger.classList.add("border-accent", "ring-4", "ring-accent/15");
       } else {
-        menu?.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
-        menu?.classList.add("opacity-0", "scale-95", "pointer-events-none");
-        arrow?.classList.remove("rotate-180", "text-accent");
-        trigger?.classList.remove("border-accent", "ring-4", "ring-accent/15");
+        if (menu) {
+          menu.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
+          menu.classList.add("opacity-0", "scale-95", "pointer-events-none");
+        }
+        if (arrow) arrow.classList.remove("rotate-180", "text-accent");
+        if (trigger) trigger.classList.remove("border-accent", "ring-4", "ring-accent/15");
       }
     }
 
-    trigger?.addEventListener("click", () => toggleDropdown());
+    if (trigger) {
+      trigger.addEventListener("click", function () {
+        toggleDropdown();
+      });
+    }
 
-    // Cerrar al hacer clic fuera del componente
-    document.addEventListener("click", (e) => {
-      if (!trigger?.contains(e.target as Node) && !menu?.contains(e.target as Node)) {
+    document.addEventListener("click", function (e) {
+      if (trigger && menu && !trigger.contains(e.target) && !menu.contains(e.target)) {
         toggleDropdown(false);
       }
     });
 
-    function renderBadges(list: string[]) {
+    function renderBadges(list) {
       return list
-        .map(
-          (item) =>
-            `<span class="inline-block rounded-lg bg-surface px-3 py-1 text-xs font-black text-ink border-2 border-line shadow-xs animate-pop">${pretty(item)}</span>`
-        )
+        .map(function (item) {
+          return '<span class="inline-block rounded-lg bg-surface px-3 py-1 text-xs font-black text-ink border-2 border-line shadow-xs animate-pop">' + pretty(item) + '</span>';
+        })
         .join("");
     }
 
-    function updateView(selectedType: string) {
+    function updateView(selectedType) {
       const info = matrixData[selectedType];
       if (!info) return;
 
-      if (selectedText) selectedText.textContent = `Tipo ${pretty(selectedType)}`;
+      if (selectedText) selectedText.textContent = "Tipo " + pretty(selectedType);
 
-      // Efecto háptico/visual en la tarjeta al actualizar
       if (resultsBox) {
         resultsBox.classList.add("scale-[0.98]", "opacity-80");
-        setTimeout(() => resultsBox.classList.remove("scale-[0.98]", "opacity-80"), 150);
+        setTimeout(function () {
+          resultsBox.classList.remove("scale-[0.98]", "opacity-80");
+        }, 150);
       }
 
       if (resType) resType.textContent = pretty(selectedType);
@@ -258,33 +264,32 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
       if (resTag) {
         if (info.isUniversalDonor) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-600 border-2 border-emerald-300 animate-pulse">Donante Universal</span>`;
+          resTag.innerHTML = '<span class="inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-600 dark:text-emerald-400 border-2 border-emerald-300 animate-pulse">Donante Universal</span>';
         } else if (info.isUniversalReceiver) {
-          resTag.innerHTML = `<span class="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-600 border-2 border-blue-300 animate-pulse">Receptor Universal</span>`;
+          resTag.innerHTML = '<span class="inline-block rounded-full bg-blue-500/15 px-3 py-1 text-xs font-black text-blue-600 dark:text-blue-400 border-2 border-blue-300 animate-pulse">Receptor Universal</span>';
         } else {
-          resTag.innerHTML = ``;
+          resTag.innerHTML = '';
         }
       }
 
       if (resMessage) {
-        let msg = `El tipo <strong>${pretty(selectedType)}</strong> es compatible para donar a <strong>${info.giveTo.length}</strong> grupo(s) (${info.giveTo.map(pretty).join(", ")}) y puede recibir de <strong>${info.receiveFrom.length}</strong> grupo(s) (${info.receiveFrom.map(pretty).join(", ")}).`;
+        let msg = "El tipo <strong>" + pretty(selectedType) + "</strong> es compatible para donar a <strong>" + info.giveTo.length + "</strong> grupo(s) (" + info.giveTo.map(pretty).join(", ") + ") y puede recibir de <strong>" + info.receiveFrom.length + "</strong> grupo(s) (" + info.receiveFrom.map(pretty).join(", ") + ").";
 
         if (info.isUniversalDonor) {
-          msg += ` <span class="text-emerald-700 font-semibold">Al ser Donante Universal, sus glóbulos rojos son aptos para cualquier paciente.</span>`;
+          msg += ' <span class="text-emerald-700 dark:text-emerald-400 font-semibold">Al ser Donante Universal, sus glóbulos rojos son aptos para cualquier paciente.</span>';
         } else if (info.isUniversalReceiver) {
-          msg += ` <span class="text-blue-700 font-semibold">Al ser Receptor Universal, puede recibir transfusiones de cualquier grupo sanguíneo.</span>`;
+          msg += ' <span class="text-blue-700 dark:text-blue-400 font-semibold">Al ser Receptor Universal, puede recibir transfusiones de cualquier grupo sanguíneo.</span>';
         }
 
         resMessage.innerHTML = msg;
       }
     }
 
-    // Manejo de clicks en las opciones de la lista
-    options.forEach((btn) => {
-      btn.addEventListener("click", () => {
+    options.forEach(function (btn) {
+      btn.addEventListener("click", function () {
         const val = btn.getAttribute("data-value") || "O-";
 
-        options.forEach((opt) => {
+        options.forEach(function (opt) {
           opt.classList.remove("bg-accent", "text-white", "shadow-sm", "shadow-accent/30");
           opt.classList.add("text-ink-2", "hover:bg-sunken", "hover:text-accent");
         });
@@ -297,7 +302,6 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
       });
     });
 
-    // Estado inicial
     updateView("O-");
   });
 </script>
