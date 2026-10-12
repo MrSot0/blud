@@ -68,7 +68,7 @@ const tiles = [
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d={t.icon} /></svg>
             </span>
             <span class="min-w-0">
-              <span class="tile-label">{t.label}</span>
+              <span class="tile-label" data-s-lbl={t.k}>{t.label}</span>
               <span class="tile-val tabular" data-s={t.k}>—</span>
             </span>
           </li>
@@ -247,7 +247,7 @@ const tiles = [
   import { cargarPerfil, guardarPerfil, iniciales, procesarAvatar, procesarFoto, toast } from '../../lib/personal';
   import type { Role } from '../../lib/personal';
 
-  const ROL: Record<string, string> = { operador: 'Operador', laboratorio: 'Laboratorio', director: 'Dirección' };
+  const ROL: Record<string, string> = { operador: 'Operador', laboratorio: 'Laboratorio', soporte: 'Soporte', director: 'Dirección' };
 
   function init() {
     document.querySelectorAll<HTMLElement>('[data-staff]').forEach((root) => {
@@ -272,6 +272,8 @@ const tiles = [
         set('nombre', p.nombre); set('cargo', p.cargo); set('cedula', p.cedula); set('mpps', p.mpps);
         set('sangre', p.sangre); set('area', p.area); set('sede', p.sede); set('telefono', p.telefono); set('email', p.email);
         q('[data-s="rol"]').textContent = ROL[role] ?? role;
+      const lblId = root.querySelector<HTMLElement>('[data-s-lbl="mpps"]');
+      if (lblId) lblId.textContent = role === 'soporte' ? 'ID de personal' : 'MPPS';
         q('[data-s="iniciales"]').textContent = iniciales(p.nombre);
         root.style.setProperty('--fy', p.fotoY + '%');
         if (p.portada) { hero.src = p.portada; hero.hidden = false; ph.hidden = true; }

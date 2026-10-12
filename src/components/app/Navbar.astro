@@ -120,6 +120,66 @@ const home = ROLE_HOME[role];
               </>
             )}
 
+            {role === 'laboratorio' && (
+              <>
+                <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                    Sede asignada
+                  </p>
+                  <p class="text-ink-2" data-op-centro>—</p>
+                  <p class="text-ink-2">
+                    <span class="font-bold text-accent-ink" data-lab-pendientes>0</span> por analizar ·
+                    <span class="font-bold text-accent-ink" data-lab-positivos>0</span> casos sin notificar
+                  </p>
+                </div>
+                <a
+                  href="/laboratorio/pruebas"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Registrar pruebas
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+                <a
+                  href="/laboratorio/fraccionamiento"
+                  class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Registrar fraccionamiento
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
+            {role === 'soporte' && (
+              <>
+                <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                    Sede asignada
+                  </p>
+                  <p class="text-ink-2" data-op-centro>—</p>
+                  <p class="text-ink-2">
+                    <span class="font-bold text-accent-ink" data-sop-abiertos>0</span> solicitudes abiertas ·
+                    <span class="font-bold text-accent-ink" data-sop-mios>0</span> tuyas
+                  </p>
+                </div>
+                <a
+                  href="/soporte/tickets"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Ver solicitudes
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+                <a
+                  href="/soporte/donantes"
+                  class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Consultar un donante
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
             {cuenta.map((l) => (
               <a
                 href={l.href}
