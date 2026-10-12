@@ -1,6 +1,6 @@
 # BLUD
 
-Red de donación de sangre en tiempo real. Conecta donantes voluntarios con pacientes, bancos de sangre y centros de salud en Maracaibo y San Francisco (Zulia). .
+Red de donación de sangre en tiempo real. Conecta donantes voluntarios con pacientes, bancos de sangre y centros de salud en Maracaibo y San Francisco (Zulia).
 
 Construido con [Astro](https://astro.build) y Tailwind CSS v4.
 
