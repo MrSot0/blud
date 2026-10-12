@@ -1,0 +1,90 @@
+---
+// src/pages/soporte/panel.astro
+import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
+---
+
+<LayoutSoporte title="BLUD | Panel de soporte">
+  <div class="container-blud py-8 space-y-8">
+
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Panel de soporte</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1" id="sede-txt">Resumen de la atención al donante.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/soporte/tickets" class="btn btn-primary">Ver solicitudes</a>
+        <a href="/soporte/donantes" class="btn btn-secondary">Consultar un donante</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <a href="/soporte/tickets" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Sin resolver</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="sinResolver">0</p>
+        <p class="text-xs text-ink-3">solicitudes en la bandeja</p>
+      </a>
+      <a href="/soporte/tickets" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Sin asignar</p>
+        <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi="sinAsignar">0</p>
+        <p class="text-xs text-ink-3">nadie las atiende aún</p>
+      </a>
+      <a href="/soporte/tickets" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Mis casos</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="mios">0</p>
+        <p class="text-xs text-ink-3"><span data-kpi="urgentes">0</span> urgentes en total</p>
+      </a>
+      <div class="panel p-5">
+        <p class="text-xs font-bold uppercase text-ink-3">Resueltas hoy</p>
+        <p class="mt-1 text-3xl font-extrabold text-ok tabular" data-kpi="resueltosHoy">0</p>
+        <p class="text-xs text-ink-3">por todo el equipo</p>
+      </div>
+    </div>
+
+    <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-pend">
+      <div class="flex items-center justify-between border-b border-line pb-3">
+        <h2 id="h-pend" class="text-lg font-bold text-ink">Por atender</h2>
+        <a href="/soporte/tickets" class="link-arrow text-sm">Ver todas</a>
+      </div>
+      <ul id="lista-pend" class="divide-y divide-line"></ul>
+    </section>
+
+    <p class="text-xs text-ink-3">
+      ¿Quieres ver el panel con datos? <button type="button" id="btn-demo" class="font-semibold text-accent-ink underline cursor-pointer">Cargar solicitudes de ejemplo</button>
+    </p>
+  </div>
+</LayoutSoporte>
+
+<script>
+  import { bandeja, esc, fmtFechaHora, kpisSoporte, onDb, seedSoporteDemo, soporteActual, toast } from '../../lib/soporte';
+
+  const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
+
+  function render() {
+    const k = kpisSoporte();
+    (Object.keys(k) as (keyof typeof k)[]).forEach((key) => {
+      const el = document.querySelector<HTMLElement>(`[data-kpi="${key}"]`);
+      if (el) el.textContent = String(k[key]);
+    });
+    $('#sede-txt').textContent = `${soporteActual().centro} · atención al donante`;
+
+    const pend = bandeja().slice(0, 6);
+    $('#lista-pend').innerHTML = pend.length
+      ? pend.map((t) => `<li class="flex items-center justify-between gap-3 py-3">
+          <div class="min-w-0"><p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span>${t.prioridad === 'alta' ? '<span class="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-white">Urgente</span>' : ''}</p>
+          <p class="truncate text-sm text-ink-2">${esc(t.donanteNombre)} · ${esc(fmtFechaHora(t.actualizado))} · ${esc(t.asignadoA ? 'Atiende ' + t.asignadoA.nombre : 'Sin asignar')}</p></div>
+          <a href="/soporte/tickets?id=${esc(t.id)}" class="btn btn-secondary btn-sm">Abrir</a></li>`).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes pendientes 🎉</li>';
+  }
+
+  function init() {
+    const btn = document.getElementById('btn-demo');
+    if (!btn || btn.dataset.ready) return;
+    btn.dataset.ready = '1';
+    btn.addEventListener('click', () => { seedSoporteDemo(); toast('Solicitudes de ejemplo cargadas.'); });
+    render();
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

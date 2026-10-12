@@ -2,7 +2,7 @@
 // Sustituir por la API real cuando exista: aquí nada sale del dispositivo.
 
 /** Rol del usuario. Lo asigna el sistema, NUNCA el formulario de registro público. */
-export type Role = 'donante' | 'operador' | 'laboratorio' | 'director';
+export type Role = 'donante' | 'operador' | 'laboratorio' | 'soporte' | 'director';
 
 export interface Session {
   email: string;
@@ -42,6 +42,7 @@ export const demoUsers: (Session & { password: string })[] = [
   { name: 'Carlos Pérez', email: 'carlos@blud.app', password: 'Sangre2026', role: 'donante', bloodType: 'A-', telefono: '+58 414 7654321' },
   { name: 'Dra. María Colina', email: 'operador@blud.app', password: 'Operador2026', role: 'operador', bloodType: 'B+', telefono: '+58 414 5550123', colegiado: 'MPPS-51230', cargo: 'Operador de Banco de Sangre', sede: 'Hospital Central Maracaibo' },
   { name: 'Lic. Andrea Vargas', email: 'laboratorio@blud.app', password: 'Laboratorio2026', role: 'laboratorio', bloodType: 'O-', telefono: '+58 414 5550456', colegiado: 'MPPS-60721', cargo: 'Bioanalista', sede: 'Hospital Central Maracaibo' },
+  { name: 'Lic. Daniela Ríos', email: 'soporte@blud.app', password: 'Soporte2026', role: 'soporte', bloodType: 'A+', telefono: '+58 414 5550789', colegiado: 'BLUD-SOP-014', cargo: 'Especialista de Soporte al Donante', sede: 'Hospital Central Maracaibo' },
 ];
 
 // ---------- Almacenamiento seguro (puede fallar en modo privado) ----------

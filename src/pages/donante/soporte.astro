@@ -118,6 +118,12 @@ const faqs = [
         </p>
       </div>
     </div>
+
+    <!-- Mis solicitudes -->
+    <section id="mis" class="hidden panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-mis">
+      <h2 id="h-mis" class="text-lg font-bold text-ink border-b border-line pb-3">Mis solicitudes <span class="text-ink-3 text-sm font-semibold">(<span id="mis-n">0</span>)</span></h2>
+      <div id="mis-lista" class="space-y-3"></div>
+    </section>
   </div>
 </LayoutDonante>
 
@@ -126,18 +132,18 @@ const faqs = [
   @keyframes rise { to { opacity: 1; transform: none; } }
 
   .faq { border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); transition: border-color 200ms, background 200ms; }
-  .faq[open] { border-color: var(--color-blud-flag-red); background: var(--accent-soft); }
+  .faq[open] { border-color: var(--color-blud-flag-red, #CA2B2B); background: var(--accent-soft); }
   .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; cursor: pointer; list-style: none; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary:focus-visible { outline: 2px solid var(--color-blud-flag-red); outline-offset: 2px; border-radius: 1rem; }
+  .faq summary:focus-visible { outline: 2px solid var(--color-blud-flag-red, #CA2B2B); outline-offset: 2px; border-radius: 1rem; }
   .chev { transition: transform 250ms ease; }
-  .faq[open] .chev { transform: rotate(180deg); color: var(--color-blud-flag-red); }
+  .faq[open] .chev { transform: rotate(180deg); color: var(--color-blud-flag-red, #CA2B2B); }
   .faq-a { padding: 0 1.25rem 1.25rem; }
   .faq[open] .faq-a { animation: fade 300ms ease-out; }
   @keyframes fade { from { opacity: 0; transform: translateY(-6px); } }
 
   .contact { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; transition: transform 200ms, border-color 200ms; }
-  .contact:hover { transform: translateY(-2px); border-color: var(--color-blud-flag-red); }
+  .contact:hover { transform: translateY(-2px); border-color: var(--color-blud-flag-red, #CA2B2B); }
   .ico { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--accent-soft); font-size: 1.1rem; }
 
   @media (prefers-reduced-motion: reduce) {
@@ -149,6 +155,7 @@ const faqs = [
 
 <script>
   import { getDonor, toast } from '../../lib/donante';
+  import { ESTADO_LABEL, crearTicket, esc, fmtFechaHora, onDb, responderComoDonante, ticketsDeDonante } from '../../lib/soporte';
 
   function init() {
     const faq = document.getElementById('faq');
@@ -176,21 +183,66 @@ const faqs = [
       e.preventDefault();
       const asunto = (document.getElementById('asunto') as HTMLSelectElement).value;
       const msg = (document.getElementById('mensaje') as HTMLTextAreaElement).value.trim();
-      if (msg.length < 10) {
-        err.textContent = 'Cuéntanos un poco más (mínimo 10 caracteres).';
+      const d = getDonor();
+      // TODO: POST /api/soporte/solicitudes (hoy se guarda en lib/db y lo ve el personal de soporte)
+      const r = crearTicket({ donanteId: d.id, nombre: `${d.firstname} ${d.lastname}`, email: d.email, asunto, mensaje: msg });
+      if (!r.ok) {
+        err.textContent = r.motivo;
         err.classList.remove('hidden');
         return;
       }
       err.classList.add('hidden');
-      const d = getDonor();
-
-      // TODO: enviar a tu backend (correo/ticket). Datos disponibles:
-      // { asunto, mensaje: msg, donorId: d.id, email: d.email }
-      console.debug('Soporte', { asunto, msg, donorId: d.id, email: d.email });
-
       form.reset();
+      abiertas.add(r.data.id);
+      renderMis();
       toast('¡Mensaje enviado! Te responderemos pronto 💙');
     });
+
+    // Mis solicitudes: estado y respuestas del equipo de soporte
+    const abiertas = new Set<string>();
+    function renderMis() {
+      const lista = ticketsDeDonante(getDonor().id);
+      document.getElementById('mis')!.classList.toggle('hidden', lista.length === 0);
+      document.getElementById('mis-n')!.textContent = String(lista.length);
+      document.getElementById('mis-lista')!.innerHTML = lista.map((t) => {
+        const c = t.estado === 'resuelto' ? 'bg-ok-soft text-ok' : t.estado === 'en_proceso' ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink';
+        const nuevas = t.mensajes.at(-1)?.autor === 'soporte' && t.estado !== 'resuelto';
+        return `<details class="faq" data-id="${esc(t.id)}" ${abiertas.has(t.id) ? 'open' : ''}>
+          <summary>
+            <span class="min-w-0"><span class="block font-semibold text-ink">${esc(t.asunto)} ${nuevas ? '<span class="ml-1 rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-bold text-white">Nueva respuesta</span>' : ''}</span>
+            <span class="block text-xs text-ink-3">${esc(t.codigo)} · ${esc(fmtFechaHora(t.actualizado))}</span></span>
+            <span class="flex items-center gap-3"><span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${c}">${esc(ESTADO_LABEL[t.estado])}</span>
+            <svg viewBox="0 0 24 24" class="chev size-4 shrink-0 text-ink-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+          </summary>
+          <div class="faq-a space-y-3">
+            ${t.mensajes.map((m) => `<div class="flex ${m.autor === 'donante' ? 'justify-end' : 'justify-start'}"><div class="max-w-[90%] rounded-2xl px-4 py-2.5 text-sm ${m.autor === 'donante' ? 'bg-accent-soft' : 'bg-sunken'} text-ink">
+              <p class="mb-0.5 text-xs font-bold text-ink-2">${m.autor === 'donante' ? 'Tú' : esc(m.nombre) + ' · Soporte BLUD'} <span class="font-normal text-ink-3">· ${esc(fmtFechaHora(m.fecha))}</span></p>
+              <p class="whitespace-pre-wrap">${esc(m.texto)}</p></div></div>`).join('')}
+            <form class="flex flex-col sm:flex-row gap-2 pt-1" data-resp="${esc(t.id)}">
+              <input class="field flex-1" placeholder="${t.estado === 'resuelto' ? 'Escribe para reabrir esta solicitud…' : 'Escribe tu respuesta…'}" maxlength="1000" aria-label="Tu respuesta" />
+              <button type="submit" class="btn btn-secondary">Enviar</button>
+            </form>
+          </div></details>`;
+      }).join('');
+    }
+    document.getElementById('mis-lista')!.addEventListener('toggle', (e) => {
+      const el = e.target as HTMLDetailsElement;
+      const id = el.dataset?.id;
+      if (id) el.open ? abiertas.add(id) : abiertas.delete(id);
+    }, true);
+    document.getElementById('mis-lista')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = e.target as HTMLFormElement;
+      const id = f.dataset.resp;
+      if (!id) return;
+      const inp = f.querySelector('input')!;
+      const d = getDonor();
+      const r = responderComoDonante(id, inp.value, `${d.firstname} ${d.lastname}`.trim() || 'Donante');
+      if (!r.ok) return toast(r.motivo);
+      toast('Mensaje enviado 💙');
+    });
+    renderMis();
+    onDb(renderMis);
   }
 
   init();

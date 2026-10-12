@@ -1,0 +1,114 @@
+---
+// src/pages/soporte/donantes.astro
+import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
+---
+
+<LayoutSoporte title="BLUD | Consultar donante">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Consultar donante</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Busca a un donante para ayudarlo con su cuenta. Es solo lectura: aquí no se modifican datos ni se ven resultados médicos.</p>
+    </div>
+
+    <div class="panel p-6 sm:p-8 space-y-6 w-full">
+      <form id="form-buscar" class="flex flex-col sm:flex-row sm:items-end gap-3" novalidate>
+        <div class="flex-1 min-w-0">
+          <label for="buscar" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula, ID del carnet, correo o contenido del QR</label>
+          <input type="text" id="buscar" class="field" placeholder="V-12345678 · BLD-A1B2C3 · correo@ejemplo.com" autocomplete="off" />
+        </div>
+        <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Buscar</button>
+      </form>
+
+      <p id="vacio" class="hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn"></p>
+
+      <div id="ficha" class="hidden space-y-6 border-t border-line pt-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p id="f-nombre" class="text-xl font-extrabold text-ink"></p>
+            <p id="f-id" class="font-mono text-xs text-ink-3"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="f-sangre" class="blood-chip"></span>
+            <span id="f-estado" class="rounded-full px-2.5 py-0.5 text-xs font-bold"></span>
+          </div>
+        </div>
+
+        <dl class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Cédula</dt><dd class="mt-0.5 font-semibold text-ink tabular" id="f-cedula"></dd></div>
+          <div class="min-w-0"><dt class="text-xs font-bold uppercase text-ink-3">Correo</dt><dd class="mt-0.5 truncate text-ink-2" id="f-email"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Teléfono</dt><dd class="mt-0.5 text-ink-2 tabular" id="f-tel"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">En BLUD desde</dt><dd class="mt-0.5 text-ink-2" id="f-desde"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Donaciones</dt><dd class="mt-0.5 font-semibold text-ink tabular" id="f-don"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Última donación</dt><dd class="mt-0.5 text-ink-2" id="f-ultima"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Origen</dt><dd class="mt-0.5 text-ink-2" id="f-origen"></dd></div>
+        </dl>
+
+        <div class="space-y-3 border-t border-line pt-6">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-ink-2">Sus solicitudes <span class="text-ink-3 font-semibold normal-case">(<span id="f-n">0</span>)</span></h2>
+          <ul id="f-tickets" class="divide-y divide-line"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</LayoutSoporte>
+
+<script>
+  import { ESTADO_LABEL, consultarDonante, esc, fmtFecha, fmtFechaHora, onDb, toast } from '../../lib/soporte';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  function init() {
+    const form = $<HTMLFormElement>('#form-buscar');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+    let ultima = '';
+
+    const buscar = (q: string) => {
+      ultima = q;
+      const f = consultarDonante(q);
+      $('#ficha').classList.toggle('hidden', !f);
+      const vacio = $('#vacio');
+      vacio.classList.toggle('hidden', !!f);
+      if (!f) {
+        vacio.textContent = 'No encontramos a ese donante. Revisa la cédula o el ID, o pídele que complete su perfil en la app.';
+        return;
+      }
+      const r = f.registro;
+      $('#f-nombre').textContent = r.nombreCompleto;
+      $('#f-id').textContent = r.id;
+      $('#f-sangre').textContent = r.sangre || '—';
+      const ver = r.estado === 'verificado';
+      const est = $('#f-estado');
+      est.textContent = ver ? 'Identidad verificada' : 'Sin verificar';
+      est.className = `rounded-full px-2.5 py-0.5 text-xs font-bold ${ver ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`;
+      $('#f-cedula').textContent = r.cedula;
+      $('#f-email').textContent = r.email || 'No registrado';
+      $('#f-tel').textContent = r.telefono || 'No registrado';
+      $('#f-desde').textContent = fmtFecha(r.fechaRegistro, { day: 'numeric', month: 'short', year: 'numeric' });
+      $('#f-don').textContent = String(f.donaciones);
+      $('#f-ultima').textContent = f.ultimaDonacion ? fmtFecha(f.ultimaDonacion, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Aún no ha donado';
+      $('#f-origen').textContent = r.origen === 'app' ? 'Se registró en la app' : 'Registrado en el centro';
+      $('#f-n').textContent = String(f.tickets.length);
+      $('#f-tickets').innerHTML = f.tickets.length
+        ? f.tickets.map((t) => `<li class="flex items-center justify-between gap-3 py-3">
+            <div class="min-w-0"><p class="font-semibold text-ink"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span> ${esc(t.asunto)}</p>
+            <p class="text-xs text-ink-3">${esc(ESTADO_LABEL[t.estado])} · ${esc(fmtFechaHora(t.actualizado))}</p></div>
+            <a href="/soporte/tickets?id=${esc(t.id)}" class="btn btn-secondary btn-sm">Abrir</a></li>`).join('')
+        : '<li class="py-4 text-sm text-ink-3">Este donante no ha escrito a soporte.</li>';
+    };
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = $<HTMLInputElement>('#buscar').value;
+      if (!q.trim()) return toast('Escribe una cédula, un ID, un correo o el contenido del QR.');
+      buscar(q);
+    });
+
+    onDb(() => { if (ultima) buscar(ultima); });
+    const q = new URLSearchParams(location.search).get('q');
+    if (q) { $<HTMLInputElement>('#buscar').value = q; buscar(q); }
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

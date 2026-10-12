@@ -15,6 +15,7 @@ export const SANGRES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 export const AREA_POR_ROL: Record<string, string> = {
   operador: 'Operación y donaciones',
   laboratorio: 'Laboratorio · tamizaje y fraccionamiento',
+  soporte: 'Atención al donante',
   director: 'Dirección general',
 };
 

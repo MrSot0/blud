@@ -334,6 +334,8 @@ html[data-auth="in"] [data-auth-out] {
 /* ===== Contenido según el rol (donante / operador / director) ===== */
 html:not([data-role="donante"]) [data-role-only="donante"],
 html:not([data-role="operador"]) [data-role-only="operador"],
+html:not([data-role="laboratorio"]) [data-role-only="laboratorio"],
+html:not([data-role="soporte"]) [data-role-only="soporte"],
 html:not([data-role="director"]) [data-role-only="director"] {
   display: none !important;
 }
