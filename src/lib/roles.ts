@@ -15,6 +15,7 @@ export const ROLE_HOME: Record<Role, string> = {
   donante: '/donante/perfil',
   operador: '/operador/panel',
   laboratorio: '/laboratorio/panel',
+  soporte: '/soporte/panel',
   director: '/director/dashboard',
 };
 
@@ -22,6 +23,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   donante: 'Donante',
   operador: 'Operador',
   laboratorio: 'Laboratorio',
+  soporte: 'Soporte',
   director: 'Director',
 };
 
@@ -30,6 +32,7 @@ export function normalizeRole(v: unknown): Role | null {
   if (['donante', 'donor', 'user', 'usuario'].includes(s)) return 'donante';
   if (['operador', 'operator', 'op'].includes(s)) return 'operador';
   if (['laboratorio', 'laboratorista', 'lab', 'bioanalista'].includes(s)) return 'laboratorio';
+  if (['soporte', 'support', 'agente', 'atencion'].includes(s)) return 'soporte';
   if (['director', 'admin', 'administrador'].includes(s)) return 'director';
   return null;
 }

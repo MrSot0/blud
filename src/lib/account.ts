@@ -14,6 +14,7 @@ import type { Role } from './roles';
 import { centroById, fmtFecha, getCita, loadDonor } from './donante';
 import { kpis, operadorActual } from './operador';
 import { kpisLab } from './laboratorio';
+import { kpisSoporte } from './soporte';
 
 const fill = (selector: string, value: string) =>
   document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
@@ -22,12 +23,14 @@ const HOME_LABEL: Record<Role, string> = {
   donante: 'Mi perfil',
   operador: 'Ir al panel de operación',
   laboratorio: 'Ir al panel del laboratorio',
+  soporte: 'Ir al panel de soporte',
   director: 'Ir al dashboard',
 };
 const CTA_LABEL: Record<Role, string> = {
   donante: 'Agendar una donación',
   operador: 'Ir al panel de operación',
   laboratorio: 'Ir al panel del laboratorio',
+  soporte: 'Ir al panel de soporte',
   director: 'Ir al dashboard',
 };
 
@@ -77,6 +80,16 @@ export function renderAccount(): boolean {
     fill('[data-lab-pendientes]', String(k.porAnalizar));
     fill('[data-lab-positivos]', String(k.positivosSinNotificar));
     fill('[data-next-appointment-short]', k.porAnalizar ? `${k.porAnalizar} muestras por analizar` : 'Sin muestras pendientes');
+    return true;
+  }
+
+  if (role === 'soporte') {
+    const k = kpisSoporte();
+    fill('[data-user-blood]', ROLE_LABEL.soporte);
+    fill('[data-op-centro]', operadorActual().centro);
+    fill('[data-sop-abiertos]', String(k.sinResolver));
+    fill('[data-sop-mios]', String(k.mios));
+    fill('[data-next-appointment-short]', k.sinAsignar ? `${k.sinAsignar} solicitudes sin asignar` : 'Sin solicitudes pendientes');
     return true;
   }
 

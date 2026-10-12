@@ -182,6 +182,44 @@ export interface CasoPositivo {
   notificadoPor?: string;
 }
 
+// ---------------------------------------------------------------- Soporte
+export type EstadoTicket = 'abierto' | 'en_proceso' | 'resuelto';
+
+export interface MensajeTicket {
+  id: string;
+  autor: 'donante' | 'soporte';
+  nombre: string;
+  texto: string;
+  fecha: string; // ISO con hora
+}
+
+export interface NotaTicket {
+  id: string;
+  autor: string;
+  texto: string;
+  fecha: string;
+}
+
+export interface Ticket {
+  id: string;
+  codigo: string; // TCK-XXXXXX
+  donanteId: string;
+  donanteNombre: string;
+  donanteEmail: string;
+  asunto: string;
+  estado: EstadoTicket;
+  prioridad: 'normal' | 'alta';
+  creado: string;
+  actualizado: string;
+  asignadoA?: { id: string; nombre: string };
+  mensajes: MensajeTicket[];
+  /** Notas internas: solo las ve el personal de soporte. */
+  notas: NotaTicket[];
+  resueltoEn?: string;
+}
+
+export const codigoTicket = (id: string) => 'TCK-' + id.replace(/^tk-/, '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
+
 /** DON-AB12CD: identifica la bolsa sin exponer datos del donante */
 export const codigoDonacion = (id: string) => 'DON-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase();
 
@@ -193,6 +231,7 @@ export const entregas = collection<EntregaOp>('blud-db-entregas');
 export const pruebas = collection<PruebaLab>('blud-db-pruebas');
 export const fracciones = collection<Fraccionamiento>('blud-db-fracciones');
 export const positivos = collection<CasoPositivo>('blud-db-positivos');
+export const tickets = collection<Ticket>('blud-db-tickets');
 
 // ---------------------------------------------------------------- Registro de donantes
 /** V12345678 / 12345678 / v-12345678 → V-12345678 */

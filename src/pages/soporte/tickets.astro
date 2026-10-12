@@ -1,0 +1,283 @@
+---
+// src/pages/soporte/tickets.astro
+import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
+import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
+---
+
+<LayoutSoporte title="BLUD | Solicitudes">
+  <div class="container-blud py-8 space-y-8">
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Solicitudes</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Atiende los mensajes de los donantes: toma un caso, responde y ciérralo cuando esté resuelto.</p>
+      </div>
+      <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Filtrar solicitudes">
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="bandeja" aria-pressed="false">
+          Bandeja <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="bandeja">0</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="mios" aria-pressed="false">
+          Mis casos <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="mios">0</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="resueltos" aria-pressed="false">
+          Resueltos <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="resueltos">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <section data-frame="lista">
+      <div class="panel p-6 sm:p-8 space-y-4 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink" id="lista-titulo">Bandeja</h2>
+          <input type="search" id="filtro" class="field sm:w-80" placeholder="Buscar por código, donante o asunto…" aria-label="Buscar solicitudes" />
+        </div>
+        <ul id="lista" class="divide-y divide-line"></ul>
+        <p id="lista-vacia" class="hidden py-8 text-center text-sm text-ink-3"></p>
+      </div>
+    </section>
+
+    <!-- Detalle -->
+    <section data-frame="detalle" class="hidden">
+      <div class="panel p-6 sm:p-8 space-y-6 w-full">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+          <button type="button" id="btn-volver" class="btn btn-secondary btn-sm">← Volver</button>
+          <div class="flex flex-wrap items-center gap-2" id="d-chips"></div>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-bold text-ink" id="d-asunto"></h2>
+          <p class="font-mono text-xs text-ink-3" id="d-codigo"></p>
+        </div>
+
+        <dl class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Donante</dt><dd class="mt-0.5 font-semibold text-ink"><a id="d-donante" class="link-arrow" href="/soporte/donantes"></a></dd></div>
+          <div class="min-w-0"><dt class="text-xs font-bold uppercase text-ink-3">Correo</dt><dd class="mt-0.5 truncate text-ink-2" id="d-email"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Recibida</dt><dd class="mt-0.5 text-ink-2" id="d-creado"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Atiende</dt><dd class="mt-0.5 text-ink-2" id="d-asignado"></dd></div>
+        </dl>
+
+        <div class="flex flex-wrap gap-2" id="d-acciones"></div>
+
+        <ol id="hilo" class="space-y-3 border-t border-line pt-6" aria-label="Conversación"></ol>
+
+        <form id="form-resp" class="space-y-3 border-t border-line pt-6" novalidate>
+          <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+            <div class="sm:w-80">
+              <label for="rapida" class="block text-xs font-bold uppercase text-ink-2 mb-1">Respuesta rápida</label>
+              <select id="rapida" class="field">
+                <option value="">Escribir desde cero…</option>
+                {RESPUESTAS_RAPIDAS.map((r, i) => <option value={String(i)}>{r.titulo}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="resp" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tu respuesta al donante</label>
+            <textarea id="resp" rows="5" class="field resize-y" maxlength="2000" placeholder="Escribe tu respuesta…"></textarea>
+          </div>
+          <p id="resp-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
+            <button type="button" id="btn-enviar-resolver" class="btn btn-secondary min-h-12 sm:px-8">Enviar y resolver</button>
+            <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Enviar respuesta</button>
+          </div>
+        </form>
+
+        <div class="space-y-3 border-t border-line pt-6">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-ink-2">Notas internas <span class="font-normal normal-case text-ink-3">(el donante no las ve)</span></h3>
+          <ul id="notas" class="space-y-2"></ul>
+          <form id="form-nota" class="flex flex-col sm:flex-row gap-3" novalidate>
+            <input id="nota" class="field flex-1" placeholder="Añadir una nota para el equipo…" maxlength="500" />
+            <button type="submit" class="btn btn-secondary min-h-12 sm:px-8">Guardar nota</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+</LayoutSoporte>
+
+<script>
+  import {
+    ESTADO_LABEL, RESPUESTAS_RAPIDAS, agregarNota, bandeja, cambiarEstado, esc, fmtFechaHora, getTicket, getTickets,
+    marcarUrgente, misCasos, onDb, resueltos, responderComoSoporte, soltarCaso, soporteActual, toast, tomarCaso,
+  } from '../../lib/soporte';
+  import type { Ticket } from '../../lib/soporte';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  const chipEstado = (t: Ticket) => {
+    const c = t.estado === 'resuelto' ? 'bg-ok-soft text-ok' : t.estado === 'en_proceso' ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink';
+    return `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${c}">${ESTADO_LABEL[t.estado]}</span>`;
+  };
+  const chipUrgente = (t: Ticket) => (t.prioridad === 'alta' ? '<span class="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-white">Urgente</span>' : '');
+
+  function init() {
+    const form = $<HTMLFormElement>('#form-resp');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+
+    type Vista = 'bandeja' | 'mios' | 'resueltos';
+    let vista: Vista = 'bandeja';
+    let abierto: string | null = null;
+
+    const frames = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const botones = [...document.querySelectorAll<HTMLButtonElement>('[data-vista]')];
+    const mostrarFrame = (f: 'lista' | 'detalle') => frames.forEach((x) => x.classList.toggle('hidden', x.dataset.frame !== f));
+
+    const marcarBotones = () =>
+      botones.forEach((b) => {
+        const on = !abierto && b.dataset.vista === vista;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('btn-primary', on);
+        b.classList.toggle('btn-secondary', !on);
+      });
+
+    const setVista = (v: Vista) => {
+      vista = v;
+      abierto = null;
+      mostrarFrame('lista');
+      marcarBotones();
+      renderLista();
+    };
+    const abrir = (id: string) => {
+      if (!getTicket(id)) return;
+      abierto = id;
+      mostrarFrame('detalle');
+      marcarBotones();
+      renderDetalle(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    const volver = () => setVista(vista);
+
+    botones.forEach((b) => b.addEventListener('click', () => setVista(b.dataset.vista as Vista)));
+    $('#btn-volver').addEventListener('click', volver);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && abierto && !(e.target instanceof HTMLTextAreaElement)) volver();
+    });
+    $('#filtro').addEventListener('input', renderLista);
+
+    // ---------- Lista
+    function renderLista() {
+      const q = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
+      const base = vista === 'bandeja' ? bandeja() : vista === 'mios' ? misCasos() : resueltos();
+      const vis = base.filter((t) => !q || `${t.codigo} ${t.donanteNombre} ${t.asunto} ${t.mensajes.at(-1)?.texto ?? ''}`.toLowerCase().includes(q));
+      $('#lista-titulo').textContent = vista === 'bandeja' ? 'Bandeja (sin resolver)' : vista === 'mios' ? 'Mis casos' : 'Resueltos';
+
+      const all = getTickets();
+      const yo = soporteActual().id;
+      $('[data-cuenta="bandeja"]').textContent = String(all.filter((t) => t.estado !== 'resuelto').length);
+      $('[data-cuenta="mios"]').textContent = String(all.filter((t) => t.estado !== 'resuelto' && t.asignadoA?.id === yo).length);
+      $('[data-cuenta="resueltos"]').textContent = String(all.filter((t) => t.estado === 'resuelto').length);
+
+      $('#lista').innerHTML = vis.map((t) => {
+        const ult = t.mensajes.at(-1);
+        return `<li><button type="button" data-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 py-4 text-left transition-colors hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2 rounded-control">
+          <div class="min-w-0 flex-1">
+            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span> ${chipUrgente(t)}</p>
+            <p class="truncate text-sm text-ink-2"><span class="font-semibold">${esc(t.donanteNombre)}:</span> ${esc(ult?.texto ?? '')}</p>
+          </div>
+          <div class="flex items-center gap-3 sm:shrink-0">
+            ${chipEstado(t)}
+            <span class="text-xs text-ink-3">${esc(t.asignadoA ? t.asignadoA.nombre.split(' ').slice(-1)[0] : 'Sin asignar')}</span>
+            <span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span>
+          </div></button></li>`;
+      }).join('');
+      const vacio = $('#lista-vacia');
+      vacio.classList.toggle('hidden', vis.length > 0);
+      vacio.textContent = q ? 'Ninguna solicitud coincide con tu búsqueda.' : vista === 'resueltos' ? 'Todavía no hay solicitudes resueltas.' : vista === 'mios' ? 'No tienes casos asignados. Toma uno de la bandeja.' : 'No hay solicitudes pendientes 🎉';
+    }
+    $('#lista').addEventListener('click', (e) => {
+      const id = (e.target as HTMLElement).closest<HTMLElement>('[data-abrir]')?.dataset.abrir;
+      if (id) abrir(id);
+    });
+
+    // ---------- Detalle
+    function renderDetalle(primera = false) {
+      const t = abierto ? getTicket(abierto) : undefined;
+      if (!t) return;
+      const yo = soporteActual().id;
+      const mio = t.asignadoA?.id === yo;
+      $('#d-asunto').textContent = t.asunto;
+      $('#d-codigo').textContent = t.codigo;
+      $('#d-chips').innerHTML = `${chipUrgente(t)} ${chipEstado(t)}`;
+      const dn = $<HTMLAnchorElement>('#d-donante');
+      dn.textContent = t.donanteNombre;
+      dn.href = `/soporte/donantes?q=${encodeURIComponent(t.donanteId)}`;
+      $('#d-email').textContent = t.donanteEmail || '—';
+      $('#d-creado').textContent = fmtFechaHora(t.creado);
+      $('#d-asignado').textContent = t.asignadoA ? (mio ? 'Tú' : t.asignadoA.nombre) : 'Sin asignar';
+
+      const btn = (accion: string, texto: string, cls = 'btn-secondary') => `<button type="button" class="btn ${cls} btn-sm" data-accion="${accion}">${texto}</button>`;
+      $('#d-acciones').innerHTML = [
+        t.estado !== 'resuelto' && !mio ? btn('tomar', 'Tomar este caso', 'btn-primary') : '',
+        t.estado !== 'resuelto' && t.asignadoA && mio ? btn('soltar', 'Soltar caso') : '',
+        t.estado !== 'resuelto' ? btn('urgente', t.prioridad === 'alta' ? 'Quitar urgencia' : 'Marcar urgente') : '',
+        t.estado === 'resuelto' ? btn('reabrir', 'Reabrir solicitud', 'btn-primary') : btn('resolver', 'Marcar como resuelta'),
+      ].join('');
+
+      $('#hilo').innerHTML = t.mensajes.map((m) => {
+        const yoMsg = m.autor === 'soporte';
+        return `<li class="flex ${yoMsg ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-2xl px-4 py-3 text-sm ${yoMsg ? 'bg-accent-soft text-ink' : 'bg-sunken text-ink'}">
+          <p class="mb-1 text-xs font-bold ${yoMsg ? 'text-accent-ink' : 'text-ink-2'}">${esc(m.nombre)} <span class="font-normal text-ink-3">· ${esc(fmtFechaHora(m.fecha))}</span></p>
+          <p class="whitespace-pre-wrap">${esc(m.texto)}</p></div></li>`;
+      }).join('');
+
+      $('#notas').innerHTML = t.notas.length
+        ? t.notas.map((n) => `<li class="rounded-control bg-warn-soft px-3 py-2 text-sm text-ink"><span class="font-bold">${esc(n.autor)}</span> <span class="text-xs text-ink-3">· ${esc(fmtFechaHora(n.fecha))}</span><br>${esc(n.texto)}</li>`).join('')
+        : '<li class="text-sm text-ink-3">Sin notas todavía.</li>';
+
+      if (primera) {
+        $<HTMLTextAreaElement>('#resp').value = '';
+        $<HTMLSelectElement>('#rapida').value = '';
+        $('#resp-error').classList.add('hidden');
+      }
+    }
+
+    $('#d-acciones').addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest<HTMLElement>('[data-accion]')?.dataset.accion;
+      if (!a || !abierto) return;
+      const t = getTicket(abierto)!;
+      if (a === 'tomar') { tomarCaso(abierto); toast('Caso asignado a ti.'); }
+      if (a === 'soltar') { soltarCaso(abierto); toast('Caso devuelto a la bandeja.'); }
+      if (a === 'urgente') marcarUrgente(abierto, t.prioridad !== 'alta');
+      if (a === 'resolver') { cambiarEstado(abierto, 'resuelto'); toast('Solicitud marcada como resuelta ✅'); }
+      if (a === 'reabrir') { cambiarEstado(abierto, 'en_proceso'); toast('Solicitud reabierta.'); }
+    });
+
+    $('#rapida').addEventListener('change', (e) => {
+      const i = (e.target as HTMLSelectElement).value;
+      if (i === '') return;
+      $<HTMLTextAreaElement>('#resp').value = RESPUESTAS_RAPIDAS[Number(i)].texto;
+      $('#resp').focus();
+    });
+
+    const enviar = (resolver: boolean) => {
+      if (!abierto) return;
+      const err = $('#resp-error');
+      const r = responderComoSoporte(abierto, $<HTMLTextAreaElement>('#resp').value, resolver);
+      if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
+      err.classList.add('hidden');
+      $<HTMLTextAreaElement>('#resp').value = '';
+      $<HTMLSelectElement>('#rapida').value = '';
+      toast(resolver ? 'Respuesta enviada y solicitud resuelta ✅' : 'Respuesta enviada al donante.');
+    };
+    form.addEventListener('submit', (e) => { e.preventDefault(); enviar(false); });
+    $('#btn-enviar-resolver').addEventListener('click', () => enviar(true));
+
+    $('#form-nota').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!abierto) return;
+      const inp = $<HTMLInputElement>('#nota');
+      const r = agregarNota(abierto, inp.value);
+      if (!r.ok) return toast(r.motivo);
+      inp.value = '';
+    });
+
+    const render = () => { renderLista(); if (abierto) renderDetalle(); };
+    const id = new URLSearchParams(location.search).get('id');
+    setVista('bandeja');
+    if (id) abrir(id);
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
