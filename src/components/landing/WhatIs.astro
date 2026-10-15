@@ -1,128 +1,148 @@
 ---
+// Matrix.astro - Matriz de Compatibilidad con Selector Desplegable Animado (Fondo Adaptativo + Stripes)
 import DropField from '../DropField.astro';
 import Icon from '../Icon.astro';
 
-const labPhoto = "https://images.unsplash.com/photo-1579154204601-01588f351e67";
-const labSrc = (w: number) => `${labPhoto}?q=70&w=${w}&auto=format&fit=crop`;
-
-// Vista previa de la matriz: tipos que O- puede recibir (solo O-) frente al resto.
-const previewTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
-const pretty = (t: string) => t.replace('-', '−');
+const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 ---
 
-<section id="que-es" class="relative isolate pb-24 pt-24 lg:pb-32 lg:pt-32 stripe-pattern-section">
-  <!-- Fondo decorativo de íconos -->
-  <DropField seed={1} />
+<section id="compatibilidad" class="relative isolate overflow-hidden py-20 lg:py-28 select-none stripe-pattern-section">
+  <DropField seed={3} />
 
-  <div class="container-blud relative z-10">
-    <div class="section-head" data-reveal>
-      <h2 class="section-title">¿Qué es <span class="text-accent">BLUD</span>?</h2>
-      <p class="section-lead">
-        Un ecosistema digital para que donar sangre sea más rápido y más claro: reduce los tiempos de
-        respuesta en situaciones críticas y coordina a donantes y centros médicos en una sola red.
+  <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 z-10">
+    
+    <!-- Encabezado -->
+    <div class="text-center max-w-2xl mx-auto space-y-4" data-reveal>
+      <h2 class="text-3xl font-black text-ink sm:text-4xl lg:text-5xl tracking-tight">
+        Matriz de <span class="text-accent">Compatibilidad</span> Sanguínea
+      </h2>
+      <p class="text-base sm:text-lg text-ink-2 leading-relaxed">
+        Selecciona un tipo de sangre para consultar al instante sus compatibilidades de donación y recepción.
       </p>
     </div>
 
-    <div class="mt-14 grid gap-4 lg:mt-16 lg:grid-cols-12 lg:grid-rows-[auto_auto] lg:gap-5">
-      <!-- Red de bancos de sangre: foto real -->
-      <article
-        class="group relative isolate flex min-h-[26rem] flex-col justify-end overflow-hidden rounded-panel bg-night p-7 text-white lg:col-span-7 lg:row-span-2 lg:min-h-[34rem] lg:p-10 shadow-sm"
-        data-reveal
-      >
-        <img
-          src={labSrc(1200)}
-          srcset={`${labSrc(640)} 640w, ${labSrc(1200)} 1200w`}
-          sizes="(min-width: 1024px) 58vw, 100vw"
-          alt="Técnica de laboratorio trabajando en un banco de sangre con equipos de análisis"
-          loading="lazy"
-          decoding="async"
-          class="absolute inset-0 -z-10 size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-        />
-        <div class="absolute inset-0 -z-10 bg-[linear-gradient(180deg,transparent_20%,rgb(26_32_44/0.7)_55%,rgb(26_32_44/0.96)_100%)]" aria-hidden="true"></div>
+    <!-- CUSTOM SELECTOR ANIMADO -->
+    <div class="mt-10 max-w-xs mx-auto relative z-30" data-reveal style="--reveal-delay:1">
+      <label class="block text-xs font-black uppercase tracking-wider text-ink-3 mb-2 text-center">
+        Selecciona el Tipo de Sangre
+      </label>
+      
+      <div class="relative" id="custom-dropdown">
+        <!-- Botón del Selector Custom -->
+        <button
+          type="button"
+          id="dropdown-trigger"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          class="w-full bg-surface border-2 border-line hover:border-accent focus:border-accent focus:ring-4 focus:ring-accent/15 text-ink font-extrabold text-lg rounded-2xl px-5 py-3.5 shadow-md flex items-center justify-between transition-all duration-300 outline-none cursor-pointer group"
+        >
+          <span id="selected-text" class="mx-auto">Tipo O−</span>
+          <Icon name="caret-down" id="dropdown-arrow" class="w-5 h-5 text-ink-3 transition-transform duration-300" />
+        </button>
 
-        <span class="mb-5 grid size-11 place-items-center rounded-control bg-white/12 text-white backdrop-blur-md">
-          <Icon name="map-trifold" class="size-6" />
-        </span>
-        <h3 class="text-2xl font-bold tracking-[-0.03em] lg:text-3xl">Red de bancos de sangre</h3>
-        <p class="mt-3 max-w-md leading-relaxed text-white/80">
-          Hospitales, clínicas y bancos de sangre verificados en un mapa, con su dirección, su contacto y
-          cómo llegar.
-        </p>
-        <a href="#centros" class="mt-6 inline-flex w-fit items-center gap-2 font-semibold text-white underline decoration-white/40 underline-offset-[6px] hover:decoration-white">
-          Ver centros conectados
-          <Icon name="arrow-right" class="size-4" />
-        </a>
-      </article>
-
-      <!-- Conexión inmediata: patrón de ondas en tono de marca -->
-      <article
-        class="relative isolate overflow-hidden rounded-panel border border-accent/15 bg-accent-soft p-7 lg:col-span-5 lg:p-9 shadow-sm"
-        data-reveal
-        style="--reveal-delay:1"
-      >
-        <div class="ripple pointer-events-none absolute -right-24 -top-24 -z-10 size-72" aria-hidden="true"></div>
-        <span class="grid size-11 place-items-center rounded-control bg-accent text-white">
-          <Icon name="bell-ringing" class="size-6" />
-        </span>
-        <h3 class="mt-8 text-2xl font-bold tracking-[-0.03em] text-ink">Conexión inmediata</h3>
-        <p class="mt-3 max-w-md leading-relaxed text-ink-2">
-          Vinculamos de forma automática a donantes voluntarios con pacientes y bancos de sangre que
-          necesitan atención urgente.
-        </p>
-      </article>
-
-      <!-- Compatibilidad: vista previa real de la matriz -->
-      <article
-        class="rounded-panel border border-line bg-surface p-7 lg:col-span-5 lg:p-9 shadow-sm"
-        data-reveal
-        style="--reveal-delay:2"
-      >
-        <div class="flex items-start justify-between gap-6">
-          <span class="grid size-11 place-items-center rounded-control bg-sunken text-ink">
-            <Icon name="intersect-three" class="size-6" />
-          </span>
-          <ul class="grid grid-cols-4 gap-1.5" aria-hidden="true">
-            {previewTypes.map((type) => (
-              <li
-                class:list={[
-                  'grid h-8 w-11 place-items-center rounded-lg font-mono text-xs font-semibold',
-                  type === 'O-' ? 'bg-accent text-white' : 'border border-line text-ink-3',
-                ]}
+        <!-- Lista Desplegable Animada -->
+        <div
+          id="dropdown-menu"
+          class="absolute left-0 right-0 mt-2 bg-surface/95 backdrop-blur-md border-2 border-line rounded-2xl shadow-2xl p-2 z-50 transform opacity-0 scale-95 pointer-events-none transition-all duration-200 origin-top divide-y divide-line"
+        >
+          <div class="grid grid-cols-2 gap-1.5 p-1">
+            {bloodTypes.map((type, idx) => (
+              <button
+                type="button"
+                data-value={type}
+                class={`dropdown-option w-full py-2.5 px-3 rounded-xl font-extrabold text-sm transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+                  idx === 0 
+                    ? "bg-accent text-white shadow-sm shadow-accent/30" 
+                    : "text-ink-2 hover:bg-sunken hover:text-accent"
+                }`}
               >
-                {pretty(type)}
-              </li>
+                <span>Tipo</span>
+                <span class="text-base">{type.replace('-', '−')}</span>
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
-        <h3 class="mt-8 text-2xl font-bold tracking-[-0.03em] text-ink">Algoritmo de compatibilidad</h3>
-        <p class="mt-3 max-w-md leading-relaxed text-ink-2">
-          Cruza tipo de sangre y factor Rh para proponerte solo donaciones compatibles. Las pruebas
-          finales siguen en manos del hospital.
-        </p>
-        <a href="#compatibilidad" class="link-arrow mt-5">
-          Consultar la matriz
-          <Icon name="arrow-right" class="size-4" />
-        </a>
-      </article>
+      </div>
     </div>
+
+    <!-- Caja de Resultados Animada -->
+    <div 
+      id="results-box"
+      class="mt-8 rounded-3xl bg-surface border-2 border-line p-6 sm:p-8 shadow-xl transition-all duration-300 relative z-10"
+      data-reveal style="--reveal-delay:2"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center pb-6 border-b-2 border-line">
+        
+        <!-- Puede Donar A -->
+        <div class="space-y-3">
+          <span class="block text-xs font-black uppercase tracking-wider text-ink-3">
+            Puede Donar A
+          </span>
+          <div id="res-give" class="flex flex-wrap justify-center gap-2 min-h-[36px]"></div>
+        </div>
+
+        <!-- Badge Central Destacado -->
+        <div class="flex flex-col items-center justify-center space-y-2 order-first md:order-none py-2 md:py-0 border-y md:border-y-0 md:border-x border-line">
+          <span class="block text-xs font-black uppercase tracking-wider text-ink-3">
+            Tipo Evaluado
+          </span>
+          
+          <div class="relative group">
+            <div class="absolute -inset-1 bg-accent rounded-2xl blur-sm opacity-40 group-hover:opacity-75 transition duration-300"></div>
+            <span 
+              id="res-type" 
+              class="relative inline-flex items-center justify-center h-14 min-w-[4.5rem] px-4 rounded-2xl bg-accent text-white font-black text-2xl shadow-lg shadow-accent/30 transition-transform duration-300 transform group-hover:scale-105"
+            >
+              O−
+            </span>
+          </div>
+
+          <div id="res-tag" class="pt-1.5"></div>
+        </div>
+
+        <!-- Puede Recibir De -->
+        <div class="space-y-3">
+          <span class="block text-xs font-black uppercase tracking-wider text-ink-3">
+            Puede Recibir De
+          </span>
+          <div id="res-receive" class="flex flex-wrap justify-center gap-2 min-h-[36px]"></div>
+        </div>
+
+      </div>
+
+      <!-- Nota Informativa -->
+      <div class="mt-6 bg-sunken/80 border border-line rounded-2xl p-4 sm:p-5 flex items-start gap-4 shadow-inner">
+        <div class="p-2.5 bg-accent/10 text-accent rounded-xl shrink-0 mt-0.5">
+          <Icon name="info" class="w-5 h-5" />
+        </div>
+        <div>
+          <h4 class="text-xs font-black text-ink uppercase tracking-wide">
+            Nota de Compatibilidad
+          </h4>
+          <p id="res-message" class="text-sm text-ink-2 leading-relaxed mt-1">
+            Cargando información...
+          </p>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </section>
 
+<!-- CSS del patrón adaptativo -->
 <style>
-  .ripple {
-    border-radius: 999px;
-    background: repeating-radial-gradient(
-      circle at center,
-      color-mix(in srgb, var(--accent) 16%, transparent) 0 1px,
-      transparent 1px 22px
-    );
-    mask-image: radial-gradient(circle at center, #000 30%, transparent 70%);
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-pop {
+    animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   }
 
-  /* El patrón decorativo conserva el fondo semántico del tema. */
   .stripe-pattern-section {
     position: relative;
-    background-color: var(--surface);
+    background-color: var(--canvas, #ffffff);
   }
 
   .stripe-pattern-section::before {
@@ -140,3 +160,148 @@ const pretty = (t: string) => t.replace('-', '−');
     );
   }
 </style>
+
+<!-- Data JSON embed -->
+<script id="compatibility-json" type="application/json" is:raw>
+  {
+    "O-": { "giveTo": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "receiveFrom": ["O-"], "isUniversalDonor": true },
+    "O+": { "giveTo": ["O+", "A+", "B+", "AB+"], "receiveFrom": ["O+", "O-"] },
+    "A-": { "giveTo": ["A+", "A-", "AB+", "AB-"], "receiveFrom": ["A-", "O-"] },
+    "A+": { "giveTo": ["A+", "AB+"], "receiveFrom": ["A+", "A-", "O+", "O-"] },
+    "B-": { "giveTo": ["B+", "B-", "AB+", "AB-"], "receiveFrom": ["B-", "O-"] },
+    "B+": { "giveTo": ["B+", "AB+"], "receiveFrom": ["B+", "B-", "O+", "O-"] },
+    "AB-": { "giveTo": ["AB+", "AB-"], "receiveFrom": ["AB-", "A-", "B-", "O-"] },
+    "AB+": { "giveTo": ["AB+"], "receiveFrom": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "isUniversalReceiver": true }
+  }
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const dataElement = document.getElementById("compatibility-json");
+    if (!dataElement) return;
+    
+    const matrixData = JSON.parse(dataElement.textContent || "{}");
+
+    const trigger = document.getElementById("dropdown-trigger");
+    const menu = document.getElementById("dropdown-menu");
+    const arrow = document.getElementById("dropdown-arrow");
+    const selectedText = document.getElementById("selected-text");
+    const options = document.querySelectorAll(".dropdown-option");
+
+    const resultsBox = document.getElementById("results-box");
+    const resType = document.getElementById("res-type");
+    const resGive = document.getElementById("res-give");
+    const resReceive = document.getElementById("res-receive");
+    const resTag = document.getElementById("res-tag");
+    const resMessage = document.getElementById("res-message");
+
+    let isOpen = false;
+
+    function pretty(t) {
+      return t.replace('-', '−');
+    }
+
+    function toggleDropdown(show) {
+      isOpen = show !== undefined ? show : !isOpen;
+
+      if (trigger) {
+        trigger.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      if (isOpen) {
+        if (menu) {
+          menu.classList.remove("opacity-0", "scale-95", "pointer-events-none");
+          menu.classList.add("opacity-100", "scale-100", "pointer-events-auto");
+        }
+        if (arrow) arrow.classList.add("rotate-180", "text-accent");
+        if (trigger) trigger.classList.add("border-accent", "ring-4", "ring-accent/15");
+      } else {
+        if (menu) {
+          menu.classList.remove("opacity-100", "scale-100", "pointer-events-auto");
+          menu.classList.add("opacity-0", "scale-95", "pointer-events-none");
+        }
+        if (arrow) arrow.classList.remove("rotate-180", "text-accent");
+        if (trigger) trigger.classList.remove("border-accent", "ring-4", "ring-accent/15");
+      }
+    }
+
+    if (trigger) {
+      trigger.addEventListener("click", function () {
+        toggleDropdown();
+      });
+    }
+
+    document.addEventListener("click", function (e) {
+      if (trigger && menu && !trigger.contains(e.target) && !menu.contains(e.target)) {
+        toggleDropdown(false);
+      }
+    });
+
+    function renderBadges(list) {
+      return list
+        .map(function (item) {
+          return '<span class="inline-block rounded-lg bg-surface px-3 py-1 text-xs font-black text-ink border-2 border-line shadow-xs animate-pop">' + pretty(item) + '</span>';
+        })
+        .join("");
+    }
+
+    function updateView(selectedType) {
+      const info = matrixData[selectedType];
+      if (!info) return;
+
+      if (selectedText) selectedText.textContent = "Tipo " + pretty(selectedType);
+
+      if (resultsBox) {
+        resultsBox.classList.add("scale-[0.98]", "opacity-80");
+        setTimeout(function () {
+          resultsBox.classList.remove("scale-[0.98]", "opacity-80");
+        }, 150);
+      }
+
+      if (resType) resType.textContent = pretty(selectedType);
+      if (resGive) resGive.innerHTML = renderBadges(info.giveTo);
+      if (resReceive) resReceive.innerHTML = renderBadges(info.receiveFrom);
+
+      if (resTag) {
+        if (info.isUniversalDonor) {
+          resTag.innerHTML = '<span class="inline-block rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-600 dark:text-emerald-400 border-2 border-emerald-300 animate-pulse">Donante Universal</span>';
+        } else if (info.isUniversalReceiver) {
+          resTag.innerHTML = '<span class="inline-block rounded-full bg-blue-500/15 px-3 py-1 text-xs font-black text-blue-600 dark:text-blue-400 border-2 border-blue-300 animate-pulse">Receptor Universal</span>';
+        } else {
+          resTag.innerHTML = '';
+        }
+      }
+
+      if (resMessage) {
+        let msg = "El tipo <strong>" + pretty(selectedType) + "</strong> es compatible para donar a <strong>" + info.giveTo.length + "</strong> grupo(s) (" + info.giveTo.map(pretty).join(", ") + ") y puede recibir de <strong>" + info.receiveFrom.length + "</strong> grupo(s) (" + info.receiveFrom.map(pretty).join(", ") + ").";
+
+        if (info.isUniversalDonor) {
+          msg += ' <span class="text-emerald-700 dark:text-emerald-400 font-semibold">Al ser Donante Universal, sus glóbulos rojos son aptos para cualquier paciente.</span>';
+        } else if (info.isUniversalReceiver) {
+          msg += ' <span class="text-blue-700 dark:text-blue-400 font-semibold">Al ser Receptor Universal, puede recibir transfusiones de cualquier grupo sanguíneo.</span>';
+        }
+
+        resMessage.innerHTML = msg;
+      }
+    }
+
+    options.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const val = btn.getAttribute("data-value") || "O-";
+
+        options.forEach(function (opt) {
+          opt.classList.remove("bg-accent", "text-white", "shadow-sm", "shadow-accent/30");
+          opt.classList.add("text-ink-2", "hover:bg-sunken", "hover:text-accent");
+        });
+
+        btn.classList.remove("text-ink-2", "hover:bg-sunken", "hover:text-accent");
+        btn.classList.add("bg-accent", "text-white", "shadow-sm", "shadow-accent/30");
+
+        updateView(val);
+        toggleDropdown(false);
+      });
+    });
+
+    updateView("O-");
+  });
+</script>

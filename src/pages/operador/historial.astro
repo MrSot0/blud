@@ -1,0 +1,109 @@
+---
+// src/pages/operador/historial.astro
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+
+const filtros = [
+  { id: 'todos', label: 'Todo' },
+  { id: 'donante', label: 'Donantes' },
+  { id: 'donacion', label: 'Donaciones' },
+  { id: 'pedido', label: 'Pedidos' },
+  { id: 'entrega', label: 'Entregas' },
+];
+---
+
+<LayoutOperador title="BLUD | Historial de actividad">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Historial</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Todo lo que has hecho: verificaciones, donaciones, pedidos y entregas.</p>
+      </div>
+      <button type="button" id="btn-csv" class="btn btn-secondary self-start sm:self-auto">Exportar CSV</button>
+    </div>
+
+    <section class="panel p-6 sm:p-8 space-y-5">
+      <div class="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar por tipo">
+          {filtros.map((f) => (
+            <button type="button" class="chip" data-filtro={f.id} aria-pressed={f.id === 'todos' ? 'true' : 'false'}>
+              {f.label} <span class="opacity-70" data-count={f.id}>0</span>
+            </button>
+          ))}
+        </div>
+        <input type="search" id="buscar" class="field lg:max-w-xs" placeholder="Buscar en el historial…" />
+      </div>
+
+      <ol id="lista" class="divide-y divide-line"></ol>
+      <p id="vacio" class="hidden py-8 text-center text-sm text-ink-3">No hay actividad que coincida.</p>
+    </section>
+  </div>
+</LayoutOperador>
+
+<style is:global>
+  .chip { padding: 0.5rem 0.9rem; border: 2px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: 0.875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; transition: all 200ms; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+
+<script>
+  import { actividad, downloadFile, esc, fmtFecha, onDb, toCSV, toast } from '../../lib/operador';
+  import type { Evento } from '../../lib/operador';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  const ETIQUETA: Record<Evento['tipo'], { icono: string; clase: string }> = {
+    donante: { icono: '🪪', clase: 'bg-ok-soft text-ok' },
+    donacion: { icono: '🩸', clase: 'bg-accent-soft text-accent-ink' },
+    pedido: { icono: '📋', clase: 'bg-warn-soft text-warn' },
+    entrega: { icono: '🚚', clase: 'bg-sunken text-ink-2' },
+  };
+
+  function init() {
+    const lista = $('#lista');
+    if (lista.dataset.ready) return;
+    lista.dataset.ready = '1';
+
+    let filtro = 'todos';
+    let eventos: Evento[] = [];
+
+    const visibles = () => {
+      const q = $<HTMLInputElement>('#buscar').value.trim().toLowerCase();
+      return eventos.filter((e) => (filtro === 'todos' || e.tipo === filtro) && (!q || `${e.titulo} ${e.detalle}`.toLowerCase().includes(q)));
+    };
+
+    const render = () => {
+      eventos = actividad();
+      document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+        const id = el.dataset.count!;
+        el.textContent = String(id === 'todos' ? eventos.length : eventos.filter((e) => e.tipo === id).length);
+      });
+      const vis = visibles();
+      $('#vacio').classList.toggle('hidden', vis.length > 0);
+      lista.innerHTML = vis.map((e) => `<li class="flex items-start gap-4 py-4">
+        <span class="grid size-10 shrink-0 place-items-center rounded-full ${ETIQUETA[e.tipo].clase}" aria-hidden="true">${ETIQUETA[e.tipo].icono}</span>
+        <div class="min-w-0 flex-1"><p class="font-semibold text-ink">${esc(e.titulo)}</p><p class="text-sm text-ink-2">${esc(e.detalle)}</p></div>
+        <span class="shrink-0 text-xs text-ink-3">${esc(fmtFecha(e.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</span></li>`).join('');
+    };
+
+    document.querySelectorAll<HTMLElement>('[data-filtro]').forEach((b) =>
+      b.addEventListener('click', () => {
+        filtro = b.dataset.filtro!;
+        document.querySelectorAll('[data-filtro]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        render();
+      })
+    );
+    $('#buscar').addEventListener('input', render);
+
+    $('#btn-csv').addEventListener('click', () => {
+      const rows = visibles().map((e) => ({ Fecha: e.fecha, Tipo: e.tipo, Evento: e.titulo, Detalle: e.detalle }));
+      if (!rows.length) return toast('No hay datos para exportar.');
+      downloadFile(`blud-historial-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows), 'text/csv');
+    });
+
+    render();
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

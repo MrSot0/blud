@@ -1,0 +1,332 @@
+---
+// src/components/app/Sidebar.astro
+// Menú lateral de las zonas privadas. Las opciones salen de lib/menus.ts según el rol.
+import Icon from '../Icon.astro';
+import { ICON_PATHS, MENUS } from '../../lib/menus';
+import type { MenuItem } from '../../lib/menus';
+import type { Role } from '../../lib/roles';
+
+interface Props {
+  role: Role;
+}
+
+const { role } = Astro.props;
+const menu = MENUS[role] ?? { titulo: 'Menú', items: [], cuenta: [] };
+
+const normalize = (p: string) => p.replace(/\/$/, '') || '/';
+const currentPath = normalize(Astro.url.pathname);
+const isActive = (href: string) => normalize(href) === currentPath;
+
+const grupos: { titulo?: string; items: MenuItem[] }[] = [
+  { items: menu.items },
+  ...(menu.cuenta.length ? [{ titulo: 'Cuenta', items: menu.cuenta }] : []),
+];
+let n = 0;
+---
+
+<!-- Fondo oscuro traslúcido debajo del Navbar (z-30). Estado controlado por data-open. -->
+<div id="sidebar-overlay" data-open="false" aria-hidden="true"></div>
+
+<!-- Menú lateral por debajo del Navbar (z-40) -->
+<aside id="sidebar-drawer" data-open="false" inert aria-label={`Navegación de ${menu.titulo.toLowerCase()}`}>
+  <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="grid size-9 place-items-center rounded-control bg-accent/10 text-accent-ink">
+        <Icon name="first-aid-kit" class="size-5" />
+      </div>
+      <span class="font-extrabold text-sm tracking-tight uppercase text-ink">{menu.titulo}</span>
+    </div>
+    <button
+      type="button"
+      id="sidebar-close-btn"
+      class="grid size-8 place-items-center rounded-control text-ink-3 hover:bg-sunken hover:text-ink transition-colors cursor-pointer"
+      aria-label="Cerrar menú lateral"
+    >
+      <span class="caret-close" aria-hidden="true"><Icon name="caret-down" class="size-4" /></span>
+    </button>
+  </div>
+
+  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
+    {grupos.map((g) => (
+      <div>
+        {g.titulo && <p class="px-3 pb-2 pt-1 text-[0.6875rem] font-bold uppercase tracking-widest text-ink-3 border-t border-line mt-1 pt-4">{g.titulo}</p>}
+        <ul class="space-y-1.5">
+          {g.items.map((item) => (
+            <li class="nav-item" style={`--i:${n++}`}>
+              <a
+                href={item.href}
+                class="nav-link group flex items-center gap-3 rounded-control px-3 py-3 text-ink transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                <span class="nav-ico grid size-10 shrink-0 place-items-center rounded-full bg-sunken text-accent-ink transition-colors group-aria-[current=page]:bg-accent group-aria-[current=page]:text-white">
+                  <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_PATHS[item.icon]} />
+                </span>
+                <span class="min-w-0">
+                  <span class="block text-sm font-semibold leading-tight">{item.label}</span>
+                  <span class="block text-xs text-ink-3 group-aria-[current=page]:text-accent-ink/80">{item.hint}</span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  <!-- Cuenta en responsive (< lg), donde el menú de cuenta del Navbar está oculto -->
+  <div class="shrink-0 border-t border-line p-4 lg:hidden">
+    <div class="flex items-center gap-3 px-2 pb-3">
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-white" data-user-initials></span>
+      <div class="min-w-0 flex-1">
+        <p class="truncate font-semibold text-ink" data-user-name></p>
+        <p class="truncate text-xs text-ink-3" data-next-appointment-short></p>
+      </div>
+      <span class="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-ink empty:hidden" data-user-blood></span>
+    </div>
+    <button
+      type="button"
+      data-logout
+      class="flex w-full items-center gap-2 rounded-control px-3 py-2.5 text-left text-sm font-semibold text-accent-ink transition-colors hover:bg-sunken cursor-pointer"
+    >
+      Cerrar sesión
+    </button>
+  </div>
+</aside>
+
+<style>
+  /* Entrada escalonada de los ítems cuando se abre el menú */
+  .nav-item { opacity: 0; transform: translateX(-12px); }
+  :global(#sidebar-drawer[data-open="true"]) .nav-item {
+    animation: nav-in 380ms var(--ease-out, ease-out) both;
+    animation-delay: calc(var(--i) * 55ms + 120ms);
+  }
+  @keyframes nav-in { to { opacity: 1; transform: none; } }
+  .nav-link:hover .nav-ico { animation: nav-pop 450ms var(--ease-out, ease-out); }
+  @keyframes nav-pop { 40% { transform: scale(1.15) rotate(-6deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-item { opacity: 1; transform: none; }
+    :global(#sidebar-drawer[data-open="true"]) .nav-item, .nav-link:hover .nav-ico { animation: none; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+    if (!s || !s.name) return;
+    var parts = s.name.split(/\s+/).filter(Boolean);
+    var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
+    var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
+    set('[data-user-initials]', ini);
+    set('[data-user-first]', parts[0] || '');
+    set('[data-user-name]', s.name);
+    set('[data-user-email]', s.email || '');
+  })();
+</script>
+
+<style>
+  #sidebar-overlay {
+    position: fixed;
+    top: var(--header-h, 4.5rem);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    background: rgb(0 0 0 / 0.4);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 300ms ease;
+  }
+  #sidebar-overlay[data-open="true"] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #sidebar-drawer {
+    position: fixed;
+    top: var(--header-h, 4.5rem);
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    width: 20rem;
+    max-width: 85vw;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 300ms ease-in-out, visibility 0s linear 300ms;
+  }
+  #sidebar-drawer[data-open="true"] {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 300ms ease-in-out, visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #sidebar-overlay,
+    #sidebar-drawer,
+    #sidebar-drawer[data-open="true"] {
+      transition: none;
+    }
+  }
+
+  .caret-close,
+  .caret-group {
+    display: inline-grid;
+    place-items: center;
+  }
+  .caret-close { transform: rotate(90deg); }
+  .caret-group { transition: transform 200ms ease; }
+  details[open] > summary .caret-group { transform: rotate(180deg); }
+</style>
+
+<script>
+  import { getSession, initials, logout } from '../../lib/auth';
+
+  const FOCUSABLE = 'a[href], button:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
+
+  const fill = (selector: string, value: string) =>
+    document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
+
+  function renderSidebarAuth() {
+    const user = getSession();
+    if (!user) return;
+    fill('[data-user-initials]', initials(user.name));
+    fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
+    fill('[data-user-name]', user.name);
+    fill('[data-user-email]', user.email || '');
+  }
+
+  function initSidebar() {
+    const w = window as unknown as { __bludSidebarCtl?: AbortController };
+
+    w.__bludSidebarCtl?.abort();
+    const ctl = new AbortController();
+    w.__bludSidebarCtl = ctl;
+    const { signal } = ctl;
+
+    const root = document.documentElement;
+    const sidebar = document.getElementById('sidebar-drawer');
+    const overlay = document.getElementById('sidebar-overlay');
+    const closeBtn = document.getElementById('sidebar-close-btn');
+    const toggleBtn = document.getElementById('desktop-sidebar-btn');
+
+    const unlockScroll = () => {
+      root.style.overflow = '';
+      root.style.paddingRight = '';
+    };
+    unlockScroll();
+    signal.addEventListener('abort', unlockScroll);
+
+    if (!sidebar || !overlay) return;
+
+    toggleBtn?.setAttribute('aria-controls', 'sidebar-drawer');
+    toggleBtn?.setAttribute('aria-expanded', 'false');
+
+    let isOpen = false;
+
+    function setOpen(next: boolean, restoreFocus = true) {
+      if (next === isOpen || !sidebar || !overlay) return;
+      isOpen = next;
+
+      const hadFocusInside = sidebar.contains(document.activeElement);
+
+      sidebar.dataset.open = String(next);
+      overlay.dataset.open = String(next);
+      toggleBtn?.setAttribute('aria-expanded', String(next));
+
+      if (next) {
+        const gap = window.innerWidth - root.clientWidth;
+        root.style.overflow = 'hidden';
+        if (gap > 0) root.style.paddingRight = `${gap}px`;
+        sidebar.removeAttribute('inert');
+        closeBtn?.focus({ preventScroll: true });
+      } else {
+        unlockScroll();
+        sidebar.setAttribute('inert', '');
+        if (restoreFocus && hadFocusInside) toggleBtn?.focus({ preventScroll: true });
+      }
+    }
+
+    toggleBtn?.addEventListener('click', () => setOpen(!isOpen), { signal });
+    window.addEventListener('blud:toggle-sidebar', () => setOpen(!isOpen), { signal });
+    closeBtn?.addEventListener('click', () => setOpen(false), { signal });
+
+    sidebar.addEventListener(
+      'click',
+      (e) => {
+        if ((e.target as HTMLElement).closest('a[href]')) setOpen(false, false);
+      },
+      { signal }
+    );
+
+    document.addEventListener(
+      'click',
+      (e) => {
+        if (!isOpen) return;
+        const target = e.target as Node;
+        if (sidebar.contains(target) || toggleBtn?.contains(target)) return;
+        setOpen(false, false);
+      },
+      { capture: true, signal }
+    );
+
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (!isOpen) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setOpen(false);
+          return;
+        }
+
+        if (e.key === 'Tab') {
+          const items = Array.from(sidebar.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+            (el) => el.offsetParent !== null
+          );
+          if (items.length === 0) return;
+          const first = items[0];
+          const last = items[items.length - 1];
+          const active = document.activeElement;
+          if (e.shiftKey && (active === first || !sidebar.contains(active))) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && (active === last || !sidebar.contains(active))) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      },
+      { signal }
+    );
+
+    document.addEventListener('astro:before-swap', () => setOpen(false, false), { signal });
+  }
+
+  // Cierre de sesión centralizado
+  document.querySelectorAll('[data-logout]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      logout();
+      window.location.href = '/login';
+    })
+  );
+
+  renderSidebarAuth();
+  window.addEventListener('blud:auth', renderSidebarAuth);
+  window.addEventListener('storage', (e) => {
+    if (e.key === null || e.key.startsWith('blud-')) renderSidebarAuth();
+  });
+
+  initSidebar();
+  document.addEventListener('astro:page-load', () => {
+    initSidebar();
+    renderSidebarAuth();
+  });
+</script>

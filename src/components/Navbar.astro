@@ -126,18 +126,46 @@ const current = (href: string) => (path === href ? 'page' : undefined);
               </div>
               <span class="ml-auto shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-ink empty:hidden" data-user-blood></span>
             </div>
-            <div class="mx-1 rounded-control bg-sunken p-3 text-sm">
-              <p class="flex items-center gap-2 font-semibold text-ink">
-                <Icon name="calendar-check" class="size-4 text-ink-3" />
-                Próxima cita
-              </p>
-              <p class="mt-1 text-ink-2" data-next-appointment>Aún no tienes citas agendadas.</p>
+            <!-- Donante -->
+            <div data-role-only="donante">
+              <div class="mx-1 rounded-control bg-sunken p-3 text-sm">
+                <p class="flex items-center gap-2 font-semibold text-ink">
+                  <Icon name="calendar-check" class="size-4 text-ink-3" />
+                  Próxima cita
+                </p>
+                <p class="mt-1 text-ink-2" data-next-appointment>Aún no tienes citas agendadas.</p>
+              </div>
+              <a
+                href="/donante/donar"
+                class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+              >
+                Agendar una donación
+                <Icon name="arrow-right" class="size-4 text-ink-3" />
+              </a>
             </div>
+
+            <!-- Operador -->
+            <div data-role-only="operador">
+              <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                <p class="flex items-center gap-2 font-semibold text-ink">
+                  <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                  Centro asignado
+                </p>
+                <p class="text-ink-2" data-op-centro>—</p>
+                <p class="text-ink-2">
+                  <span class="font-bold text-accent-ink" data-op-pendientes>0</span> pedidos pendientes ·
+                  <span class="font-bold text-accent-ink" data-op-verificar>0</span> por verificar
+                </p>
+              </div>
+            </div>
+
+            <!-- Todos los roles: acceso directo a su zona -->
             <a
-              href="/centros"
+              href="/donante/perfil"
+              data-role-home
               class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
             >
-              Agendar una donación
+              <span data-role-home-label>Mi perfil</span>
               <Icon name="arrow-right" class="size-4 text-ink-3" />
             </a>
             <button
@@ -257,7 +285,7 @@ const current = (href: string) => (path === href ? 'page' : undefined);
         <a href="/login" class="mobile-nav-link btn btn-secondary btn-lg">Iniciar sesión</a>
       </div>
       <div class="grid gap-3 sm:grid-cols-2" data-auth-in>
-        <a href="/centros" class="mobile-nav-link btn btn-primary btn-lg">Agendar una donación</a>
+        <a href="/donante/donar" data-role-cta class="mobile-nav-link btn btn-primary btn-lg">Agendar una donación</a>
         <button type="button" data-logout class="btn btn-secondary btn-lg">Cerrar sesión</button>
       </div>
       <p class="mt-6 flex items-center gap-2 text-sm text-ink-3">
@@ -280,6 +308,9 @@ const current = (href: string) => (path === href ? 'page' : undefined);
     set('[data-user-initials]', ini);
     set('[data-user-first]', parts[0] || '');
     set('[data-user-name]', s.name);
+    // Rol antes del primer pintado (evita ver bloques de otro rol por un instante)
+    var r = String(s.role || s.rol || s.userType || s.tipo || '').toLowerCase();
+    document.documentElement.dataset.role = /oper/.test(r) ? 'operador' : /dir|admin/.test(r) ? 'director' : 'donante';
   })();
 </script>
 
@@ -499,7 +530,9 @@ const current = (href: string) => (path === href ? 'page' : undefined);
 </style>
 
 <script>
-  import { appointmentLabel, getSession, initials, logout, nextAppointment } from '../lib/auth';
+  import { logout } from '../lib/auth';
+  import { renderAccount } from '../lib/account';
+  import { onDb } from '../lib/db';
 
   const root = document.documentElement;
 
@@ -651,30 +684,8 @@ const current = (href: string) => (path === href ? 'page' : undefined);
     });
   }
 
-  // ----- Estado de la sesión -----
-  const fill = (selector: string, value: string) =>
-    document.querySelectorAll(selector).forEach((el) => (el.textContent = value));
-
-  function renderAuth() {
-    const user = getSession();
-    if (!user) {
-      delete root.dataset.auth;
-      return;
-    }
-    root.dataset.auth = 'in';
-    fill('[data-user-initials]', initials(user.name));
-    fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
-    fill('[data-user-name]', user.name);
-    fill('[data-user-email]', user.email);
-    fill('[data-user-blood]', user.bloodType ? user.bloodType.replace('-', '−') : '');
-
-    const next = nextAppointment(user.email);
-    fill(
-      '[data-next-appointment]',
-      next ? `${next.centerName}, ${appointmentLabel(next)}` : 'Aún no tienes citas agendadas.'
-    );
-    fill('[data-next-appointment-short]', next ? `Próxima cita: ${appointmentLabel(next)}` : 'Sin citas agendadas');
-  }
+  // ----- Estado de la sesión: una sola función compartida con los navbars de donante y operador -----
+  const renderAuth = renderAccount;
 
   document.querySelectorAll('[data-logout]').forEach((btn) =>
     btn.addEventListener('click', () => {
@@ -685,6 +696,8 @@ const current = (href: string) => (path === href ? 'page' : undefined);
 
   renderAuth();
   window.addEventListener('blud:auth', renderAuth);
+  window.addEventListener('blud:donor', renderAuth);
+  onDb(renderAuth);
   // Sincroniza entre pestañas.
   window.addEventListener('storage', (e) => {
     if (e.key === null || e.key.startsWith('blud-')) renderAuth();

@@ -1,0 +1,146 @@
+---
+// src/components/app/AccountSettings.astro
+// Configuración de la cuenta: datos del usuario + cambio de contraseña.
+// Reutilizable para operador, laboratorio y director:  <AccountSettings />
+---
+
+<div class="container-blud py-8 space-y-8" data-account>
+  <div class="pb-6 border-b border-line">
+    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Configuración</h1>
+    <p class="text-ink-2 text-sm sm:text-base mt-1">Actualiza los datos de tu cuenta y la seguridad de tu acceso.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-datos">
+      <h2 id="h-datos" class="text-lg font-bold text-ink border-b border-line pb-3">Datos de la cuenta</h2>
+      <form data-datos class="space-y-4" novalidate>
+        <div>
+          <label for="c-nombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre completo</label>
+          <input id="c-nombre" class="field" autocomplete="name" required />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="c-email" class="block text-xs font-bold uppercase text-ink-2 mb-1">Correo</label>
+            <input id="c-email" type="email" class="field" autocomplete="email" required />
+          </div>
+          <div>
+            <label for="c-tel" class="block text-xs font-bold uppercase text-ink-2 mb-1">Teléfono</label>
+            <input id="c-tel" type="tel" class="field" autocomplete="tel" placeholder="+58 414 1234567" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="c-mpps" data-lbl-mpps class="block text-xs font-bold uppercase text-ink-2 mb-1">MPPS / colegiado</label>
+            <input id="c-mpps" class="field bg-sunken" readonly />
+          </div>
+          <div>
+            <label for="c-cargo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cargo</label>
+            <input id="c-cargo" class="field bg-sunken" readonly />
+          </div>
+        </div>
+        <div>
+          <label for="c-sede" class="block text-xs font-bold uppercase text-ink-2 mb-1">Sede asignada</label>
+          <input id="c-sede" class="field bg-sunken" readonly aria-describedby="c-ayuda" />
+          <p id="c-ayuda" class="mt-1 text-xs text-ink-3">MPPS (o ID de personal), cargo y sede los asigna la dirección. Para cambiarlos, contacta al director.</p>
+        </div>
+        <p data-datos-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+        <button type="submit" class="btn btn-primary w-full">Guardar cambios</button>
+      </form>
+    </section>
+
+    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-clave">
+      <h2 id="h-clave" class="text-lg font-bold text-ink border-b border-line pb-3">Contraseña</h2>
+      <form data-clave class="space-y-4" novalidate>
+        <div>
+          <label for="c-actual" class="block text-xs font-bold uppercase text-ink-2 mb-1">Contraseña actual</label>
+          <input id="c-actual" type="password" class="field" autocomplete="current-password" required />
+        </div>
+        <div>
+          <label for="c-nueva" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nueva contraseña</label>
+          <input id="c-nueva" type="password" class="field" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres, con un número" required />
+          <div class="mt-2 h-1.5 rounded-full bg-sunken overflow-hidden" aria-hidden="true">
+            <div data-fuerza class="h-full w-0 rounded-full transition-all duration-300"></div>
+          </div>
+        </div>
+        <div>
+          <label for="c-conf" class="block text-xs font-bold uppercase text-ink-2 mb-1">Confirmar nueva contraseña</label>
+          <input id="c-conf" type="password" class="field" autocomplete="new-password" required />
+        </div>
+        <label class="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
+          <input type="checkbox" data-ver class="accent-[var(--accent)]" /> Mostrar contraseñas
+        </label>
+        <p data-clave-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+        <button type="submit" class="btn btn-secondary w-full">Actualizar contraseña</button>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+  import { changePassword, getSession, updateAccount } from '../../lib/auth';
+  import { toast } from '../../lib/ui';
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-account]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    const val = (id: string) => q<HTMLInputElement>('#' + id).value;
+    const show = (el: HTMLElement, m: string) => { el.textContent = m; el.classList.remove('hidden'); };
+
+    function fill() {
+      const s = getSession();
+      if (!s) return;
+      q<HTMLInputElement>('#c-nombre').value = s.name;
+      q<HTMLInputElement>('#c-email').value = s.email;
+      q<HTMLInputElement>('#c-tel').value = s.telefono ?? '';
+      q<HTMLInputElement>('#c-mpps').value = s.colegiado ?? '';
+      q<HTMLInputElement>('#c-cargo').value = s.cargo ?? '';
+      q<HTMLInputElement>('#c-sede').value = s.sede ?? '';
+      q('[data-lbl-mpps]').textContent = s.role === 'soporte' ? 'ID de personal' : 'MPPS / colegiado';
+    }
+    fill();
+
+    const datos = q<HTMLFormElement>('[data-datos]');
+    datos.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = q('[data-datos-err]');
+      err.classList.add('hidden');
+      const r = await updateAccount({ name: val('c-nombre'), email: val('c-email'), telefono: val('c-tel') });
+      if (!r.ok) return show(err, r.error);
+      fill();
+      toast('¡Datos actualizados!');
+    });
+
+    // Fuerza de la nueva contraseña
+    const bar = q('[data-fuerza]');
+    q('#c-nueva').addEventListener('input', () => {
+      const v = val('c-nueva');
+      const pts = [v.length >= 8, /[A-Z]/.test(v) && /[a-z]/.test(v), /\d/.test(v), /[^A-Za-z0-9]/.test(v) || v.length >= 12].filter(Boolean).length;
+      bar.style.width = v ? pts * 25 + '%' : '0';
+      bar.style.background = pts <= 1 ? 'var(--accent)' : pts <= 2 ? 'var(--warn)' : 'var(--ok)';
+    });
+
+    q<HTMLInputElement>('[data-ver]').addEventListener('change', (e) => {
+      const t = (e.target as HTMLInputElement).checked ? 'text' : 'password';
+      ['c-actual', 'c-nueva', 'c-conf'].forEach((id) => (q<HTMLInputElement>('#' + id).type = t));
+    });
+
+    const clave = q<HTMLFormElement>('[data-clave]');
+    clave.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = q('[data-clave-err]');
+      err.classList.add('hidden');
+      if (!val('c-actual')) return show(err, 'Escribe tu contraseña actual.');
+      if (val('c-nueva') !== val('c-conf')) return show(err, 'Las contraseñas no coinciden.');
+      const r = await changePassword(val('c-actual'), val('c-nueva'));
+      if (!r.ok) return show(err, r.error);
+      clave.reset();
+      bar.style.width = '0';
+      toast('¡Contraseña actualizada!');
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -47,10 +47,10 @@ import { infoTopics, infoHref } from '../../data/info';
     .teaser-row:hover .teaser-arrow :global(svg) { transform: translateX(2px) rotate(-45deg); }
   }
 
-  /* El patrón decorativo conserva el fondo semántico del tema. */
+  /* Fondo adaptativo con patrón de líneas diagonales usando variables del tema */
   .stripe-pattern-section {
     position: relative;
-    background-color: var(--surface);
+    background-color: var(--canvas, #ffffff);
   }
 
   .stripe-pattern-section::before {

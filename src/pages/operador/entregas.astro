@@ -1,0 +1,238 @@
+---
+// src/pages/operador/entregas.astro
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
+---
+
+<LayoutOperador title="BLUD | Entregas">
+  <div class="container-blud py-8 space-y-8">
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Entregas</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Despacha los pedidos pendientes o registra una salida directa. El stock se descuenta solo.</p>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
+          <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="pedidos" aria-pressed="false">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/></svg>
+            Pedidos pendientes <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="pedidos">0</span>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="salida" aria-pressed="false">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m12 8-4 4 4 4"/><path d="M16 12H8"/></svg>
+            Salida directa
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="historial" aria-pressed="false">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+            Historial de despachos <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="historial">0</span>
+          </button>
+        </div>
+        <a href="/operador/prescribir" class="btn btn-secondary btn-sm self-start sm:self-auto">Cargar orden médica</a>
+      </div>
+    </div>
+
+    <!-- Vista: Pedidos pendientes -->
+    <div data-frame="pedidos">
+      <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-ped">
+        <h2 id="h-ped" class="text-lg font-bold text-ink border-b border-line pb-3">Pedidos pendientes <span class="text-ink-3 text-sm font-semibold">(<span id="n-ped">0</span>)</span></h2>
+        <ul id="pedidos" class="grid gap-3 md:grid-cols-2"></ul>
+        <p id="sin-pedidos" class="hidden py-4 text-center text-sm text-ink-3">No hay pedidos pendientes 🎉</p>
+      </section>
+    </div>
+
+    <!-- Vista: Salida directa -->
+    <div data-frame="salida" class="hidden">
+      <section class="panel p-6 sm:p-8 space-y-6 w-full">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Salida directa</h2>
+        <form id="form" class="space-y-4" novalidate>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="paciente" class="block text-xs font-bold uppercase text-ink-2 mb-1">Paciente / receptor</label>
+              <input type="text" id="paciente" class="field" placeholder="Ej. Roberto Gómez" required />
+            </div>
+            <div>
+              <label for="pcedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula del receptor</label>
+              <input type="text" id="pcedula" class="field" placeholder="V-12345678" required />
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <div>
+              <label for="tipo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de sangre</label>
+              <select id="tipo" class="field" required>
+                <option value="">Seleccionar</option>
+                {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label for="comp" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hemocomponente</label>
+              <select id="comp" class="field" required>
+                {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label for="unidades" class="block text-xs font-bold uppercase text-ink-2 mb-1">Unidades</label>
+              <input type="number" id="unidades" min="1" max="10" value="1" class="field" required />
+            </div>
+          </div>
+          <p id="stock-hint" class="hidden rounded-control px-3 py-2 text-xs font-semibold"></p>
+          <div>
+            <label for="destino" class="block text-xs font-bold uppercase text-ink-2 mb-1">Hospital / clínica destino</label>
+            <input type="text" id="destino" class="field" placeholder="Ej. Hospital Coromoto" required />
+          </div>
+          <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Confirmar y despachar</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Vista: Historial de despachos -->
+    <div data-frame="historial" class="hidden">
+      <section class="panel p-6 sm:p-8 space-y-4 w-full">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Historial de despachos <span class="text-ink-3 text-sm font-semibold">(<span id="n-historial">0</span>)</span></h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+              <tr><th class="py-2">Receptor</th><th class="py-2">Componente</th><th class="py-2">Cant.</th><th class="py-2">Destino</th><th class="py-2">Fecha</th></tr>
+            </thead>
+            <tbody id="tabla" class="divide-y divide-line"></tbody>
+          </table>
+        </div>
+        <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">Aún no hay despachos registrados.</p>
+      </section>
+    </div>
+  </div>
+</LayoutOperador>
+
+<script>
+  import { esc, fmtFecha, getEntregasOp, getPedidosPendientes, onDb, registrarEntrega, stockDe, toast } from '../../lib/operador';
+  import type { Hemocomponente } from '../../lib/operador';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const val = (id: string) => ($(`#${id}`) as HTMLInputElement).value;
+
+  function init() {
+    const form = $<HTMLFormElement>('#form');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+
+    // Aviso de stock en vivo para la salida directa
+    const hint = $('#stock-hint');
+    const updateHint = () => {
+      const tipo = val('tipo');
+      if (!tipo) return hint.classList.add('hidden');
+      const disp = stockDe(tipo, val('comp'));
+      const need = Number(val('unidades')) || 1;
+      hint.classList.remove('hidden');
+      hint.textContent = `Stock disponible: ${disp} u.${disp < need ? ' (insuficiente)' : ''}`;
+      hint.className = `rounded-control px-3 py-2 text-xs font-semibold ${disp >= need ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}`;
+    };
+    ['tipo', 'comp', 'unidades'].forEach((id) => $(`#${id}`).addEventListener('input', updateHint));
+
+    const confirmar = (aviso?: string) => !aviso || confirm(`${aviso}\n\n¿Despachar de todas formas?`);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const datos = {
+        pacienteNombre: val('paciente'),
+        pacienteCedula: val('pcedula'),
+        tipoSangre: val('tipo'),
+        tipoHemocomponente: val('comp') as Hemocomponente,
+        unidades: Number(val('unidades')),
+        hospitalDestino: val('destino'),
+      };
+      const disp = stockDe(datos.tipoSangre, datos.tipoHemocomponente);
+      if (datos.tipoSangre && disp < datos.unidades && !confirmar(`El stock registrado de ${datos.tipoSangre} ${datos.tipoHemocomponente} es de ${disp} u.`)) return;
+      const r = registrarEntrega(datos);
+      const err = $('#error');
+      if (!r.ok) {
+        err.textContent = r.motivo;
+        err.classList.remove('hidden');
+        return;
+      }
+      err.classList.add('hidden');
+      toast('¡Despacho registrado! 🩸');
+      form.reset();
+      hint.classList.add('hidden');
+    });
+
+    // Despachar un pedido pendiente con un clic
+    $('#pedidos').addEventListener('click', (e) => {
+      const id = (e.target as HTMLElement).closest<HTMLElement>('[data-despachar]')?.dataset.despachar;
+      const p = id ? getPedidosPendientes().find((x) => x.id === id) : undefined;
+      if (!p) return;
+      const disp = stockDe(p.tipoSangre, p.tipoHemocomponente);
+      if (disp < p.unidades && !confirmar(`El stock registrado de ${p.tipoSangre} ${p.tipoHemocomponente} es de ${disp} u. y el pedido pide ${p.unidades}.`)) return;
+      const r = registrarEntrega({ ...p, pedidoId: p.id });
+      if (!r.ok) return toast(r.motivo);
+      toast(`Pedido de ${p.pacienteNombre} despachado ✅`);
+    });
+
+    const render = () => {
+      const pend = getPedidosPendientes();
+      $('#n-ped').textContent = String(pend.length);
+      $('[data-cuenta="pedidos"]').textContent = String(pend.length);
+      $('#sin-pedidos').classList.toggle('hidden', pend.length > 0);
+      $('#pedidos').innerHTML = pend.map((p) => {
+        const disp = stockDe(p.tipoSangre, p.tipoHemocomponente);
+        const ok = disp >= p.unidades;
+        return `<li class="rounded-control border border-line p-4 space-y-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0"><p class="truncate font-bold text-ink">${esc(p.pacienteNombre)}</p>
+            <p class="text-xs text-ink-3">${esc(p.pacienteCedula)} · ${esc(fmtFecha(p.fecha, { day: 'numeric', month: 'short' }))}</p></div>
+            <span class="blood-chip">${esc(p.tipoSangre)}</span>
+          </div>
+          <p class="text-sm text-ink-2">${p.unidades} u. de ${esc(p.tipoHemocomponente)} → ${esc(p.hospitalDestino)}</p>
+          <div class="flex items-center justify-between gap-3">
+            <span class="rounded-full px-2 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${ok ? `Hay stock (${disp} u.)` : `Stock ${disp} u.`}</span>
+            <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}">Despachar</button>
+          </div></li>`;
+      }).join('');
+
+      const lista = getEntregasOp();
+      $('#n-historial').textContent = String(lista.length);
+      $('[data-cuenta="historial"]').textContent = String(lista.length);
+      $('#vacia').classList.toggle('hidden', lista.length > 0);
+      $('#tabla').innerHTML = lista.map((e) => `<tr>
+        <td class="py-3 font-semibold text-ink">${esc(e.pacienteNombre)}<br><span class="text-xs font-normal text-ink-3">${esc(e.pacienteCedula)}</span></td>
+        <td class="py-3"><span class="blood-chip">${esc(e.tipoSangre)}</span><span class="mt-0.5 block text-xs text-ink-2">${esc(e.tipoHemocomponente)}</span></td>
+        <td class="py-3 font-mono font-bold">${e.unidades} u.</td>
+        <td class="py-3 text-xs text-ink-2">${esc(e.hospitalDestino)}</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(e.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+      updateHint();
+    };
+
+    // Lógica de pestañas
+    type Vista = 'pedidos' | 'salida' | 'historial';
+    const frames = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const botones = [...document.querySelectorAll<HTMLButtonElement>('[data-vista]')];
+    let vista: Vista = 'pedidos';
+
+    const setVista = (v: Vista) => {
+      vista = v;
+      frames.forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
+      botones.forEach((b) => {
+        const on = b.dataset.vista === v;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('btn-primary', on);
+        b.classList.toggle('btn-secondary', !on);
+      });
+      if (v === 'salida') $('#paciente').focus({ preventScroll: true });
+    };
+
+    botones.forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.vista as Vista;
+      setVista(v === 'pedidos' && vista === 'pedidos' ? 'pedidos' : v);
+    }));
+    
+    document.addEventListener('keydown', (e) => { 
+      if (e.key === 'Escape' && vista !== 'pedidos' && !document.querySelector('dialog[open]')) setVista('pedidos'); 
+    });
+    
+    setVista('pedidos');
+
+    render();
+    onDb(render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

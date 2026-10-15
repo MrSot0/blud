@@ -149,17 +149,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Ocultación global forzada del cursor nativo en dispositivos con puntero (mouse) */
-  @media (pointer: fine) {
-    html,
-    body,
-    *,
-    *::before,
-    *::after {
-      cursor: none !important;
-    }
-  }
-
   h1, h2, h3, h4 {
     text-wrap: balance;
     letter-spacing: -0.02em;
@@ -300,6 +289,18 @@ html.theme-vt::view-transition-new(root) {
     box-shadow: 0 1px 2px hsl(var(--shadow-tint) / 0.04), 0 12px 32px -18px hsl(var(--shadow-tint) / 0.18);
   }
 
+  .blood-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-ink);
+    font-size: 0.75rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
   .section-title {
     font-size: clamp(2rem, 1.4rem + 2.4vw, 3.25rem);
     line-height: 1.02;
@@ -327,6 +328,15 @@ html.theme-vt::view-transition-new(root) {
 /* ===== Sesión ===== */
 html:not([data-auth="in"]) [data-auth-in],
 html[data-auth="in"] [data-auth-out] {
+  display: none !important;
+}
+
+/* ===== Contenido según el rol (donante / operador / director) ===== */
+html:not([data-role="donante"]) [data-role-only="donante"],
+html:not([data-role="operador"]) [data-role-only="operador"],
+html:not([data-role="laboratorio"]) [data-role-only="laboratorio"],
+html:not([data-role="soporte"]) [data-role-only="soporte"],
+html:not([data-role="director"]) [data-role-only="director"] {
   display: none !important;
 }
 

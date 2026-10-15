@@ -1,0 +1,120 @@
+---
+// src/components/app/DonorCard.astro
+import type { Donor } from '../../lib/donante';
+
+interface Props {
+  editable?: boolean;
+}
+const { editable = true } = Astro.props;
+
+const tiles = [
+  { k: 'cedula', label: 'Cédula', icon: 'M3 5h18v14H3zM7 10h4M7 14h3M15 10h2M15 14h2' },
+  { k: 'sangre', label: 'Tipo de sangre', icon: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z', blood: true },
+  { k: 'telefono', label: 'Teléfono', icon: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z' },
+  { k: 'email', label: 'Correo', icon: 'M3 6h18v12H3zM3 7l9 7 9-7', wide: true },
+];
+---
+
+<section class="staff" data-donor-card aria-label="Perfil del donante">
+  <div class="staff-hero">
+    <div class="staff-ph" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+    </div>
+    <div class="staff-shade" aria-hidden="true"></div>
+
+    {editable && (
+      <a href="/donante/perfil" class="staff-edit">
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+        Gestionar perfil
+      </a>
+    )}
+
+    <div class="staff-id container-blud">
+      <div class="staff-id-in rise" style="--d:80ms">
+        <span class="staff-chip" data-dc="kyc-chip">Donante BLUD</span>
+        <h1 class="staff-name" data-dc="fullname">—</h1>
+        <p class="staff-cargo" data-dc="id">—</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="staff-sheet">
+    <div class="container-blud">
+      <div class="staff-av-row">
+        <div class="staff-av rise" style="--d:40ms">
+          <span class="staff-av-ini" data-dc="initials" aria-hidden="true">?</span>
+        </div>
+      </div>
+    </div>
+    <div class="container-blud space-y-6">
+      <ul class="staff-grid">
+        {tiles.map((t, i) => (
+          <li class:list={['tile rise', t.blood && 'tile-blood', t.wide && 'tile-wide']} style={`--d:${160 + i * 55}ms`}>
+            <span class="tile-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d={t.icon} /></svg>
+            </span>
+            <span class="min-w-0">
+              <span class="tile-label">{t.label}</span>
+              <span class="tile-val tabular" data-dc={t.k}>—</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <!-- Estadísticas de donación debajo de las celdas -->
+      <div class="grid grid-cols-2 gap-4 text-center pt-2">
+        <div class="panel p-4 bg-sunken">
+          <span class="block text-3xl font-extrabold text-ink tabular" data-dc-count="donaciones">0</span>
+          <span class="text-xs font-semibold text-ink-3 uppercase">Donaciones</span>
+        </div>
+        <div class="panel p-4 bg-sunken">
+          <span class="block text-3xl font-extrabold text-ink tabular" data-dc-count="vidas">0</span>
+          <span class="text-xs font-semibold text-ink-3 uppercase">Vidas ayudadas*</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { loadDonor } from '../../lib/donante';
+
+  function initDonorCard() {
+    document.querySelectorAll<HTMLElement>('[data-donor-card]').forEach((root) => {
+      const d = loadDonor();
+      const fullName = `${d.firstname} ${d.lastname}`.trim() || 'Donante BLUD';
+      const initials = fullName.split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('') || '?';
+
+      const set = (k: string, v: string) => {
+        const el = root.querySelector<HTMLElement>(`[data-dc="${k}"]`);
+        if (!el) return;
+        el.textContent = v || 'Sin registrar';
+        el.classList.toggle('empty', !v);
+      };
+
+      set('fullname', fullName);
+      set('id', d.id);
+      set('initials', initials);
+      set('cedula', d.cedula);
+      set('sangre', d.sangre);
+      set('telefono', d.telefono);
+      set('email', d.email);
+
+      const chip = root.querySelector<HTMLElement>('[data-dc="kyc-chip"]');
+      if (chip) {
+        chip.textContent = d.kyc === 'verified' ? '✓ Verificado' : d.kyc === 'review' ? 'En revisión' : 'Donante BLUD';
+      }
+
+      const donacionesEl = root.querySelector<HTMLElement>('[data-dc-count="donaciones"]');
+      const vidasEl = root.querySelector<HTMLElement>('[data-dc-count="vidas"]');
+      if (donacionesEl) donacionesEl.textContent = String(d.donaciones);
+      if (vidasEl) vidasEl.textContent = String(d.donaciones * 3);
+
+      root.dataset.ready = 'true';
+    });
+  }
+
+  initDonorCard();
+  document.addEventListener('astro:page-load', initDonorCard);
+  window.addEventListener('blud:donor', initDonorCard);
+</script>

@@ -1,0 +1,203 @@
+---
+// src/pages/laboratorio/fraccionamiento.astro
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+import { COMPONENTES } from '../../lib/db';
+
+// Hemocomponentes que salen de una bolsa de sangre total, con valores típicos editables
+const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
+  nombre: c,
+  unidades: c === 'Concentrado Globular' || c === 'Plasma Fresco Congelado' ? 1 : 0,
+  volumen: c === 'Concentrado Globular' ? 250 : c === 'Plasma Fresco Congelado' ? 200 : c === 'Plaquetas' ? 50 : 15,
+}));
+---
+
+<LayoutLaboratorio title="BLUD | Fraccionamiento">
+  <div class="container-blud py-8 space-y-8">
+    <div class="flex flex-col gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Fraccionamiento</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Registra los hemocomponentes obtenidos de cada bolsa de sangre total. Cuando la unidad esté liberada, pasan al stock.</p>
+      </div>
+      <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="registrar" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Registrar fraccionamiento
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="historial" aria-pressed="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/></svg>
+          Historial y totales <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="fraccionamientos">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vista: Registrar -->
+    <div data-frame="registrar">
+      <section class="panel p-6 sm:p-8 space-y-6 w-full">
+        <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Registrar fraccionamiento</h2>
+        <form id="form" class="space-y-4" novalidate>
+          <div>
+            <label for="donacion" class="block text-xs font-bold uppercase text-ink-2 mb-1">Bolsa de sangre total</label>
+            <select id="donacion" class="field" required></select>
+            <p id="sin-bolsas" class="hidden mt-1 text-xs text-ink-3">No hay bolsas por fraccionar.</p>
+            <p id="estado-bolsa" class="hidden mt-2 rounded-control px-3 py-2 text-xs font-semibold"></p>
+          </div>
+
+          <fieldset class="space-y-2">
+            <legend class="text-xs font-bold uppercase text-ink-2 mb-1">Hemocomponentes obtenidos</legend>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {productos.map((p) => (
+                <div class="rounded-control border border-line p-3" data-prod={p.nombre}>
+                  <p class="text-sm font-semibold text-ink mb-2">{p.nombre}</p>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-[0.6875rem] font-bold uppercase text-ink-3 mb-1" for={`u-${p.nombre}`}>Unidades</label>
+                      <input type="number" id={`u-${p.nombre}`} class="field" min="0" max="10" value={p.unidades} data-u />
+                    </div>
+                    <div>
+                      <label class="block text-[0.6875rem] font-bold uppercase text-ink-3 mb-1" for={`v-${p.nombre}`}>ml/unidad</label>
+                      <input type="number" id={`v-${p.nombre}`} class="field" min="1" max="600" value={p.volumen} data-v />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <label for="obs" class="block text-xs font-bold uppercase text-ink-2 mb-1">Observaciones</label>
+            <input type="text" id="obs" class="field" placeholder="Opcional (ej. plasma lipémico)" />
+          </div>
+          <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Guardar fraccionamiento</button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Vista: Historial y Totales -->
+    <div data-frame="historial" class="hidden">
+      <div class="space-y-6">
+        <section class="panel p-6 sm:p-8 space-y-3 w-full">
+          <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Total obtenido</h2>
+          <ul id="totales" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></ul>
+        </section>
+        <section class="panel p-6 sm:p-8 space-y-4 w-full">
+          <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Fraccionamientos registrados <span class="text-ink-3 text-sm font-semibold">(<span id="n">0</span>)</span></h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
+                <tr><th class="py-2">Código</th><th class="py-2">Hemocomponentes</th><th class="py-2">Fecha</th></tr>
+              </thead>
+              <tbody id="tabla" class="divide-y divide-line"></tbody>
+            </table>
+          </div>
+          <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">Aún no hay fraccionamientos.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</LayoutLaboratorio>
+
+<script>
+  import { codigoDonacion, esc, estadoLabDe, fmtFecha, fraccionables, getFraccionamientos, onDb, registrarFraccionamiento, toast } from '../../lib/laboratorio';
+  import type { Hemocomponente } from '../../lib/laboratorio';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+  function init() {
+    const form = $<HTMLFormElement>('#form');
+    if (form.dataset.ready) return;
+    form.dataset.ready = '1';
+
+    const sel = $<HTMLSelectElement>('#donacion');
+
+    const renderSelect = () => {
+      const actual = sel.value || new URLSearchParams(location.search).get('donacion') || '';
+      const lista = fraccionables();
+      sel.innerHTML = '<option value="">Seleccionar</option>' + lista.map((d) =>
+        `<option value="${esc(d.id)}">${esc(codigoDonacion(d.id))} · ${esc(d.tipoSangre)} · ${d.volumenMl} ml · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))}</option>`).join('');
+      if (lista.some((d) => d.id === actual)) sel.value = actual;
+      $('#sin-bolsas').classList.toggle('hidden', lista.length > 0);
+      estado();
+    };
+
+    const estado = () => {
+      const box = $('#estado-bolsa');
+      const d = fraccionables().find((x) => x.id === sel.value);
+      box.classList.toggle('hidden', !d);
+      if (!d) return;
+      const cuarentena = estadoLabDe(d) === 'pendiente';
+      box.textContent = cuarentena ? 'En cuarentena: los hemocomponentes quedarán retenidos hasta que se libere la donación.' : 'Liberada: los hemocomponentes pasarán al stock.';
+      box.className = `mt-2 rounded-control px-3 py-2 text-xs font-semibold ${cuarentena ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'}`;
+    };
+    sel.addEventListener('change', estado);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const productos = Array.from(form.querySelectorAll<HTMLElement>('[data-prod]')).map((el) => ({
+        componente: el.dataset.prod as Hemocomponente,
+        unidades: Number(el.querySelector<HTMLInputElement>('[data-u]')!.value),
+        volumenMl: Number(el.querySelector<HTMLInputElement>('[data-v]')!.value),
+      }));
+      const r = registrarFraccionamiento({ donacionId: sel.value, productos, observaciones: $<HTMLInputElement>('#obs').value });
+      const err = $('#error');
+      if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
+      err.classList.add('hidden');
+      toast('Fraccionamiento registrado ✅');
+      $<HTMLInputElement>('#obs').value = '';
+      history.replaceState(null, '', location.pathname);
+      renderSelect();
+    });
+
+    const render = () => {
+      const lista = getFraccionamientos();
+      $('#n').textContent = String(lista.length);
+      $('[data-cuenta="fraccionamientos"]').textContent = String(lista.length);
+      $('#vacia').classList.toggle('hidden', lista.length > 0);
+      $('#tabla').innerHTML = lista.map((f) => `<tr>
+        <td class="py-3 font-mono font-bold text-ink">${esc(f.codigo)}</td>
+        <td class="py-3 text-ink-2">${f.productos.map((p) => `${p.unidades} ×${esc(p.componente)} <span class="text-xs text-ink-3">(${p.volumenMl} ml)</span>`).join('<br>')}</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(f.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+
+      const tot: Record<string, number> = {};
+      lista.forEach((f) => f.productos.forEach((p) => (tot[p.componente] = (tot[p.componente] ?? 0) + p.unidades)));
+      $('#totales').innerHTML = Object.keys(tot).length
+        ? Object.entries(tot).map(([c, n]) => `<li class="rounded-control bg-sunken p-3"><p class="text-2xl font-extrabold text-ink tabular">${n}</p><p class="text-xs font-semibold text-ink-3">${esc(c)}</p></li>`).join('')
+        : '<li class="col-span-2 sm:col-span-3 text-sm text-ink-3">Todavía no hay hemocomponentes registrados.</li>';
+    };
+
+    // Lógica de pestañas
+    type Vista = 'registrar' | 'historial';
+    const frames = [...document.querySelectorAll<HTMLElement>('[data-frame]')];
+    const botones = [...document.querySelectorAll<HTMLButtonElement>('[data-vista]')];
+    let vista: Vista = 'registrar';
+
+    const setVista = (v: Vista) => {
+      vista = v;
+      frames.forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
+      botones.forEach((b) => {
+        const on = b.dataset.vista === v;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.toggle('btn-primary', on);
+        b.classList.toggle('btn-secondary', !on);
+      });
+      if (v === 'registrar') sel.focus({ preventScroll: true });
+    };
+
+    botones.forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.vista as Vista;
+      setVista(v === 'registrar' && vista === 'registrar' ? 'registrar' : v);
+    }));
+
+    document.addEventListener('keydown', (e) => { 
+      if (e.key === 'Escape' && vista === 'historial' && !document.querySelector('dialog[open]')) setVista('registrar'); 
+    });
+
+    renderSelect();
+    render();
+    setVista('registrar');
+    onDb(() => { const keep = sel.value; render(); renderSelect(); if (keep) sel.value = keep; estado(); });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
