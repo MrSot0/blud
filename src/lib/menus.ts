@@ -99,4 +99,21 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/soporte/configuracion', icon: 'settings' },
     ],
   },
+    director: {
+    titulo: 'Director',
+    items: [
+      { label: 'Dashboard', hint: 'Resumen estadistico', href: '/director/dashboard', icon: 'dashboard' },
+      { label: 'Mis solicitudes', hint: 'Bandeja y respuestas', href: '/director/solicitudes/solicitudes', icon: 'inbox' },
+      { label: 'Historial de solicitudes', hint: 'Historial de solicitudes', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { label: 'Registro de solicitudes', hint: 'Registro de solicitudes', href: '/director/solicitudes/registro', icon: 'inbox' },
+      { label: 'Usuarios', hint: 'Gestionar usuarios del sistema', href: '/director/operadores/#registro', icon: 'users' },
+      { label: 'Reportes', hint: 'Estadísticas y exportación', href: '/director/reportes', icon: 'chart' },
+      { label: 'Inventario', hint: 'Gestionar inventario del sistema', href: '/director/inventario', icon: 'package' },
+
+    ],
+    cuenta: [
+      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
+      { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
+    ],
+  },
 };

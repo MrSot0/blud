@@ -120,6 +120,37 @@ const home = ROLE_HOME[role];
               </>
             )}
 
+            {role === 'director' && (
+              <>
+                <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                    Estadisticas del centro
+                  </p>
+                  <p class="text-ink-2" data-op-centro>—</p>
+                  <p class="text-ink-2">
+                    <span class="font-bold text-accent-ink" data-op-pendientes>0</span> pedidos pendientes ·
+                    <span class="font-bold text-accent-ink" data-op-verificar>0</span> por verificar
+                  </p>
+                </div>
+                <a
+                  href="/director/solicitudes/solicitudes"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Solicitudes
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+                <a
+                  href="/director/usuarios"
+                  class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Usuarios
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
+
             {role === 'laboratorio' && (
               <>
                 <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
