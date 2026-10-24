@@ -109,6 +109,8 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Usuarios', hint: 'Gestionar usuarios del sistema', href: '/director/operadores/#registro', icon: 'users' },
       { label: 'Reportes', hint: 'Estadísticas y exportación', href: '/director/reportes', icon: 'chart' },
       { label: 'Inventario', hint: 'Gestionar inventario del sistema', href: '/director/inventario', icon: 'package' },
+      { label: 'Hemovigilancia', hint: 'Gestionar hemovigilancia', href: '/director/hemovigilancia', icon: 'alert' },
+
 
     ],
     cuenta: [

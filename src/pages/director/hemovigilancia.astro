@@ -1,0 +1,550 @@
+---
+import Layout from '../../layouts/LayoutD.astro';
+import Icon from '../../components/Icon.astro';
+
+const reportesHemovigilancia = [
+  {
+    id: "HV-2026-001",
+    din: "B00422600123",
+    fecha: "2026-10-24 14:30",
+    enCurso: true,
+    tipoEvento: "RAT",
+    categoria: "Reacción Febril No Hemolítica",
+    severidad: "Crítica",
+    componente: "Concentrado de Eritrocitos",
+    volumen: "280 mL",
+    centroOrigen: "Hospital Central del Sur",
+    centrifugado: "3800 RCF x 10 min (4°C)",
+    infusion: {
+      inicio: "14:15",
+      transicion: "14:25 (Aparición de síntomas)",
+      finalizacion: "14:28 (Infusión Detenida)",
+      goteo: "40 gotas/min (Configurado)"
+    },
+    donante: {
+      nombre: "Carlos Eduardo Mendoza",
+      cedula: "V-18.452.910",
+      tipoDonacion: "Voluntaria"
+    },
+    paciente: {
+      nombre: "María Alejandra Pérez",
+      cedula: "V-21.304.551",
+      ubicacion: "UCI Cama 4",
+      medico: "Dr. Roberto Silva"
+    },
+    preTransfucion: {
+      consentimiento: true,
+      dobleChequeo: true,
+      coombs: "Negativo",
+      pruebaCruzada: "Compatible"
+    },
+    signosVitales: {
+      pa: "110/70 -> 90/60 mmHg",
+      temp: "36.8°C -> 38.5°C",
+      fc: "72 -> 110 bpm"
+    },
+    acciones: "Infusión suspendida inmediatamente al momento de transición. Mantención de vía salina al 0.9%, administración de antihistamínicos. Bolsa y muestras devueltas a laboratorio de banco de sangre para Coombs directo post-transfusión."
+  },
+  {
+    id: "HV-2026-002",
+    din: "B00422600189",
+    fecha: "2026-10-24 11:00",
+    enCurso: false,
+    tipoEvento: "Hallazgo Serológico",
+    categoria: "Serología Reactiva (HCV)",
+    severidad: "Urgente",
+    componente: "Plasma Fresco Congelado",
+    volumen: "220 mL",
+    centroOrigen: "Clínica San Rafael",
+    centrifugado: "4400 RCF x 15 min (-30°C)",
+    infusion: {
+      inicio: "N/A",
+      transicion: "N/A",
+      finalizacion: "N/A",
+      goteo: "N/A"
+    },
+    donante: {
+      nombre: "Ana Isabel Gómez",
+      cedula: "V-25.112.890",
+      tipoDonacion: "Reposición"
+    },
+    paciente: {
+      nombre: "N/A (Unidad Bloqueada)",
+      cedula: "N/A",
+      ubicacion: "Cuarentena / Laboratorio",
+      medico: "N/A"
+    },
+    preTransfucion: {
+      consentimiento: false,
+      dobleChequeo: false,
+      coombs: "N/A",
+      pruebaCruzada: "N/A"
+    },
+    signosVitales: { pa: "N/A", temp: "N/A", fc: "N/A" },
+    acciones: "Unidad descartada e incinerada. Bloqueo permanente del donante en el sistema central. Notificación formal enviada a la coordinación médica."
+  },
+  {
+    id: "HV-2026-003",
+    din: "B00422600201",
+    fecha: "2026-10-23 18:40",
+    enCurso: false,
+    tipoEvento: "Incidente Cadena Frío",
+    categoria: "Excursión Térmica en Transporte",
+    severidad: "Normal",
+    componente: "Concentrado de Plaquetas",
+    volumen: "60 mL",
+    centroOrigen: "Banco de Sangre Principal",
+    centrifugado: "2000 RCF x 5 min (22°C - Agitación Continua)",
+    infusion: {
+      inicio: "N/A",
+      transicion: "N/A",
+      finalizacion: "N/A",
+      goteo: "N/A"
+    },
+    donante: {
+      nombre: "José Luis Bastidas",
+      cedula: "V-19.882.102",
+      tipoDonacion: "Plaquetoféresis"
+    },
+    paciente: {
+      nombre: "N/A (Baja Previa)",
+      cedula: "N/A",
+      ubicacion: "En Traslado",
+      medico: "Dra. Elena Rivas"
+    },
+    preTransfucion: {
+      consentimiento: false,
+      dobleChequeo: false,
+      coombs: "N/A",
+      pruebaCruzada: "N/A"
+    },
+    signosVitales: { pa: "N/A", temp: "N/A", fc: "N/A" },
+    acciones: "Data logger superó el límite térmico (>24°C) durante el traslado. Unidad dada de baja y descartada según norma."
+  },
+  {
+    id: "HV-2026-004",
+    din: "B00422600310",
+    fecha: "2026-10-24 09:00",
+    enCurso: false,
+    tipoEvento: "Transfusión Exitosa",
+    categoria: "Sin Incidencias / Evolución Normal",
+    severidad: "Normal",
+    componente: "Concentrado de Eritrocitos Leucorreducido",
+    volumen: "300 mL",
+    centroOrigen: "Banco de Sangre Principal",
+    centrifugado: "3600 RCF x 10 min (4°C) - SAGM",
+    infusion: {
+      inicio: "08:30",
+      transicion: "N/A (Sin alteraciones)",
+      finalizacion: "11:15",
+      goteo: "25 gotas/min"
+    },
+    donante: {
+      nombre: "Gabriel Alejandro Torres",
+      cedula: "V-20.111.222",
+      tipoDonacion: "Voluntaria"
+    },
+    paciente: {
+      nombre: "Carmen Rosa Valbuena",
+      cedula: "V-15.678.901",
+      ubicacion: "Hospitalización Piso 2 - Cama 12",
+      medico: "Dr. Andrés Bello"
+    },
+    preTransfucion: {
+      consentimiento: true,
+      dobleChequeo: true,
+      coombs: "Negativo",
+      pruebaCruzada: "Compatible"
+    },
+    signosVitales: {
+      pa: "120/80 -> 120/80 mmHg",
+      temp: "36.5°C -> 36.6°C",
+      fc: "75 -> 78 bpm"
+    },
+    acciones: "Verificación pre-transfusional exitosa. Monitoreo completo a los 15 minutos sin alteraciones. Transfusión finalizada dentro del tiempo normado (2h 45m). Registro clínico completado satisfactoriamente."
+  },
+  {
+    id: "HV-2026-005",
+    din: "B00422600455",
+    fecha: "2026-10-23 16:20",
+    enCurso: false,
+    tipoEvento: "Transfusión Exitosa",
+    categoria: "Plaquetoféresis - Sin Incidencias",
+    severidad: "Normal",
+    componente: "Concentrado de Plaquetas (Aféresis)",
+    volumen: "250 mL",
+    centroOrigen: "Clínica San Rafael",
+    centrifugado: "2200 RCF x 8 min (22°C - Agitación Continua)",
+    infusion: {
+      inicio: "15:00",
+      transicion: "N/A (Sin alteraciones)",
+      finalizacion: "15:45",
+      goteo: "60 gotas/min"
+    },
+    donante: {
+      nombre: "Luis Enrique Parra",
+      cedula: "V-22.333.444",
+      tipoDonacion: "Aféresis"
+    },
+    paciente: {
+      nombre: "Sofía Valentina Rincón",
+      cedula: "V-26.444.555",
+      ubicacion: "Hematología - Cama 3",
+      medico: "Dra. Mariana Vega"
+    },
+    preTransfucion: {
+      consentimiento: true,
+      dobleChequeo: true,
+      coombs: "Negativo",
+      pruebaCruzada: "Compatible"
+    },
+    signosVitales: {
+      pa: "110/70 -> 112/72 mmHg",
+      temp: "36.7°C -> 36.7°C",
+      fc: "80 -> 82 bpm"
+    },
+    acciones: "Doble chequeo riguroso en cabecera de cama. Infusión de plaquetas completada en 45 minutos bajo agitación y control térmico adecuado. Sin reacciones adversas reportadas por el servicio clínico[cite: 1]."
+  }
+];
+---
+
+<Layout title="BLUD | Hemovigilancia Directiva" description="Panel de supervisión y monitoreo de hemovigilancia para el Director de Banco de Sangre">
+  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
+    <div class="container-blud space-y-6">
+      <header class="flex flex-col gap-2 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Hemovigilancia y Monitoreo en Tiempo Real</h1>
+        </div>
+        <div class="flex items-center gap-2">
+
+        </div>
+      </header>
+
+      <section class="panel space-y-4 p-4 sm:p-6" aria-label="Monitoreo de reportes de hemovigilancia">
+        <div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto_auto_auto_auto]">
+            <div>
+              <label class="sr-only" for="request-search">Buscar reportes o bolsas</label>
+              <input 
+                id="request-search" 
+                type="search" 
+                class="field text-sm w-full" 
+                placeholder="Buscar por folio, DIN, paciente, donante o centro..." 
+              />
+            </div>
+
+            <div>
+              <label class="sr-only" for="status-filter">Filtrar por estado</label>
+              <select id="status-filter" class="field text-sm sm:w-40">
+                <option value="">Todos los estados</option>
+                <option value="en-curso">🔴 En Curso (Tiempo Real)</option>
+                <option value="finalizado">Cerrados / Archivados</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="sr-only" for="center-filter">Filtrar por sede</label>
+              <select id="center-filter" class="field text-sm sm:w-44">
+                <option value="">Todas las sedes</option>
+                <option value="Hospital Central del Sur">Hospital Central del Sur</option>
+                <option value="Clínica San Rafael">Clínica San Rafael</option>
+                <option value="Banco de Sangre Principal">Banco de Sangre Principal</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="sr-only" for="priority-filter">Filtrar por severidad</label>
+              <select id="priority-filter" class="field text-sm sm:w-36">
+                <option value="">Todas las severidades</option>
+                <option value="Crítica">Crítica</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Normal">Normal</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="sr-only" for="event-type-filter">Filtrar por evento</label>
+              <select id="event-type-filter" class="field text-sm sm:w-40">
+                <option value="">Todos los eventos</option>
+                <option value="RAT">Reacción Transfusional</option>
+                <option value="Hallazgo Serológico">Hallazgo Serológico</option>
+                <option value="Incidente Cadena Frío">Incidente de Traslado</option>
+                <option value="Transfusión Exitosa">Transfusión Exitosa</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <p id="request-feedback" class="sr-only" role="status" aria-live="polite"></p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm border-collapse" id="hv-table">
+            <thead>
+              <tr class="border-b border-line text-xs uppercase tracking-wider text-muted bg-surface/50">
+                <th class="p-3">Estatus</th>
+                <th class="p-3">Folio / Fecha</th>
+                <th class="p-3">Sede / Centro</th>
+                <th class="p-3">Código DIN</th>
+                <th class="p-3">Evento / Tipo Reacción</th>
+                <th class="p-3">Severidad</th>
+                <th class="p-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line" id="hv-table-body">
+              {reportesHemovigilancia.map((reporte) => (
+                <tr 
+                  class={`hover:bg-surface/30 transition-colors hv-row ${reporte.enCurso ? 'bg-red-500/5' : ''}`}
+                  data-priority={reporte.severidad} 
+                  data-event={reporte.tipoEvento} 
+                  data-center={reporte.centroOrigen}
+                  data-status={reporte.enCurso ? 'en-curso' : 'finalizado'}
+                  data-search={`${reporte.id} ${reporte.din} ${reporte.centroOrigen} ${reporte.donante.nombre} ${reporte.paciente.nombre}`.toLowerCase()}
+                >
+                  <td class="p-3">
+                    {reporte.enCurso ? (
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/30 animate-pulse">
+                        <span class="size-1.5 rounded-full bg-red-500"></span>
+                        EN CURSO
+                      </span>
+                    ) : (
+                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-surface border border-line text-muted">
+                        Finalizado
+                      </span>
+                    )}
+                  </td>
+                  <td class="p-3">
+                    <span class="font-bold block text-ink">{reporte.id}</span>
+                    <span class="text-xs text-muted">{reporte.fecha}</span>
+                  </td>
+                  <td class="p-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-surface border border-line text-ink">
+                      {reporte.centroOrigen}
+                    </span>
+                  </td>
+                  <td class="p-3 font-mono text-xs font-semibold">{reporte.din}</td>
+                  <td class="p-3">
+                    <span class="font-medium block">{reporte.tipoEvento}</span>
+                    <span class="text-xs text-muted">{reporte.categoria}</span>
+                  </td>
+                  <td class="p-3">
+                    <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                      reporte.severidad === 'Crítica' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                      reporte.severidad === 'Urgente' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                      'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                    }`}>
+                      {reporte.severidad}
+                    </span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button 
+                      type="button" 
+                      class="btn btn-secondary text-xs px-3 py-1 btn-view-trace"
+                      data-report={JSON.stringify(reporte)}
+                    >
+                      Auditar / Rastrear
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <dialog id="trace-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-full max-w-3xl rounded-xl shadow-2xl">
+    <div class="panel bg-canvas border border-line text-ink p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between border-b border-line pb-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="m-centro-badge" class="text-xs font-bold text-primary uppercase"></span>
+            <span id="m-status-badge"></span>
+          </div>
+          <h2 class="text-xl font-bold">Auditoría Hemovigilancia: <span id="modal-hv-id" class="text-primary"></span></h2>
+        </div>
+        <button id="close-modal" class="text-muted hover:text-ink text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border border-line p-4 rounded-lg bg-surface/20">
+        <div class="space-y-1">
+          <span class="text-xs font-semibold text-muted uppercase block">1. Donante Origen</span>
+          <p id="m-donante-nombre" class="font-bold text-sm"></p>
+          <p id="m-donante-cedula" class="text-xs text-muted"></p>
+          <span id="m-donante-tipo" class="inline-block text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded mt-1"></span>
+        </div>
+
+        <div class="space-y-1 border-t md:border-t-0 md:border-l border-line pt-2 md:pt-0 md:pl-4">
+          <span class="text-xs font-semibold text-muted uppercase block">2. Componente y Procesamiento</span>
+          <p id="m-bolsa-din" class="font-mono font-bold text-sm text-primary"></p>
+          <p id="m-bolsa-tipo" class="text-xs font-medium"></p>
+          <p id="m-bolsa-volumen" class="text-xs text-muted"></p>
+          <div class="mt-2 pt-2 border-t border-line/50 text-[11px]">
+            <span class="text-muted block">Centrifugado / RCF:</span>
+            <span id="m-centrifugado" class="font-mono font-semibold text-ink"></span>
+          </div>
+        </div>
+
+        <div class="space-y-1 border-t md:border-t-0 md:border-l border-line pt-2 md:pt-0 md:pl-4">
+          <span class="text-xs font-semibold text-muted uppercase block">3. Paciente Receptor</span>
+          <p id="m-paciente-nombre" class="font-bold text-sm"></p>
+          <p id="m-paciente-cedula" class="text-xs text-muted"></p>
+          <p id="m-paciente-ubicacion" class="text-xs text-muted"></p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <h3 class="text-sm font-bold border-b border-line pb-1">Cronograma de Infusión, Velocidad y Tiempos</h3>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div class="p-2.5 border border-line rounded bg-surface/30">
+            <span class="text-muted block text-[11px]">Inicio Infusión:</span>
+            <strong id="m-inf-inicio" class="font-mono text-sm"></strong>
+          </div>
+          <div class="p-2.5 border border-line rounded bg-surface/30">
+            <span class="text-muted block text-[11px]">Transición / Evento:</span>
+            <strong id="m-inf-transicion" class="font-mono text-sm text-amber-500"></strong>
+          </div>
+          <div class="p-2.5 border border-line rounded bg-surface/30">
+            <span class="text-muted block text-[11px]">Finalización / Cierre:</span>
+            <strong id="m-inf-finalizacion" class="font-mono text-sm"></strong>
+          </div>
+          <div class="p-2.5 border border-line rounded bg-surface/30">
+            <span class="text-muted block text-[11px]">Velocidad / Goteo:</span>
+            <strong id="m-inf-goteo" class="font-mono text-sm"></strong>
+          </div>
+        </div>
+
+        <div class="p-3 border border-line rounded-lg space-y-2 bg-surface/10">
+          <div class="flex justify-between items-center border-b border-line/50 pb-2">
+            <span class="text-xs font-bold uppercase text-muted">Tipo de Evento / Reacción Registrada:</span>
+            <span id="m-tipo-reaccion" class="text-xs font-bold text-red-500"></span>
+          </div>
+          
+          <div class="grid grid-cols-3 gap-2 text-xs pt-1">
+            <div><span class="text-muted block">Presión Arterial:</span> <span id="m-vit-pa" class="font-mono"></span></div>
+            <div><span class="text-muted block">Temperatura:</span> <span id="m-vit-temp" class="font-mono"></span></div>
+            <div><span class="text-muted block">Frecuencia Cardíaca:</span> <span id="m-vit-fc" class="font-mono"></span></div>
+          </div>
+        </div>
+
+        <div class="p-3 border border-line rounded-lg space-y-1 bg-surface/10">
+          <h4 class="text-xs font-bold uppercase text-muted">Acciones Inmediatas Tomadas y Protocolo Ejecutado</h4>
+          <p id="m-acciones" class="text-xs leading-relaxed text-ink"></p>
+        </div>
+      </div>
+
+      <div class="flex justify-end border-t border-line pt-4">
+        <button id="btn-close-dialog" type="button" class="btn btn-secondary text-xs">Cerrar Auditoría</button>
+      </div>
+    </div>
+  </dialog>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('request-search') as HTMLInputElement;
+    const statusSelect = document.getElementById('status-filter') as HTMLSelectElement;
+    const centerSelect = document.getElementById('center-filter') as HTMLSelectElement;
+    const prioritySelect = document.getElementById('priority-filter') as HTMLSelectElement;
+    const eventSelect = document.getElementById('event-type-filter') as HTMLSelectElement;
+    const rows = document.querySelectorAll('.hv-row');
+    const feedback = document.getElementById('request-feedback');
+
+    const filterTable = () => {
+      const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+      const selectedStatus = statusSelect?.value || '';
+      const selectedCenter = centerSelect?.value || '';
+      const selectedPriority = prioritySelect?.value || '';
+      const selectedEvent = eventSelect?.value || '';
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const htmlRow = row as HTMLElement;
+        const searchData = htmlRow.dataset.search || '';
+        const statusData = htmlRow.dataset.status || '';
+        const centerData = htmlRow.dataset.center || '';
+        const priorityData = htmlRow.dataset.priority || '';
+        const eventData = htmlRow.dataset.event || '';
+
+        const matchesSearch = !searchTerm || searchData.includes(searchTerm);
+        const matchesStatus = !selectedStatus || statusData === selectedStatus;
+        const matchesCenter = !selectedCenter || centerData === selectedCenter;
+        const matchesPriority = !selectedPriority || priorityData === selectedPriority;
+        const matchesEvent = !selectedEvent || eventData === selectedEvent;
+
+        if (matchesSearch && matchesStatus && matchesCenter && matchesPriority && matchesEvent) {
+          htmlRow.style.display = '';
+          visibleCount++;
+        } else {
+          htmlRow.style.display = 'none';
+        }
+      });
+
+      if (feedback) {
+        feedback.textContent = `Se están mostrando ${visibleCount} reportes de hemovigilancia.`;
+      }
+    };
+
+    searchInput?.addEventListener('input', filterTable);
+    statusSelect?.addEventListener('change', filterTable);
+    centerSelect?.addEventListener('change', filterTable);
+    prioritySelect?.addEventListener('change', filterTable);
+    eventSelect?.addEventListener('change', filterTable);
+
+    const modal = document.getElementById('trace-modal') as HTMLDialogElement;
+    const btnClose = document.getElementById('close-modal');
+    const btnCloseDialog = document.getElementById('btn-close-dialog');
+
+    document.querySelectorAll('.btn-view-trace').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const rawData = target.dataset.report;
+        if (!rawData) return;
+
+        const data = JSON.parse(rawData);
+
+        const statusBadge = document.getElementById('m-status-badge')!;
+        if (data.enCurso) {
+          statusBadge.innerHTML = `<span class="px-2 py-0.5 text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/30 rounded">EN CURSO (MONITOREANDO)</span>`;
+        } else {
+          statusBadge.innerHTML = `<span class="px-2 py-0.5 text-[10px] font-medium bg-surface text-muted border border-line rounded">FINALIZADO</span>`;
+        }
+
+        (document.getElementById('m-centro-badge')!).textContent = `Centro: ${data.centroOrigen}`;
+        (document.getElementById('modal-hv-id')!).textContent = data.id;
+
+        (document.getElementById('m-donante-nombre')!).textContent = data.donante.nombre;
+        (document.getElementById('m-donante-cedula')!).textContent = data.donante.cedula;
+        (document.getElementById('m-donante-tipo')!).textContent = `Donación ${data.donante.tipoDonacion}`;
+
+        (document.getElementById('m-bolsa-din')!).textContent = data.din;
+        (document.getElementById('m-bolsa-tipo')!).textContent = data.componente;
+        (document.getElementById('m-bolsa-volumen')!).textContent = `Volumen: ${data.volumen}`;
+        (document.getElementById('m-centrifugado')!).textContent = data.centrifugado;
+
+        (document.getElementById('m-paciente-nombre')!).textContent = data.paciente.nombre;
+        (document.getElementById('m-paciente-cedula')!).textContent = data.paciente.cedula;
+        (document.getElementById('m-paciente-ubicacion')!).textContent = data.paciente.ubicacion;
+
+        (document.getElementById('m-inf-inicio')!).textContent = data.infusion.inicio;
+        (document.getElementById('m-inf-transicion')!).textContent = data.infusion.transicion;
+        (document.getElementById('m-inf-finalizacion')!).textContent = data.infusion.finalizacion;
+        (document.getElementById('m-inf-goteo')!).textContent = data.infusion.goteo;
+
+        (document.getElementById('m-tipo-reaccion')!).textContent = `${data.tipoEvento} - ${data.categoria}`;
+        (document.getElementById('m-vit-pa')!).textContent = data.signosVitales.pa;
+        (document.getElementById('m-vit-temp')!).textContent = data.signosVitales.temp;
+        (document.getElementById('m-vit-fc')!).textContent = data.signosVitales.fc;
+
+        (document.getElementById('m-acciones')!).textContent = data.acciones;
+
+        modal?.showModal();
+      });
+    });
+
+    const closeModal = () => modal?.close();
+    btnClose?.addEventListener('click', closeModal);
+    btnCloseDialog?.addEventListener('click', closeModal);
+  });
+</script>
