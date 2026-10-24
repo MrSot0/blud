@@ -1,12 +1,13 @@
 // POST /api/chat - Bluddie, el asistente de BLUD, con Gemini 3.1 Flash-Lite.
 // Se ejecuta en el servidor para que la clave de Gemini nunca llegue al navegador.
 import type { APIRoute } from 'astro';
+import { GEMINI_API_KEY } from 'astro:env/server';
 import { centers, hoursLabel, prettyBloodType } from '../../data/centers';
 import { infoTopics, infoHref } from '../../data/info';
 import { questions } from '../../data/eligibility';
 
 export const prerender = false;
-const GEMINI_API_KEY = import.meta.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+
 // El Flash-Lite más barato disponible para cuentas nuevas (retiro anunciado: 7 may 2027).
 // Google a veces responde 503 (saturado): se reintenta una vez y luego se usa el siguiente Flash-Lite.
 const ATTEMPTS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
