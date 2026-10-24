@@ -22,3 +22,5 @@ Thumbs.db
 .claude/
 
 .vercel
+
+src/api
