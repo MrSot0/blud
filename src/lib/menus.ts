@@ -66,6 +66,8 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Prescribir', hint: 'Cargar orden médica', href: '/operador/prescribir', icon: 'file' },
       { label: 'Entregas', hint: 'Despachar pedidos', href: '/operador/entregas', icon: 'truck' },
       { label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
+      { label: 'Hemovigilancia', hint: 'Registro de eventos transfusionales', href: '/operador/hemovigilancia', icon: 'alert' },
+
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/operador/perfil', icon: 'user' },

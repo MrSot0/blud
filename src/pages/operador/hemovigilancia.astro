@@ -1,0 +1,273 @@
+    ---
+    import Layout from '../../layouts/LayoutD.astro';
+    import Icon from '../../components/Icon.astro';
+
+    const reportesEnJornada = [
+    {
+        id: "HV-2026-008",
+        din: "B00422600512",
+        fecha: "2026-10-24 17:10",
+        enCurso: true,
+        tipoEvento: "RAT",
+        categoria: "Sobrecarga Circulatoria (TACO)",
+        severidad: "Crítica",
+        componente: "Concentrado de Eritrocitos",
+        paciente: "Pedro José Alvarado (V-12.345.678)",
+        medico: "Dra. Carmen Silva",
+        acciones: "Disnea severa a los 20 min. Infusión suspendida. Vía venosa permeable con solución salina."
+    }
+    ];
+    ---
+
+    <Layout title="BLUD | Registro Activo de Hemovigilancia" description="Formulario de verificación y reporte en tiempo real para personal clínico de sede">
+    <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
+        <div class="container-blud space-y-6">
+        <header class="flex flex-col gap-2 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Módulo M09 - Punto de Transfusión / Sede</span>
+            <h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Verificación y Registro en Jornada</h1>
+            </div>
+            <button id="btn-open-form" type="button" class="btn btn-primary text-sm flex items-center gap-2">
+            <Icon name="caret-down" class="size-4 -rotate-90" />
+            Registrar Transfusión / Evento
+            </button>
+        </header>
+
+        <section class="panel space-y-4 p-4 sm:p-6" aria-label="Monitoreo de registros en proceso">
+            <div class="flex items-center justify-between border-b border-line pb-3">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-ink">Registros en Curso (Jornada Actual)</h2>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <span class="size-2 rounded-full bg-emerald-500 animate-ping"></span>
+                Monitoreo Activo
+            </span>
+            </div>
+
+            <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                <tr class="border-b border-line text-xs uppercase tracking-wider text-muted bg-surface/50">
+                    <th class="p-3">Estatus</th>
+                    <th class="p-3">Folio / Hora</th>
+                    <th class="p-3">DIN Bolsa</th>
+                    <th class="p-3">Componente</th>
+                    <th class="p-3">Paciente / Médico</th>
+                    <th class="p-3">Evento Registrado</th>
+                    <th class="p-3 text-right">Acción</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-line">
+                {reportesEnJornada.map((rep) => (
+                    <tr class="hover:bg-surface/30 transition-colors bg-red-500/5">
+                    <td class="p-3">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/30 animate-pulse">
+                        <span class="size-1.5 rounded-full bg-red-500"></span>
+                        EN CURSO
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <span class="font-bold block text-ink">{rep.id}</span>
+                        <span class="text-xs text-muted">{rep.fecha}</span>
+                    </td>
+                    <td class="p-3 font-mono text-xs font-semibold">{rep.din}</td>
+                    <td class="p-3 text-xs">{rep.componente}</td>
+                    <td class="p-3 text-xs">
+                        <span class="font-bold block">{rep.paciente}</span>
+                        <span class="text-muted">{rep.medico}</span>
+                    </td>
+                    <td class="p-3">
+                        <span class="font-medium block text-xs">{rep.tipoEvento}</span>
+                        <span class="text-[11px] text-muted">{rep.categoria}</span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button type="button" class="btn btn-secondary text-xs px-2.5 py-1">Editar / Concluir</button>
+                    </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            </div>
+        </section>
+        </div>
+    </section>
+
+    <dialog id="form-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-full max-w-4xl rounded-xl shadow-2xl">
+        <div class="panel bg-canvas border border-line text-ink p-6 space-y-6 max-h-[92vh] overflow-y-auto">
+        <div class="flex items-start justify-between border-b border-line pb-4">
+            <div>
+            <span class="text-xs font-bold text-primary uppercase block">Punto de Transfusión - Registro Operativo</span>
+            <h2 class="text-xl font-bold">Verificación y Registro de Hemovigilancia</h2>
+            </div>
+            <button id="close-form-modal" class="text-muted hover:text-ink text-xl font-bold">&times;</button>
+        </div>
+
+        <form id="hv-form" class="space-y-6">
+            <div class="p-4 border border-primary/30 rounded-lg bg-primary/5 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-primary">1. Verificación e Identificación de Bolsa (DIN)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                <label for="form-din" class="block text-xs font-semibold mb-1">Código Único DIN (ISBT-128)</label>
+                <div class="flex gap-2">
+                    <input id="form-din" type="text" required class="field text-sm font-mono w-full" placeholder="Ej: B00422600123" />
+                    <button type="button" class="btn btn-secondary text-xs whitespace-nowrap">Validar Bolsa</button>
+                </div>
+                </div>
+                <div>
+                <label for="form-componente" class="block text-xs font-semibold mb-1">Hemocomponente</label>
+                <select id="form-componente" required class="field text-sm w-full">
+                    <option value="">Seleccionar...</option>
+                    <option value="Concentrado de Eritrocitos">Concentrado de Eritrocitos</option>
+                    <option value="Plasma Fresco Congelado">Plasma Fresco Congelado</option>
+                    <option value="Concentrado de Plaquetas">Concentrado de Plaquetas</option>
+                    <option value="Crioprecipitado">Crioprecipitado</option>
+                </select>
+                </div>
+            </div>
+            </div>
+
+            <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted border-b border-line pb-1">2. Lista de Doble Verificación en Cabecera de Cama</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <label class="flex items-center gap-2 p-2.5 border border-line rounded bg-surface/20 cursor-pointer">
+                <input type="checkbox" required class="rounded border-line text-primary focus:ring-primary" />
+                <span>Consentimiento informado firmado en orden</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 border border-line rounded bg-surface/20 cursor-pointer">
+                <input type="checkbox" required class="rounded border-line text-primary focus:ring-primary" />
+                <span>Identidad del paciente vs. Brazalete validada</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 border border-line rounded bg-surface/20 cursor-pointer">
+                <input type="checkbox" required class="rounded border-line text-primary focus:ring-primary" />
+                <span>Coincidencia de Grupo ABO/Rh paciente vs. bolsa</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 border border-line rounded bg-surface/20 cursor-pointer">
+                <input type="checkbox" required class="rounded border-line text-primary focus:ring-primary" />
+                <span>Pruebas cruzadas y Coombs compatibles</span>
+                </label>
+            </div>
+            </div>
+
+            <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted border-b border-line pb-1">3. Paciente y Médico Responsable</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                <label for="form-paciente" class="block text-xs font-semibold mb-1">Nombre Completo del Paciente</label>
+                <input id="form-paciente" type="text" required class="field text-sm w-full" placeholder="Nombre y Apellido" />
+                </div>
+                <div>
+                <label for="form-cedula-paciente" class="block text-xs font-semibold mb-1">Cédula / Historia Clínica</label>
+                <input id="form-cedula-paciente" type="text" required class="field text-sm w-full" placeholder="V-00.000.000" />
+                </div>
+                <div>
+                <label for="form-medico" class="block text-xs font-semibold mb-1">Médico Indicante / Tratante</label>
+                <input id="form-medico" type="text" required class="field text-sm w-full" placeholder="Dr. Nombre Apellido" />
+                </div>
+            </div>
+            </div>
+
+            <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted border-b border-line pb-1">4. Tiempos de Infusión y Parámetros</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                <label for="form-hora-inicio" class="block text-xs font-semibold mb-1">Hora Inicio</label>
+                <input id="form-hora-inicio" type="time" required class="field text-sm w-full" />
+                </div>
+                <div>
+                <label for="form-hora-transicion" class="block text-xs font-semibold mb-1">Hora Transición / Evento</label>
+                <input id="form-hora-transicion" type="time" class="field text-sm w-full" />
+                </div>
+                <div>
+                <label for="form-hora-fin" class="block text-xs font-semibold mb-1">Hora Finalización</label>
+                <input id="form-hora-fin" type="time" class="field text-sm w-full" />
+                </div>
+                <div>
+                <label for="form-goteo" class="block text-xs font-semibold mb-1">Velocidad / Goteo</label>
+                <input id="form-goteo" type="text" class="field text-sm w-full" placeholder="Ej: 30 gotas/min" />
+                </div>
+            </div>
+            </div>
+
+            <div class="space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-muted border-b border-line pb-1">5. Diagnóstico de Evento o Reacción Adversa</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                <label for="form-tipo-evento" class="block text-xs font-semibold mb-1">Tipo de Evento</label>
+                <select id="form-tipo-evento" required class="field text-sm w-full">
+                    <option value="Transfusión Exitosa">Transfusión Exitosa (Sin Incidencias)</option>
+                    <option value="RAT">Reacción Transfusional Adversa (RAT)</option>
+                    <option value="Incidente">Incidente / Alteración de Bolsa</option>
+                </select>
+                </div>
+                <div>
+                <label for="form-categoria" class="block text-xs font-semibold mb-1">Categoría Específica</label>
+                <select id="form-categoria" class="field text-sm w-full">
+                    <option value="Sin Incidencias">Sin Incidencias</option>
+                    <option value="Febril No Hemolítica">Febril No Hemolítica</option>
+                    <option value="Alérgica / Urticaria">Alérgica / Urticaria</option>
+                    <option value="Sobrecarga Circulatoria (TACO)">Sobrecarga Circulatoria (TACO)</option>
+                    <option value="Lesión Pulmonar (TRALI)">Lesión Pulmonar (TRALI)</option>
+                    <option value="Contaminación Bacteriana">Contaminación Bacteriana</option>
+                    <option value="Hemolítica Aguda">Hemolítica Aguda</option>
+                </select>
+                </div>
+                <div>
+                <label for="form-severidad" class="block text-xs font-semibold mb-1">Nivel de Severidad</label>
+                <select id="form-severidad" required class="field text-sm w-full">
+                    <option value="Normal">Normal / Leve</option>
+                    <option value="Urgente">Urgente / Moderado</option>
+                    <option value="Crítica">Crítica / Severo</option>
+                </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 pt-2">
+                <div>
+                <label for="form-pa" class="block text-xs font-semibold mb-1">Presión Arterial</label>
+                <input id="form-pa" type="text" class="field text-sm w-full" placeholder="120/80 -> 90/60" />
+                </div>
+                <div>
+                <label for="form-temp" class="block text-xs font-semibold mb-1">Temperatura (°C)</label>
+                <input id="form-temp" type="text" class="field text-sm w-full" placeholder="36.5°C -> 38.5°C" />
+                </div>
+                <div>
+                <label for="form-fc" class="block text-xs font-semibold mb-1">Frecuencia Cardíaca</label>
+                <input id="form-fc" type="text" class="field text-sm w-full" placeholder="75 -> 110" />
+                </div>
+            </div>
+            </div>
+
+            <div>
+            <label for="form-acciones" class="block text-xs font-semibold mb-1">Acciones Médicas Inmediatas Tomadas</label>
+            <textarea id="form-acciones" rows="3" required class="field text-sm w-full" placeholder="Describir las acciones médicas, suspensión de infusión, medicamentos o devolución de la unidad..."></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 border-t border-line pt-4">
+            <button id="btn-cancel-form" type="button" class="btn btn-secondary text-xs">Cancelar</button>
+            <button type="submit" class="btn btn-primary text-xs">Transmitir Registro al Banco Central</button>
+            </div>
+        </form>
+        </div>
+    </dialog>
+    </Layout>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const formModal = document.getElementById('form-modal') as HTMLDialogElement;
+        const btnOpenForm = document.getElementById('btn-open-form');
+        const btnCloseModal = document.getElementById('close-form-modal');
+        const btnCancelForm = document.getElementById('btn-cancel-form');
+        const hvForm = document.getElementById('hv-form') as HTMLFormElement;
+
+        btnOpenForm?.addEventListener('click', () => formModal?.showModal());
+
+        const closeModal = () => formModal?.close();
+        btnCloseModal?.addEventListener('click', closeModal);
+        btnCancelForm?.addEventListener('click', closeModal);
+
+        hvForm?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert('Registro de Hemovigilancia transmitido en tiempo real.');
+        hvForm.reset();
+        closeModal();
+        });
+    });
+    </script>
