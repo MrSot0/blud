@@ -175,7 +175,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         return;
       }
       err.classList.add('hidden');
-      toast(`¡Donación de ${r.data.donanteNombre} registrada! 🩸`);
+      toast(`Donación de ${r.data.donanteNombre} registrada. ${r.aviso ?? ''}`.trim());
       form.reset();
       $('#vol').setAttribute('value', '450');
       $('#donante').classList.add('hidden');

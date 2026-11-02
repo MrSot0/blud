@@ -90,7 +90,13 @@ export interface DonacionOp {
   estadoLab?: EstadoLab;
 }
 
-export type EstadoPedido = 'pendiente' | 'despachado';
+/**
+ * Ciclo de una solicitud de hemocomponentes:
+ * pendiente (la carga el operador) → aprobado o rechazado (lo decide la dirección) → despachado (entrega del operador).
+ * Las que crea la dirección nacen aprobadas.
+ */
+export type EstadoPedido = 'pendiente' | 'aprobado' | 'rechazado' | 'despachado';
+export type Prioridad = 'normal' | 'urgente' | 'critica';
 
 export interface PedidoOp {
   id: string;
@@ -102,9 +108,23 @@ export interface PedidoOp {
   hospitalDestino: string;
   fecha: string;
   estado: EstadoPedido;
+  prioridad?: Prioridad;
+  servicio?: string;
+  medico?: string;
+  diagnostico?: string;
+  /** Datos clínicos del formulario de transfusión (Hb, Hcto, plaquetas…). */
+  clinica?: Record<string, string>;
   creadoPor?: string;
+  creadoPorNombre?: string;
+  revisadoPor?: string;
+  revisadoPorNombre?: string;
+  fechaRevision?: string;
+  motivoRechazo?: string;
   entregaId?: string;
 }
+
+/** REQ-AB12CD: folio corto para mostrar y buscar solicitudes. */
+export const codigoPedido = (id: string) => 'REQ-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
 export interface EntregaOp {
   id: string;
@@ -213,8 +233,8 @@ export interface Ticket {
   actualizado: string;
   asignadoA?: { id: string; nombre: string };
   mensajes: MensajeTicket[];
-  /** Notas internas: solo las ve el personal de soporte. */
-  notas: NotaTicket[];
+  /** Solo en datos antiguos: las notas internas ahora viven en `ticketNotas` (el donante no puede leerlas). */
+  notas?: NotaTicket[];
   resueltoEn?: string;
 }
 
@@ -232,6 +252,9 @@ export const pruebas = collection<PruebaLab>('blud-db-pruebas');
 export const fracciones = collection<Fraccionamiento>('blud-db-fracciones');
 export const positivos = collection<CasoPositivo>('blud-db-positivos');
 export const tickets = collection<Ticket>('blud-db-tickets');
+/** Notas internas de soporte, aparte del ticket para que el donante nunca las reciba (id = id del ticket). */
+export interface NotasTicket { id: string; notas: NotaTicket[] }
+export const ticketNotas = collection<NotasTicket>('blud-db-ticket-notas');
 
 // ---------------------------------------------------------------- Registro de donantes
 /** V12345678 / 12345678 / v-12345678 → V-12345678 */

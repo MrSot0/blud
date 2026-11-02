@@ -1,229 +1,162 @@
 ---
 // src/pages/director/dashboard.astro
+// Resumen del banco de sangre con datos reales: stock por tipo, solicitudes por aprobar, vencimientos y actividad de la red.
 import Layout from '../../layouts/LayoutD.astro';
-import Icon from '../../components/Icon.astro';
-
-const metrics = [
-  { 
-    label: 'Stock Crítico / Agotado', 
-    value: '4', 
-    color: 'text-accent-ink', 
-    bg: 'bg-accent-soft',
-    border: 'border-accent/20',
-    icon: 'first-aid-kit'
-  },
-  { 
-    label: 'Lotes Próximos a Vencer (<30 días)', 
-    value: '7', 
-    color: 'text-warn', 
-    bg: 'bg-warn-soft',
-    border: 'border-warn/30',
-    icon: 'calendar-check'
-  },
-  { 
-    label: 'Requisiciones Pendientes', 
-    value: '3', 
-    color: 'text-ink-2', 
-    bg: 'bg-sunken',
-    border: 'border-line-strong',
-    icon: 'caret-down'
-  },
-  { 
-    label: 'Movimientos Hoy', 
-    value: '18', 
-    color: 'text-ok', 
-    bg: 'bg-ok-soft',
-    border: 'border-ok/30',
-    icon: 'arrow-right'
-  },
-];
-
-const lowStockItems = [
-  { code: 'INS-0284', name: 'Plasma', presentation: 'Frasco 1000g', stock: 0, min: 20 },
-  { code: 'INS-4326', name: 'Glóbulos Rojos', presentation: 'Frasco 500ml', stock: 2, min: 30 },
-  { code: 'INS-6650', name: 'Plaquetas', presentation: 'Prueba 3 Unidades', stock: 5, min: 25 },
-];
-
-const expiringLots = [
-  { lot: 'LOT-98382', name: 'Plasma', presentation: '2 Unidades', exp: '2026-10-05', status: 'red', statusText: 'Crítico (<3 meses)' },
-  { lot: 'LOT-AUS00', name: 'Glóbulos Rojos', presentation: 'Unidad 1L', exp: '2026-11-12', status: 'yellow', statusText: 'Precaución (3-6 meses)' },
-  { lot: 'LOT-OP234', name: 'Plaquetas', presentation: 'Bolsa 450ml', exp: '2026-12-01', status: 'green', statusText: 'Óptimo (>6 meses)' },
-];
-
-const recentMovements = [
-  { type: 'Ingreso', code: 'INS-6436', name: 'Plaquetas', lot: 'LOT-1029', qty: '+50', area: 'Stock Principal', user: 'Pedro Castro', time: '10:15 AM' },
-  { type: 'Egreso', code: 'INS-4326', name: 'Glóbulos Rojos', lot: 'LOT-9345', qty: '-5', area: 'Hematología y Coagulación', user: 'Ana Castro', time: '09:30 AM' },
-  { type: 'Egreso', code: 'INS-0284', name: 'Plasma', lot: 'LOT-7732', qty: '-2', area: 'Microbiología', user: 'Pedro Castro', time: '08:45 AM' },
-];
+import { BLOOD_TYPES } from '../../lib/db';
 ---
 
-<Layout title="BLUD | Dashboard Director">
-  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
-    <div class="container-blud space-y-8">
-      
-      <!-- Encabezado con acciones -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-line pb-6">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-            Panel de Control BLUD
-          </h1>
-          <p class="mt-1 text-sm text-ink-2">
-            Gestión integral de insumos, hemoderivados y trazabilidad en tiempo real.
-          </p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <a href="/director/inventario" class="btn btn-secondary text-xs sm:text-sm">
-            <Icon name="first-aid-kit" class="size-4" />
-            Gestionar Stock
-          </a>
-          <a href="/director/reportes" class="btn btn-primary text-xs sm:text-sm">
-            <Icon name="caret-down" class="size-4 -rotate-90" />
-            Generar Reporte
-          </a>
-        </div>
-      </div>
+<Layout title="BLUD | Panel de dirección">
+  <div class="container-blud py-8 space-y-8">
 
-      <!-- Métricas del Sistema -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-1">
-        {metrics.map(m => (
-          <div class={`p-5 panel border ${m.border} flex items-center justify-between shadow-xs`}>
-            <div>
-              <p class="text-xs font-semibold text-ink-3 uppercase tracking-wider">{m.label}</p>
-              <p class={`text-3xl font-black mt-2 tabular ${m.color}`}>{m.value}</p>
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Panel de dirección</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1" id="sede-txt">Resumen del banco de sangre.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/director/solicitudes/historial" class="btn btn-primary">Revisar solicitudes</a>
+        <a href="/director/reportes" class="btn btn-secondary">Generar reporte</a>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <a href="/director/solicitudes/historial" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Por aprobar</p>
+        <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi="porAprobar">0</p>
+        <p class="text-xs text-ink-3">Por despachar: <span data-kpi="porDespachar">0</span></p>
+      </a>
+      <a href="/director/inventario" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Stock vigente</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="stockTotal">0</p>
+        <p class="text-xs text-ink-3">Tipos en nivel crítico: <span data-kpi="tiposCriticos">0</span></p>
+      </a>
+      <a href="/director/inventario#vencimientos" class="panel p-5 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Por vencer</p>
+        <p class="mt-1 text-3xl font-extrabold text-warn tabular" data-kpi="porVencer">0</p>
+        <p class="text-xs text-ink-3">Vencidas por retirar: <span data-kpi="vencidas">0</span></p>
+      </a>
+      <div class="panel p-5">
+        <p class="text-xs font-bold uppercase text-ink-3">Este mes</p>
+        <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="donacionesMes">0</p>
+        <p class="text-xs text-ink-3">donaciones · entregadas: <span data-kpi="entregasMes">0</span> u.</p>
+      </div>
+    </div>
+
+    <!-- Stock por tipo -->
+    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-stock">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="h-stock" class="text-lg font-bold text-ink">Stock vigente por tipo de sangre</h2>
+        <p class="text-sm text-ink-3"><span class="font-semibold text-ink" data-kpi="cuarentena">0</span> bolsas en cuarentena del laboratorio</p>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="stock">
+        {BLOOD_TYPES.map((t) => (
+          <div class="rounded-control bg-sunken p-4" data-tipo={t}>
+            <div class="flex items-center justify-between">
+              <span class="blood-chip">{t}</span>
+              <span class="hidden text-[0.6875rem] font-bold uppercase text-warn" data-bajo>Crítico</span>
             </div>
-            <div class={`p-3 rounded-control ${m.bg} ${m.color}`}>
-              <Icon name={m.icon} class="size-6" />
-            </div>
+            <p class="mt-2 text-2xl font-extrabold text-ink tabular"><span data-n>0</span> <span class="text-xs font-semibold text-ink-3">u.</span></p>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><span class="block h-full w-0 rounded-full bg-accent transition-[width] duration-500" data-bar></span></div>
           </div>
         ))}
       </div>
+    </section>
 
-      <!-- Secciones de Tabla Principal -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 py-2">
-        
-        <!-- Control FIFO / Vencimientos -->
-        <div class="panel p-6 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold text-ink flex items-center gap-2">
-              <Icon name="calendar-check" class="size-5 text-accent-ink" />
-              Control de Vencimientos (FIFO)
-            </h2>
-            <a href="/director/inventario" class="text-xs font-semibold text-accent-ink hover:underline">Ver todo</a>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-ink">
-              <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-                <tr>
-                  <th class="p-3 rounded-l-control">Lote / Insumo</th>
-                  <th class="p-3">Vencimiento</th>
-                  <th class="p-3 rounded-r-control">Estado</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line">
-                {expiringLots.map(item => (
-                  <tr class="hover:bg-sunken/50 transition-colors">
-                    <td class="p-3">
-                      <p class="font-bold text-ink">{item.name}</p>
-                      <p class="text-xs text-ink-3">{item.lot} • {item.presentation}</p>
-                    </td>
-                    <td class="p-3 font-mono text-xs text-ink-2 tabular">{item.exp}</td>
-                    <td class="p-3">
-                      <span class={`inline-block px-2.5 py-1 text-xs font-bold rounded-full border ${
-                        item.status === 'red' ? 'bg-accent-soft text-accent-ink border-accent/30' :
-                        item.status === 'yellow' ? 'bg-warn-soft text-warn border-warn/30' :
-                        'bg-ok-soft text-ok border-ok/30'
-                      }`}>
-                        {item.statusText}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-aprobar">
+        <div class="flex items-center justify-between border-b border-line pb-3">
+          <h2 id="h-aprobar" class="text-lg font-bold text-ink">Solicitudes por aprobar</h2>
+          <a href="/director/solicitudes/historial" class="link-arrow text-sm">Ver todas</a>
         </div>
+        <ul id="lista-aprobar" class="divide-y divide-line"></ul>
+      </section>
 
-        <!-- Alertas de Stock Crítico -->
-        <div class="panel p-6 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-bold text-ink flex items-center gap-2">
-              <Icon name="first-aid-kit" class="size-5 text-accent-ink" />
-              Alertas de Stock Mínimo
-            </h2>
-            <a href="/director/inventario" class="text-xs font-semibold text-accent-ink hover:underline">Gestionar Stock</a>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-ink">
-              <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-                <tr>
-                  <th class="p-3 rounded-l-control">Código e Insumo</th>
-                  <th class="p-3 text-center">Actual</th>
-                  <th class="p-3 text-center rounded-r-control">Mínimo</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-line">
-                {lowStockItems.map(item => (
-                  <tr class="hover:bg-sunken/50 transition-colors">
-                    <td class="p-3">
-                      <p class="font-bold text-ink">{item.name}</p>
-                      <p class="text-xs text-ink-3">{item.code} • {item.presentation}</p>
-                    </td>
-                    <td class="p-3 text-center font-bold text-accent-ink tabular">{item.stock}</td>
-                    <td class="p-3 text-center text-ink-3 tabular">{item.min}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-vence">
+        <div class="flex items-center justify-between border-b border-line pb-3">
+          <h2 id="h-vence" class="text-lg font-bold text-ink">Próximos vencimientos</h2>
+          <a href="/director/inventario#vencimientos" class="link-arrow text-sm">Ver inventario</a>
         </div>
-
-      </div>
-
-      <!-- Bitácora Reciente -->
-      <div class="panel p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-bold text-ink">Últimos Movimientos del Sistema</h2>
-          <a href="/director/reportes" class="text-xs font-semibold text-accent-ink hover:underline">Ver Bitácora Completa</a>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-ink">
-            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-              <tr>
-                <th class="p-3 rounded-l-control">Tipo</th>
-                <th class="p-3">Insumo / Lote</th>
-                <th class="p-3">Cantidad</th>
-                <th class="p-3">Origen / Destino</th>
-                <th class="p-3">Usuario</th>
-                <th class="p-3 rounded-r-control">Hora</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              {recentMovements.map(m => (
-                <tr class="hover:bg-sunken/50 transition-colors">
-                  <td class="p-3">
-                    <span class={`inline-block px-2 py-0.5 text-xs font-bold rounded-control ${
-                      m.type === 'Ingreso' ? 'bg-ok-soft text-ok' : 'bg-sunken text-ink-2'
-                    }`}>
-                      {m.type}
-                    </span>
-                  </td>
-                  <td class="p-3">
-                    <p class="font-semibold text-ink">{m.name}</p>
-                    <p class="text-xs text-ink-3">{m.code} | {m.lot}</p>
-                  </td>
-                  <td class={`p-3 font-mono font-bold tabular ${m.type === 'Ingreso' ? 'text-ok' : 'text-accent-ink'}`}>
-                    {m.qty}
-                  </td>
-                  <td class="p-3 text-ink-2">{m.area}</td>
-                  <td class="p-3 text-ink font-medium">{m.user}</td>
-                  <td class="p-3 text-xs text-ink-3 font-mono tabular">{m.time}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+        <ul id="lista-vence" class="divide-y divide-line"></ul>
+      </section>
     </div>
-  </section>
+
+    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-act">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <h2 id="h-act" class="text-lg font-bold text-ink">Actividad de la red</h2>
+        <p class="text-sm text-ink-3">
+          <span class="font-semibold text-ink" data-kpi="casosSinNotificar">0</span> casos del laboratorio sin notificar ·
+          <span class="font-semibold text-ink" data-kpi="ticketsAbiertos">0</span> solicitudes de soporte abiertas
+        </p>
+      </div>
+      <ul id="lista-actividad" class="divide-y divide-line"></ul>
+    </section>
+  </div>
 </Layout>
+
+<script>
+  import {
+    PRIORIDAD_LABEL, STOCK_BAJO, actividadRed, aprobarSolicitud, codigoPedido, directorActual, esc, fmtFecha,
+    kpisDirector, onDb, resumenInventario, solicitudesPorAprobar, toast,
+  } from '../../lib/director';
+
+  const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
+  const corto = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'short' });
+  const prioridadChip = (p?: string) =>
+    p === 'critica' ? 'bg-accent text-white' : p === 'urgente' ? 'bg-accent-soft text-accent-ink' : 'bg-sunken text-ink-2';
+
+  function render() {
+    const k = kpisDirector();
+    (Object.keys(k) as (keyof typeof k)[]).forEach((key) =>
+      document.querySelectorAll(`[data-kpi="${key}"]`).forEach((el) => (el.textContent = String(k[key])))
+    );
+    $('#sede-txt').textContent = `${directorActual().sede} · resumen de hoy`;
+
+    const inv = resumenInventario();
+    const max = Math.max(10, ...Object.values(inv.porTipo));
+    document.querySelectorAll<HTMLElement>('#stock [data-tipo]').forEach((card) => {
+      const n = inv.porTipo[card.dataset.tipo!] ?? 0;
+      card.querySelector('[data-n]')!.textContent = String(n);
+      (card.querySelector('[data-bar]') as HTMLElement).style.width = `${Math.round((n / max) * 100)}%`;
+      card.querySelector('[data-bajo]')!.classList.toggle('hidden', n >= STOCK_BAJO);
+    });
+
+    const pend = solicitudesPorAprobar().slice(0, 5);
+    $('#lista-aprobar').innerHTML = pend.length
+      ? pend.map((p) => `<li class="flex items-center justify-between gap-3 py-3">
+          <div class="min-w-0">
+            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(codigoPedido(p.id))}</span>
+              <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${prioridadChip(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</span></p>
+            <p class="mt-0.5 truncate font-semibold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.tipoHemocomponente)}</p>
+            <p class="truncate text-xs text-ink-3">${esc(p.pacienteNombre)} → ${esc(p.hospitalDestino)} · ${esc(p.creadoPorNombre ?? '')}</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm shrink-0" data-aprobar="${esc(p.id)}">Aprobar</button>
+        </li>`).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes esperando tu aprobación.</li>';
+
+    const vence = [...inv.vencidas, ...inv.porVencer].slice(0, 6);
+    $('#lista-vence').innerHTML = vence.length
+      ? vence.map((u) => `<li class="flex items-center justify-between gap-3 py-3">
+          <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(u.componente)} · ${esc(u.tipoSangre)}</p>
+          <p class="truncate text-xs text-ink-3">${esc(u.codigo)} · vence ${esc(corto(u.vence))}</p></div>
+          <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${u.estado === 'vencida' ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn'}">${u.estado === 'vencida' ? 'Vencida' : u.dias === 0 ? 'Vence hoy' : `${u.dias} d`}</span>
+        </li>`).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">Ninguna unidad vence en los próximos días.</li>';
+
+    const act = actividadRed().slice(0, 8);
+    $('#lista-actividad').innerHTML = act.length
+      ? act.map((e) => `<li class="py-3"><p class="text-sm font-semibold text-ink">${esc(e.titulo)}</p>
+          <p class="truncate text-xs text-ink-3">${esc(e.detalle)} · ${esc(corto(e.fecha))}</p></li>`).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">Todavía no hay actividad.</li>';
+  }
+
+  $('#lista-aprobar').addEventListener('click', (e) => {
+    const id = (e.target as HTMLElement).closest<HTMLElement>('[data-aprobar]')?.dataset.aprobar;
+    if (!id) return;
+    const r = aprobarSolicitud(id);
+    toast(r.ok ? `Solicitud ${codigoPedido(id)} aprobada.` : r.motivo);
+  });
+
+  render();
+  onDb(render);
+</script>

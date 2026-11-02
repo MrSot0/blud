@@ -302,7 +302,7 @@ const current = (href: string) => (path === href ? 'page' : undefined);
     var s = null;
     try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
     if (!s || !s.name) return;
-    var parts = s.name.split(/\s+/).filter(Boolean);
+    var parts = s.name.replace(/^(?:(?:Dra?|Lic|Licda|Ing|Prof)\.?\s+)+/i, '').split(/\s+/).filter(Boolean);
     var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
     var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
     set('[data-user-initials]', ini);

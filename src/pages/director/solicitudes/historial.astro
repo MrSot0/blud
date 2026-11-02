@@ -1,185 +1,212 @@
 ---
+// src/pages/director/solicitudes/historial.astro
+// Todas las solicitudes de hemocomponentes. La dirección aprueba o rechaza las que cargan los operadores.
 import Layout from '../../../layouts/LayoutD.astro';
-import Icon from '../../../components/Icon.astro';
-import SolicitudEstado from '../../../components/director/SolicitudEstado.astro';
-import { solicitudesIniciales } from '../../../data/solicitudes';
 
-const view = Astro.url.searchParams.get('view') === 'history' ? 'history' : 'pending';
-const pendingCount = solicitudesIniciales.filter((request) => request.status === 'Pendiente').length;
+const filtros = [
+  { id: 'pendiente', label: 'Por aprobar' },
+  { id: 'aprobado', label: 'Aprobadas' },
+  { id: 'rechazado', label: 'Rechazadas' },
+  { id: 'despachado', label: 'Despachadas' },
+  { id: 'todas', label: 'Todas' },
+];
 ---
 
-<Layout title="BLUD | Solicitudes externas">
-	<section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
-		<div class="container-blud space-y-6">
-			<header class="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
-				<div>
-					<h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Solicitudes</h1>
-				</div>
-				<a href="/director/solicitudes/registro" class="btn btn-primary text-sm">
-					<Icon name="caret-down" class="size-4 -rotate-90" />
-					Registrar solicitud
-				</a>
-			</header>
+<Layout title="BLUD | Solicitudes">
+  <div class="container-blud py-8 space-y-6">
+    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Solicitudes</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Las que carga el operador esperan tu aprobación antes del despacho.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="/director/solicitudes/registro" class="btn btn-primary">Nueva solicitud</a>
+        <a href="/director/solicitudes/solicitudes" class="btn btn-secondary">Mis solicitudes</a>
+      </div>
+    </div>
 
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-				<div class="panel flex items-center justify-between p-4">
-					<div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Pendientes</p><p id="pending-count" class="mt-1 text-2xl font-extrabold tabular">{pendingCount}</p></div>
-					<span class="grid size-10 place-items-center rounded-control bg-warn-soft text-warn"><Icon name="calendar-check" class="size-5" /></span>
-				</div>
-				<div class="panel flex items-center justify-between p-4">
-					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Resueltas</p><p id="resolved-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length - pendingCount}</p></div>
-					<span class="grid size-10 place-items-center rounded-control bg-ok-soft text-ok"><Icon name="arrow-right" class="size-5" /></span>
-				</div>
-				<div class="panel flex items-center justify-between p-4">
-					  <div><p class="text-xs font-semibold uppercase tracking-wider text-ink-3">Total registradas</p><p id="total-count" class="mt-1 text-2xl font-extrabold tabular">{solicitudesIniciales.length}</p></div>
-					<span class="grid size-10 place-items-center rounded-control bg-sunken text-ink-2"><Icon name="first-aid-kit" class="size-5" /></span>
-				</div>
-			</div>
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
+        {filtros.map((f, i) => (
+          <button type="button" class="estado-chip" data-estado={f.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {f.label} <span class="tabular opacity-70" data-count={f.id}></span>
+          </button>
+        ))}
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <label class="sr-only" for="buscar">Buscar solicitud</label>
+        <input id="buscar" type="search" class="field sm:w-72" placeholder="Folio, paciente, centro o médico" autocomplete="off" />
+        <label class="sr-only" for="prioridad">Prioridad</label>
+        <select id="prioridad" class="field sm:w-44">
+          <option value="">Toda prioridad</option>
+          <option value="critica">Crítica</option>
+          <option value="urgente">Urgente</option>
+          <option value="normal">Normal</option>
+        </select>
+      </div>
+    </div>
 
-			<section class="panel space-y-4 p-4 sm:p-6" aria-label="Listado de solicitudes">
-				<div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
-					<nav class="flex gap-1" aria-label="Vistas de solicitudes">
-						<a href="/director/solicitudes/historial" aria-current={view === 'pending' ? 'page' : undefined} class="request-tab">Pendientes</a>
-						<a href="/director/solicitudes/historial?view=history" aria-current={view === 'history' ? 'page' : undefined} class="request-tab">Historial de solicitudes</a>
-					</nav>
-					<div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto]">
-						<label class="sr-only" for="request-search">Buscar solicitudes</label>
-						<input id="request-search" type="search" class="field text-sm" placeholder="Buscar por folio, centro o solicitante" />
-						<label class="sr-only" for="priority-filter">Filtrar por prioridad</label>
-						<select id="priority-filter" class="field text-sm sm:w-40">
-							<option value="">Todas las prioridades</option>
-							<option value="Crítica">Crítica</option>
-							<option value="Urgente">Urgente</option>
-							<option value="Normal">Normal</option>
-						</select>
-					</div>
-				</div>
-
-				<p id="request-feedback" class="sr-only" role="status" aria-live="polite"></p>
-				<div class="overflow-x-auto">
-					  <table class="w-full min-w-225 text-left text-sm">
-						<thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
-							<tr>
-								<th class="rounded-l-control p-3">Folio / Fecha</th>
-								<th class="p-3">Hemocomponente</th>
-								<th class="p-3">Cantidad</th>
-								<th class="p-3">Centro</th>
-								<th class="p-3">Solicitante</th>
-								<th class="p-3">Prioridad</th>
-								<th class="p-3">Estado</th>
-								<th class="rounded-r-control p-3 text-right">Acciones</th>
-							</tr>
-						</thead>
-						<tbody id="request-rows" class="divide-y divide-line">
-							  {solicitudesIniciales.map((request) => (
-								<tr class="hover:bg-sunken/50" data-request-row data-status={request.status} data-priority={request.priority}>
-									<td class="p-3"><p class="font-mono font-bold">{request.id}</p><p class="text-xs text-ink-3">{new Date(request.createdAt).toLocaleDateString('es-VE')}</p></td>
-									<td class="p-3"><p class="font-semibold">{request.component}</p><span class="mt-1 inline-block rounded border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent-ink">{request.group}</span></td>
-									<td class="p-3 font-mono font-bold">{request.quantity} unidades</td>
-									<td class="p-3 text-ink-2">{request.center}</td>
-									<td class="p-3">{request.requester}</td>
-									<td class="p-3"><span class={`priority-badge priority-${request.priority.toLowerCase()}`}>{request.priority}</span></td>
-									<td class="p-3"><SolicitudEstado status={request.status} /></td>
-									<td class="p-3 text-right"><div class="flex justify-end gap-2">
-										{request.status === 'Pendiente' ? <>
-											<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id={request.id}>Aprobar</button>
-											<button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id={request.id}>Rechazar</button>
-										</> : <span class="text-xs text-ink-3">Sin acciones</span>}
-									</div></td>
-								</tr>
-							))}
-							<tr id="empty-row" hidden><td colspan="8" class="p-10 text-center text-sm text-ink-3">No hay solicitudes para mostrar con estos filtros.</td></tr>
-						</tbody>
-					</table>
-				</div>
-			</section>
-		</div>
-	</section>
+    <ul id="lista" class="space-y-3" aria-live="polite"></ul>
+  </div>
 </Layout>
 
 <style>
-	.request-tab { border-bottom: 2px solid transparent; padding: .65rem .8rem; color: var(--ink-2); font-size: .875rem; font-weight: 650; }
-	.request-tab:hover, .request-tab[aria-current="page"] { border-color: var(--accent); color: var(--accent-ink); }
-	.priority-badge { display: inline-block; border: 1px solid var(--line); border-radius: .375rem; padding: .2rem .5rem; font-size: .75rem; font-weight: 700; }
-	.priority-critica { border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: var(--accent-soft); color: var(--accent-ink); }
-	.priority-urgente { border-color: color-mix(in srgb, var(--warn) 30%, transparent); background: var(--warn-soft); color: var(--warn); }
-	.priority-normal { background: var(--sunken); color: var(--ink-2); }
+  .estado-chip {
+    display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.25rem; padding: 0 0.875rem;
+    border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2); transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .estado-chip:hover { border-color: var(--ink-3); color: var(--ink); }
+  .estado-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
 </style>
 
 <script>
-	import { solicitudesIniciales, type Solicitud } from '../../../data/solicitudes';
+  import {
+    ESTADO_PEDIDO, PRIORIDAD_LABEL, aprobarSolicitud, codigoPedido, esc, fmtFecha, onDb, rechazarSolicitud,
+    todasLasSolicitudes, toast, unidadesInventario,
+  } from '../../../lib/director';
+  import type { PedidoOp } from '../../../lib/director';
 
-	type RequestItem = Solicitud;
-	type RequestStatus = Solicitud['status'];
+  const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
+  const buscar = $('#buscar') as HTMLInputElement;
+  const prioridad = $('#prioridad') as HTMLSelectElement;
+  let estado = 'pendiente';
+  let rechazando: string | null = null;
+  const abiertas = new Set<string>();
 
-	const storageKey = 'blud-director-solicitudes';
-	const root = document.querySelector<HTMLElement>('#request-rows');
-	const search = document.querySelector<HTMLInputElement>('#request-search');
-	const priorityFilter = document.querySelector<HTMLSelectElement>('#priority-filter');
-	const emptyRow = document.querySelector<HTMLElement>('#empty-row');
-	const feedback = document.querySelector<HTMLElement>('#request-feedback');
-	function readRequests(): RequestItem[] {
-		try {
-			const stored = localStorage.getItem(storageKey);
-			if (stored) return JSON.parse(stored) as RequestItem[];
-		} catch {}
-		return solicitudesIniciales;
-	}
+  const chipEstado: Record<PedidoOp['estado'], string> = {
+    pendiente: 'bg-warn-soft text-warn',
+    aprobado: 'bg-ok-soft text-ok',
+    rechazado: 'bg-accent-soft text-accent-ink',
+    despachado: 'bg-sunken text-ink-2',
+  };
+  const chipPrioridad = (p?: string) =>
+    p === 'critica' ? 'bg-accent text-white' : p === 'urgente' ? 'bg-accent-soft text-accent-ink' : 'bg-sunken text-ink-2';
+  const fecha = (iso?: string) => (iso ? fmtFecha(iso, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
-	let requests = readRequests();
-	const activeView = new URLSearchParams(location.search).get('view') === 'history' ? 'history' : 'pending';
-	document.querySelectorAll<HTMLAnchorElement>('.request-tab').forEach((link) => {
-		const isHistoryLink = new URL(link.href).searchParams.get('view') === 'history';
-		link.setAttribute('aria-current', String(isHistoryLink === (activeView === 'history')));
-	});
-	const escapeHTML = (value: string) => value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character);
-	const statusClass = (status: RequestStatus) => status === 'Aprobada' ? 'border-ok/30 bg-ok-soft text-ok' : status === 'Rechazada' ? 'border-accent/30 bg-accent-soft text-accent-ink' : 'border-warn/30 bg-warn-soft text-warn';
-	const priorityClass = (priority: string) => priority === 'Crítica' ? 'priority-critica' : priority === 'Urgente' ? 'priority-urgente' : 'priority-normal';
-	const dateLabel = (date: string) => new Date(date).toLocaleDateString('es-VE');
+  /** Unidades vigentes del tipo y componente pedidos: ayuda a decidir si aprobar. */
+  function stockPara(p: PedidoOp) {
+    return unidadesInventario().filter((u) => u.estado !== 'vencida' && u.tipoSangre === p.tipoSangre && u.componente === p.tipoHemocomponente).length;
+  }
 
-	function saveRequests() {
-		try { localStorage.setItem(storageKey, JSON.stringify(requests)); } catch {}
-	}
+  function detalle(p: PedidoOp) {
+    const clinica = Object.entries(p.clinica ?? {}).filter(([, v]) => v);
+    const filas: [string, string | undefined][] = [
+      ['Paciente', `${p.pacienteNombre}${p.pacienteCedula ? ' · ' + p.pacienteCedula : ''}`],
+      ['Servicio', p.servicio], ['Médico', p.medico], ['Diagnóstico', p.diagnostico],
+      ['Cargada por', `${p.creadoPorNombre ?? '—'} · ${fecha(p.fecha)}`],
+      ['Revisión', p.fechaRevision ? `${p.revisadoPorNombre ?? 'Dirección'} · ${fecha(p.fechaRevision)}` : undefined],
+      ['Motivo del rechazo', p.motivoRechazo],
+    ];
+    return `<dl class="mt-4 grid gap-x-6 gap-y-2 border-t border-line pt-4 text-sm sm:grid-cols-2">
+      ${filas.filter(([, v]) => v).map(([k, v]) => `<div><dt class="text-xs font-bold uppercase text-ink-3">${esc(k)}</dt><dd class="text-ink">${esc(v)}</dd></div>`).join('')}
+      ${clinica.length ? `<div class="sm:col-span-2"><dt class="text-xs font-bold uppercase text-ink-3">Laboratorio del paciente</dt><dd class="text-ink">${clinica.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ')}</dd></div>` : ''}
+    </dl>`;
+  }
 
-	function render() {
-		if (!root || !emptyRow) return;
-		const query = search?.value.trim().toLocaleLowerCase('es') ?? '';
-		const filtered = requests.filter((request) => {
-			const belongsToView = activeView === 'pending' ? request.status === 'Pendiente' : request.status !== 'Pendiente';
-			const matchesText = `${request.id} ${request.component} ${request.center} ${request.requester}`.toLocaleLowerCase('es').includes(query);
-			return belongsToView && matchesText && (!priorityFilter?.value || request.priority === priorityFilter.value);
-		});
-		root.querySelectorAll('[data-request-row]').forEach((row) => row.remove());
-		const rows = filtered.map((request) => {
-			const pendingActions = request.status === 'Pendiente'
-				? `<button type="button" class="btn btn-secondary px-2.5 py-1 text-xs" data-action="approve" data-id="${escapeHTML(request.id)}">Aprobar</button><button type="button" class="btn px-2.5 py-1 text-xs text-accent-ink hover:bg-accent-soft" data-action="reject" data-id="${escapeHTML(request.id)}">Rechazar</button>`
-				: '<span class="text-xs text-ink-3">Sin acciones</span>';
-			const row = document.createElement('tr');
-			row.dataset.requestRow = '';
-			row.className = 'hover:bg-sunken/50';
-			row.innerHTML = `<td class="p-3"><p class="font-mono font-bold">${escapeHTML(request.id)}</p><p class="text-xs text-ink-3">${dateLabel(request.createdAt)}</p></td><td class="p-3"><p class="font-semibold">${escapeHTML(request.component)}</p><span class="mt-1 inline-block rounded border border-accent/20 bg-accent-soft px-1.5 py-0.5 text-xs font-bold text-accent-ink">${escapeHTML(request.group)}</span></td><td class="p-3 font-mono font-bold">${request.quantity} unidades</td><td class="p-3 text-ink-2">${escapeHTML(request.center)}</td><td class="p-3">${escapeHTML(request.requester)}</td><td class="p-3"><span class="priority-badge ${priorityClass(request.priority)}">${escapeHTML(request.priority)}</span></td><td class="p-3"><span class="inline-flex items-center rounded-control border px-2.5 py-1 text-xs font-bold ${statusClass(request.status)}">${request.status}</span></td><td class="p-3 text-right"><div class="flex justify-end gap-2">${pendingActions}</div></td>`;
-			return row;
-		});
-		rows.forEach((row) => root.insertBefore(row, emptyRow));
-		emptyRow.hidden = rows.length > 0;
-		const pending = requests.filter((request) => request.status === 'Pendiente').length;
-		const resolved = requests.length - pending;
-		document.querySelector('#pending-count')!.textContent = String(pending);
-		document.querySelector('#resolved-count')!.textContent = String(resolved);
-		document.querySelector('#total-count')!.textContent = String(requests.length);
-	}
+  function fila(p: PedidoOp) {
+    const stock = stockPara(p);
+    const acciones = p.estado === 'pendiente'
+      ? `<button type="button" class="btn btn-primary btn-sm" data-accion="aprobar" data-id="${esc(p.id)}">Aprobar</button>
+         <button type="button" class="btn btn-secondary btn-sm" data-accion="rechazar" data-id="${esc(p.id)}">Rechazar</button>`
+      : p.estado === 'aprobado'
+        ? `<button type="button" class="btn btn-secondary btn-sm" data-accion="rechazar" data-id="${esc(p.id)}">Anular</button>`
+        : '';
+    const formRechazo = rechazando === p.id
+      ? `<form class="mt-4 flex flex-col gap-2 border-t border-line pt-4 sm:flex-row" data-form-rechazo="${esc(p.id)}">
+          <label class="sr-only" for="motivo-${esc(p.id)}">Motivo del rechazo</label>
+          <input id="motivo-${esc(p.id)}" name="motivo" class="field flex-1" placeholder="Motivo (lo verá el operador)" required minlength="5" />
+          <div class="flex gap-2"><button type="submit" class="btn btn-primary btn-sm">Confirmar</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-accion="cancelar">Cancelar</button></div>
+        </form>`
+      : '';
+    return `<li class="panel p-5">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <button type="button" class="min-w-0 text-left" data-accion="detalle" data-id="${esc(p.id)}" aria-expanded="${abiertas.has(p.id)}">
+          <p class="flex flex-wrap items-center gap-2">
+            <span class="font-mono text-xs font-bold text-ink-3">${esc(codigoPedido(p.id))}</span>
+            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipEstado[p.estado]}">${esc(ESTADO_PEDIDO[p.estado])}</span>
+            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipPrioridad(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</span>
+          </p>
+          <p class="mt-1 font-semibold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.tipoHemocomponente)}</p>
+          <p class="text-sm text-ink-3">${esc(p.pacienteNombre)} → ${esc(p.hospitalDestino)} · ${esc(fecha(p.fecha))}</p>
+        </button>
+        <div class="flex shrink-0 flex-wrap items-center gap-2">
+          ${p.estado === 'pendiente' || p.estado === 'aprobado'
+            ? `<span class="rounded-full px-2 py-0.5 text-xs font-bold ${stock >= p.unidades ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${stock >= p.unidades ? `Hay stock (${stock})` : `Stock ${stock}`}</span>`
+            : ''}
+          ${acciones}
+        </div>
+      </div>
+      ${abiertas.has(p.id) ? detalle(p) : ''}
+      ${formRechazo}
+    </li>`;
+  }
 
-	search?.addEventListener('input', render);
-	priorityFilter?.addEventListener('change', render);
-	root?.addEventListener('click', (event) => {
-		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-action]');
-		if (!button) return;
-		const request = requests.find((item) => item.id === button.dataset.id);
-		if (!request || request.status !== 'Pendiente') return;
-		request.status = button.dataset.action === 'approve' ? 'Aprobada' : 'Rechazada';
-		saveRequests();
-		render();
-		if (feedback) feedback.textContent = `Solicitud ${request.id}: ${request.status.toLocaleLowerCase('es')}.`;
-	});
-	render();
+  function render() {
+    const todas = todasLasSolicitudes();
+    const q = buscar.value.trim().toLowerCase();
+    document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+      const id = el.dataset.count!;
+      const n = id === 'todas' ? todas.length : todas.filter((p) => p.estado === id).length;
+      el.textContent = String(n);
+    });
+    const lista = todas
+      .filter((p) => estado === 'todas' || p.estado === estado)
+      .filter((p) => !prioridad.value || (p.prioridad ?? 'normal') === prioridad.value)
+      .filter((p) => !q || `${codigoPedido(p.id)} ${p.pacienteNombre} ${p.hospitalDestino} ${p.medico ?? ''} ${p.creadoPorNombre ?? ''}`.toLowerCase().includes(q));
+    $('#lista').innerHTML = lista.length
+      ? lista.map(fila).join('')
+      : `<li class="panel p-10 text-center text-sm text-ink-3">${estado === 'pendiente' ? 'No hay solicitudes esperando tu aprobación.' : 'No hay solicitudes con esos filtros.'}</li>`;
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-estado]').forEach((b) =>
+    b.addEventListener('click', () => {
+      estado = b.dataset.estado!;
+      document.querySelectorAll('[data-estado]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      render();
+    })
+  );
+  buscar.addEventListener('input', render);
+  prioridad.addEventListener('change', render);
+
+  $('#lista').addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-accion]');
+    if (!el) return;
+    const id = el.dataset.id!;
+    switch (el.dataset.accion) {
+      case 'detalle':
+        abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id);
+        render();
+        break;
+      case 'aprobar': {
+        const r = aprobarSolicitud(id);
+        toast(r.ok ? `Solicitud ${codigoPedido(id)} aprobada: ya puede despacharse.` : r.motivo);
+        break;
+      }
+      case 'rechazar':
+        rechazando = id;
+        render();
+        document.querySelector<HTMLInputElement>(`#motivo-${CSS.escape(id)}`)?.focus();
+        break;
+      case 'cancelar':
+        rechazando = null;
+        render();
+        break;
+    }
+  });
+
+  $('#lista').addEventListener('submit', (e) => {
+    const form = (e.target as HTMLElement).closest<HTMLFormElement>('[data-form-rechazo]');
+    if (!form) return;
+    e.preventDefault();
+    const id = form.dataset.formRechazo!;
+    const r = rechazarSolicitud(id, String(new FormData(form).get('motivo') ?? ''));
+    if (!r.ok) return toast(r.motivo);
+    rechazando = null;
+    toast(`Solicitud ${codigoPedido(id)} rechazada.`);
+  });
+
+  render();
+  onDb(render);
 </script>

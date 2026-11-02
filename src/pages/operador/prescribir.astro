@@ -79,16 +79,28 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
             <label for="unidades" class="block text-xs font-bold uppercase text-ink-2">Unidades (bolsas)</label>
             <input type="number" id="unidades" min="1" max="10" class="field" value="1" required />
           </div>
-          <div class="space-y-1.5 sm:col-span-2 lg:col-span-3">
+          <div class="space-y-1.5 sm:col-span-2">
             <label for="destino" class="block text-xs font-bold uppercase text-ink-2">Centro / hospital solicitante</label>
             <input type="text" id="destino" class="field" placeholder="Ej. Hospital Universitario" required />
+          </div>
+          <div class="space-y-1.5">
+            <label for="prioridad" class="block text-xs font-bold uppercase text-ink-2">Prioridad</label>
+            <select id="prioridad" class="field">
+              <option value="normal">Normal</option>
+              <option value="urgente">Urgente</option>
+              <option value="critica">Crítica</option>
+            </select>
+          </div>
+          <div class="space-y-1.5 sm:col-span-2 lg:col-span-3">
+            <label for="medico" class="block text-xs font-bold uppercase text-ink-2">Médico que indica <span class="font-normal normal-case text-ink-3">(opcional)</span></label>
+            <input type="text" id="medico" class="field" placeholder="Ej. Dra. Elena Ríos" />
           </div>
         </div>
 
         <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
         <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between">
           <button type="button" id="btn-atras" class="btn btn-secondary min-h-12 sm:px-8">← Atrás</button>
-          <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Registrar pedido</button>
+          <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Enviar a la dirección</button>
         </div>
       </form>
     </section>
@@ -97,7 +109,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 
 <script>
   import { registrarPedido, toast } from '../../lib/operador';
-  import type { Hemocomponente } from '../../lib/operador';
+  import type { Hemocomponente, Prioridad } from '../../lib/operador';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const val = (id: string) => ($(`#${id}`) as HTMLInputElement).value;
@@ -186,6 +198,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         tipoHemocomponente: val('comp') as Hemocomponente,
         unidades: Number(val('unidades')),
         hospitalDestino: val('destino'),
+        prioridad: val('prioridad') as Prioridad,
+        medico: val('medico').trim() || undefined,
       });
       if (!r.ok) {
         const err = $('#error');
@@ -193,7 +207,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         err.classList.remove('hidden');
         return;
       }
-      toast('¡Pedido registrado! Ya puedes despacharlo.');
+      toast('Orden enviada: la dirección la revisará antes del despacho.');
       setTimeout(() => (window.location.href = '/operador/entregas'), 600);
     });
   }

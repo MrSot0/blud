@@ -1,0 +1,74 @@
+---
+// src/layouts/LayoutPortal.astro
+// Estructura común de las zonas privadas (donante, operador, laboratorio, soporte y dirección).
+// Los layouts de cada rol solo eligen el rol, el título y la descripción.
+import '../styles/global.css';
+import Navbar from '../components/app/Navbar.astro';
+import { ROLE_HOME } from '../lib/roles';
+import type { Role } from '../lib/roles';
+
+interface Props {
+  role: Role;
+  title: string;
+  description: string;
+}
+
+const { role, title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+
+    <!-- Tema antes de pintar (mismo key que usa el Navbar) -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('blud-theme');
+          if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Acceso por rol antes de pintar: sin sesión va a /login; con otro rol, a su propia zona.
+         Es una comodidad de interfaz: la autorización real la hacen las reglas (RLS) de la base de datos. -->
+    <script is:inline define:vars={{ allowed: role, homes: ROLE_HOME }}>
+      (function () {
+        var s = null;
+        try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
+        if (!s) { location.replace('/login?next=' + encodeURIComponent(location.pathname)); return; }
+        var role = s.role || 'donante';
+        if (role !== allowed) { location.replace(homes[role] || '/'); return; }
+        document.documentElement.dataset.auth = 'in';
+        document.documentElement.dataset.role = role;
+      })();
+    </script>
+  </head>
+
+  <body class="min-h-dvh antialiased" data-portal-role={role}>
+    <Navbar role={role} />
+    <main id="main">
+      <slot />
+    </main>
+
+    <script>
+      import { guard } from '../lib/roles';
+      import { seedDemoSiHaceFalta } from '../lib/demo';
+      import { usaSupabase } from '../lib/supabase';
+      import type { Role } from '../lib/roles';
+
+      const role = document.body.dataset.portalRole as Role;
+      if (guard([role]) && role !== 'donante' && !usaSupabase()) {
+        // Sin base de datos conectada, el personal arranca con datos de ejemplo coherentes entre roles.
+        seedDemoSiHaceFalta();
+      }
+    </script>
+  </body>
+</html>

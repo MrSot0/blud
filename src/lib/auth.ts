@@ -142,6 +142,7 @@ export async function login(email: string, password: string, remember: boolean):
   const demo = storedUsers().some((u) => u.email === target) ? undefined : demoUsers.find((u) => u.email === target);
   if (demo) {
     if (demo.password !== password) return { ok: false, error: 'Correo o contraseña incorrectos.' };
+    if (personalInactivo(target)) return { ok: false, error: CUENTA_INACTIVA };
     startSession(demo, remember);
     return { ok: true, user: demo };
   }
@@ -150,6 +151,7 @@ export async function login(email: string, password: string, remember: boolean):
   if (!user || (await hashPassword(password, user.salt)) !== user.hash) {
     return { ok: false, error: 'Correo o contraseña incorrectos.' };
   }
+  if (personalInactivo(target)) return { ok: false, error: CUENTA_INACTIVA };
   startSession(user, remember);
   return { ok: true, user };
 }
@@ -246,6 +248,92 @@ export async function changePassword(currentPassword: string, newPassword: strin
   return { ok: true };
 }
 
+// ---------- Personal (lo gestiona la dirección) ----------
+
+export const STAFF_ROLES: Role[] = ['operador', 'laboratorio', 'soporte', 'director'];
+const INACTIVE_KEY = 'blud-staff-inactive';
+const CUENTA_INACTIVA = 'Tu cuenta está desactivada. Habla con la dirección del banco de sangre.';
+
+export interface CuentaPersonal {
+  email: string;
+  name: string;
+  role: Role;
+  cargo?: string;
+  sede?: string;
+  colegiado?: string;
+  telefono?: string;
+  /** Cuenta de prueba incluida en el sitio. */
+  demo: boolean;
+  activo: boolean;
+}
+
+const inactivos = () => new Set(read<string[]>(local(), INACTIVE_KEY, []));
+export const personalInactivo = (email: string) => inactivos().has(normalize(email));
+
+/** Cuentas con rol de personal (las de prueba y las que creó la dirección). */
+export function listarPersonal(): CuentaPersonal[] {
+  const off = inactivos();
+  const out = new Map<string, CuentaPersonal>();
+  const add = (u: Session, demo: boolean) => {
+    if (!STAFF_ROLES.includes(u.role)) return;
+    out.set(u.email, {
+      email: u.email, name: u.name, role: u.role, cargo: u.cargo, sede: u.sede, colegiado: u.colegiado,
+      telefono: u.telefono, demo: demo || out.get(u.email)?.demo === true, activo: !off.has(u.email),
+    });
+  };
+  demoUsers.forEach((u) => add(u, true));
+  storedUsers().forEach((u) => add(u, false));
+  return [...out.values()].sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name));
+}
+
+/** Clave temporal legible: letras y números, sin caracteres que se confunden (0/O, 1/l). */
+function claveTemporal() {
+  const letras = 'abcdefghjkmnpqrstuvwxyz';
+  const digitos = '23456789';
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const parte = Array.from(bytes.slice(0, 4), (b) => letras[b % letras.length]).join('');
+  const num = Array.from(bytes.slice(4), (b) => digitos[b % digitos.length]).join('');
+  return `Blud-${parte}${num}`;
+}
+
+export type NuevaCuenta = { name: string; email: string; role: Role; cargo?: string; sede?: string; colegiado?: string };
+
+/** La dirección crea cuentas del personal. Devuelve la clave temporal para entregarla a la persona. */
+export async function crearCuentaPersonal(input: NuevaCuenta): Promise<{ ok: true; password: string } | { ok: false; error: string }> {
+  if (getSession()?.role !== 'director') return { ok: false, error: 'Solo la dirección puede crear cuentas del personal.' };
+  const name = input.name.trim().replace(/\s+/g, ' ');
+  const email = normalize(input.email);
+  if (name.length < 3) return { ok: false, error: 'Escribe el nombre completo.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'Revisa el correo electrónico.' };
+  if (!STAFF_ROLES.includes(input.role)) return { ok: false, error: 'Elige un rol del personal.' };
+  if (emailExists(email)) return { ok: false, error: 'Ya existe una cuenta con ese correo.' };
+
+  const password = claveTemporal();
+  const salt = randomSalt();
+  const user: StoredUser = {
+    name, email, role: input.role, bloodType: '',
+    cargo: input.cargo?.trim() || undefined, sede: input.sede?.trim() || undefined, colegiado: input.colegiado?.trim() || undefined,
+    salt, hash: await hashPassword(password, salt), createdAt: new Date().toISOString(),
+  };
+  write(local(), USERS_KEY, [...storedUsers(), user]);
+  window.dispatchEvent(new CustomEvent('blud:auth'));
+  return { ok: true, password };
+}
+
+/** Activa o desactiva una cuenta del personal (la persona desactivada ya no puede entrar). */
+export function setPersonalActivo(email: string, activo: boolean): { ok: true } | { ok: false; error: string } {
+  const actor = getSession();
+  if (actor?.role !== 'director') return { ok: false, error: 'Solo la dirección puede cambiar el estado del personal.' };
+  const key = normalize(email);
+  if (key === normalize(actor.email)) return { ok: false, error: 'No puedes desactivar tu propia cuenta.' };
+  const off = inactivos();
+  if (activo) off.delete(key); else off.add(key);
+  write(local(), INACTIVE_KEY, [...off]);
+  window.dispatchEvent(new CustomEvent('blud:auth'));
+  return { ok: true };
+}
+
 // ---------- Citas ----------
 
 type AppointmentBook = Record<string, Appointment[]>;
@@ -283,8 +371,11 @@ export function appointmentLabel(a: Pick<Appointment, 'date' | 'time'>): string 
   return `${day} · ${a.time.replace(/^0/, '')}`;
 }
 
+/** "Dra. María Colina" → "María Colina": los títulos no cuentan para el saludo ni las iniciales. */
+export const sinTitulo = (name: string) => name.replace(/^(?:(?:Dra?|Lic|Licda|Ing|Prof)\.?\s+)+/i, '').trim() || name;
+
 export const initials = (name: string) =>
-  name
+  sinTitulo(name)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)

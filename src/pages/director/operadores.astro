@@ -1,106 +1,126 @@
 ---
 // src/pages/director/operadores.astro
+// Personal de la plataforma: la dirección crea cuentas con su rol y las activa o desactiva.
 import Layout from '../../layouts/LayoutD.astro';
-import Icon from '../../components/Icon.astro';
 
-const operadores = [
-  { id: 1, nombre: "Dra. María Elena Pérez", cedula: "V-14.892.301", rol: "Médico", correo: "m.perez@hospital.org", estado: "Activo" },
-  { id: 2, nombre: "Lic. Carlos Mendoza", cedula: "V-18.432.109", rol: "Laboratorio", correo: "c.mendoza@hospital.org", estado: "Activo" },
-  { id: 3, nombre: "Enf. Ana Beatriz Lugo", cedula: "V-21.093.844", rol: "Enfermero", correo: "a.lugo@hospital.org", estado: "Inactivo" },
+const roles = [
+  { id: 'operador', label: 'Operador' },
+  { id: 'laboratorio', label: 'Laboratorio' },
+  { id: 'soporte', label: 'Soporte' },
+  { id: 'director', label: 'Dirección' },
 ];
 ---
 
-<Layout title="BLUD | Gestión de Operadores">
-  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
-    <div class="container-blud space-y-6">
-      
-      <!-- Encabezado -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-line pb-6">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Gestión de Operadores</h1>
-          <p class="text-sm text-ink-2 mt-1">Administración de credenciales, roles y permisos de acceso del personal del banco de sangre.</p>
-        </div>
-      </div>
-
-      <!-- Formulario Registrar / Editar -->
-      <div class="panel p-6 space-y-4" id="registro">
-        <h2 class="text-base font-bold text-ink border-b border-line pb-2">Registrar o Modificar Operador</h2>
-        <form class="grid grid-cols-1 md:grid-cols-3 gap-4" onsubmit="event.preventDefault();">
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombre Completo</label>
-            <input type="text" placeholder="Ej. Dr. Juan Reyes" class="field" required />
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cédula de Identidad</label>
-            <input type="text" placeholder="Ej. V-12345678" class="field" required />
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Correo Electrónico</label>
-            <input type="email" placeholder="usuario@bancodesangre.org" class="field" required />
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Rol / Cargo</label>
-            <select class="field">
-              <option>Médico / Evaluador</option>
-              <option>Laboratorio / Bioanalista</option>
-              <option>Enfermero(a)</option>
-              <option>Técnico de Banco de Sangre</option>
-              <option>Director / Administrador</option>
-            </select>
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Colegiatura / Registro Médico</label>
-            <input type="text" placeholder="Ej. MPPS-123456" class="field" />
-          </div>
-          <div class="flex items-end gap-2">
-            <button type="submit" class="btn btn-primary w-full justify-center">
-              Registrar Operador
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Tabla de Registros -->
-      <div class="panel p-6 space-y-4">
-        <h2 class="text-base font-bold text-ink">Personal Autorizado en la Plataforma</h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-ink">
-            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-              <tr>
-                <th class="p-3 rounded-l-control">Operador</th>
-                <th class="p-3">Cédula</th>
-                <th class="p-3">Rol</th>
-                <th class="p-3">Estado</th>
-                <th class="p-3 text-right rounded-r-control">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              {operadores.map((op) => (
-                <tr class="hover:bg-sunken/50 transition-colors">
-                  <td class="p-3 font-medium text-ink">
-                    {op.nombre}
-                    <span class="block text-xs text-ink-3">{op.correo}</span>
-                  </td>
-                  <td class="p-3 font-mono text-xs">{op.cedula}</td>
-                  <td class="p-3">{op.rol}</td>
-                  <td class="p-3">
-                    <span class={`px-2 py-0.5 rounded-full text-xs font-bold border ${
-                      op.estado === 'Activo' ? 'bg-ok-soft text-ok border-ok/30' : 'bg-sunken text-ink-3 border-line'
-                    }`}>
-                      {op.estado}
-                    </span>
-                  </td>
-                  <td class="p-3 text-right space-x-2">
-                    <button class="text-xs font-semibold text-accent-ink hover:underline">Editar</button>
-                    <button class="text-xs font-semibold text-warn hover:underline">Inactivar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
+<Layout title="BLUD | Personal">
+  <div class="container-blud py-8 space-y-8">
+    <div class="pb-6 border-b border-line">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Personal</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Cada cuenta entra solo a la zona de su rol. Los donantes se registran solos desde la web.</p>
     </div>
-  </section>
+
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] items-start">
+      <section class="panel p-6 space-y-5" aria-labelledby="h-nuevo">
+        <h2 id="h-nuevo" class="text-lg font-bold text-ink">Crear una cuenta</h2>
+        <form id="form" class="space-y-4" novalidate>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Nombre completo</span>
+            <input name="name" class="field" required autocomplete="off" placeholder="Ej. Lic. Juan Reyes" /></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Correo</span>
+            <input name="email" type="email" class="field" required autocomplete="off" placeholder="persona@bancodesangre.org" /></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Rol</span>
+            <select name="role" class="field" required>
+              {roles.map((r) => <option value={r.id}>{r.label}</option>)}
+            </select></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cargo</span>
+            <input name="cargo" class="field" autocomplete="off" placeholder="Ej. Bioanalista" /></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Sede</span>
+            <input name="sede" class="field" autocomplete="off" value="Hospital Central Maracaibo" /></label>
+          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">MPPS o ID de personal</span>
+            <input name="colegiado" class="field" autocomplete="off" placeholder="Ej. MPPS-123456" /></label>
+          <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <button type="submit" class="btn btn-primary w-full">Crear cuenta</button>
+        </form>
+        <div id="creada" class="hidden rounded-control border border-ok/30 bg-ok-soft p-4 text-sm text-ink" role="status">
+          <p class="font-semibold text-ok">Cuenta creada</p>
+          <p class="mt-1">Entrégale a la persona su clave temporal; podrá cambiarla en Configuración.</p>
+          <p class="mt-3 flex items-center justify-between gap-2 rounded-control bg-surface px-3 py-2 font-mono text-base font-bold" id="clave"></p>
+        </div>
+      </section>
+
+      <section class="panel overflow-hidden" aria-labelledby="h-lista">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-6">
+          <h2 id="h-lista" class="text-lg font-bold text-ink">Cuentas del personal</h2>
+          <label class="sr-only" for="buscar">Buscar</label>
+          <input id="buscar" type="search" class="field sm:w-64" placeholder="Nombre, correo o rol" autocomplete="off" />
+        </div>
+        <ul id="lista" class="divide-y divide-line"></ul>
+      </section>
+    </div>
+  </div>
 </Layout>
+
+<script>
+  import { getSession, initials } from '../../lib/auth';
+  import { cambiarEstadoPersonal, crearPersonal, esc, getPersonal, toast } from '../../lib/director';
+  import type { Role } from '../../lib/roles';
+
+  const ROL: Record<string, string> = { operador: 'Operador', laboratorio: 'Laboratorio', soporte: 'Soporte', director: 'Dirección' };
+  const form = document.getElementById('form') as HTMLFormElement;
+  const error = document.getElementById('error')!;
+  const buscar = document.getElementById('buscar') as HTMLInputElement;
+  const yo = getSession()?.email ?? '';
+
+  function render() {
+    const q = buscar.value.trim().toLowerCase();
+    const lista = getPersonal().filter((p) => !q || `${p.name} ${p.email} ${ROL[p.role]}`.toLowerCase().includes(q));
+    document.getElementById('lista')!.innerHTML = lista.length
+      ? lista.map((p) => `<li class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between ${p.activo ? '' : 'opacity-60'}">
+          <div class="flex min-w-0 items-center gap-3">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-white">${esc(initials(p.name))}</span>
+            <div class="min-w-0">
+              <p class="flex flex-wrap items-center gap-2"><span class="truncate font-semibold text-ink">${esc(p.name)}</span>
+                <span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">${esc(ROL[p.role] ?? p.role)}</span>
+                ${p.demo ? '<span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-medium text-ink-3">Prueba</span>' : ''}
+                ${p.activo ? '' : '<span class="rounded-full bg-accent-soft px-2 py-0.5 text-[0.6875rem] font-bold text-accent-ink">Desactivada</span>'}</p>
+              <p class="truncate text-sm text-ink-3">${esc(p.email)}${p.cargo ? ' · ' + esc(p.cargo) : ''}</p>
+              <p class="text-xs text-ink-3">${esc(p.sede ?? '')}${p.sede ? ' · ' : ''}${p.acciones} registros a su nombre</p>
+            </div>
+          </div>
+          ${p.email === yo ? '<span class="text-xs font-semibold text-ink-3">Tu cuenta</span>'
+            : `<button type="button" class="btn btn-secondary btn-sm shrink-0" data-estado="${esc(p.email)}" data-activo="${p.activo}">${p.activo ? 'Desactivar' : 'Reactivar'}</button>`}
+        </li>`).join('')
+      : '<li class="p-10 text-center text-sm text-ink-3">No hay cuentas con esa búsqueda.</li>';
+  }
+
+  document.getElementById('lista')!.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-estado]');
+    if (!b) return;
+    const activar = b.dataset.activo !== 'true';
+    const r = cambiarEstadoPersonal(b.dataset.estado!, activar);
+    if (!r.ok) return toast(r.error);
+    toast(activar ? 'Cuenta reactivada.' : 'Cuenta desactivada: ya no podrá entrar.');
+    render();
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    error.classList.add('hidden');
+    const f = new FormData(form);
+    const r = await crearPersonal({
+      name: String(f.get('name') ?? ''), email: String(f.get('email') ?? ''), role: String(f.get('role')) as Role,
+      cargo: String(f.get('cargo') ?? ''), sede: String(f.get('sede') ?? ''), colegiado: String(f.get('colegiado') ?? ''),
+    });
+    if (!r.ok) {
+      error.textContent = r.error;
+      error.classList.remove('hidden');
+      return;
+    }
+    document.getElementById('clave')!.textContent = r.password;
+    document.getElementById('creada')!.classList.remove('hidden');
+    form.reset();
+    render();
+  });
+
+  buscar.addEventListener('input', render);
+  window.addEventListener('blud:auth', render);
+  render();
+</script>
