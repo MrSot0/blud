@@ -298,11 +298,16 @@ const pretty = (t: string) => t.replace('-', '−');
         }
         const firstName = result.user.name.split(/\s+/)[0];
         const text = successBanner?.querySelector('[data-success-text]');
-        if (text) text.textContent = `¡Te damos la bienvenida, ${firstName}! Tu cuenta está lista y ya iniciaste sesión.`;
+        if (text) {
+          text.textContent = result.confirmar
+            ? `¡Listo, ${firstName}! Te enviamos un correo para confirmar tu cuenta. Ábrelo y luego inicia sesión.`
+            : `¡Te damos la bienvenida, ${firstName}! Tu cuenta está lista y ya iniciaste sesión.`;
+        }
         successBanner?.classList.remove('hidden');
         successBanner?.classList.add('flex');
         form.classList.add('opacity-60', 'pointer-events-none');
         successBanner?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (result.confirmar) return; // aún no hay sesión: se entra después de confirmar el correo
         const next = safeNext(new URLSearchParams(location.search).get('next'));
         window.setTimeout(() => location.assign(next), 1600);
       });

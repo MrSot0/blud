@@ -60,14 +60,27 @@ const { role, title, description } = Astro.props;
 
     <script>
       import { guard } from '../lib/roles';
+      import { verificarSesionRemota } from '../lib/auth';
       import { seedDemoSiHaceFalta } from '../lib/demo';
       import { usaSupabase } from '../lib/supabase';
+      import { toast } from '../lib/ui';
       import type { Role } from '../lib/roles';
 
       const role = document.body.dataset.portalRole as Role;
-      if (guard([role]) && role !== 'donante' && !usaSupabase()) {
-        // Sin base de datos conectada, el personal arranca con datos de ejemplo coherentes entre roles.
-        seedDemoSiHaceFalta();
+      if (guard([role])) {
+        if (usaSupabase()) {
+          // Base real: los datos de ejemplo viven en supabase/seed.sql, no en el navegador.
+          document.querySelectorAll<HTMLElement>('#btn-demo').forEach((b) => ((b.closest('p') ?? b).hidden = true));
+          // Valida la sesión con Supabase, refresca rol y descarga lo que este rol puede ver.
+          verificarSesionRemota().then((viva) => {
+            if (!viva) location.replace(`/login?next=${encodeURIComponent(location.pathname)}`);
+            else guard([role]);
+          });
+          window.addEventListener('blud:sync-error', () => toast('No pudimos sincronizar con el servidor. Revisa tu conexión.'));
+        } else if (role !== 'donante') {
+          // Sin base de datos conectada, el personal arranca con datos de ejemplo coherentes entre roles.
+          seedDemoSiHaceFalta();
+        }
       }
     </script>
   </body>

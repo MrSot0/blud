@@ -8,6 +8,7 @@ import {
 } from './db';
 import type { Collection, DonacionOp, EstadoLab, Hemocomponente, ResultadoPrueba } from './db';
 import { hoyISO, sumarDias, uid } from './ui';
+import { usaSupabase } from './supabase';
 
 // Personal de las cuentas de prueba (lib/auth → demoUsers): así cada acción queda a nombre de alguien real.
 const OPERADOR = 'operador@blud.app';
@@ -22,6 +23,8 @@ function add<T extends { id: string }>(col: Collection<T>, item: T) {
 }
 
 export function seedDemo() {
+  // Con base real, los datos de ejemplo se cargan con supabase/seed.sql (y cada rol solo ve lo suyo).
+  if (usaSupabase()) return;
   const hoy = hoyISO();
   const d = (n: number) => sumarDias(hoy, -n);
   const sinReactivos = (over: Record<string, ResultadoPrueba> = {}) =>

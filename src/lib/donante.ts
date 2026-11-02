@@ -68,7 +68,12 @@ function read<T>(key: string, fallback: T): T {
 function write(key: string, value: unknown) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
   // Cada vez que se guarda el perfil, el registro de donantes (lo que ve el operador) se actualiza
-  if (key === K_DONOR) { try { upsertDesdePerfil(value as Donor); } catch {} }
+  if (key === K_DONOR) {
+    try {
+      const userId = readSession().userId;
+      upsertDesdePerfil({ ...(value as Donor), userId: typeof userId === 'string' ? userId : undefined });
+    } catch {}
+  }
   try { window.dispatchEvent(new Event('blud:donor')); } catch {}
 }
 
@@ -114,10 +119,18 @@ export function loadDonor(): Donor {
   };
   const saved = read<Partial<Donor>>(K_DONOR, {});
   const donor: Donor = { ...base, ...saved };
+
+  // Con base real, el registro del donante se reconoce por su cuenta aunque este navegador no tenga su cédula.
+  const userId = typeof s.userId === 'string' ? s.userId : undefined;
+  const propio = userId ? registro.find((r) => r.userId === userId) : undefined;
+  if (propio && !donor.cedula) {
+    donor.cedula = propio.cedula;
+    donor.sangre = donor.sangre || propio.sangre;
+  }
   if (!saved.id) write(K_DONOR, donor); // fija el ID desde la primera visita
 
   const ced = normCedula(donor.cedula);
-  const reg = registro.get(donor.id) ?? (ced ? registro.find((r) => r.cedula === ced) : undefined);
+  const reg = registro.get(donor.id) ?? (ced ? registro.find((r) => r.cedula === ced) : undefined) ?? propio;
   if (reg?.estado === 'verificado') donor.kyc = 'verified';
   donor.donaciones = historialDe(donor.id, donor.cedula).length || donor.donaciones;
   return donor;

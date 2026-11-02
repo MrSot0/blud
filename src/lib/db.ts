@@ -1,9 +1,10 @@
 // src/lib/db.ts
 // "Base de datos" local única del sitio: colecciones tipadas sobre localStorage con eventos de cambio.
 // Donante, operador y director leen y escriben AQUÍ, así lo que hace uno lo ve el otro.
-// Para pasar a backend, solo hay que reemplazar el interior de `collection()` por llamadas a la API.
+// Con Supabase conectado (lib/supabase), cada cambio se guarda también en la base y localStorage queda como caché.
 
 import { hoyISO } from './ui';
+import { borrar as borrarRemoto, subir as subirRemoto } from './supabase';
 
 export interface Collection<T extends { id: string }> {
   all(): T[];
@@ -34,9 +35,13 @@ export function collection<T extends { id: string }>(key: string): Collection<T>
       const i = list.findIndex((x) => x.id === item.id);
       if (i >= 0) list[i] = item; else list.push(item);
       write(list);
+      subirRemoto(key, item); // con Supabase conectado, también se guarda en la base
       return item;
     },
-    remove(id) { write(read().filter((x) => x.id !== id)); },
+    remove(id) {
+      write(read().filter((x) => x.id !== id));
+      borrarRemoto(key, id);
+    },
   };
 }
 
@@ -60,6 +65,8 @@ export type Estado = 'preregistrado' | 'verificado';
 
 export interface RegistroDonante {
   id: string; // = id del carnet (BLD-XXXXXX) si vino de la app
+  /** Cuenta de Supabase del donante (solo con base real). */
+  userId?: string;
   cedula: string; // normalizada: V-12345678
   nombreCompleto: string;
   sangre: string;
@@ -266,10 +273,10 @@ export function normCedula(c: string): string {
 }
 
 /** El perfil del donante alimenta el registro: aparece como "preregistrado" hasta que un operador lo verifique. */
-export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string }) {
+export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string; userId?: string }) {
   const ced = normCedula(p.cedula);
   if (!ced || !p.firstname) return;
-  const prev = registro.get(p.id) ?? registro.find((r) => r.cedula === ced);
+  const prev = registro.get(p.id) ?? registro.find((r) => r.cedula === ced) ?? (p.userId ? registro.find((r) => r.userId === p.userId) : undefined);
   registro.upsert({
     ...(prev ?? {}),
     id: prev?.id ?? p.id,
@@ -281,6 +288,7 @@ export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: 
     fechaRegistro: prev?.fechaRegistro ?? hoyISO(),
     estado: prev?.estado ?? 'preregistrado',
     origen: prev?.origen ?? 'app',
+    userId: prev?.userId ?? p.userId,
   });
 }
 

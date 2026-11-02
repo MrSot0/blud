@@ -54,7 +54,7 @@ src/
 
 ## Asistente Bluddie (Gemini)
 
-Bluddie responde con **Gemini 2.5 Flash-Lite** a través de `src/pages/api/chat.ts`, que se ejecuta en Vercel para que la clave nunca llegue al navegador. El resto del sitio sigue siendo estático.
+Bluddie responde con **Gemini 3.1 Flash-Lite** (con reintento en 3.5 Flash-Lite) a través de `src/pages/api/chat.ts`, que se ejecuta en Vercel para que la clave nunca llegue al navegador. El resto del sitio sigue siendo estático.
 
 1. Crea una clave en [Google AI Studio](https://aistudio.google.com/apikey).
 2. En local, copia `.env.example` a `.env` y pega la clave en `GEMINI_API_KEY`.
@@ -62,18 +62,42 @@ Bluddie responde con **Gemini 2.5 Flash-Lite** a través de `src/pages/api/chat.
 
 Sin clave, el chat muestra un aviso en lugar de fallar.
 
+## Base de datos (Supabase)
+
+Sin variables de Supabase, el sitio funciona en **modo demo**: cuentas, citas y paneles viven en el navegador (`localStorage`) y el personal arranca con datos de ejemplo. Para guardar los datos de verdad:
+
+1. Aplica el esquema y los datos de ejemplo en el proyecto (SQL Editor, o `supabase db push` y luego `supabase/seed.sql`):
+   `supabase/migrations/20261102000000_blud_esquema.sql` y `supabase/seed.sql`.
+2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal`.
+3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en `.env` y en Vercel, y vuelve a desplegar.
+
+Con la base conectada, `localStorage` queda solo como caché y quién ve qué lo deciden las reglas RLS de la base, no el navegador:
+
+| Rol         | Ve                                                         | Puede                                                                                          |
+| :---------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| donante     | su registro, sus donaciones, sus citas y tickets           | pre-registrarse, agendar citas, abrir tickets                                                  |
+| operador    | donantes, donaciones, inventario, solicitudes y entregas   | registrar donaciones (entran en cuarentena), cargar solicitudes (quedan por aprobar), despachar |
+| laboratorio | donantes, donaciones, pruebas, fracciones y casos          | registrar pruebas, liberar o descartar unidades, fraccionar                                    |
+| soporte     | tickets y notas internas                                   | responder y cerrar tickets                                                                     |
+| dirección   | todo, salvo el detalle del laboratorio (recibe un resumen) | aprobar o rechazar solicitudes, crear y desactivar cuentas del personal                        |
+
+Nadie puede darse otro rol: lo asigna la dirección y lo protege la base.
+
 ## Cuentas de prueba
 
-Mientras no haya backend, el acceso funciona en el navegador (`localStorage`):
+Funcionan igual en modo demo y con Supabase (las crea `supabase/seed.sql`):
 
-| Correo            | Contraseña    |
-| :---------------- | :------------ |
-| `maria@blud.app`  | `Donante2026` |
-| `carlos@blud.app` | `Sangre2026`  |
+| Rol         | Correo                 | Contraseña        |
+| :---------- | :--------------------- | :---------------- |
+| dirección   | `maria@blud.app`       | `Donante2026`     |
+| donante     | `carlos@blud.app`      | `Sangre2026`      |
+| operador    | `operador@blud.app`    | `Operador2026`    |
+| laboratorio | `laboratorio@blud.app` | `Laboratorio2026` |
+| soporte     | `soporte@blud.app`     | `Soporte2026`     |
 
-Las cuentas creadas en `/register` y las citas agendadas desde «Agendar aquí» también se guardan en ese navegador.
+Cambia estas contraseñas (o borra las cuentas) antes de usar la base con datos reales.
 
 ## Pendiente
 
-- Las solicitudes urgentes, los centros (teléfonos ficticios, coordenadas aproximadas), el acceso y las citas usan datos de ejemplo; falta conectarlos a la API.
+- Las solicitudes urgentes y los centros (teléfonos ficticios, coordenadas aproximadas) usan datos de ejemplo.
 - Los textos de privacidad y términos son un borrador para revisión legal.
