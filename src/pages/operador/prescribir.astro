@@ -95,6 +95,16 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
             <label for="medico" class="block text-xs font-bold uppercase text-ink-2">Médico que indica <span class="font-normal normal-case text-ink-3">(opcional)</span></label>
             <input type="text" id="medico" class="field" placeholder="Ej. Dra. Elena Ríos" />
           </div>
+          <div class="space-y-1.5 sm:col-span-2 lg:col-span-3">
+            <label for="diagnostico" class="block text-xs font-bold uppercase text-ink-2">Indicación clínica</label>
+            <input type="text" id="diagnostico" class="field" placeholder="Ej. Anemia aguda por sangrado digestivo" />
+          </div>
+          <div class="sm:col-span-2 lg:col-span-3">
+            <label class="flex items-start gap-2 text-sm text-ink-2">
+            <input type="checkbox" id="consentimiento" class="mt-0.5 size-4 accent-[var(--accent)]" />
+            <span>El paciente (o su representante) firmó el consentimiento informado. <span class="text-ink-3">En emergencias puede omitirse.</span></span>
+          </label>
+          </div>
         </div>
 
         <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
@@ -200,6 +210,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         hospitalDestino: val('destino'),
         prioridad: val('prioridad') as Prioridad,
         medico: val('medico').trim() || undefined,
+        diagnostico: val('diagnostico').trim() || undefined,
+        clinica: ($('#consentimiento') as HTMLInputElement).checked ? { consentimiento: 'si' } : undefined,
       });
       if (!r.ok) {
         const err = $('#error');

@@ -182,6 +182,15 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                   <label for="nacimiento" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha de nacimiento</label>
                   <input type="date" id="nacimiento" name="nacimiento" class="field" autocomplete="bday" />
                 </div>
+                <div class="space-y-1.5">
+                  <label for="sexo" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Sexo</label>
+                  <select id="sexo" name="sexo" class="field">
+                    <option value="">Selecciona…</option>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                  </select>
+                  <p class="text-xs text-ink-3">Define el tiempo de espera entre donaciones (90 o 120 días).</p>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -603,7 +612,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     let donor = loadDonor();
 
     const form = q<HTMLFormElement>('#donor-form', root)!;
-    const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sangre', 'ciudad'] as const;
+    const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sexo', 'sangre', 'ciudad'] as const;
     fields.forEach((f) => {
       const input = form.elements.namedItem(f) as HTMLInputElement | null;
       if (input) input.value = (donor as any)[f] ?? '';
@@ -658,6 +667,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         telefono: get('telefono'),
         cedula: donor.kyc === 'verified' ? donor.cedula : ced.toUpperCase(),
         nacimiento: nac,
+        sexo: (get('sexo') || undefined) as Donor['sexo'],
         sangre: get('sangre'),
         ciudad: get('ciudad'),
       };

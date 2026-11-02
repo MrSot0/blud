@@ -26,6 +26,20 @@ const roles = [
             <input name="name" class="field" required autocomplete="off" placeholder="Ej. Lic. Juan Reyes" /></label>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Correo</span>
             <input name="email" type="email" class="field" required autocomplete="off" placeholder="persona@bancodesangre.org" /></label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cédula</span>
+              <input name="cedula" class="field" autocomplete="off" placeholder="V-12345678" /></label>
+            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Teléfono</span>
+              <input name="telefono" type="tel" class="field" autocomplete="off" placeholder="+58 414…" /></label>
+            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Nacimiento</span>
+              <input name="nacimiento" type="date" class="field" /></label>
+            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Sexo</span>
+              <select name="sexo" class="field">
+                <option value="">—</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+              </select></label>
+          </div>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Rol</span>
             <select name="role" class="field" required>
               {roles.map((r) => <option value={r.id}>{r.label}</option>)}
@@ -108,6 +122,8 @@ const roles = [
     const r = await crearPersonal({
       name: String(f.get('name') ?? ''), email: String(f.get('email') ?? ''), role: String(f.get('role')) as Role,
       cargo: String(f.get('cargo') ?? ''), sede: String(f.get('sede') ?? ''), colegiado: String(f.get('colegiado') ?? ''),
+      cedula: String(f.get('cedula') ?? '') || undefined, telefono: String(f.get('telefono') ?? '') || undefined,
+      nacimiento: String(f.get('nacimiento') ?? '') || undefined, sexo: (String(f.get('sexo') ?? '') || undefined) as 'M' | 'F' | undefined,
     });
     if (!r.ok) {
       error.textContent = r.error;

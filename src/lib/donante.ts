@@ -24,6 +24,7 @@ export interface Donor {
   sangre: string;
   ciudad: string;
   since: string; // YYYY-MM-DD
+  sexo?: 'M' | 'F';
   kyc: Kyc;
   donaciones: number;
 }

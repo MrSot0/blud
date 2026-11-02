@@ -67,6 +67,9 @@ export interface RegistroDonante {
   id: string; // = id del carnet (BLD-XXXXXX) si vino de la app
   /** Cuenta de Supabase del donante (solo con base real). */
   userId?: string;
+  /** Con base real el esquema los exige para registrar al donante. */
+  nacimiento?: string;
+  sexo?: 'M' | 'F';
   cedula: string; // normalizada: V-12345678
   nombreCompleto: string;
   sangre: string;
@@ -95,6 +98,8 @@ export interface DonacionOp {
   centroNombre?: string;
   /** Estado en laboratorio. Sin valor = liberada (datos anteriores al módulo de laboratorio). */
   estadoLab?: EstadoLab;
+  /** Evaluación previa a la extracción. Con base real es obligatoria: la base decide si el donante es apto. */
+  evaluacion?: { peso: string; presion: string; hb: string; temperatura: string; fc?: string };
 }
 
 /**
@@ -248,7 +253,7 @@ export interface Ticket {
 export const codigoTicket = (id: string) => 'TCK-' + id.replace(/^tk-/, '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
 /** DON-AB12CD: identifica la bolsa sin exponer datos del donante */
-export const codigoDonacion = (id: string) => 'DON-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase();
+export const codigoDonacion = (id: string) => /^DON-\d+$/.test(id) ? id : 'DON-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase();
 
 // ---------------------------------------------------------------- Colecciones
 export const registro = collection<RegistroDonante>('blud-db-donantes');
@@ -273,7 +278,10 @@ export function normCedula(c: string): string {
 }
 
 /** El perfil del donante alimenta el registro: aparece como "preregistrado" hasta que un operador lo verifique. */
-export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string; userId?: string }) {
+export function upsertDesdePerfil(p: {
+  id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string; userId?: string;
+  nacimiento?: string; sexo?: 'M' | 'F';
+}) {
   const ced = normCedula(p.cedula);
   if (!ced || !p.firstname) return;
   const prev = registro.get(p.id) ?? registro.find((r) => r.cedula === ced) ?? (p.userId ? registro.find((r) => r.userId === p.userId) : undefined);
@@ -289,6 +297,8 @@ export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: 
     estado: prev?.estado ?? 'preregistrado',
     origen: prev?.origen ?? 'app',
     userId: prev?.userId ?? p.userId,
+    nacimiento: p.nacimiento || prev?.nacimiento,
+    sexo: p.sexo ?? prev?.sexo,
   });
 }
 

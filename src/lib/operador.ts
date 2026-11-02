@@ -10,6 +10,7 @@ import {
 } from './db';
 import type { DonacionOp, EntregaOp, EstadoPedido, Hemocomponente, PedidoOp, Prioridad, RegistroDonante } from './db';
 import { seedDemo } from './demo';
+import { UNIDADES_KEY, usaSupabase } from './supabase';
 import { diasDesde, hoyISO, sumarDias, uid } from './ui';
 
 export { BLOOD_TYPES, COMPONENTES, codigoPedido, onDb, normCedula, buscarRegistro as buscarDonante };
@@ -67,7 +68,9 @@ export function verificarDonanteOp(id: string): Resultado<RegistroDonante> {
   return reg ? { ok: true, data: reg } : fail('No encontramos a ese donante.');
 }
 
-export function registrarDonanteOp(input: { cedula: string; nombreCompleto: string; sangre: string }): Resultado<RegistroDonante> {
+export function registrarDonanteOp(input: {
+  cedula: string; nombreCompleto: string; sangre: string; nacimiento?: string; sexo?: 'M' | 'F';
+}): Resultado<RegistroDonante> {
   const cedula = normCedula(input.cedula);
   if (!/^[VEJ]-\d{5,9}$/.test(cedula)) return fail('La cédula debe verse así: V-12345678.');
   if (!input.nombreCompleto.trim()) return fail('Escribe el nombre completo.');
@@ -84,6 +87,8 @@ export function registrarDonanteOp(input: { cedula: string; nombreCompleto: stri
     cedula,
     nombreCompleto: input.nombreCompleto.trim(),
     sangre: input.sangre,
+    nacimiento: input.nacimiento || undefined,
+    sexo: input.sexo,
     fechaRegistro: hoyISO(),
     fechaVerificacion: hoyISO(),
     estado: 'verificado',
@@ -98,6 +103,7 @@ export const getDonacionesOp = () => donaciones.all().sort(porFechaDesc);
 
 export function registrarDonacionOp(input: {
   cedula: string; tipoSangre: string; tipoHemocomponente: Hemocomponente; volumenMl: number;
+  evaluacion?: DonacionOp['evaluacion'];
 }): Resultado<DonacionOp> {
   const donante = buscarRegistro(input.cedula);
   if (!donante) return fail('No encontramos a ese donante. Regístralo primero en Donantes.');
@@ -132,6 +138,7 @@ export function registrarDonacionOp(input: {
     centroNombre: op.centro,
     // Cuarentena: no entra al stock hasta que el laboratorio la libere.
     estadoLab: 'pendiente',
+    evaluacion: input.evaluacion,
   });
   return { ok: true, data, aviso: 'Quedó en cuarentena hasta que el laboratorio la analice.' };
 }
@@ -170,6 +177,7 @@ const liberada = (d: DonacionOp) => (d.estadoLab ?? 'liberada') === 'liberada';
  * Cada entrega consume primero las unidades vigentes que vencen antes (FIFO).
  */
 export function unidadesInventario(): Unidad[] {
+  if (usaSupabase()) return unidadesRemotas();
   const frac = new Map(fracciones.all().map((f) => [f.donacionId, f]));
   const grupos = new Map<string, Unidad[]>();
   for (const d of donaciones.all()) {
@@ -203,6 +211,16 @@ export function unidadesInventario(): Unidad[] {
     out.push({ ...u, dias, estado: dias < 0 ? 'vencida' : dias <= DIAS_POR_VENCER ? 'por_vencer' : 'disponible' });
   }));
   return out.sort((a, b) => a.vence.localeCompare(b.vence));
+}
+
+/** Con base real, el inventario son las unidades que la base marca como disponibles (ya fraccionadas y liberadas). */
+function unidadesRemotas(): Unidad[] {
+  let lista: Omit<Unidad, 'dias' | 'estado'>[] = [];
+  try { lista = JSON.parse(localStorage.getItem(UNIDADES_KEY) || '[]'); } catch {}
+  return lista.map((u) => {
+    const dias = -diasDesde(u.vence);
+    return { ...u, dias, estado: dias < 0 ? 'vencida' : dias <= DIAS_POR_VENCER ? 'por_vencer' : 'disponible' } as Unidad;
+  });
 }
 
 /** Unidades vigentes por tipo y hemocomponente (las vencidas no cuentan). */

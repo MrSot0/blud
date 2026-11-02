@@ -64,14 +64,22 @@ Sin clave, el chat muestra un aviso en lugar de fallar.
 
 ## Base de datos (Supabase)
 
-Sin variables de Supabase, el sitio funciona en **modo demo**: cuentas, citas y paneles viven en el navegador (`localStorage`) y el personal arranca con datos de ejemplo. Para guardar los datos de verdad:
+Sin variables de Supabase, el sitio funciona en **modo demo**: cuentas, citas y paneles viven en el navegador (`localStorage`) y el personal arranca con datos de ejemplo.
 
-1. Aplica el esquema y los datos de ejemplo en el proyecto (SQL Editor, o `supabase db push` y luego `supabase/seed.sql`):
-   `supabase/migrations/20261102000000_blud_esquema.sql` y `supabase/seed.sql`.
-2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal`.
-3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` en `.env` y en Vercel, y vuelve a desplegar.
+Con base real, el sitio usa el esquema del proyecto **Bloodonor** (`usuario`, `donante`, `donacion`, `unidadsangre`, `solicitudtransfusion`, `prueba_serologica`…) y sus funciones de negocio (`evaluar_donante`, `registrar_donacion`, `reservar_unidades`…). [`supabase/migrations/20261102120000_blud_adaptador.sql`](supabase/migrations/20261102120000_blud_adaptador.sql) solo añade una capa de traducción, sin cambiar sus tablas ni funciones:
 
-Con la base conectada, `localStorage` queda solo como caché y quién ve qué lo deciden las reglas RLS de la base, no el navegador:
+- `blud_panel()` devuelve lo que el rol puede ver, con la forma de las colecciones del front.
+- `blud_guardar(coleccion, item)` aplica cada cambio con las funciones del esquema, que validan rol y reglas clínicas.
+
+Para conectarlo:
+
+1. En el SQL Editor de Bloodonor, ejecuta la migración y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; ambos se pueden repetir).
+2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
+3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
+
+Pruebas por rol: [`supabase/tests/adaptador.sql`](supabase/tests/adaptador.sql), sobre una copia de la base, después de la migración y el seed. Termina con un error a propósito para que todo se revierta; el mensaje trae los resultados.
+
+Con la base conectada, `localStorage` queda solo como caché. El esquema exige datos que el modo demo no pide: sexo y fecha de nacimiento del donante, signos vitales antes de la extracción, e indicación clínica y consentimiento en la orden médica.
 
 | Rol         | Ve                                                         | Puede                                                                                          |
 | :---------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |

@@ -133,9 +133,12 @@ function startSession(user: Session, remember: boolean) {
   window.dispatchEvent(new CustomEvent('blud:auth'));
 }
 
+/** Cierre de sesión en curso: un login inmediato lo espera para que no le borre la sesión nueva. */
+let cerrando: Promise<unknown> | null = null;
+
 export function logout() {
   if (usaSupabase()) {
-    sb()?.auth.signOut();
+    cerrando = sb()?.auth.signOut().finally(() => { cerrando = null; }) ?? null;
     limpiarCache();
   }
   remove(local(), SESSION_KEY);
@@ -157,18 +160,20 @@ const sesionDePerfil = (p: PerfilRemoto): Session => ({
   telefono: p.phone ?? undefined, cargo: p.cargo ?? undefined, sede: p.sede ?? undefined, colegiado: p.colegiado ?? undefined,
 });
 
-async function perfilRemoto(userId: string): Promise<PerfilRemoto | null> {
-  const { data } = await sb()!.from('profiles').select('*').eq('id', userId).maybeSingle();
+/** Perfil de quien inició sesión (rol incluido), según la base. */
+async function perfilRemoto(): Promise<PerfilRemoto | null> {
+  const { data } = await sb()!.rpc('blud_mi_perfil');
   return (data as PerfilRemoto | null) ?? null;
 }
 
 async function loginRemoto(email: string, password: string, remember: boolean): Promise<LoginResult> {
   const c = sb()!;
+  await cerrando;
   const { data, error } = await c.auth.signInWithPassword({ email, password });
   if (error || !data.user) {
     return { ok: false, error: error?.message?.includes('Email not confirmed') ? 'Confirma tu correo antes de entrar: revisa tu bandeja de entrada.' : 'Correo o contraseña incorrectos.' };
   }
-  const perfil = await perfilRemoto(data.user.id);
+  const perfil = await perfilRemoto();
   if (!perfil) {
     await c.auth.signOut();
     return { ok: false, error: 'Tu cuenta no tiene perfil todavía. Escribe a soporte@blud.app.' };
@@ -192,7 +197,7 @@ export async function verificarSesionRemota(): Promise<boolean> {
   if (!c) return true;
   const { data } = await c.auth.getSession();
   const uid = data.session?.user.id;
-  const perfil = uid ? await perfilRemoto(uid) : null;
+  const perfil = uid ? await perfilRemoto() : null;
   if (!perfil?.active) {
     logout();
     return false;
@@ -299,7 +304,7 @@ export async function updateAccount(patch: { name: string; email: string; telefo
 
   if (usaSupabase()) {
     if (email !== normalize(current.email)) return { ok: false, error: 'Para cambiar el correo escribe a soporte@blud.app.' };
-    const { error } = await sb()!.from('profiles').update({ full_name: name, phone: telefono || null }).eq('id', current.userId ?? '');
+    const { error } = await sb()!.rpc('blud_actualizar_cuenta', { p_nombre: name, p_telefono: telefono || null });
     if (error) return { ok: false, error: 'No pudimos guardar tus datos. Inténtalo de nuevo.' };
     const next: Session = { ...current, name, telefono };
     const store = read(local(), SESSION_KEY, null) ? local() : session();
@@ -399,7 +404,11 @@ function claveTemporal() {
   return `Blud-${parte}${num}`;
 }
 
-export type NuevaCuenta = { name: string; email: string; role: Role; cargo?: string; sede?: string; colegiado?: string };
+export type NuevaCuenta = {
+  name: string; email: string; role: Role; cargo?: string; sede?: string; colegiado?: string;
+  /** Con base real el esquema los exige para toda cuenta (tabla usuario). */
+  cedula?: string; telefono?: string; nacimiento?: string; sexo?: 'M' | 'F';
+};
 
 /** La dirección crea cuentas del personal. Devuelve la clave temporal para entregarla a la persona. */
 export async function crearCuentaPersonal(input: NuevaCuenta): Promise<{ ok: true; password: string } | { ok: false; error: string }> {
@@ -443,7 +452,10 @@ export function setPersonalActivo(email: string, activo: boolean): { ok: true } 
   if (usaSupabase()) {
     // La caché se actualiza al instante; la base confirma y, si se negara, la próxima sincronización lo corrige.
     write(local(), PERFILES_KEY, read<PerfilRemoto[]>(local(), PERFILES_KEY, []).map((p) => (p.email === key ? { ...p, active: activo } : p)));
-    sb()!.from('profiles').update({ active: activo }).eq('email', key).then(() => sincronizar());
+    sb()!.rpc('blud_personal_activo', { p_email: key, p_activo: activo }).then(({ error }) => {
+      if (error) window.dispatchEvent(new CustomEvent('blud:sync-error', { detail: { mensaje: error.message } }));
+      sincronizar();
+    });
     window.dispatchEvent(new CustomEvent('blud:auth'));
     return { ok: true };
   }
@@ -470,8 +482,11 @@ export function addAppointment(email: string, data: Omit<Appointment, 'id' | 'cr
   book[key] = [...(book[key] ?? []), appointment];
   write(local(), APPOINTMENTS_KEY, book);
   if (usaSupabase()) {
-    sb()!.from('citas').insert({ id: appointment.id, center_id: data.centerId, center_name: data.centerName, date: data.date, time: data.time })
-      .then(({ error }) => { if (error) console.error('[BLUD · Supabase] No se guardó la cita:', error.message); });
+    // La base valida el plazo entre donaciones y que no haya otra cita activa; si la rechaza, la caché se corrige.
+    sb()!.rpc('blud_agendar_cita', { p_centro: data.centerName, p_fecha: data.date, p_hora: data.time }).then(({ error }) => {
+      if (error) window.dispatchEvent(new CustomEvent('blud:sync-error', { detail: { mensaje: error.message } }));
+      sincronizar();
+    });
   }
   window.dispatchEvent(new CustomEvent('blud:auth'));
   return appointment;

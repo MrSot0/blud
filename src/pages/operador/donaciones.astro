@@ -52,6 +52,20 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
             </div>
             <button type="submit" class="btn btn-primary w-full sm:col-span-2 lg:col-span-1 lg:w-auto lg:px-8 min-h-12">Guardar donación</button>
 
+            <fieldset class="sm:col-span-2 lg:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <legend class="mb-1 text-xs font-bold uppercase text-ink-2">Evaluación previa <span class="font-normal normal-case text-ink-3">(el banco decide si el donante es apto)</span></legend>
+              <label class="block"><span class="mb-1 block text-xs text-ink-3">Peso (kg)</span>
+                <input id="ev-peso" inputmode="decimal" class="field" placeholder="70" autocomplete="off" /></label>
+              <label class="block"><span class="mb-1 block text-xs text-ink-3">Presión arterial</span>
+                <input id="ev-presion" class="field" placeholder="120/80" autocomplete="off" /></label>
+              <label class="block"><span class="mb-1 block text-xs text-ink-3">Hemoglobina (g/dL)</span>
+                <input id="ev-hb" inputmode="decimal" class="field" placeholder="14" autocomplete="off" /></label>
+              <label class="block"><span class="mb-1 block text-xs text-ink-3">Temperatura (°C)</span>
+                <input id="ev-temp" inputmode="decimal" class="field" placeholder="36.5" autocomplete="off" /></label>
+              <label class="block col-span-2 sm:col-span-1"><span class="mb-1 block text-xs text-ink-3">Pulso (lpm, opcional)</span>
+                <input id="ev-fc" inputmode="numeric" class="field" placeholder="72" autocomplete="off" /></label>
+            </fieldset>
+
             <div id="donante" class="hidden sm:col-span-2 lg:col-span-5 rounded-control border border-line bg-sunken p-3 text-sm space-y-1">
               <div class="flex items-center justify-between gap-3">
                 <p class="font-bold text-ink" id="d-nombre"></p>
@@ -97,6 +111,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 
 <script>
   import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, registrarDonacionOp, toast } from '../../lib/operador';
+  import { usaSupabase } from '../../lib/supabase';
   import type { Hemocomponente } from '../../lib/operador';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -163,7 +178,16 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const err = $('#error');
+      const v = (id: string) => $<HTMLInputElement>(id).value.trim();
+      const evaluacion = { peso: v('#ev-peso'), presion: v('#ev-presion'), hb: v('#ev-hb'), temperatura: v('#ev-temp'), fc: v('#ev-fc') || undefined };
+      // Con base real la evaluación es obligatoria: sin ella el banco no registra la extracción.
+      if (usaSupabase() && !(evaluacion.peso && evaluacion.presion && evaluacion.hb && evaluacion.temperatura)) {
+        err.textContent = 'Registra el peso, la presión arterial, la hemoglobina y la temperatura del donante.';
+        err.classList.remove('hidden');
+        return;
+      }
       const r = registrarDonacionOp({
+        evaluacion: evaluacion.peso ? evaluacion : undefined,
         cedula: cedula.value,
         tipoSangre: tipo.value,
         tipoHemocomponente: $<HTMLSelectElement>('#comp').value as Hemocomponente,
