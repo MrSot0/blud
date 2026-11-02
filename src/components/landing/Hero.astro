@@ -44,19 +44,20 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         )}
       </div>
     ))}
-    <div class="hero-shade absolute inset-0"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(180deg,rgb(26_32_44/0.62)_0%,rgb(26_32_44/0.74)_45%,rgb(26_32_44/0.9)_80%,#1A202C_100%)]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_46%,rgb(26_32_44/0.55),transparent_75%)]"></div>
     <div class="grain absolute inset-0"></div>
   </div>
 
-  <div class="container-blud flex min-h-[calc(100dvh-var(--header-h))] flex-col items-center justify-center py-24 text-center">
-    <div class="w-full">
+  <div class="container-blud grid min-h-[min(calc(100dvh-var(--header-h)),50rem)] place-items-center pb-32 pt-20 text-center">
+    <div class="mx-auto max-w-4xl">
       <h1
         class="hero-in text-[clamp(2.625rem,1.3rem+4.2vw,4.5rem)] font-extrabold leading-[0.98] tracking-[-0.045em]"
         style="--i:0"
       >
         <span class="lg:whitespace-nowrap">Conectando donantes,</span>
         <span class="sr-only">salvando vidas.</span>
-        <span class="hero-rotator grid text-accent" aria-hidden="true" data-rotator>
+        <span class="hero-rotator grid justify-items-center text-[#F2605A]" aria-hidden="true" data-rotator>
           {phrases.map((phrase, i) => (
             <span class="hero-phrase" data-state={i === 0 ? 'active' : ''}>
               {phrase.split(' ').map((word, w) => (
@@ -67,7 +68,7 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
         </span>
       </h1>
 
-      <p class="hero-in mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
+      <p class="hero-in mx-auto mt-6 max-w-[34rem] text-lg leading-relaxed text-white/80 sm:text-xl" style="--i:1">
         Encuentra centros cercanos, atiende solicitudes de emergencia o agenda tu cita en minutos.
       </p>
 
@@ -93,11 +94,6 @@ const phrases = ["salvando vidas.", "450 ml a la vez.", "en 10 minutos."];
   }
 
   /* Sombras en los bordes: el centro queda casi limpio y el oscurecimiento crece hacia las orillas. */
-  .hero-shade {
-    background:
-      linear-gradient(180deg, rgb(26 32 44 / 0.6) 0%, rgb(26 32 44 / 0) 24%, rgb(26 32 44 / 0) 70%, rgb(26 32 44 / 0.75) 100%),
-      radial-gradient(ellipse 90% 80% at 50% 50%, rgb(26 32 44 / 0.3) 0%, rgb(26 32 44 / 0.42) 55%, rgb(26 32 44 / 0.8) 100%);
-  }
   /* Sombra suave para que el texto siga leyéndose sobre la parte más clara de la foto. */
   .hero h1,
   .hero p {

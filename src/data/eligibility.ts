@@ -84,7 +84,7 @@ export const questions: Question[] = [
         label: "No, dormí poco o estoy en ayunas",
         eligible: false,
         reasonTitle: "Descanso o alimentación insuficiente",
-        medicalReason: "La extracción reduce por un momento el volumen de sangre circulante. Sin descanso ni alimento, la probabilidad de bajada de tensión y desmayo aumenta de forma importante.",
+        medicalReason: "La extracción reduce por un momento el volumen de sangre circulante. Sin descanso ni alimento, la probabilidad de que baje la presión arterial y aparezca un desmayo aumenta de forma importante.",
         timeframe: "Puedes donar otro día, tras dormir bien y comer algo ligero y sin grasa.",
       },
     ],
