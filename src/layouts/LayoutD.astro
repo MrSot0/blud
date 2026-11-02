@@ -96,6 +96,12 @@ const ogImage = new URL('/og-image.jpg', base).href;
     <ScrollTop />
     <CustomCursor />
 
+    <!-- Solo dirección: sin sesión va a /login; con otro rol, a su propia zona -->
+    <script>
+      import { guard } from '../lib/roles';
+      guard(['director']);
+    </script>
+
     <script>
       // Revelado progresivo: los elementos con [data-reveal] aparecen al entrar en pantalla.
       const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
