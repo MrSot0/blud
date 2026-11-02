@@ -2,7 +2,6 @@
 // src/layouts/Layout.astro
 import Navbar from '../components/director/Navbar.astro';
 import ScrollTop from '../components/ScrollTop.astro';
-import CustomCursor from '../components/CustomCusor.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -94,7 +93,6 @@ const ogImage = new URL('/og-image.jpg', base).href;
 
 
     <ScrollTop />
-    <CustomCursor />
 
     <!-- Solo dirección: sin sesión va a /login; con otro rol, a su propia zona -->
     <script>

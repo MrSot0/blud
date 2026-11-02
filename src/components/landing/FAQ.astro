@@ -1,5 +1,4 @@
 ---
-import DropField from '../DropField.astro';
 // FAQ.astro - Preguntas frecuentes de la plataforma BLUD
 import Icon from '../Icon.astro';
 
@@ -44,8 +43,7 @@ const faqs = [
 ];
 ---
 
-<section id="faq" class="relative isolate border-t border-line py-24 lg:py-32 dot-pattern-section">
-  <DropField seed={6} />
+<section id="faq" class="relative isolate border-t border-line py-24 lg:py-32 bg-sunken">
   
   <div class="container-blud relative z-10">
     <!-- Encabezado con búsqueda -->
@@ -159,23 +157,6 @@ const faqs = [
   }
   @media (prefers-reduced-motion: reduce) {
     .faq-item::details-content { transition: none; }
-  }
-
-  /* Patrón de puntos optimizado para verse perfectamente */
-  .dot-pattern-section {
-    position: relative;
-    background-color: var(--sunken, #f7f9fa);
-  }
-
-  .dot-pattern-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image: radial-gradient(color-mix(in srgb, var(--accent) 35%, #000000 15%) 1.5px, transparent 1.5px);
-    background-size: 24px 24px;
-    background-position: center;
   }
 </style>
 

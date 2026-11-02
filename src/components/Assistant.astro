@@ -498,7 +498,15 @@ const examples = [
         });
         const data = await res.json().catch(() => ({}));
         typing.remove();
-        if (!res.ok || !data.reply) throw new Error(data.error || 'No pude responder ahora. Inténtalo de nuevo.');
+        if (!res.ok || !data.reply) {
+          // El código y el estado quedan en la consola para diagnosticar (p. ej. un despliegue sin /api/chat).
+          console.warn('[Bluddie]', res.status, data.code ?? 'sin código');
+          const porEstado: Record<number, string> = {
+            404: 'Bluddie no está disponible en esta versión del sitio.',
+            504: 'Bluddie tardó demasiado en responder. Inténtalo de nuevo.',
+          };
+          throw new Error(data.error || porEstado[res.status] || 'No pude responder ahora. Inténtalo de nuevo.');
+        }
         history.push({ role: 'model', text: data.reply });
         save();
         modelReply(data.reply, history.length - 1);

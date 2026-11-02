@@ -47,6 +47,7 @@ Reglas:
 - Escribe texto plano: sin Markdown, sin asteriscos ni encabezados.
 - No diagnosticas ni reemplazas al personal médico. Sobre si alguien puede donar, usa los criterios de abajo, sé coherente (si hay que esperar, dilo claramente sin decir "sí puedes") y aclara que la decisión final la toma el banco de sangre. Sugiere el test de /elegibilidad cuando ayude.
 - Ante una emergencia médica, indica llamar al 911 o acudir al centro más cercano.
+- La orientación sexual o la identidad de género nunca son, por sí solas, motivo para no donar: se evalúan conductas de riesgo individuales (ver criterios). Responde siempre con respeto, sin juicios.
 - Si preguntan algo ajeno a la donación de sangre o a BLUD, dilo con amabilidad y vuelve al tema.
 - No inventes centros, horarios ni teléfonos: usa solo los datos de abajo.
 
@@ -93,19 +94,27 @@ function parseMessages(body: unknown): ChatMessage[] | null {
   return clean.length && clean[clean.length - 1].role === 'user' ? clean : null;
 }
 
+// Presupuesto total para no pasar el límite de la función serverless (maxDuration en astro.config).
+const TOTAL_BUDGET_MS = 32_000;
+const ATTEMPT_TIMEOUT_MS = 12_000;
+
+/** El código ayuda a diagnosticar desde la consola del navegador sin exponer detalles internos. */
+type ErrorCode = 'not_configured' | 'rate_limited' | 'invalid' | 'busy' | 'auth' | 'timeout' | 'upstream' | 'empty';
+const fail = (code: ErrorCode, error: string, status: number) => json({ error, code }, status);
+
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!GEMINI_API_KEY) {
-    return json({ error: 'Bluddie aún no está configurado en este servidor.' }, 503);
+    return fail('not_configured', 'Bluddie aún no está configurado en este servidor.', 503);
   }
   if (rateLimited(clientAddress ?? 'desconocida')) {
-    return json({ error: 'Vas muy rápido. Espera un momento y vuelve a intentarlo.' }, 429);
+    return fail('rate_limited', 'Vas muy rápido. Espera un momento y vuelve a intentarlo.', 429);
   }
 
   let messages: ChatMessage[] | null = null;
   try {
     messages = parseMessages(await request.json());
   } catch {}
-  if (!messages) return json({ error: 'Mensaje no válido.' }, 400);
+  if (!messages) return fail('invalid', 'Mensaje no válido.', 400);
 
   const payload = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -113,8 +122,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
   });
 
+  const started = Date.now();
   let lastStatus = 0;
+  let timedOut = false;
   for (const [i, model] of ATTEMPTS.entries()) {
+    const left = TOTAL_BUDGET_MS - (Date.now() - started);
+    if (left < 3_000) break; // no alcanza para otro intento
     if (i > 0) await new Promise((r) => setTimeout(r, 600));
     try {
       const res = await fetch(endpoint(model), {
@@ -126,13 +139,17 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
           'Accept-Encoding': 'identity',
         },
         body: payload,
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, left)),
       });
 
       if (!res.ok) {
         lastStatus = res.status;
         console.error(`Gemini (${model}) respondió`, res.status, await res.text());
-        // Solo vale la pena probar otro modelo si este está saturado o no disponible.
+        // 400/401/403: clave inválida, sin permisos o API desactivada. Reintentar no sirve.
+        if ([400, 401, 403].includes(res.status)) {
+          return fail('auth', 'Bluddie no puede conectarse con su servicio de IA. Avísanos a soporte@blud.app.', 502);
+        }
+        // Saturado o modelo no disponible: probamos el siguiente intento.
         if ([404, 429, 500, 503].includes(res.status)) continue;
         break;
       }
@@ -143,16 +160,17 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         .join('')
         .trim();
 
-      if (!reply) return json({ error: 'No tengo una respuesta para eso. ¿Puedes reformular la pregunta?' }, 502);
+      if (!reply) return fail('empty', 'No tengo una respuesta para eso. ¿Puedes reformular la pregunta?', 502);
       return json({ reply });
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') timedOut = true;
       console.error(`Error al llamar a Gemini (${model})`, error);
     }
   }
 
-  const busy = lastStatus === 429 || lastStatus === 503;
-  return json(
-    { error: busy ? 'Bluddie está atendiendo a mucha gente. Inténtalo en un minuto.' : 'No pude responder ahora. Inténtalo de nuevo.' },
-    busy ? 429 : 502
-  );
+  if (lastStatus === 429 || lastStatus === 503) {
+    return fail('busy', 'Bluddie está atendiendo a mucha gente. Inténtalo en un minuto.', 429);
+  }
+  if (timedOut) return fail('timeout', 'Bluddie tardó demasiado en responder. Inténtalo de nuevo.', 504);
+  return fail('upstream', 'No pude responder ahora. Inténtalo de nuevo.', 502);
 };

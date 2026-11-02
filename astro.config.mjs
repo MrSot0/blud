@@ -12,7 +12,8 @@ export default defineConfig({
   site: 'https://blud-alpha.vercel.app',
 
   // Todo el sitio sigue siendo estático; solo /api/chat se ejecuta en el servidor (Vercel).
-  adapter: vercel(),
+  // maxDuration: margen para los reintentos de /api/chat cuando Gemini está lento.
+  adapter: vercel({ maxDuration: 60 }),
 
   env: {
     schema: {

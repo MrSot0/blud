@@ -22,3 +22,6 @@ Thumbs.db
 .claude/
 
 .vercel
+
+# Configuración local de herramientas (MCP de Claude Code)
+.mcp.json
