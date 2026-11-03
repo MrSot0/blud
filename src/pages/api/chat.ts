@@ -8,9 +8,15 @@ import { questions } from '../../data/eligibility';
 
 export const prerender = false;
 
-// El Flash-Lite más barato disponible para cuentas nuevas (retiro anunciado: 7 may 2027).
-// Google a veces responde 503 (saturado): se reintenta una vez y luego se usa el siguiente Flash-Lite.
-const ATTEMPTS = ['gemini-3.1-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
+// Primero el Flash-Lite más barato (retiro anunciado: 7 may 2027). Cuando Google lo satura (503 o sin respuesta),
+// se pasa a modelos de otra familia, que no suelen saturarse a la vez. Cada intento tiene su propio límite de tiempo.
+const ATTEMPTS: { model: string; ms: number }[] = [
+  { model: 'gemini-3.1-flash-lite', ms: 5_000 },
+  // shortcut: modelo preview, el más estable en las pruebas (3 nov 2026); cambiarlo si Google lo retira.
+  { model: 'gemini-3-flash-preview', ms: 10_000 },
+  { model: 'gemini-3.5-flash', ms: 12_000 },
+  { model: 'gemini-3-flash-preview', ms: 10_000 },
+];
 const endpoint = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -95,8 +101,7 @@ function parseMessages(body: unknown): ChatMessage[] | null {
 }
 
 // Presupuesto total para no pasar el límite de la función serverless (maxDuration en astro.config).
-const TOTAL_BUDGET_MS = 32_000;
-const ATTEMPT_TIMEOUT_MS = 12_000;
+const TOTAL_BUDGET_MS = 45_000;
 
 /** El código ayuda a diagnosticar desde la consola del navegador sin exponer detalles internos. */
 type ErrorCode = 'not_configured' | 'rate_limited' | 'invalid' | 'busy' | 'auth' | 'timeout' | 'upstream' | 'empty';
@@ -119,13 +124,14 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const payload = JSON.stringify({
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
     contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
-    generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+    // Sin "pensar": el razonamiento gasta el límite de tokens (respuestas cortadas) y a veces se cuela en el texto.
+    generationConfig: { temperature: 0.4, maxOutputTokens: 400, thinkingConfig: { thinkingLevel: 'minimal' } },
   });
 
   const started = Date.now();
   let lastStatus = 0;
   let timedOut = false;
-  for (const [i, model] of ATTEMPTS.entries()) {
+  for (const [i, { model, ms }] of ATTEMPTS.entries()) {
     const left = TOTAL_BUDGET_MS - (Date.now() - started);
     if (left < 3_000) break; // no alcanza para otro intento
     if (i > 0) await new Promise((r) => setTimeout(r, 600));
@@ -139,7 +145,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
           'Accept-Encoding': 'identity',
         },
         body: payload,
-        signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, left)),
+        signal: AbortSignal.timeout(Math.min(ms, left)),
       });
 
       if (!res.ok) {
@@ -156,6 +162,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
       const data = await res.json();
       const reply: string = (data?.candidates?.[0]?.content?.parts ?? [])
+        .filter((p: { thought?: boolean }) => !p.thought)
         .map((p: { text?: string }) => p.text ?? '')
         .join('')
         .trim();
