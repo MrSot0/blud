@@ -8,15 +8,17 @@ import { questions } from '../../data/eligibility';
 
 export const prerender = false;
 
-// Primero el Flash-Lite más barato (retiro anunciado: 7 may 2027). Cuando Google lo satura (503 o sin respuesta),
-// se pasa a modelos de otra familia, que no suelen saturarse a la vez. Cada intento tiene su propio límite de tiempo.
-const ATTEMPTS: { model: string; ms: number }[] = [
-  { model: 'gemini-3.1-flash-lite', ms: 5_000 },
-  // shortcut: modelo preview, el más estable en las pruebas (3 nov 2026); cambiarlo si Google lo retira.
-  { model: 'gemini-3-flash-preview', ms: 10_000 },
-  { model: 'gemini-3.5-flash', ms: 12_000 },
-  { model: 'gemini-3-flash-preview', ms: 10_000 },
+// De más barato a más estable. Si Google satura uno (503) o no contesta a tiempo, se pasa al siguiente al instante;
+// los de familias distintas casi nunca se saturan a la vez. Si fallan todos, una segunda vuelta tras una pausa breve.
+// shortcut: lista según las pruebas del 4 nov 2026 (gemini-3-flash-preview es preview); revisarla si Google retira alguno.
+const MODELOS: { model: string; ms: number }[] = [
+  { model: 'gemini-3.1-flash-lite', ms: 4_000 },
+  { model: 'gemini-flash-lite-latest', ms: 4_000 },
+  { model: 'gemini-3-flash-preview', ms: 7_000 },
+  { model: 'gemini-3.5-flash', ms: 7_000 },
+  { model: 'gemini-3.6-flash', ms: 7_000 },
 ];
+const ATTEMPTS = [...MODELOS, ...MODELOS.slice(2)];
 const endpoint = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -134,7 +136,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   for (const [i, { model, ms }] of ATTEMPTS.entries()) {
     const left = TOTAL_BUDGET_MS - (Date.now() - started);
     if (left < 3_000) break; // no alcanza para otro intento
-    if (i > 0) await new Promise((r) => setTimeout(r, 600));
+    if (i === MODELOS.length) await new Promise((r) => setTimeout(r, 1_200)); // pausa antes de la segunda vuelta
     try {
       const res = await fetch(endpoint(model), {
         method: 'POST',
@@ -151,12 +153,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       if (!res.ok) {
         lastStatus = res.status;
         console.error(`Gemini (${model}) respondió`, res.status, await res.text());
-        // 400/401/403: clave inválida, sin permisos o API desactivada. Reintentar no sirve.
-        if ([400, 401, 403].includes(res.status)) {
+        // 401/403: clave inválida, sin permisos o API desactivada. Reintentar no sirve.
+        if ([401, 403].includes(res.status)) {
           return fail('auth', 'Bluddie no puede conectarse con su servicio de IA. Avísanos a soporte@blud.app.', 502);
         }
-        // Saturado o modelo no disponible: probamos el siguiente intento.
-        if ([404, 429, 500, 503].includes(res.status)) continue;
+        // Saturado, retirado o sin soporte para esta configuración (400): probamos el siguiente modelo.
+        if ([400, 404, 429, 500, 503].includes(res.status)) continue;
         break;
       }
 
@@ -176,7 +178,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
 
   if (lastStatus === 429 || lastStatus === 503) {
-    return fail('busy', 'Bluddie está atendiendo a mucha gente. Inténtalo en un minuto.', 429);
+    return fail('busy', 'El servicio de IA de Google está saturado en este momento. Inténtalo de nuevo en un minuto.', 503);
   }
   if (timedOut) return fail('timeout', 'Bluddie tardó demasiado en responder. Inténtalo de nuevo.', 504);
   return fail('upstream', 'No pude responder ahora. Inténtalo de nuevo.', 502);
