@@ -1,5 +1,5 @@
     ---
-    import Layout from '../../layouts/LayoutD.astro';
+    import Layout from '../../layouts/LayoutOperador.astro';
     import Icon from '../../components/Icon.astro';
 
     const reportesEnJornada = [
@@ -36,10 +36,6 @@
         <section class="panel space-y-4 p-4 sm:p-6" aria-label="Monitoreo de registros en proceso">
             <div class="flex items-center justify-between border-b border-line pb-3">
             <h2 class="text-sm font-bold uppercase tracking-wider text-ink">Registros en Curso (Jornada Actual)</h2>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                <span class="size-2 rounded-full bg-emerald-500 animate-ping"></span>
-                Monitoreo Activo
-            </span>
             </div>
 
             <div class="overflow-x-auto">
@@ -79,7 +75,7 @@
                         <span class="text-[11px] text-muted">{rep.categoria}</span>
                     </td>
                     <td class="p-3 text-right">
-                        <button type="button" class="btn btn-secondary text-xs px-2.5 py-1">Editar / Concluir</button>
+                        <button type="button" class="btn btn-secondary text-xs px-2.5 py-1" data-report={JSON.stringify(rep)} aria-label={`Editar o concluir el reporte ${rep.id}`}>Editar / Concluir</button>
                     </td>
                     </tr>
                 ))}
@@ -90,14 +86,14 @@
         </div>
     </section>
 
-    <dialog id="form-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-full max-w-4xl rounded-xl shadow-2xl">
-        <div class="panel bg-canvas border border-line text-ink p-6 space-y-6 max-h-[92vh] overflow-y-auto">
-        <div class="flex items-start justify-between border-b border-line pb-4">
+    <dialog id="form-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-full max-w-3xl m-auto rounded-xl shadow-2xl">
+        <div class="panel bg-canvas text-ink p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-start justify-between pb-4">
             <div>
             <span class="text-xs font-bold text-primary uppercase block">Punto de Transfusión - Registro Operativo</span>
             <h2 class="text-xl font-bold">Verificación y Registro de Hemovigilancia</h2>
             </div>
-            <button id="close-form-modal" class="text-muted hover:text-ink text-xl font-bold">&times;</button>
+            <button id="close-form-modal" type="button" aria-label="Cerrar formulario" class="text-muted hover:text-ink text-xl font-bold">&times;</button>
         </div>
 
         <form id="hv-form" class="space-y-6">
@@ -250,24 +246,107 @@
     </Layout>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    const initializeHemovigilanciaModal = () => {
         const formModal = document.getElementById('form-modal') as HTMLDialogElement;
         const btnOpenForm = document.getElementById('btn-open-form');
         const btnCloseModal = document.getElementById('close-form-modal');
         const btnCancelForm = document.getElementById('btn-cancel-form');
         const hvForm = document.getElementById('hv-form') as HTMLFormElement;
+        const submitButton = hvForm?.querySelector<HTMLButtonElement>('button[type="submit"]');
+        let editingRow: HTMLTableRowElement | null = null;
+        let editingReport: Record<string, unknown> | null = null;
 
-        btnOpenForm?.addEventListener('click', () => formModal?.showModal());
+        const field = (id: string) => document.getElementById(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        const setFieldValue = (id: string, value: unknown) => {
+            field(id).value = typeof value === 'string' ? value : '';
+        };
+        const openModal = (report?: Record<string, unknown>, row?: HTMLTableRowElement) => {
+            hvForm?.reset();
+            editingReport = report ?? null;
+            editingRow = row ?? null;
+
+            if (report) {
+                const patient = typeof report.paciente === 'string'
+                    ? report.paciente.match(/^(.*?)\s+\((.*?)\)$/)
+                    : null;
+                setFieldValue('form-din', report.din);
+                setFieldValue('form-componente', report.componente);
+                setFieldValue('form-paciente', patient?.[1] ?? report.paciente);
+                setFieldValue('form-cedula-paciente', patient?.[2] ?? '');
+                setFieldValue('form-medico', report.medico);
+                setFieldValue('form-tipo-evento', report.tipoEvento);
+                setFieldValue('form-categoria', report.categoria);
+                setFieldValue('form-severidad', report.severidad);
+                setFieldValue('form-acciones', report.acciones);
+                if (submitButton) submitButton.textContent = 'Guardar cambios';
+            } else if (submitButton) {
+                submitButton.textContent = 'Transmitir Registro al Banco Central';
+            }
+
+            if (formModal && !formModal.open) formModal.showModal();
+        };
+
+        btnOpenForm?.addEventListener('click', () => openModal());
+        document.querySelectorAll<HTMLButtonElement>('[data-report]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const row = button.closest('tr');
+                if (!row || !button.dataset.report) return;
+
+                try {
+                    openModal(JSON.parse(button.dataset.report) as Record<string, unknown>, row);
+                } catch (error) {
+                    console.error('No se pudo cargar el reporte de hemovigilancia.', error);
+                }
+            });
+        });
 
         const closeModal = () => formModal?.close();
         btnCloseModal?.addEventListener('click', closeModal);
         btnCancelForm?.addEventListener('click', closeModal);
+        formModal?.addEventListener('click', (event) => {
+            if (event.target === formModal) closeModal();
+        });
 
         hvForm?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        alert('Registro de Hemovigilancia transmitido en tiempo real.');
-        hvForm.reset();
-        closeModal();
+            e.preventDefault();
+
+            if (editingRow && editingReport) {
+                const patientName = field('form-paciente').value.trim();
+                const patientId = field('form-cedula-paciente').value.trim();
+                const updatedReport = {
+                    ...editingReport,
+                    din: field('form-din').value.trim(),
+                    componente: field('form-componente').value,
+                    paciente: patientId ? `${patientName} (${patientId})` : patientName,
+                    medico: field('form-medico').value.trim(),
+                    tipoEvento: field('form-tipo-evento').value,
+                    categoria: field('form-categoria').value,
+                    severidad: field('form-severidad').value,
+                    acciones: field('form-acciones').value.trim()
+                };
+                const cells = editingRow.cells;
+                cells[2].textContent = String(updatedReport.din);
+                cells[3].textContent = String(updatedReport.componente);
+                cells[4].querySelector('span')!.textContent = String(updatedReport.paciente);
+                cells[4].querySelectorAll('span')[1].textContent = String(updatedReport.medico);
+                cells[5].querySelector('span')!.textContent = String(updatedReport.tipoEvento);
+                cells[5].querySelectorAll('span')[1].textContent = String(updatedReport.categoria);
+                editingRow.querySelector<HTMLButtonElement>('[data-report]')!.dataset.report = JSON.stringify(updatedReport);
+                alert('Registro de Hemovigilancia actualizado.');
+            } else {
+                alert('Registro de Hemovigilancia transmitido en tiempo real.');
+            }
+
+            hvForm.reset();
+            editingRow = null;
+            editingReport = null;
+            closeModal();
         });
-    });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeHemovigilanciaModal, { once: true });
+    } else {
+        initializeHemovigilanciaModal();
+    }
     </script>
