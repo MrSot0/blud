@@ -74,7 +74,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       <div class="panel p-6 sm:p-8 space-y-6 w-full">
         <div class="space-y-4">
           <h2 class="text-lg font-bold text-ink">Nuevo registro manual</h2>
-          <form id="form-nuevo" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1.6fr_11rem_auto] gap-4 items-end" novalidate>
+          <form id="form-nuevo" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1.5fr_9rem_10rem_8rem_auto] gap-4 items-end" novalidate>
             <div>
               <label for="reg-cedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula</label>
               <input type="text" id="reg-cedula" class="field" placeholder="V-12345678" required />
@@ -90,7 +90,19 @@ import { BLOOD_TYPES } from '../../lib/db';
                 {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
               </select>
             </div>
-            <p id="reg-error" class="hidden order-last sm:col-span-2 lg:col-span-4 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <div>
+              <label for="reg-nac" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nacimiento</label>
+              <input type="date" id="reg-nac" class="field" />
+            </div>
+            <div>
+              <label for="reg-sexo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Sexo</label>
+              <select id="reg-sexo" class="field">
+                <option value="">—</option>
+                <option value="F">Femenino</option>
+                <option value="M">Masculino</option>
+              </select>
+            </div>
+            <p id="reg-error" class="hidden order-last sm:col-span-2 lg:col-span-6 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
             <button type="submit" class="btn btn-primary w-full sm:col-span-2 lg:col-span-1 lg:w-auto lg:px-8 min-h-12">Guardar donante</button>
           </form>
         </div>
@@ -198,6 +210,8 @@ import { BLOOD_TYPES } from '../../lib/db';
         cedula: ($('#reg-cedula') as HTMLInputElement).value,
         nombreCompleto: ($('#reg-nombre') as HTMLInputElement).value,
         sangre: ($('#reg-sangre') as HTMLSelectElement).value,
+        nacimiento: ($('#reg-nac') as HTMLInputElement).value || undefined,
+        sexo: (($('#reg-sexo') as HTMLSelectElement).value || undefined) as 'M' | 'F' | undefined,
       });
       if (!r.ok) {
         err.textContent = r.motivo;

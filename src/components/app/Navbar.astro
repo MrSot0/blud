@@ -1,7 +1,7 @@
 ---
 // src/components/app/Navbar.astro
 // Navbar de las zonas privadas (donante y operador). El contenido del menú de cuenta depende del rol.
-import Logo from '../Logo.astro';
+import Logo from '../Logo.astro';  
 import Icon from '../Icon.astro';
 import Sidebar from './Sidebar.astro';
 import { MENUS } from '../../lib/menus';
@@ -181,6 +181,35 @@ const home = ROLE_HOME[role];
               </>
             )}
 
+            {role === 'director' && (
+              <>
+                <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
+                  <p class="flex items-center gap-2 font-semibold text-ink">
+                    <Icon name="first-aid-kit" class="size-4 text-ink-3" />
+                    Sede
+                  </p>
+                  <p class="text-ink-2" data-op-centro>—</p>
+                  <p class="text-ink-2">
+                    <span class="font-bold text-accent-ink" data-dir-pendientes>0</span> solicitudes por aprobar
+                  </p>
+                </div>
+                <a
+                  href="/director/solicitudes/historial"
+                  class="mt-1 flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Revisar solicitudes
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+                <a
+                  href="/director/inventario"
+                  class="flex items-center justify-between rounded-control px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunken"
+                >
+                  Ver inventario
+                  <Icon name="arrow-right" class="size-4 text-ink-3" />
+                </a>
+              </>
+            )}
+
             {role === 'soporte' && (
               <>
                 <div class="mx-1 space-y-1.5 rounded-control bg-sunken p-3 text-sm">
@@ -256,7 +285,7 @@ const home = ROLE_HOME[role];
     var s = null;
     try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
     if (!s || !s.name) return;
-    var parts = s.name.split(/\s+/).filter(Boolean);
+    var parts = s.name.replace(/^(?:(?:Dra?|Lic|Licda|Ing|Prof)\.?\s+)+/i, '').split(/\s+/).filter(Boolean);
     var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
     var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
     set('[data-user-initials]', ini);

@@ -1,5 +1,9 @@
-// Cuentas y sesión de demostración guardadas en el navegador (localStorage).
-// Sustituir por la API real cuando exista: aquí nada sale del dispositivo.
+// Cuentas y sesión. Dos modos:
+//  - Demo (sin variables de Supabase): todo vive en este navegador (localStorage), con cuentas de prueba.
+//  - Supabase: el acceso lo valida Supabase Auth y el rol sale de la tabla profiles (lo asigna la dirección).
+// En ambos, la sesión se resume en 'blud-session' para que la interfaz la lea sin esperar a la red.
+
+import { PERFILES_KEY, limpiarCache, sb, sincronizar, usaSupabase } from './supabase';
 
 /** Rol del usuario. Lo asigna el sistema, NUNCA el formulario de registro público. */
 export type Role = 'donante' | 'operador' | 'laboratorio' | 'soporte' | 'director';
@@ -13,6 +17,8 @@ export interface Session {
   colegiado?: string;
   cargo?: string;
   sede?: string;
+  /** id del usuario en Supabase Auth (solo con base real). */
+  userId?: string;
 }
 
 interface StoredUser extends Session {
@@ -117,6 +123,7 @@ function startSession(user: Session, remember: boolean) {
     colegiado: user.colegiado,
     sede: user.sede,
     cargo: user.cargo,
+    userId: user.userId,
   };
   remove(local(), SESSION_KEY);
   remove(session(), SESSION_KEY);
@@ -126,7 +133,14 @@ function startSession(user: Session, remember: boolean) {
   window.dispatchEvent(new CustomEvent('blud:auth'));
 }
 
+/** Cierre de sesión en curso: un login inmediato lo espera para que no le borre la sesión nueva. */
+let cerrando: Promise<unknown> | null = null;
+
 export function logout() {
+  if (usaSupabase()) {
+    cerrando = sb()?.auth.signOut().finally(() => { cerrando = null; }) ?? null;
+    limpiarCache();
+  }
   remove(local(), SESSION_KEY);
   remove(session(), SESSION_KEY);
   delete document.documentElement.dataset.auth;
@@ -134,14 +148,75 @@ export function logout() {
   window.dispatchEvent(new CustomEvent('blud:auth'));
 }
 
-export type LoginResult = { ok: true; user: Session } | { ok: false; error: string };
+export type LoginResult = { ok: true; user: Session; confirmar?: boolean } | { ok: false; error: string };
+
+// ---------- Supabase ----------
+interface PerfilRemoto {
+  id: string; email: string; full_name: string; role: Role; blood_type: string | null; phone: string | null;
+  cargo: string | null; sede: string | null; colegiado: string | null; active: boolean;
+}
+const sesionDePerfil = (p: PerfilRemoto): Session => ({
+  userId: p.id, email: p.email, name: p.full_name || p.email, role: p.role, bloodType: p.blood_type ?? '',
+  telefono: p.phone ?? undefined, cargo: p.cargo ?? undefined, sede: p.sede ?? undefined, colegiado: p.colegiado ?? undefined,
+});
+
+/** Perfil de quien inició sesión (rol incluido), según la base. */
+async function perfilRemoto(): Promise<PerfilRemoto | null> {
+  const { data } = await sb()!.rpc('blud_mi_perfil');
+  return (data as PerfilRemoto | null) ?? null;
+}
+
+async function loginRemoto(email: string, password: string, remember: boolean): Promise<LoginResult> {
+  const c = sb()!;
+  await cerrando;
+  const { data, error } = await c.auth.signInWithPassword({ email, password });
+  if (error || !data.user) {
+    return { ok: false, error: error?.message?.includes('Email not confirmed') ? 'Confirma tu correo antes de entrar: revisa tu bandeja de entrada.' : 'Correo o contraseña incorrectos.' };
+  }
+  const perfil = await perfilRemoto();
+  if (!perfil) {
+    await c.auth.signOut();
+    return { ok: false, error: 'Tu cuenta no tiene perfil todavía. Escribe a soporte@blud.app.' };
+  }
+  if (!perfil.active) {
+    await c.auth.signOut();
+    return { ok: false, error: CUENTA_INACTIVA };
+  }
+  const user = sesionDePerfil(perfil);
+  startSession(user, remember);
+  await sincronizar();
+  return { ok: true, user };
+}
+
+/**
+ * Comprueba que la sesión de Supabase siga viva y refresca rol y datos (la dirección puede cambiarlos).
+ * Devuelve false si ya no hay sesión válida (expiró o la cuenta se desactivó).
+ */
+export async function verificarSesionRemota(): Promise<boolean> {
+  const c = sb();
+  if (!c) return true;
+  const { data } = await c.auth.getSession();
+  const uid = data.session?.user.id;
+  const perfil = uid ? await perfilRemoto() : null;
+  if (!perfil?.active) {
+    logout();
+    return false;
+  }
+  const actual = getSession();
+  const nueva = sesionDePerfil(perfil);
+  if (!actual || actual.role !== nueva.role || actual.name !== nueva.name) startSession(nueva, read(local(), SESSION_KEY, null) !== null);
+  await sincronizar();
+  return true;
+}
 
 export async function login(email: string, password: string, remember: boolean): Promise<LoginResult> {
   const target = normalize(email);
+  if (usaSupabase()) return loginRemoto(target, password, remember);
   // Si la cuenta tiene copia guardada (cambió su clave o sus datos), manda esa copia.
   const demo = storedUsers().some((u) => u.email === target) ? undefined : demoUsers.find((u) => u.email === target);
   if (demo) {
     if (demo.password !== password) return { ok: false, error: 'Correo o contraseña incorrectos.' };
+    if (personalInactivo(target)) return { ok: false, error: CUENTA_INACTIVA };
     startSession(demo, remember);
     return { ok: true, user: demo };
   }
@@ -150,6 +225,7 @@ export async function login(email: string, password: string, remember: boolean):
   if (!user || (await hashPassword(password, user.salt)) !== user.hash) {
     return { ok: false, error: 'Correo o contraseña incorrectos.' };
   }
+  if (personalInactivo(target)) return { ok: false, error: CUENTA_INACTIVA };
   startSession(user, remember);
   return { ok: true, user };
 }
@@ -158,6 +234,21 @@ export type RegisterInput = { name: string; email: string; password: string; blo
 
 export async function register(input: RegisterInput): Promise<LoginResult> {
   const email = normalize(input.email);
+  if (usaSupabase()) {
+    // El rol lo pone la base (siempre "donante"); los metadatos solo llevan nombre y tipo de sangre.
+    const { data, error } = await sb()!.auth.signUp({
+      email, password: input.password,
+      options: { data: { full_name: input.name.trim(), blood_type: input.bloodType } },
+    });
+    if (error) {
+      return { ok: false, error: /registered|exists/i.test(error.message) ? 'Ya existe una cuenta con este correo.' : `No pudimos crear la cuenta: ${error.message}` };
+    }
+    const user: Session = { email, name: input.name.trim(), role: 'donante', bloodType: input.bloodType, userId: data.user?.id };
+    if (!data.session) return { ok: true, user, confirmar: true }; // el proyecto pide confirmar el correo
+    startSession(user, true);
+    await sincronizar();
+    return { ok: true, user };
+  }
   if (emailExists(email)) return { ok: false, error: 'Ya existe una cuenta con este correo.' };
 
   const salt = randomSalt();
@@ -211,7 +302,16 @@ export async function updateAccount(patch: { name: string; email: string; telefo
   if (telefono && !/^[+\d][\d\s()-]{6,}$/.test(telefono)) return { ok: false, error: 'Revisa el teléfono.' };
   if (email !== normalize(current.email) && emailExists(email)) return { ok: false, error: 'Ya existe una cuenta con ese correo.' };
 
-  // TODO: PATCH /api/cuenta
+  if (usaSupabase()) {
+    if (email !== normalize(current.email)) return { ok: false, error: 'Para cambiar el correo escribe a soporte@blud.app.' };
+    const { error } = await sb()!.rpc('blud_actualizar_cuenta', { p_nombre: name, p_telefono: telefono || null });
+    if (error) return { ok: false, error: 'No pudimos guardar tus datos. Inténtalo de nuevo.' };
+    const next: Session = { ...current, name, telefono };
+    const store = read(local(), SESSION_KEY, null) ? local() : session();
+    write(store, SESSION_KEY, next);
+    window.dispatchEvent(new CustomEvent('blud:auth'));
+    return { ok: true, user: next };
+  }
   const stored = await ensureStored(current.email);
   if (stored) saveStored({ ...stored, name, email, telefono }, current.email);
 
@@ -236,13 +336,133 @@ export async function changePassword(currentPassword: string, newPassword: strin
   if (!s) return { ok: false, error: 'Tu sesión expiró. Vuelve a entrar.' };
   if (newPassword.length < 8) return { ok: false, error: 'La nueva contraseña debe tener al menos 8 caracteres.' };
   if (!/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) return { ok: false, error: 'Usa letras y al menos un número.' };
+  if (usaSupabase()) return cambiarClaveRemota(s.email, currentPassword, newPassword);
   const stored = await ensureStored(s.email);
   if (!stored) return { ok: false, error: 'No encontramos tu cuenta.' };
   if ((await hashPassword(currentPassword, stored.salt)) !== stored.hash) return { ok: false, error: 'La contraseña actual no es correcta.' };
   if (currentPassword === newPassword) return { ok: false, error: 'La nueva contraseña debe ser distinta de la actual.' };
-  // TODO: POST /api/auth/cambiar-clave
   const salt = randomSalt();
   saveStored({ ...stored, salt, hash: await hashPassword(newPassword, salt) }, s.email);
+  return { ok: true };
+}
+
+// ---------- Personal (lo gestiona la dirección) ----------
+
+export const STAFF_ROLES: Role[] = ['operador', 'laboratorio', 'soporte', 'director'];
+const INACTIVE_KEY = 'blud-staff-inactive';
+const CUENTA_INACTIVA = 'Tu cuenta está desactivada. Habla con la dirección del banco de sangre.';
+
+export interface CuentaPersonal {
+  email: string;
+  name: string;
+  role: Role;
+  cargo?: string;
+  sede?: string;
+  colegiado?: string;
+  telefono?: string;
+  /** Cuenta de prueba incluida en el sitio. */
+  demo: boolean;
+  activo: boolean;
+}
+
+const inactivos = () => new Set(read<string[]>(local(), INACTIVE_KEY, []));
+export const personalInactivo = (email: string) => inactivos().has(normalize(email));
+
+/** Cuentas con rol de personal (las de prueba y las que creó la dirección). */
+export function listarPersonal(): CuentaPersonal[] {
+  if (usaSupabase()) {
+    return read<PerfilRemoto[]>(local(), PERFILES_KEY, [])
+      .filter((p) => STAFF_ROLES.includes(p.role))
+      .map((p) => ({
+        email: p.email, name: p.full_name || p.email, role: p.role, cargo: p.cargo ?? undefined, sede: p.sede ?? undefined,
+        colegiado: p.colegiado ?? undefined, telefono: p.phone ?? undefined, demo: false, activo: p.active,
+      }))
+      .sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name));
+  }
+  const off = inactivos();
+  const out = new Map<string, CuentaPersonal>();
+  const add = (u: Session, demo: boolean) => {
+    if (!STAFF_ROLES.includes(u.role)) return;
+    out.set(u.email, {
+      email: u.email, name: u.name, role: u.role, cargo: u.cargo, sede: u.sede, colegiado: u.colegiado,
+      telefono: u.telefono, demo: demo || out.get(u.email)?.demo === true, activo: !off.has(u.email),
+    });
+  };
+  demoUsers.forEach((u) => add(u, true));
+  storedUsers().forEach((u) => add(u, false));
+  return [...out.values()].sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name));
+}
+
+/** Clave temporal legible: letras y números, sin caracteres que se confunden (0/O, 1/l). */
+function claveTemporal() {
+  const letras = 'abcdefghjkmnpqrstuvwxyz';
+  const digitos = '23456789';
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const parte = Array.from(bytes.slice(0, 4), (b) => letras[b % letras.length]).join('');
+  const num = Array.from(bytes.slice(4), (b) => digitos[b % digitos.length]).join('');
+  return `Blud-${parte}${num}`;
+}
+
+export type NuevaCuenta = {
+  name: string; email: string; role: Role; cargo?: string; sede?: string; colegiado?: string;
+  /** Con base real el esquema los exige para toda cuenta (tabla usuario). */
+  cedula?: string; telefono?: string; nacimiento?: string; sexo?: 'M' | 'F';
+};
+
+/** La dirección crea cuentas del personal. Devuelve la clave temporal para entregarla a la persona. */
+export async function crearCuentaPersonal(input: NuevaCuenta): Promise<{ ok: true; password: string } | { ok: false; error: string }> {
+  if (getSession()?.role !== 'director') return { ok: false, error: 'Solo la dirección puede crear cuentas del personal.' };
+  if (usaSupabase()) {
+    // Crear usuarios exige la clave de servicio: lo hace la función del servidor supabase/functions/crear-personal.
+    const { data, error } = await sb()!.functions.invoke('crear-personal', { body: input });
+    if (error) {
+      // En las respuestas 4xx/5xx el motivo viene en el cuerpo (error.context es la Response de la función).
+      const motivo = await error.context?.json?.().then((b: { error?: string }) => b.error).catch(() => undefined);
+      return { ok: false, error: motivo ?? 'No se pudo crear la cuenta. ¿Está desplegada la función crear-personal?' };
+    }
+    await sincronizar();
+    return { ok: true, password: String(data.password) };
+  }
+  const name = input.name.trim().replace(/\s+/g, ' ');
+  const email = normalize(input.email);
+  if (name.length < 3) return { ok: false, error: 'Escribe el nombre completo.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'Revisa el correo electrónico.' };
+  if (!STAFF_ROLES.includes(input.role)) return { ok: false, error: 'Elige un rol del personal.' };
+  if (emailExists(email)) return { ok: false, error: 'Ya existe una cuenta con ese correo.' };
+
+  const password = claveTemporal();
+  const salt = randomSalt();
+  const user: StoredUser = {
+    name, email, role: input.role, bloodType: '',
+    cargo: input.cargo?.trim() || undefined, sede: input.sede?.trim() || undefined, colegiado: input.colegiado?.trim() || undefined,
+    salt, hash: await hashPassword(password, salt), createdAt: new Date().toISOString(),
+  };
+  write(local(), USERS_KEY, [...storedUsers(), user]);
+  window.dispatchEvent(new CustomEvent('blud:auth'));
+  return { ok: true, password };
+}
+
+/** Activa o desactiva una cuenta del personal (la persona desactivada ya no puede entrar). */
+export function setPersonalActivo(email: string, activo: boolean): { ok: true } | { ok: false; error: string } {
+  const actor = getSession();
+  if (actor?.role !== 'director') return { ok: false, error: 'Solo la dirección puede cambiar el estado del personal.' };
+  const key = normalize(email);
+  if (key === normalize(actor.email)) return { ok: false, error: 'No puedes desactivar tu propia cuenta.' };
+  if (usaSupabase()) {
+    // La caché se actualiza al instante; la base confirma y, si se negara, la próxima sincronización lo corrige.
+    write(local(), PERFILES_KEY, read<PerfilRemoto[]>(local(), PERFILES_KEY, []).map((p) => (p.email === key ? { ...p, active: activo } : p)));
+    sb()!.rpc('blud_personal_activo', { p_email: key, p_activo: activo }).then(({ error }) => {
+      if (error) window.dispatchEvent(new CustomEvent('blud:sync-error', { detail: { mensaje: error.message } }));
+      sincronizar();
+    });
+    window.dispatchEvent(new CustomEvent('blud:auth'));
+    return { ok: true };
+  }
+  const off = inactivos();
+  if (activo) off.delete(key); else off.add(key);
+  write(local(), INACTIVE_KEY, [...off]);
+  window.dispatchEvent(new CustomEvent('blud:auth'));
   return { ok: true };
 }
 
@@ -261,6 +481,13 @@ export function addAppointment(email: string, data: Omit<Appointment, 'id' | 'cr
   const appointment: Appointment = { ...data, id: randomSalt().slice(0, 8), createdAt: new Date().toISOString() };
   book[key] = [...(book[key] ?? []), appointment];
   write(local(), APPOINTMENTS_KEY, book);
+  if (usaSupabase()) {
+    // La base valida el plazo entre donaciones y que no haya otra cita activa; si la rechaza, la caché se corrige.
+    sb()!.rpc('blud_agendar_cita', { p_centro: data.centerName, p_fecha: data.date, p_hora: data.time }).then(({ error }) => {
+      if (error) window.dispatchEvent(new CustomEvent('blud:sync-error', { detail: { mensaje: error.message } }));
+      sincronizar();
+    });
+  }
   window.dispatchEvent(new CustomEvent('blud:auth'));
   return appointment;
 }
@@ -283,8 +510,11 @@ export function appointmentLabel(a: Pick<Appointment, 'date' | 'time'>): string 
   return `${day} · ${a.time.replace(/^0/, '')}`;
 }
 
+/** "Dra. María Colina" → "María Colina": los títulos no cuentan para el saludo ni las iniciales. */
+export const sinTitulo = (name: string) => name.replace(/^(?:(?:Dra?|Lic|Licda|Ing|Prof)\.?\s+)+/i, '').trim() || name;
+
 export const initials = (name: string) =>
-  name
+  sinTitulo(name)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -294,4 +524,12 @@ export const initials = (name: string) =>
 /** Solo permite volver a rutas internas del sitio. */
 export function safeNext(value: string | null): string {
   return value && value.startsWith('/') && !value.startsWith('//') ? value : '/';
+}
+async function cambiarClaveRemota(email: string, actual: string, nueva: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const c = sb()!;
+  if (actual === nueva) return { ok: false, error: 'La nueva contraseña debe ser distinta de la actual.' };
+  const check = await c.auth.signInWithPassword({ email, password: actual });
+  if (check.error) return { ok: false, error: 'La contraseña actual no es correcta.' };
+  const { error } = await c.auth.updateUser({ password: nueva });
+  return error ? { ok: false, error: 'No pudimos cambiar la contraseña. Inténtalo de nuevo.' } : { ok: true };
 }

@@ -1,9 +1,10 @@
 // src/lib/db.ts
 // "Base de datos" local única del sitio: colecciones tipadas sobre localStorage con eventos de cambio.
 // Donante, operador y director leen y escriben AQUÍ, así lo que hace uno lo ve el otro.
-// Para pasar a backend, solo hay que reemplazar el interior de `collection()` por llamadas a la API.
+// Con Supabase conectado (lib/supabase), cada cambio se guarda también en la base y localStorage queda como caché.
 
 import { hoyISO } from './ui';
+import { borrar as borrarRemoto, subir as subirRemoto } from './supabase';
 
 export interface Collection<T extends { id: string }> {
   all(): T[];
@@ -34,9 +35,13 @@ export function collection<T extends { id: string }>(key: string): Collection<T>
       const i = list.findIndex((x) => x.id === item.id);
       if (i >= 0) list[i] = item; else list.push(item);
       write(list);
+      subirRemoto(key, item); // con Supabase conectado, también se guarda en la base
       return item;
     },
-    remove(id) { write(read().filter((x) => x.id !== id)); },
+    remove(id) {
+      write(read().filter((x) => x.id !== id));
+      borrarRemoto(key, id);
+    },
   };
 }
 
@@ -60,6 +65,11 @@ export type Estado = 'preregistrado' | 'verificado';
 
 export interface RegistroDonante {
   id: string; // = id del carnet (BLD-XXXXXX) si vino de la app
+  /** Cuenta de Supabase del donante (solo con base real). */
+  userId?: string;
+  /** Con base real el esquema los exige para registrar al donante. */
+  nacimiento?: string;
+  sexo?: 'M' | 'F';
   cedula: string; // normalizada: V-12345678
   nombreCompleto: string;
   sangre: string;
@@ -88,9 +98,17 @@ export interface DonacionOp {
   centroNombre?: string;
   /** Estado en laboratorio. Sin valor = liberada (datos anteriores al módulo de laboratorio). */
   estadoLab?: EstadoLab;
+  /** Evaluación previa a la extracción. Con base real es obligatoria: la base decide si el donante es apto. */
+  evaluacion?: { peso: string; presion: string; hb: string; temperatura: string; fc?: string };
 }
 
-export type EstadoPedido = 'pendiente' | 'despachado';
+/**
+ * Ciclo de una solicitud de hemocomponentes:
+ * pendiente (la carga el operador) → aprobado o rechazado (lo decide la dirección) → despachado (entrega del operador).
+ * Las que crea la dirección nacen aprobadas.
+ */
+export type EstadoPedido = 'pendiente' | 'aprobado' | 'rechazado' | 'despachado';
+export type Prioridad = 'normal' | 'urgente' | 'critica';
 
 export interface PedidoOp {
   id: string;
@@ -102,9 +120,23 @@ export interface PedidoOp {
   hospitalDestino: string;
   fecha: string;
   estado: EstadoPedido;
+  prioridad?: Prioridad;
+  servicio?: string;
+  medico?: string;
+  diagnostico?: string;
+  /** Datos clínicos del formulario de transfusión (Hb, Hcto, plaquetas…). */
+  clinica?: Record<string, string>;
   creadoPor?: string;
+  creadoPorNombre?: string;
+  revisadoPor?: string;
+  revisadoPorNombre?: string;
+  fechaRevision?: string;
+  motivoRechazo?: string;
   entregaId?: string;
 }
+
+/** REQ-AB12CD: folio corto para mostrar y buscar solicitudes. */
+export const codigoPedido = (id: string) => 'REQ-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
 export interface EntregaOp {
   id: string;
@@ -213,15 +245,15 @@ export interface Ticket {
   actualizado: string;
   asignadoA?: { id: string; nombre: string };
   mensajes: MensajeTicket[];
-  /** Notas internas: solo las ve el personal de soporte. */
-  notas: NotaTicket[];
+  /** Solo en datos antiguos: las notas internas ahora viven en `ticketNotas` (el donante no puede leerlas). */
+  notas?: NotaTicket[];
   resueltoEn?: string;
 }
 
 export const codigoTicket = (id: string) => 'TCK-' + id.replace(/^tk-/, '').replace(/[^a-z0-9]/gi, '').slice(-6).toUpperCase();
 
 /** DON-AB12CD: identifica la bolsa sin exponer datos del donante */
-export const codigoDonacion = (id: string) => 'DON-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase();
+export const codigoDonacion = (id: string) => /^DON-\d+$/.test(id) ? id : 'DON-' + id.replace(/^demo-/, '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase();
 
 // ---------------------------------------------------------------- Colecciones
 export const registro = collection<RegistroDonante>('blud-db-donantes');
@@ -232,6 +264,9 @@ export const pruebas = collection<PruebaLab>('blud-db-pruebas');
 export const fracciones = collection<Fraccionamiento>('blud-db-fracciones');
 export const positivos = collection<CasoPositivo>('blud-db-positivos');
 export const tickets = collection<Ticket>('blud-db-tickets');
+/** Notas internas de soporte, aparte del ticket para que el donante nunca las reciba (id = id del ticket). */
+export interface NotasTicket { id: string; notas: NotaTicket[] }
+export const ticketNotas = collection<NotasTicket>('blud-db-ticket-notas');
 
 // ---------------------------------------------------------------- Registro de donantes
 /** V12345678 / 12345678 / v-12345678 → V-12345678 */
@@ -243,10 +278,13 @@ export function normCedula(c: string): string {
 }
 
 /** El perfil del donante alimenta el registro: aparece como "preregistrado" hasta que un operador lo verifique. */
-export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string }) {
+export function upsertDesdePerfil(p: {
+  id: string; firstname: string; lastname: string; cedula: string; sangre: string; telefono?: string; email?: string; userId?: string;
+  nacimiento?: string; sexo?: 'M' | 'F';
+}) {
   const ced = normCedula(p.cedula);
   if (!ced || !p.firstname) return;
-  const prev = registro.get(p.id) ?? registro.find((r) => r.cedula === ced);
+  const prev = registro.get(p.id) ?? registro.find((r) => r.cedula === ced) ?? (p.userId ? registro.find((r) => r.userId === p.userId) : undefined);
   registro.upsert({
     ...(prev ?? {}),
     id: prev?.id ?? p.id,
@@ -258,6 +296,9 @@ export function upsertDesdePerfil(p: { id: string; firstname: string; lastname: 
     fechaRegistro: prev?.fechaRegistro ?? hoyISO(),
     estado: prev?.estado ?? 'preregistrado',
     origen: prev?.origen ?? 'app',
+    userId: prev?.userId ?? p.userId,
+    nacimiento: p.nacimiento || prev?.nacimiento,
+    sexo: p.sexo ?? prev?.sexo,
   });
 }
 

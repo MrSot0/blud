@@ -9,13 +9,13 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     <div class="flex flex-col gap-4 pb-6 border-b border-line">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Entregas</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Despacha los pedidos pendientes o registra una salida directa. El stock se descuenta solo.</p>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Despacha lo que aprobó la dirección o registra una salida directa. El stock se descuenta solo.</p>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
           <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="pedidos" aria-pressed="false">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/></svg>
-            Pedidos pendientes <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="pedidos">0</span>
+            Por despachar <span class="rounded-full bg-sunken px-2 py-0.5 text-xs font-bold text-ink-2 tabular" data-cuenta="pedidos">0</span>
           </button>
           <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="salida" aria-pressed="false">
             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m12 8-4 4 4 4"/><path d="M16 12H8"/></svg>
@@ -30,12 +30,20 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       </div>
     </div>
 
-    <!-- Vista: Pedidos pendientes -->
-    <div data-frame="pedidos">
+    <!-- Vista: Solicitudes aprobadas por despachar -->
+    <div data-frame="pedidos" class="space-y-8">
       <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-ped">
-        <h2 id="h-ped" class="text-lg font-bold text-ink border-b border-line pb-3">Pedidos pendientes <span class="text-ink-3 text-sm font-semibold">(<span id="n-ped">0</span>)</span></h2>
+        <h2 id="h-ped" class="text-lg font-bold text-ink border-b border-line pb-3">Aprobadas por la dirección <span class="text-ink-3 text-sm font-semibold">(<span id="n-ped">0</span>)</span></h2>
         <ul id="pedidos" class="grid gap-3 md:grid-cols-2"></ul>
-        <p id="sin-pedidos" class="hidden py-4 text-center text-sm text-ink-3">No hay pedidos pendientes 🎉</p>
+        <p id="sin-pedidos" class="hidden py-4 text-center text-sm text-ink-3">No hay solicitudes aprobadas por despachar.</p>
+      </section>
+
+      <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-espera">
+        <div class="border-b border-line pb-3">
+          <h2 id="h-espera" class="text-lg font-bold text-ink">Tus órdenes en revisión</h2>
+          <p class="mt-1 text-sm text-ink-3">Las órdenes que cargaste esperan la decisión de la dirección. Si se rechaza una, aquí ves el motivo.</p>
+        </div>
+        <ul id="espera" class="divide-y divide-line"></ul>
       </section>
     </div>
 
@@ -103,7 +111,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 </LayoutOperador>
 
 <script>
-  import { esc, fmtFecha, getEntregasOp, getPedidosPendientes, onDb, registrarEntrega, stockDe, toast } from '../../lib/operador';
+  import { ESTADO_PEDIDO, PRIORIDAD_LABEL, codigoPedido, esc, fmtFecha, getEntregasOp, getPedidos, getPedidosPendientes, onDb, operadorActual, registrarEntrega, stockDe, toast, sumarDiasOp } from '../../lib/operador';
   import type { Hemocomponente } from '../../lib/operador';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -176,7 +184,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         const ok = disp >= p.unidades;
         return `<li class="rounded-control border border-line p-4 space-y-3">
           <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0"><p class="truncate font-bold text-ink">${esc(p.pacienteNombre)}</p>
+            <div class="min-w-0"><p class="font-mono text-[0.6875rem] font-bold text-ink-3">${esc(codigoPedido(p.id))} · ${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</p>
+            <p class="truncate font-bold text-ink">${esc(p.pacienteNombre)}</p>
             <p class="text-xs text-ink-3">${esc(p.pacienteCedula)} · ${esc(fmtFecha(p.fecha, { day: 'numeric', month: 'short' }))}</p></div>
             <span class="blood-chip">${esc(p.tipoSangre)}</span>
           </div>
@@ -186,6 +195,17 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
             <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}">Despachar</button>
           </div></li>`;
       }).join('');
+
+      // Órdenes propias en revisión y rechazos recientes (7 días)
+      const yo = operadorActual().id;
+      const limite = sumarDiasOp(-7);
+      const espera = getPedidos().filter((p) => p.creadoPor === yo && (p.estado === 'pendiente' || (p.estado === 'rechazado' && (p.fechaRevision ?? p.fecha) >= limite)));
+      $('#espera').innerHTML = espera.length
+        ? espera.map((p) => `<li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(codigoPedido(p.id))} · ${p.unidades} u. ${esc(p.tipoSangre)} ${esc(p.tipoHemocomponente)}</p>
+            <p class="truncate text-xs text-ink-3">${esc(p.pacienteNombre)} → ${esc(p.hospitalDestino)}${p.motivoRechazo ? ' · Motivo: ' + esc(p.motivoRechazo) : ''}</p></div>
+            <span class="shrink-0 self-start rounded-full px-2 py-0.5 text-xs font-bold ${p.estado === 'rechazado' ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn'}">${esc(ESTADO_PEDIDO[p.estado])}</span></li>`).join('')
+        : '<li class="py-4 text-center text-sm text-ink-3">No tienes órdenes esperando revisión.</li>';
 
       const lista = getEntregasOp();
       $('#n-historial').textContent = String(lista.length);

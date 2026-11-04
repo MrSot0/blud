@@ -1,13 +1,11 @@
 ---
 // Matrix.astro - Matriz de Compatibilidad con Selector Desplegable Animado (Fondo Adaptativo + Stripes)
-import DropField from '../DropField.astro';
 import Icon from '../Icon.astro';
 
 const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 ---
 
-<section id="compatibilidad" class="relative isolate overflow-hidden py-20 lg:py-28 select-none stripe-pattern-section">
-  <DropField seed={3} />
+<section id="compatibilidad" class="relative isolate overflow-hidden py-20 lg:py-28">
 
   <div class="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 z-10">
     
@@ -138,26 +136,6 @@ const bloodTypes = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
   }
   .animate-pop {
     animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  }
-
-  .stripe-pattern-section {
-    position: relative;
-    background-color: var(--canvas, #ffffff);
-  }
-
-  .stripe-pattern-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image: repeating-linear-gradient(
-      -45deg,
-      color-mix(in srgb, var(--accent) 12%, transparent),
-      color-mix(in srgb, var(--accent) 12%, transparent) 2px,
-      transparent 2px,
-      transparent 18px
-    );
   }
 </style>
 

@@ -78,6 +78,7 @@ import fish from '@phosphor-icons/core/assets/regular/fish.svg?raw';
 import leaf from '@phosphor-icons/core/assets/regular/leaf.svg?raw';
 import grains from '@phosphor-icons/core/assets/regular/grains.svg?raw';
 import cookingPot from '@phosphor-icons/core/assets/regular/cooking-pot.svg?raw';
+import flag from '@phosphor-icons/core/assets/regular/flag.svg?raw';
 
 export const icons = {
   'arrow-right': arrowRight,
@@ -157,6 +158,7 @@ export const icons = {
   leaf: leaf,
   grains: grains,
   'cooking-pot': cookingPot,
+  flag: flag,
 } as const;
 
 export type IconName = keyof typeof icons;

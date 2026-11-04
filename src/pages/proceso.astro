@@ -1,0 +1,1181 @@
+---
+// proceso.astro - El viaje de una bolsa de sangre (prototipo: extracción, fraccionamiento y transfusión).
+// Cada escena queda fija mientras se hace scroll y el scroll avanza o retrocede su animación (Anime.js).
+import Layout from '../layouts/Layout.astro';
+
+const escenas = [
+  {
+    id: 'cita',
+    num: '01',
+    titulo: 'La cita',
+    pasos: [
+      { at: 0, t: 'Todo empieza con una decisión', d: 'Carlos abre BLUD y elige el centro más cercano de la red.' },
+      { at: 0.2, t: 'Elige el día', d: 'El calendario solo ofrece fechas en las que ya puede donar: 90 días después de la última vez (120 si es mujer).' },
+      { at: 0.42, t: 'Y la hora', d: 'Los horarios disponibles salen de la agenda real del centro.' },
+      { at: 0.6, t: 'Cita confirmada', d: 'La cita queda guardada y el centro ya sabe que llega.' },
+      { at: 0.78, t: 'El día antes, un recordatorio', d: 'Con la ruta al centro y lo que conviene hacer: comer bien, dormir y tomar agua.' },
+    ],
+  },
+  {
+    id: 'evaluacion',
+    num: '02',
+    titulo: 'Evaluación',
+    pasos: [
+      { at: 0, t: 'Antes de donar, cuidarte', d: 'Un profesional revisa que donar sea seguro para ti y para quien reciba tu sangre.' },
+      { at: 0.08, t: 'Peso: 50 kg o más', d: 'Así se pueden extraer 450 ml sin riesgo.' },
+      { at: 0.3, t: 'Presión arterial en rango', d: 'Entre 90/50 y 180/100.' },
+      { at: 0.52, t: 'Hemoglobina suficiente', d: 'Al menos 13 g/dL en hombres y 12,5 en mujeres: una gota del dedo basta.' },
+      { at: 0.72, t: 'Sin fiebre', d: 'Temperatura de 37,5 °C o menos.' },
+      { at: 0.88, t: 'Apto para donar', d: 'Si algo no está en rango, no es un "no": el sistema indica desde cuándo podrá volver.' },
+    ],
+  },
+  {
+    id: 'extraccion',
+    num: '03',
+    titulo: 'Extracción',
+    pasos: [
+      { at: 0, t: 'Todo empieza con una persona', d: 'Carlos ya pasó la evaluación: peso, hemoglobina, presión y temperatura en rango.' },
+      { at: 0.18, t: 'Una punción, nada más', d: 'Se coloca el torniquete y una aguja estéril de un solo uso en la vena del brazo.' },
+      { at: 0.38, t: '450 ml en unos 10 minutos', d: 'La sangre baja por la vía hasta la bolsa, que se mece para mezclarla con el anticoagulante.' },
+      { at: 0.82, t: 'La bolsa recibe su identidad', d: 'Se sella y se etiqueta con un código único (DIN). Desde aquí se puede rastrear hasta el paciente.' },
+    ],
+  },
+  {
+    id: 'cuarentena',
+    num: '04',
+    titulo: 'Cuarentena',
+    pasos: [
+      { at: 0, t: 'Bajo llave', d: 'La bolsa entra a una nevera de conservación a 4 °C.' },
+      { at: 0.25, t: 'Todavía no cuenta', d: 'Queda marcada en cuarentena: el sistema no la ofrece a ningún hospital.' },
+      { at: 0.5, t: 'Nada sale sin análisis', d: 'Ninguna unidad puede despacharse hasta tener todos sus resultados.' },
+      { at: 0.7, t: 'Las muestras viajan al laboratorio', d: 'Tres tubos piloto, tomados en la extracción, van a serología con el mismo código de la bolsa.' },
+    ],
+  },
+  {
+    id: 'serologia',
+    num: '05',
+    titulo: 'Serología',
+    pasos: [
+      { at: 0, t: 'Siete pruebas, una por una', d: 'Se buscan infecciones que pueden transmitirse por la sangre.' },
+      { at: 0.15, t: 'VIH y hepatitis B y C', d: 'Cuatro de los siete marcadores.' },
+      { at: 0.5, t: 'Sífilis, Chagas y HTLV', d: 'Los otros tres, obligatorios en Venezuela.' },
+      { at: 0.82, t: 'Todo negativo: liberada', d: 'La bolsa sale de cuarentena. Si una prueba fuera reactiva, se descarta y el laboratorio notifica el caso con total confidencialidad.' },
+    ],
+  },
+  {
+    id: 'fraccionamiento',
+    num: '06',
+    titulo: 'Fraccionamiento',
+    pasos: [
+      { at: 0, t: 'Una bolsa, tres medicinas', d: 'La sangre total se separa en sus componentes, porque cada paciente necesita algo distinto.' },
+      { at: 0.2, t: 'A la centrífuga', d: 'La bolsa entra al rotor junto a otras y la tapa se cierra.' },
+      { at: 0.35, t: '4.000 revoluciones por minuto', d: 'La fuerza ordena la sangre por densidad: lo más pesado se va al fondo.' },
+      { at: 0.66, t: 'Tres capas', d: 'Abajo los glóbulos rojos, en medio una capa fina con las plaquetas y arriba el plasma.' },
+      { at: 0.84, t: 'Cada una con su reloj', d: 'Glóbulos rojos 42 días, plasma congelado 365 días y plaquetas solo 7.' },
+    ],
+  },
+  {
+    id: 'inventario',
+    num: '07',
+    titulo: 'Inventario',
+    pasos: [
+      { at: 0, t: 'Stock en tiempo real', d: 'Cada unidad liberada aparece en el inventario de la red, por tipo de sangre.' },
+      { at: 0.35, t: 'Llegan las nuevas', d: 'Los tres componentes de Carlos se suman al stock de O+.' },
+      { at: 0.6, t: 'Alerta de stock bajo', d: 'Si un tipo baja de 3 unidades, la red lo sabe y puede convocar donantes de ese grupo.' },
+      { at: 0.8, t: 'Primero lo que vence antes', d: 'Las plaquetas duran 7 días: el sistema despacha siempre la unidad más próxima a vencer.' },
+    ],
+  },
+  {
+    id: 'solicitud',
+    num: '08',
+    titulo: 'Solicitud',
+    pasos: [
+      { at: 0, t: 'Un médico la pide', d: 'Llega una orden de transfusión: Roberto Gómez, O+, 1 unidad de glóbulos rojos, urgente.' },
+      { at: 0.3, t: '¿Qué sangre le sirve?', d: 'Un paciente O+ puede recibir glóbulos rojos O+ u O−. El sistema solo propone unidades compatibles.' },
+      { at: 0.58, t: 'La dirección aprueba', d: 'Revisa la orden y el stock, y la aprueba.' },
+      { at: 0.76, t: 'Unidad reservada', d: 'La bolsa de Carlos queda apartada para Roberto: ya nadie más puede tomarla.' },
+    ],
+  },
+  {
+    id: 'transfusion',
+    num: '09',
+    titulo: 'Transfusión',
+    pasos: [
+      { at: 0, t: 'Un hospital la necesita', d: 'La dirección aprobó la solicitud y la unidad compatible sale del banco de sangre.' },
+      { at: 0.4, t: 'Llega a tiempo', d: 'La cadena de frío se mantiene durante todo el traslado.' },
+      { at: 0.62, t: 'Tres personas distintas', d: 'Una paciente en cirugía, un niño con leucemia y alguien con quemaduras graves.' },
+      { at: 0.86, t: '450 ml, hasta 3 vidas', d: 'Eso es lo que deja una sola donación de 10 minutos.' },
+    ],
+  },
+];
+---
+
+<Layout title="BLUD | El viaje de una bolsa" description="Sigue una bolsa de sangre desde la extracción hasta el paciente, paso a paso.">
+  <section class="hero relative overflow-hidden bg-[#0B0F15] text-white">
+    <div class="absolute inset-0 bg-[radial-gradient(45%_60%_at_72%_45%,rgba(202,43,43,0.42),transparent_70%)]" aria-hidden="true"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(30%_40%_at_10%_90%,rgba(43,185,160,0.12),transparent_70%)]" aria-hidden="true"></div>
+    <div class="hero-grid absolute inset-0 opacity-[0.07]" aria-hidden="true"></div>
+    <div class="container-blud relative grid min-h-[calc(100dvh-var(--header-h))] items-center gap-10 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+      <div>
+        <p class="hero-in font-mono text-xs tracking-[0.3em] text-[#FF8A8E]">DON-26000001 · SANGRE TOTAL · O+</p>
+        <h1 class="hero-in mt-5 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl">El viaje de una <span class="text-[#FF5A5F]">bolsa de sangre</span></h1>
+        <p class="hero-in mt-6 max-w-xl text-lg text-white/70">De un brazo a tres personas que la necesitan. Desliza y acompáñala por las 9 etapas que recorre en el banco de sangre.</p>
+        <dl class="hero-in mt-10 grid max-w-lg grid-cols-3 gap-3">
+          {[['450', 'ml por donación'], ['10', 'minutos en el sillón'], ['3', 'vidas que puede salvar']].map(([n, l]) => (
+            <div class="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm">
+              <dt class="sr-only">{l}</dt>
+              <dd class="text-3xl font-bold">{n}</dd>
+              <dd class="mt-1 text-xs leading-snug text-white/55">{l}</dd>
+            </div>
+          ))}
+        </dl>
+        <ol class="hero-in mt-10 flex flex-wrap gap-2" aria-label="Etapas del recorrido">
+          {escenas.map((e) => (
+            <li>
+              <a href={`#etapa-${e.id}`} class="block rounded-full border border-white/12 bg-white/[0.03] px-3 py-1 text-xs text-white/70 transition-colors duration-200 hover:border-[#FF5A5F]/60 hover:bg-[#CA2B2B]/20 hover:text-white">
+                <span class="font-mono text-white/40">{e.num}</span> {e.titulo}
+              </a>
+            </li>
+          ))}
+        </ol>
+        <p class="hero-in mt-12 flex items-center gap-3 text-sm text-white/50"><span class="scroll-cue" aria-hidden="true"></span>Desliza para empezar</p>
+      </div>
+      <div class="hero-bolsa relative mx-auto w-full max-w-[26rem]" aria-hidden="true">
+        <svg viewBox="0 0 420 560" class="w-full drop-shadow-[0_50px_60px_rgba(0,0,0,0.6)]">
+          <defs>
+            <linearGradient id="h-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset=".55" stop-color="#B3121A"/><stop offset="1" stop-color="#6E070D"/></linearGradient>
+            <linearGradient id="h-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".3" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+            <linearGradient id="h-film" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity=".04"/></linearGradient>
+            <radialGradient id="h-glow"><stop offset="0" stop-color="#FF3B42" stop-opacity=".55"/><stop offset="1" stop-color="#FF3B42" stop-opacity="0"/></radialGradient>
+            <clipPath id="h-clip"><path d="M92 132 Q92 104 120 104 H300 Q328 104 328 132 V448 Q328 500 276 500 H144 Q92 500 92 448 Z"/></clipPath>
+          </defs>
+          <ellipse cx="210" cy="320" rx="200" ry="220" fill="url(#h-glow)"/>
+          <path class="h-tubo" d="M210 500 C 210 548, 330 520, 410 560" fill="none" stroke="#C81E26" stroke-width="10" stroke-linecap="round" opacity=".85"/>
+          <path d="M210 500 C 210 548, 330 520, 410 560" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="3" stroke-linecap="round" transform="translate(-2 -3)"/>
+          <rect x="170" y="56" width="26" height="56" rx="10" fill="#D7DDE5"/><rect x="224" y="56" width="26" height="56" rx="10" fill="#D7DDE5"/>
+          <rect x="174" y="60" width="6" height="46" rx="3" fill="#fff" opacity=".7"/><rect x="228" y="60" width="6" height="46" rx="3" fill="#fff" opacity=".7"/>
+          <path d="M92 132 Q92 104 120 104 H300 Q328 104 328 132 V448 Q328 500 276 500 H144 Q92 500 92 448 Z" fill="url(#h-film)" stroke="#fff" stroke-opacity=".45" stroke-width="2.5"/>
+          <rect x="182" y="118" width="56" height="12" rx="6" fill="#0B0F15" opacity=".6"/>
+          <g clip-path="url(#h-clip)">
+            <rect x="80" y="190" width="260" height="330" fill="url(#h-blood)"/>
+            <path class="h-ola" d="M-40 190 q 26 -12 52 0 t 52 0 t 52 0 t 52 0 t 52 0 t 52 0 t 52 0 t 52 0 t 52 0 V 214 H-40 Z" fill="#F0565B"/>
+            {[[140, 420, 5], [250, 380, 3.5], [190, 460, 4], [280, 300, 3], [130, 330, 3], [230, 250, 2.5]].map(([x, y, r], i) => <circle class="h-burbuja" style={`animation-delay:${i * 0.7}s`} cx={x} cy={y} r={r} fill="#fff" opacity=".35"/>)}
+          </g>
+          <path d="M104 140 Q104 118 124 118 H146 V488 H140 Q104 488 104 452 Z" fill="url(#h-gloss)"/>
+          <g>
+            <rect x="156" y="300" width="150" height="150" rx="10" fill="#fff"/>
+            <rect x="156" y="300" width="150" height="30" rx="10" fill="#CA2B2B"/><rect x="156" y="318" width="150" height="12" fill="#CA2B2B"/>
+            <text x="170" y="320" font-size="13" font-weight="800" fill="#fff" letter-spacing="2">BLUD</text>
+            <text x="292" y="320" text-anchor="end" font-size="11" fill="#fff" opacity=".85">Sangre total</text>
+            <text x="170" y="372" font-size="40" font-weight="800" fill="#151A23">O+</text>
+            <text x="292" y="352" text-anchor="end" font-size="11" fill="#616B7C">450 ml</text>
+            <text x="292" y="368" text-anchor="end" font-size="11" fill="#616B7C">CPDA-1</text>
+            <g fill="#151A23">{[0, 4, 6, 11, 13, 17, 22, 24, 28, 33, 35, 40, 43, 46, 51, 54, 59, 62, 66, 70, 73, 78, 82, 85, 90, 94, 97, 102, 106, 110, 114, 118].map((x, i) => <rect x={170 + x} y="390" width={i % 3 ? 2 : 3.5} height="32"/>)}</g>
+            <text x="231" y="440" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="#151A23">DON-26000001</text>
+          </g>
+        </svg>
+        {[[8, 30, 10], [88, 18, 7], [92, 70, 8], [4, 76, 6]].map(([x, y, s], i) => (
+          <span class="h-gota absolute" style={`left:${x}%;top:${y}%;width:${s * 2}px;height:${s * 2.6}px;animation-delay:${i * 0.9}s`}></span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {escenas.map((e) => (
+    <section id={`etapa-${e.id}`} class="escena relative bg-[#0B0F15] text-white" data-escena={e.id} aria-labelledby={`h-${e.id}`}>
+      <div class="escena-stage sticky overflow-hidden">
+        <div class="escena-fondo absolute inset-0" aria-hidden="true"></div>
+        <div class="container-blud relative grid h-full items-center gap-6 py-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
+          <div class="order-2 lg:order-1">
+            <p class="font-mono text-xs tracking-[0.3em] text-white/50">ETAPA {e.num} / 09</p>
+            <h2 id={`h-${e.id}`} class="mt-2 text-3xl font-bold sm:text-4xl">{e.titulo}</h2>
+            <ol class="pasos relative mt-6 min-h-36">
+              {e.pasos.map((p, i) => (
+                <li class="paso" data-at={p.at} data-activo={i === 0 ? '' : undefined}>
+                  <p class="text-lg font-semibold">{p.t}</p>
+                  <p class="mt-2 text-white/70">{p.d}</p>
+                </li>
+              ))}
+            </ol>
+            <div class="mt-8 h-1 w-full max-w-60 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+              <div class="progreso h-full origin-left rounded-full bg-[#E5484D]"></div>
+            </div>
+          </div>
+          <div class="order-1 lg:order-2" set:html={''} data-svg={e.id}></div>
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <section class="bg-[#0B0F15] py-24 text-center text-white">
+    <p class="font-mono text-xs tracking-[0.3em] text-white/50">FIN DEL VIAJE · DON-26000001</p>
+    <p class="mx-auto mt-4 max-w-2xl text-3xl font-bold sm:text-4xl">La próxima bolsa puede ser la tuya.</p>
+    <p class="mx-auto mt-4 max-w-xl text-white/65">10 minutos en un sillón. Hasta 3 personas que siguen adelante.</p>
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <a href="/centros" class="btn btn-primary">Encuentra dónde donar</a>
+      <a href="/elegibilidad" class="btn border border-white/20 text-white hover:bg-white/10">¿Puedo donar?</a>
+    </div>
+  </section>
+
+  <!-- ============ Ilustraciones (se mueven al contenedor de cada escena) ============ -->
+  <template id="svg-cita">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="En el teléfono se elige día y hora, se confirma la cita y aparece la ruta al centro">
+      <defs>
+        <radialGradient id="c-bg" cx="40%" cy="35%" r="80%"><stop offset="0" stop-color="#2B2140"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="c-body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3A4352"/><stop offset=".5" stop-color="#151B24"/><stop offset="1" stop-color="#2A313D"/></linearGradient>
+        <linearGradient id="c-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18202C"/><stop offset="1" stop-color="#0D131B"/></linearGradient>
+        <linearGradient id="c-map" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E2A38"/><stop offset="1" stop-color="#141C27"/></linearGradient>
+        <linearGradient id="c-btn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5484D"/><stop offset="1" stop-color="#B42121"/></linearGradient>
+        <clipPath id="c-clip"><rect x="10" y="10" width="190" height="410" rx="26"/></clipPath>
+        <filter id="c-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="c-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="c-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="c-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="c-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="c-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="c-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#c-bg)"/>
+      <circle cx="160" cy="470" r="180" fill="#CA2B2B" opacity=".08"/>
+      <circle cx="640" cy="120" r="140" fill="#2BB9A0" opacity=".07"/>
+
+      <!-- Mapa con la ruta al centro -->
+      <g id="c-mapa" filter="url(#c-shadow)">
+        <rect x="470" y="150" width="290" height="320" rx="26" fill="url(#c-map)" stroke="#fff" stroke-opacity=".08"/>
+        <g stroke="#fff" stroke-opacity=".07" stroke-width="14" stroke-linecap="round">
+          <path d="M470 230 H760"/><path d="M470 340 H760"/><path d="M540 150 V470"/><path d="M680 150 V470"/><path d="M470 420 L 760 280"/>
+        </g>
+        <g fill="#fff" opacity=".04">{[[490, 170, 40, 50], [560, 170, 110, 50], [700, 170, 50, 50], [490, 250, 40, 80], [560, 250, 110, 80], [700, 360, 50, 90], [560, 360, 110, 40]].map(([x, y, w, h]) => <rect x={x} y={y} width={w} height={h} rx="6"/>)}</g>
+        <path id="c-ruta" d="M510 440 C 540 380, 560 340, 610 340 S 680 300, 680 230" fill="none" stroke="#FF5A5F" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 10" filter="url(#c-glow)"/>
+        <circle cx="510" cy="440" r="14" fill="#3B8CFF" opacity=".25"/><circle cx="510" cy="440" r="7" fill="#3B8CFF" stroke="#fff" stroke-width="2"/>
+        <g id="c-pin"><path d="M680 230 c -16 -18 -20 -28 -20 -38 a 20 20 0 1 1 40 0 c 0 10 -4 20 -20 38 Z" fill="#E5484D" filter="url(#c-glow)"/><circle cx="680" cy="192" r="7" fill="#fff"/></g>
+        <g id="c-eta" opacity="0"><rect x="560" y="410" width="180" height="40" rx="12" fill="#0B1117" fill-opacity=".85"/><text x="576" y="435" font-size="13" fill="#fff">Hospital Central · <tspan fill="#5EF08A">12 min</tspan></text></g>
+      </g>
+
+      <!-- Teléfono -->
+      <g id="c-telefono">
+        <g transform="translate(150 70) rotate(-6 105 215)" filter="url(#c-shadow)">
+          <rect width="210" height="430" rx="34" fill="url(#c-body)"/>
+          <rect x="10" y="10" width="190" height="410" rx="26" fill="url(#c-screen)"/>
+          <g clip-path="url(#c-clip)">
+            <rect x="80" y="18" width="50" height="10" rx="5" fill="#000"/>
+            <text x="26" y="60" font-size="11" fill="#fff" fill-opacity=".5">Hospital Central Maracaibo</text>
+            <text x="26" y="80" font-size="17" font-weight="700" fill="#fff">Agenda tu cita</text>
+            <text x="26" y="106" font-size="11" fill="#fff" fill-opacity=".7">Noviembre 2026</text>
+            <g font-size="10" fill="#fff" fill-opacity=".75" text-anchor="middle">
+              {Array.from({ length: 28 }, (_, d) => <text x={38 + (d % 7) * 24} y={132 + Math.floor(d / 7) * 26}>{d + 1}</text>)}
+            </g>
+            <circle id="c-dia" cx="86" cy="128" r="11" fill="#E5484D" opacity=".9"/>
+            <g font-size="10" fill="#fff" text-anchor="middle"><text id="c-dia-n" x="86" y="132" font-weight="700">3</text></g>
+            <text x="26" y="248" font-size="11" fill="#fff" fill-opacity=".7">Horario</text>
+            <g>{['8:00', '9:00', '10:30'].map((h, i) => <g><rect x={26 + i * 56} y="258" width="50" height="28" rx="9" fill="#fff" fill-opacity=".06" stroke="#fff" stroke-opacity=".12"/><text x={51 + i * 56} y="276" font-size="11" fill="#fff" text-anchor="middle">{h}</text></g>)}</g>
+            <rect id="c-slot" x="26" y="258" width="50" height="28" rx="9" fill="none" stroke="#FF5A5F" stroke-width="2"/>
+            <g id="c-boton"><rect x="26" y="318" width="158" height="40" rx="12" fill="url(#c-btn)"/><text x="105" y="343" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">Confirmar cita</text></g>
+            <g id="c-ok" opacity="0">
+              <rect x="10" y="10" width="190" height="410" fill="#0D131B" fill-opacity=".96"/>
+              <circle cx="105" cy="190" r="38" fill="#1D7F3E" fill-opacity=".25" stroke="#5EF08A" stroke-width="3"/>
+              <path id="c-check" d="M88 190 l 12 12 l 22 -26" fill="none" stroke="#5EF08A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="105" y="260" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">Cita confirmada</text>
+              <text x="105" y="282" font-size="11" fill="#fff" fill-opacity=".65" text-anchor="middle">Martes 12 de noviembre · 9:00</text>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- Recordatorio -->
+      <g id="c-noti" opacity="0" filter="url(#c-soft)">
+        <rect x="300" y="40" width="300" height="64" rx="18" fill="#1B2330" fill-opacity=".97" stroke="#fff" stroke-opacity=".1"/>
+        <rect x="314" y="54" width="36" height="36" rx="10" fill="#CA2B2B"/>
+        <path d="M332 62 c -6 8 -9 12 -9 16 a 9 9 0 0 0 18 0 c 0 -4 -3 -8 -9 -16 Z" fill="#fff"/>
+        <text x="362" y="68" font-size="12" font-weight="700" fill="#fff">BLUD · Recordatorio</text>
+        <text x="362" y="88" font-size="12" fill="#fff" fill-opacity=".7">Mañana donas a las 9:00. Toma agua.</text>
+      </g>
+    </svg>
+  </template>
+
+  <template id="svg-evaluacion">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Se miden peso, presión, hemoglobina y temperatura, y el donante resulta apto">
+      <defs>
+        <radialGradient id="v-bg" cx="50%" cy="40%" r="80%"><stop offset="0" stop-color="#14323A"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="v-merc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF7A7E"/><stop offset="1" stop-color="#C81E26"/></linearGradient>
+        <linearGradient id="v-dial" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F4F6F9"/><stop offset="1" stop-color="#C9D1DB"/></linearGradient>
+        <filter id="v-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="v-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="v-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="v-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="v-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="v-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="v-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#v-bg)"/>
+      {[
+        { x: 40, y: 40, t: 'Peso', id: 1 },
+        { x: 420, y: 40, t: 'Presión arterial', id: 2 },
+        { x: 40, y: 320, t: 'Hemoglobina', id: 3 },
+        { x: 420, y: 320, t: 'Temperatura', id: 4 },
+      ].map((c) => (
+        <g class="v-card" filter="url(#v-shadow)">
+          <rect x={c.x} y={c.y} width="340" height="240" rx="24" fill="url(#v-glass)" stroke="#fff" stroke-opacity=".08"/>
+          <text x={c.x + 24} y={c.y + 36} font-size="14" fill="#fff" fill-opacity=".6">{c.t}</text>
+          <g class={`v-estado v-estado-${c.id}`}>
+            <rect x={c.x + 228} y={c.y + 20} width="92" height="26" rx="13" fill="#fff" fill-opacity=".06"/>
+            <text class="v-midiendo" x={c.x + 274} y={c.y + 37} font-size="11" fill="#fff" fill-opacity=".55" text-anchor="middle">Midiendo…</text>
+            <g class="v-enrango" opacity="0"><rect x={c.x + 228} y={c.y + 20} width="92" height="26" rx="13" fill="#1D7F3E" fill-opacity=".35"/><text x={c.x + 274} y={c.y + 37} font-size="11" fill="#5EF08A" text-anchor="middle">En rango</text></g>
+          </g>
+        </g>
+      ))}
+
+      <!-- Peso: balanza -->
+      <path d="M90 200 H330 L 316 236 H104 Z" fill="url(#v-metal)"/>
+      <rect x="150" y="150" width="140" height="46" rx="10" fill="#0B1117"/>
+      <text id="v-peso" x="276" y="182" text-anchor="end" font-family="var(--font-mono)" font-size="24" fill="#5EF08A" filter="url(#v-glow)">00.0</text>
+      <text x="162" y="182" font-size="12" fill="#fff" fill-opacity=".45">kg</text>
+      <text x="90" y="128" font-size="11" fill="#fff" fill-opacity=".45">Mínimo 50 kg</text>
+
+      <!-- Presión: manómetro -->
+      <g transform="translate(530 178) scale(.78)">
+        <circle r="78" fill="url(#v-dial)" filter="url(#v-soft)"/>
+        <circle r="66" fill="#fff"/>
+        <path d="M -52 30 A 60 60 0 1 1 52 30" fill="none" stroke="#E3F4E8" stroke-width="10"/>
+        <path d="M -40 -42 A 60 60 0 0 1 40 -42" fill="none" stroke="#5EC27A" stroke-width="10"/>
+        {Array.from({ length: 11 }, (_, i) => <line x1="0" y1="-58" x2="0" y2="-50" stroke="#434C5A" stroke-width="2" transform={`rotate(${-120 + i * 24})`}/>)}
+        <g id="v-aguja"><path d="M -3 0 L 0 -54 L 3 0 Z" fill="#CA2B2B"/></g>
+        <circle r="7" fill="#151A23"/>
+      </g>
+      <text id="v-presion" x="622" y="184" font-family="var(--font-mono)" font-size="24" fill="#fff">---/--</text>
+      <text x="622" y="206" font-size="11" fill="#fff" fill-opacity=".45">mmHg · 90/50 a 180/100</text>
+
+      <!-- Hemoglobina: dedo y medidor -->
+      <g transform="translate(80 400)">
+        <path d="M0 70 Q 0 20 40 18 L 120 18 Q 140 18 140 38 Q 140 58 120 58 L 60 58 Q 40 58 40 78 Z" fill="#E7AE88"/>
+        <ellipse cx="128" cy="30" rx="10" ry="7" fill="#F6D6C2"/>
+        <g id="v-gota"><path d="M138 52 c -6 8 -9 12 -9 16 a 9 9 0 0 0 18 0 c 0 -4 -3 -8 -9 -16 Z" fill="#E5484D" filter="url(#v-glow)"/></g>
+      </g>
+      <g transform="translate(240 380)" filter="url(#v-soft)">
+        <rect width="112" height="150" rx="18" fill="url(#v-metal)"/>
+        <rect x="12" y="14" width="88" height="54" rx="8" fill="#0B1117"/>
+        <text id="v-hb" x="90" y="48" text-anchor="end" font-family="var(--font-mono)" font-size="22" fill="#5EF08A" filter="url(#v-glow)">--.-</text>
+        <text x="20" y="62" font-size="9" fill="#fff" fill-opacity=".5">g/dL</text>
+        <rect x="44" y="96" width="24" height="44" rx="4" fill="#F5D27A"/>
+      </g>
+
+      <!-- Temperatura: termómetro -->
+      <g transform="translate(470 360)">
+        <rect x="0" y="0" width="30" height="170" rx="15" fill="#fff" fill-opacity=".12" stroke="#fff" stroke-opacity=".35"/>
+        <circle cx="15" cy="176" r="22" fill="url(#v-merc)"/>
+        <g id="v-mercurio"><rect x="8" y="20" width="14" height="150" rx="7" fill="url(#v-merc)"/></g>
+        {Array.from({ length: 7 }, (_, i) => <line x1="34" y1={30 + i * 20} x2={i % 2 ? 42 : 48} y2={30 + i * 20} stroke="#fff" stroke-opacity=".4"/>)}
+      </g>
+      <text id="v-temp" x="700" y="470" text-anchor="end" font-family="var(--font-mono)" font-size="30" fill="#fff">--.- °C</text>
+      <text x="700" y="496" text-anchor="end" font-size="11" fill="#fff" fill-opacity=".45">Máximo 37,5 °C</text>
+
+      <!-- Sello final -->
+      <g id="v-sello" opacity="0">
+        <g transform="rotate(-8 400 300)">
+          <rect x="250" y="252" width="300" height="96" rx="20" fill="#0B1117" fill-opacity=".9" stroke="#5EF08A" stroke-width="4" filter="url(#v-glow)"/>
+          <text x="400" y="296" font-size="30" font-weight="800" fill="#5EF08A" text-anchor="middle" letter-spacing="3">APTO</text>
+          <text x="400" y="326" font-size="13" fill="#fff" fill-opacity=".75" text-anchor="middle">Puede donar hoy</text>
+        </g>
+      </g>
+    </svg>
+  </template>
+
+  <template id="svg-cuarentena">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="La bolsa entra a una nevera a 4 grados, queda en cuarentena bajo llave y sus muestras van al laboratorio">
+      <defs>
+        <radialGradient id="q-bg" cx="50%" cy="40%" r="80%"><stop offset="0" stop-color="#142B44"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="q-inside" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#CFEFFF" stop-opacity=".22"/><stop offset="1" stop-color="#5AA9D6" stop-opacity=".08"/></linearGradient>
+        <linearGradient id="q-reflejo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="q-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD36B"/><stop offset="1" stop-color="#E8A317"/></linearGradient>
+        <filter id="q-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="q-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="q-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="q-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="q-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="q-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="q-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#q-bg)"/>
+      <ellipse cx="400" cy="566" rx="280" ry="18" fill="#000" opacity=".5"/>
+
+      <!-- Nevera -->
+      <g filter="url(#q-shadow)">
+        <rect x="200" y="40" width="400" height="520" rx="26" fill="url(#q-metal)"/>
+        <rect x="222" y="96" width="356" height="440" rx="14" fill="#0D1622"/>
+        <rect x="222" y="96" width="356" height="440" rx="14" fill="url(#q-inside)"/>
+        <rect x="236" y="104" width="328" height="4" rx="2" fill="#CFEFFF" opacity=".8" filter="url(#q-glow)"/>
+        <rect x="236" y="56" width="120" height="28" rx="8" fill="#0B1117"/>
+        <text x="296" y="76" font-family="var(--font-mono)" font-size="15" fill="#7FD4FF" text-anchor="middle" filter="url(#q-glow)">4.0 °C</text>
+        <circle cx="560" cy="70" r="6" fill="#5EF08A" filter="url(#q-glow)"/>
+      </g>
+      {[220, 340, 460].map((y) => <rect x="232" y={y} width="336" height="6" rx="3" fill="#fff" fill-opacity=".22"/>)}
+      <!-- Bolsas que ya estaban -->
+      {[[250, 140, '#B3121A'], [310, 140, '#9C0F17'], [250, 260, '#B3121A'], [490, 380, '#9C0F17'], [430, 380, '#B3121A'], [490, 140, '#9C0F17']].map(([x, y, c]) => (
+        <g><rect x={x} y={y} width="48" height="76" rx="10" fill={c} opacity=".85"/><rect x={x + 6} y={y + 8} width="8" height="60" rx="4" fill="#fff" opacity=".18"/></g>
+      ))}
+      <!-- La bolsa de Carlos -->
+      <g id="q-bolsa">
+        <rect x="370" y="250" width="60" height="86" rx="12" fill="url(#q-blood)" filter="url(#q-soft)"/>
+        <rect x="378" y="258" width="10" height="70" rx="5" fill="url(#q-gloss)"/>
+        <rect x="380" y="300" width="40" height="22" rx="3" fill="#fff"/>
+        <g fill="#151A23">{[0, 3, 5, 8, 11, 13, 17, 20, 23, 26, 29, 32].map((x) => <rect x={384 + x} y="304" width="1.6" height="10"/>)}</g>
+      </g>
+      <g id="q-tag" opacity="0"><g transform="translate(436 252)"><path d="M0 0 L 10 -8 H 92 Q 100 -8 100 0 V 22 Q 100 30 92 30 H 10 Z" fill="url(#q-amber)"/><circle cx="10" cy="11" r="3" fill="#7A4A00"/><text x="22" y="16" font-size="11" font-weight="800" fill="#4A2D00">CUARENTENA</text></g></g>
+      <!-- Vidrio de la puerta -->
+      <rect x="222" y="96" width="356" height="440" rx="14" fill="url(#q-reflejo)" pointer-events="none"/>
+      <path d="M250 520 L 420 110 L 470 110 L 300 520 Z" fill="#fff" opacity=".05"/>
+      {Array.from({ length: 14 }, (_, i) => <circle class="q-copo" cx={240 + (i * 53) % 330} cy={130 + (i * 71) % 380} r={i % 3 ? 1.6 : 2.6} fill="#E8F7FF" opacity=".6" style={`animation-delay:${(i % 7) * 0.6}s`}/>)}
+      <!-- Candado -->
+      <g id="q-candado" opacity="0" filter="url(#q-soft)">
+        <g id="q-arco"><path d="M568 266 v -14 a 18 18 0 0 1 36 0 v 14" fill="none" stroke="url(#q-metal)" stroke-width="7" stroke-linecap="round"/></g>
+        <rect x="560" y="264" width="52" height="44" rx="10" fill="url(#q-amber)"/>
+        <circle cx="586" cy="282" r="5" fill="#4A2D00"/><rect x="584" y="284" width="4" height="12" rx="2" fill="#4A2D00"/>
+      </g>
+
+      <!-- Contadores -->
+      <g filter="url(#q-soft)">
+        <rect x="620" y="140" width="160" height="130" rx="18" fill="url(#q-glass)" stroke="#fff" stroke-opacity=".08"/>
+        <text x="638" y="168" font-size="11" fill="#fff" fill-opacity=".55">Disponibles</text>
+        <text x="638" y="196" font-family="var(--font-mono)" font-size="24" fill="#fff">12</text>
+        <text x="638" y="226" font-size="11" fill="#FFD36B">En cuarentena</text>
+        <text id="q-n" x="638" y="254" font-family="var(--font-mono)" font-size="24" fill="#FFD36B">2</text>
+      </g>
+      <!-- Muestras al laboratorio -->
+      {[0, 1, 2].map((i) => (
+        <g class="q-tubo" opacity="0"><rect x={388 + i * 10} y="320" width="8" height="34" rx="4" fill="url(#q-blood)" stroke="#fff" stroke-opacity=".6"/><rect x={388 + i * 10} y="316" width="8" height="8" rx="2" fill={['#7B61FF', '#F5D27A', '#3B8CFF'][i]}/></g>
+      ))}
+      <g id="q-lab" opacity="0"><rect x="610" y="470" width="170" height="40" rx="12" fill="#0B1117" fill-opacity=".85"/><text x="626" y="495" font-size="12" fill="#fff">Muestras → laboratorio</text></g>
+    </svg>
+  </template>
+
+  <template id="svg-serologia">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Un analizador revisa siete pruebas; todas salen no reactivas y la unidad se libera">
+      <defs>
+        <radialGradient id="s-bg" cx="50%" cy="40%" r="80%"><stop offset="0" stop-color="#26203F"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="s-laser" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5EF08A" stop-opacity="0"/><stop offset=".5" stop-color="#5EF08A" stop-opacity=".9"/><stop offset="1" stop-color="#5EF08A" stop-opacity="0"/></linearGradient>
+        <linearGradient id="s-window" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101824"/><stop offset="1" stop-color="#070B11"/></linearGradient>
+        <filter id="s-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="s-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="s-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="s-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="s-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="s-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="s-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#s-bg)"/>
+      <ellipse cx="400" cy="520" rx="340" ry="18" fill="#000" opacity=".5"/>
+      <g filter="url(#s-shadow)">
+        <rect x="60" y="120" width="680" height="390" rx="28" fill="url(#s-metal)"/>
+        <rect x="88" y="150" width="624" height="270" rx="18" fill="url(#s-window)"/>
+        <rect x="88" y="440" width="624" height="46" rx="12" fill="#0B1117"/>
+      </g>
+      <rect x="88" y="150" width="624" height="6" rx="3" fill="#B9A7FF" opacity=".35" filter="url(#s-glow)"/>
+      {['VIH 1/2', 'HBsAg', 'Anti-HBc', 'Anti-VHC', 'Sífilis', 'Chagas', 'HTLV'].map((n, i) => (
+        <g>
+          <rect x={122 + i * 84} y="250" width="28" height="120" rx="14" fill="#fff" fill-opacity=".1" stroke="#fff" stroke-opacity=".35"/>
+          <rect x={126 + i * 84} y="300" width="20" height="66" rx="10" fill="url(#s-blood)"/>
+          <rect x={120 + i * 84} y="240" width="32" height="16" rx="4" fill={['#7B61FF', '#F5D27A', '#F5D27A', '#3B8CFF', '#E5484D', '#2BB9A0', '#7B61FF'][i]}/>
+          <text x={136 + i * 84} y="396" font-size="11" fill="#fff" fill-opacity=".7" text-anchor="middle">{n}</text>
+          <g>
+            <rect x={100 + i * 84} y="182" width="72" height="26" rx="13" fill="#fff" fill-opacity=".06"/>
+            <text x={136 + i * 84} y="199" font-size="10" fill="#fff" fill-opacity=".45" text-anchor="middle">Pendiente</text>
+            <g class="s-chip" opacity="0"><rect x={100 + i * 84} y="182" width="72" height="26" rx="13" fill="#1D7F3E" fill-opacity=".55" stroke="#5EF08A" stroke-opacity=".7"/><text x={136 + i * 84} y="199" font-size="10" font-weight="700" fill="#BFFFD2" text-anchor="middle">No reactivo</text></g>
+          </g>
+        </g>
+      ))}
+      <g id="s-laser"><rect x="0" y="160" width="60" height="252" fill="url(#s-laser)" opacity=".55"/><rect x="28" y="160" width="3" height="252" fill="#5EF08A" filter="url(#s-glow)"/></g>
+      <rect x="108" y="458" width="420" height="10" rx="5" fill="#fff" fill-opacity=".08"/>
+      <rect id="s-barra" x="108" y="458" width="420" height="10" rx="5" fill="#5EF08A"/>
+      <text id="s-n" x="690" y="470" font-family="var(--font-mono)" font-size="15" fill="#5EF08A" text-anchor="end">0/7 pruebas</text>
+      <g id="s-liberada" opacity="0" filter="url(#s-shadow)">
+        <rect x="210" y="40" width="380" height="60" rx="30" fill="#0E2A19" stroke="#5EF08A" stroke-width="2"/>
+        <path d="M244 72 v -10 a 10 10 0 0 1 20 0" fill="none" stroke="#5EF08A" stroke-width="4" stroke-linecap="round"/>
+        <rect x="238" y="70" width="32" height="22" rx="6" fill="#5EF08A"/>
+        <text x="284" y="68" font-size="13" fill="#BFFFD2">Resultado global: negativo</text>
+        <text x="284" y="88" font-size="16" font-weight="800" fill="#fff">Unidad liberada</text>
+      </g>
+    </svg>
+  </template>
+
+  <template id="svg-inventario">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="El stock por tipo de sangre sube, llegan las nuevas unidades O+ y se avisa el stock bajo">
+      <defs>
+        <radialGradient id="i-bg" cx="50%" cy="30%" r="85%"><stop offset="0" stop-color="#2A1A22"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="i-amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD36B"/><stop offset="1" stop-color="#E8A317"/></linearGradient>
+        <filter id="i-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="i-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="i-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="i-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="i-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="i-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="i-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#i-bg)"/>
+      <g filter="url(#i-shadow)"><rect x="30" y="40" width="740" height="520" rx="28" fill="url(#i-glass)" stroke="#fff" stroke-opacity=".08"/></g>
+      <text x="64" y="86" font-size="15" font-weight="700" fill="#fff">Inventario de la red</text>
+      <text x="64" y="108" font-size="12" fill="#fff" fill-opacity=".5">Unidades disponibles por tipo de sangre</text>
+      <text id="i-total" x="736" y="96" font-family="var(--font-mono)" font-size="26" fill="#fff" text-anchor="end">0</text>
+      <text x="736" y="114" font-size="11" fill="#fff" fill-opacity=".5" text-anchor="end">unidades</text>
+      <line x1="64" y1="420" x2="736" y2="420" stroke="#fff" stroke-opacity=".1"/>
+      {[['A+', 9], ['A−', 3], ['B+', 7], ['B−', 2], ['AB+', 4], ['AB−', 1], ['O+', 10], ['O−', 5]].map(([t, n], i) => (
+        <g>
+          <g class="i-col">{Array.from({ length: Number(n) }, (_, k) => <rect x={84 + i * 82} y={402 - k * 22} width="52" height="18" rx="5" fill={Number(n) < 3 ? 'url(#i-amber)' : 'url(#i-blood)'} opacity={0.75 + (k % 2) * 0.25}/>)}</g>
+          <text x={110 + i * 82} y="446" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">{t}</text>
+          <text x={110 + i * 82} y="466" font-family="var(--font-mono)" font-size="12" fill="#fff" fill-opacity=".55" text-anchor="middle">{t === 'O+' ? '' : n}</text>
+          {Number(n) < 3 && <g class="i-bajo" opacity="0"><rect x={80 + i * 82} y={370 - Number(n) * 22} width="60" height="22" rx="11" fill="#3A2600" stroke="#FFD36B"/><text x={110 + i * 82} y={385 - Number(n) * 22} font-size="10" font-weight="800" fill="#FFD36B" text-anchor="middle">BAJO</text></g>}
+        </g>
+      ))}
+      <text id="i-omas" x="602" y="466" font-family="var(--font-mono)" font-size="12" fill="#5EF08A" text-anchor="middle">10</text>
+      <!-- Llegan las 3 unidades de Carlos al O+ -->
+      {[['url(#i-blood)', 0], ['#F0A93B', 1], ['#F5D27A', 2]].map(([c, k]) => (
+        <g class="i-nueva" opacity="0"><rect x="576" y={182 - Number(k) * 22} width="52" height="18" rx="5" fill={String(c)} stroke="#fff" stroke-width="1.5" filter="url(#i-glow)"/></g>
+      ))}
+      <!-- Primero lo que vence antes -->
+      <text x="64" y="502" font-size="12" fill="#fff" fill-opacity=".55">Plaquetas O+ · orden de salida</text>
+      <g id="i-fifo">
+        {[['1 día', true], ['3 días', false], ['5 días', false], ['7 días', false]].map(([d, primero], k) => (
+          <g><rect x={260 + k * 120} y="484" width="104" height="44" rx="12" fill={primero ? '#3A2600' : '#fff'} fill-opacity={primero ? 1 : 0.05} stroke={primero ? '#FFD36B' : '#fff'} stroke-opacity={primero ? 1 : 0.12}/><text x={312 + k * 120} y="502" font-size="10" fill="#fff" fill-opacity=".5" text-anchor="middle">vence en</text><text x={312 + k * 120} y="519" font-size="13" font-weight="700" fill={primero ? '#FFD36B' : '#fff'} text-anchor="middle">{d}</text></g>
+        ))}
+      </g>
+      <g id="i-sale" opacity="0"><path d="M312 532 v 10" stroke="#FFD36B" stroke-width="2"/><text x="312" y="556" font-size="11" font-weight="700" fill="#FFD36B" text-anchor="middle">Sale primero</text></g>
+    </svg>
+  </template>
+
+  <template id="svg-solicitud">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Llega una orden médica, se eligen las sangres compatibles, la dirección aprueba y se reserva la unidad">
+      <defs>
+        <radialGradient id="r-bg" cx="40%" cy="40%" r="85%"><stop offset="0" stop-color="#2A2230"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="r-paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E6E9EE"/></linearGradient>
+        <filter id="r-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="r-soft" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".4"/></filter>
+        <filter id="r-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <linearGradient id="r-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="r-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="r-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="r-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B2432" stop-opacity=".95"/><stop offset="1" stop-color="#0E141C" stop-opacity=".95"/></linearGradient>
+      </defs>
+      <rect width="800" height="600" fill="url(#r-bg)"/>
+
+      <!-- Orden de transfusión -->
+      <g id="r-orden">
+        <g transform="rotate(-4 180 300)" filter="url(#r-shadow)">
+          <rect x="50" y="90" width="270" height="380" rx="14" fill="url(#r-paper)"/>
+          <rect x="50" y="90" width="270" height="48" rx="14" fill="#CA2B2B"/><rect x="50" y="122" width="270" height="16" fill="#CA2B2B"/>
+          <text x="72" y="121" font-size="14" font-weight="800" fill="#fff">Orden de transfusión</text>
+          <g font-size="11" fill="#616B7C">
+            <text x="72" y="172">Paciente</text><text x="72" y="230">Grupo y Rh</text><text x="186" y="230">Unidades</text><text x="72" y="288">Componente</text><text x="72" y="346">Indicación</text>
+          </g>
+          <g font-size="15" font-weight="700" fill="#151A23">
+            <text x="72" y="194">Roberto Gómez</text><text x="72" y="254" font-size="22">O+</text><text x="186" y="254" font-size="22">1</text><text x="72" y="310">Glóbulos rojos</text>
+          </g>
+          <text x="72" y="368" font-size="12" fill="#151A23">Anemia aguda por sangrado</text>
+          <rect x="238" y="156" width="64" height="22" rx="11" fill="#FBEAEA"/><text x="270" y="171" font-size="10" font-weight="800" fill="#B42121" text-anchor="middle">URGENTE</text>
+          <path id="r-firma" d="M80 430 c 14 -24 22 6 34 -10 s 16 -20 24 2 s 18 6 30 -14 s 20 10 36 0" fill="none" stroke="#1D3A8A" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="72" y1="442" x2="296" y2="442" stroke="#C3CAD4"/>
+          <text x="72" y="458" font-size="9" fill="#8B94A3">Dr. Luis Medina · MPPS-40218</text>
+        </g>
+      </g>
+
+      <!-- Compatibilidad -->
+      <g filter="url(#r-soft)">
+        <rect x="360" y="90" width="400" height="170" rx="22" fill="url(#r-glass)" stroke="#fff" stroke-opacity=".08"/>
+        <text x="384" y="124" font-size="13" fill="#fff" fill-opacity=".6">Glóbulos rojos compatibles con O+</text>
+      </g>
+      {['A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'].map((t, i) => (
+        <g>
+          <rect x={384 + (i % 4) * 90} y={142 + Math.floor(i / 4) * 52} width="78" height="40" rx="12" fill="#fff" fill-opacity=".05" stroke="#fff" stroke-opacity=".1"/>
+          <text x={423 + (i % 4) * 90} y={168 + Math.floor(i / 4) * 52} font-size="15" font-weight="700" fill="#fff" fill-opacity=".35" text-anchor="middle">{t}</text>
+          {(t === 'O+' || t === 'O−') && (
+            <g class="r-ok" opacity="0"><rect x={384 + (i % 4) * 90} y={142 + Math.floor(i / 4) * 52} width="78" height="40" rx="12" fill="#1D7F3E" fill-opacity=".45" stroke="#5EF08A"/><text x={423 + (i % 4) * 90} y={168 + Math.floor(i / 4) * 52} font-size="15" font-weight="800" fill="#BFFFD2" text-anchor="middle">{t}</text></g>
+          )}
+        </g>
+      ))}
+
+      <!-- Aprobación de la dirección -->
+      <g filter="url(#r-soft)">
+        <rect x="360" y="290" width="400" height="120" rx="22" fill="url(#r-glass)" stroke="#fff" stroke-opacity=".08"/>
+        <circle cx="408" cy="350" r="26" fill="#CA2B2B" fill-opacity=".25"/><text x="408" y="356" font-size="15" font-weight="800" fill="#FF8A8E" text-anchor="middle">MF</text>
+        <text x="446" y="342" font-size="14" font-weight="700" fill="#fff">María Fernández</text>
+        <text x="446" y="362" font-size="11" fill="#fff" fill-opacity=".55">Dirección del banco de sangre</text>
+      </g>
+      <g id="r-sello" opacity="0"><g transform="rotate(-10 676 350)"><rect x="616" y="326" width="120" height="44" rx="10" fill="none" stroke="#5EF08A" stroke-width="3"/><text x="676" y="355" font-size="16" font-weight="800" fill="#5EF08A" text-anchor="middle" letter-spacing="1.5">APROBADA</text></g></g>
+
+      <!-- Unidad reservada -->
+      <g id="r-unidad" opacity="0" filter="url(#r-shadow)">
+        <rect x="360" y="440" width="400" height="96" rx="22" fill="#2A1013" stroke="#E5484D" stroke-opacity=".6"/>
+        <rect x="384" y="460" width="40" height="56" rx="9" fill="url(#r-blood)"/><rect x="390" y="466" width="8" height="44" rx="4" fill="url(#r-gloss)"/>
+        <text x="440" y="482" font-size="14" font-weight="700" fill="#fff">Glóbulos rojos O+</text>
+        <text x="440" y="502" font-family="var(--font-mono)" font-size="11" fill="#fff" fill-opacity=".6">DON-26000001-CG · vence en 40 días</text>
+        <rect x="640" y="474" width="100" height="28" rx="14" fill="#E5484D"/><text x="690" y="493" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">RESERVADA</text>
+      </g>
+    </svg>
+  </template>
+
+  <template id="svg-extraccion">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Un donante recostado en el sillón aprieta una pelota mientras su sangre llena la bolsa">
+      <defs>
+        <linearGradient id="e-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1C2533"/><stop offset="1" stop-color="#121822"/></linearGradient>
+        <linearGradient id="e-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A212C"/><stop offset="1" stop-color="#0B0F15"/></linearGradient>
+        <linearGradient id="e-window" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8FD3E8" stop-opacity=".35"/><stop offset="1" stop-color="#8FD3E8" stop-opacity=".05"/></linearGradient>
+        <linearGradient id="e-ray" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BFE6F2" stop-opacity=".16"/><stop offset="1" stop-color="#BFE6F2" stop-opacity="0"/></linearGradient>
+        <linearGradient id="e-skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F2C7A5"/><stop offset="1" stop-color="#C98563"/></linearGradient>
+        <linearGradient id="e-shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2BB9A0"/><stop offset="1" stop-color="#127466"/></linearGradient>
+        <linearGradient id="e-jeans" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3D63A0"/><stop offset="1" stop-color="#22406F"/></linearGradient>
+        <linearGradient id="e-chair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A4A63"/><stop offset="1" stop-color="#1B2433"/></linearGradient>
+        <linearGradient id="e-metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E4E8EE"/><stop offset=".5" stop-color="#9AA4B2"/><stop offset="1" stop-color="#5B6574"/></linearGradient>
+        <linearGradient id="e-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0565B"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="e-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".4" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <radialGradient id="e-ball" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#FF8A8E"/><stop offset="1" stop-color="#B3121A"/></radialGradient>
+        <filter id="e-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000" flood-opacity=".5"/></filter>
+        <filter id="e-soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".35"/></filter>
+        <filter id="e-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <clipPath id="e-bagclip"><path d="M646 434 Q646 420 660 420 H728 Q742 420 742 434 V532 Q742 550 724 550 H664 Q646 550 646 532 Z"/></clipPath>
+      </defs>
+
+      <!-- Sala -->
+      <rect width="800" height="600" fill="url(#e-wall)"/>
+      <rect x="0" y="470" width="800" height="130" fill="url(#e-floor)"/>
+      <rect x="0" y="468" width="800" height="3" fill="#fff" opacity=".05"/>
+      <g transform="translate(90 70)">
+        <rect width="170" height="200" rx="10" fill="url(#e-window)" stroke="#fff" stroke-opacity=".12"/>
+        <line x1="85" y1="0" x2="85" y2="200" stroke="#fff" stroke-opacity=".12"/><line x1="0" y1="100" x2="170" y2="100" stroke="#fff" stroke-opacity=".12"/>
+      </g>
+      <path d="M90 270 L 260 270 L 520 600 L 230 600 Z" fill="url(#e-ray)"/>
+      <!-- Monitor de signos vitales -->
+      <g transform="translate(320 70)" filter="url(#e-soft)">
+        <rect width="180" height="112" rx="12" fill="#0B1117" stroke="#fff" stroke-opacity=".1"/>
+        <text x="16" y="26" font-size="11" fill="#fff" fill-opacity=".55">Tiempo de donación</text>
+        <text id="e-tiempo" x="16" y="54" font-family="var(--font-mono)" font-size="24" fill="#fff">00:00</text>
+        <text x="164" y="54" text-anchor="end" font-family="var(--font-mono)" font-size="14" fill="#5EF08A">72 lpm</text>
+        <path id="e-ecg" d="M16 88 h30 l6 -16 l8 30 l6 -14 h22 l5 -6 l5 6 h30 l6 -16 l8 30 l6 -14 h22" fill="none" stroke="#5EF08A" stroke-width="2" filter="url(#e-glow)"/>
+      </g>
+
+      <!-- Sillón de donación (reclinado) -->
+      <ellipse cx="400" cy="532" rx="300" ry="20" fill="#000" opacity=".45"/>
+      <rect x="402" y="414" width="26" height="100" rx="6" fill="url(#e-metal)"/>
+      <ellipse cx="415" cy="518" rx="90" ry="12" fill="url(#e-metal)"/>
+      <g filter="url(#e-shadow)">
+        <path d="M304 376 L 132 432 Q 108 440 114 462 Q 120 480 144 472 L 312 418 Z" fill="url(#e-chair)"/>
+        <path d="M300 372 H566 Q586 372 586 392 V398 Q586 418 566 418 H300 Q290 418 292 400 Z" fill="url(#e-chair)"/>
+        <path d="M548 404 L 626 168 Q 634 146 656 152 Q 678 158 672 180 L 598 414 Z" fill="url(#e-chair)"/>
+        <rect x="640" y="118" width="64" height="44" rx="18" fill="url(#e-chair)" transform="rotate(18 672 140)"/>
+      </g>
+      <path d="M306 376 H562" stroke="#fff" stroke-opacity=".1" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- Donante -->
+      <g id="e-persona">
+        <path d="M548 352 L 300 358 L 150 414" fill="none" stroke="url(#e-jeans)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M118 398 Q 104 420 122 436 L 154 428 Q 160 410 146 398 Z" fill="#1A1F29"/>
+        <path id="e-torso" d="M552 352 L 604 232" fill="none" stroke="url(#e-shirt)" stroke-width="74" stroke-linecap="round"/>
+        <path d="M584 214 Q 612 200 628 222" fill="none" stroke="#0E5C52" stroke-width="6" stroke-linecap="round"/>
+        <path d="M612 214 L 622 192" stroke="url(#e-skin)" stroke-width="22" stroke-linecap="round"/>
+        <circle cx="636" cy="168" r="32" fill="url(#e-skin)"/>
+        <path d="M640 136 Q 678 136 670 176 Q 662 196 650 194 Q 662 160 628 150 Q 606 146 604 160 Q 604 132 640 136 Z" fill="#2A1C16"/>
+        <ellipse cx="656" cy="172" rx="6" ry="8" fill="#D9997A"/>
+        <path d="M612 162 q 6 4 12 0" stroke="#3A2418" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M608 156 q 6 -3 12 -1" stroke="#2A1C16" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M612 184 q 8 6 15 1" stroke="#9B4A3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M604 168 q -6 4 -1 8" stroke="#C98563" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+        <!-- Brazo apoyado: hombro → codo → mano -->
+        <rect x="282" y="334" width="250" height="26" rx="13" fill="#4A5D7C" filter="url(#e-soft)"/>
+        <path d="M600 248 L 480 322" stroke="url(#e-skin)" stroke-width="26" stroke-linecap="round"/>
+        <path d="M600 248 L 556 275" stroke="url(#e-shirt)" stroke-width="34" stroke-linecap="round"/>
+        <path d="M480 322 L 320 324" stroke="url(#e-skin)" stroke-width="23" stroke-linecap="round"/>
+        <path d="M466 328 C 420 330 380 328 336 328" stroke="#8A5A6E" stroke-width="2.2" fill="none" opacity=".45" stroke-linecap="round"/>
+        <g id="e-pelota"><circle cx="300" cy="320" r="15" fill="url(#e-ball)"/></g>
+        <path d="M318 310 q -16 -4 -22 4 q -4 8 4 12 q -8 4 -2 12 q 8 6 22 0 Z" fill="url(#e-skin)"/>
+        <path d="M304 318 h 10 M302 328 h 12" stroke="#B9785A" stroke-width="1.5" stroke-linecap="round"/>
+        <g id="e-torniquete"><path d="M532 278 L 550 306" stroke="#3FA0D8" stroke-width="13" stroke-linecap="round"/><path d="M534 280 L 541 292" stroke="#fff" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/></g>
+      </g>
+
+      <!-- Vía -->
+      <path id="e-tubo-bg" d="M470 334 C 474 430, 590 470, 640 420 S 694 380, 694 404" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="7" stroke-linecap="round"/>
+      <path id="e-tubo" d="M470 334 C 474 430, 590 470, 640 420 S 694 380, 694 404" fill="none" stroke="url(#e-blood)" stroke-width="5" stroke-linecap="round"/>
+      {Array.from({ length: 4 }, () => <circle class="e-gota" r="4" fill="#FF7A7E" filter="url(#e-glow)" opacity="0"/>)}
+      <g id="e-aguja" opacity="0">
+        <rect x="462" y="326" width="18" height="10" rx="3" fill="#fff" opacity=".85"/>
+        <path d="M466 330 l -14 -16 l 10 -4 Z M474 330 l 8 -20 l 8 8 Z" fill="#2BB9A0"/>
+      </g>
+
+      <!-- Bolsa sobre la balanza mezcladora -->
+      <g filter="url(#e-shadow)">
+        <path d="M620 552 H770 L 758 588 H632 Z" fill="url(#e-metal)"/>
+        <rect x="652" y="560" width="88" height="20" rx="4" fill="#0B1117"/>
+        <text id="e-ml" x="732" y="575" text-anchor="end" font-family="var(--font-mono)" font-size="13" fill="#5EF08A" filter="url(#e-glow)">000 ml</text>
+      </g>
+      <g id="e-bolsa" filter="url(#e-shadow)">
+        <rect x="684" y="398" width="20" height="24" rx="4" fill="#C9D1DB"/>
+        <path d="M646 434 Q646 420 660 420 H728 Q742 420 742 434 V532 Q742 550 724 550 H664 Q646 550 646 532 Z" fill="#fff" fill-opacity=".08" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+        <g clip-path="url(#e-bagclip)">
+          <g id="e-liquido">
+            <rect x="630" y="434" width="130" height="140" fill="url(#e-blood)"/>
+            <path class="e-ola" d="M570 434 q 12 -6 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 V 452 H570 Z" fill="#F0565B"/>
+          </g>
+        </g>
+        <g stroke="#fff" stroke-opacity=".55"><line x1="728" y1="456" x2="738" y2="456"/><line x1="728" y1="486" x2="738" y2="486"/><line x1="728" y1="516" x2="738" y2="516"/></g>
+        <path d="M652 438 Q652 428 662 428 H674 V542 H664 Q652 542 652 530 Z" fill="url(#e-gloss)"/>
+        <g id="e-din" opacity="0">
+          <rect x="658" y="492" width="64" height="40" rx="4" fill="#fff"/>
+          <g fill="#151A23">{[0, 3, 5, 9, 11, 14, 18, 20, 23, 27, 29, 33, 36, 38, 42, 45, 49, 52].map((x, i) => <rect x={663 + x} y="497" width={i % 3 ? 1.4 : 2.4} height="18"/>)}</g>
+          <text x="690" y="527" text-anchor="middle" font-family="var(--font-mono)" font-size="7.5" fill="#151A23">DON-26000001</text>
+        </g>
+      </g>
+    </svg>
+  </template>
+
+  <template id="svg-fraccionamiento">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="La centrífuga gira y separa la sangre en glóbulos rojos, plaquetas y plasma">
+      <defs>
+        <radialGradient id="f-bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#103A44"/><stop offset="1" stop-color="#0B0F15"/></radialGradient>
+        <linearGradient id="f-body" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5B6574"/><stop offset=".3" stop-color="#E4E8EE"/><stop offset=".55" stop-color="#B7C0CB"/><stop offset="1" stop-color="#4A5361"/></linearGradient>
+        <radialGradient id="f-well" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#2A3340"/><stop offset="1" stop-color="#0A0E13"/></radialGradient>
+        <linearGradient id="f-blood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E5484D"/><stop offset="1" stop-color="#7A0910"/></linearGradient>
+        <linearGradient id="f-plasma" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE29A"/><stop offset="1" stop-color="#F0A93B"/></linearGradient>
+        <linearGradient id="f-plaq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF4D0"/><stop offset="1" stop-color="#F5D27A"/></linearGradient>
+        <linearGradient id="f-gloss" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".4" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="f-bench" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B3442"/><stop offset="1" stop-color="#11161E"/></linearGradient>
+        <filter id="f-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="f-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="f-blur"><feGaussianBlur id="f-blur-amt" stdDeviation="0"/></filter>
+        <clipPath id="f-sepclip"><path d="M312 150 Q312 136 326 136 H474 Q488 136 488 150 V430 Q488 452 466 452 H334 Q312 452 312 430 Z"/></clipPath>
+      </defs>
+      <rect width="800" height="600" fill="url(#f-bg)"/>
+      <rect y="470" width="800" height="130" fill="url(#f-bench)"/>
+      <rect y="470" width="800" height="3" fill="#fff" opacity=".08"/>
+
+      <!-- Centrífuga -->
+      <g id="f-maquina">
+        <ellipse cx="400" cy="478" rx="210" ry="22" fill="#000" opacity=".5"/>
+        <path d="M210 300 V440 Q210 470 240 470 H560 Q590 470 590 440 V300 Z" fill="url(#f-body)" filter="url(#f-shadow)"/>
+        <rect x="330" y="392" width="140" height="48" rx="10" fill="#0B1117"/>
+        <text id="f-rpm" x="456" y="424" text-anchor="end" font-family="var(--font-mono)" font-size="18" fill="#5EF08A" filter="url(#f-glow)">0 rpm</text>
+        <circle id="f-led" cx="350" cy="416" r="5" fill="#5EF08A" opacity=".2" filter="url(#f-glow)"/>
+        <ellipse cx="400" cy="300" rx="190" ry="56" fill="#C9D1DB"/>
+        <ellipse cx="400" cy="300" rx="168" ry="46" fill="url(#f-well)"/>
+        <g transform="translate(400 302) scale(1 .27)">
+          <g id="f-rotor" filter="url(#f-blur)">
+            <circle r="150" fill="#1A222D" stroke="#3A4656" stroke-width="6"/>
+            {[0, 90, 180, 270].map((a) => <g transform={`rotate(${a})`}><rect x="-26" y="-140" width="52" height="88" rx="12" fill="#56616F"/><rect x="-18" y="-132" width="36" height="72" rx="8" fill={a === 0 ? 'url(#f-blood)' : '#2A3340'}/></g>)}
+            <circle r="22" fill="#9AA4B2"/>
+          </g>
+        </g>
+        <!-- Tapa con ventana de vidrio: el giro se ve a través de ella -->
+        <g id="f-tapa">
+          <path fill-rule="evenodd" fill="url(#f-body)" d="M210 300 a190 56 0 1 0 380 0 a190 56 0 1 0 -380 0 Z M290 300 a110 28 0 1 0 220 0 a110 28 0 1 0 -220 0 Z"/>
+          <ellipse cx="400" cy="300" rx="110" ry="28" fill="#8FD3E8" opacity=".12" stroke="#fff" stroke-opacity=".35"/>
+          <path d="M310 294 Q 360 276 430 280" stroke="#fff" stroke-opacity=".45" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+      </g>
+
+      <!-- Bolsa que entra -->
+      <g id="f-bolsa-in" filter="url(#f-shadow)">
+        <path d="M370 60 Q370 50 380 50 H420 Q430 50 430 60 V150 Q430 162 418 162 H382 Q370 162 370 150 Z" fill="url(#f-blood)"/>
+        <path d="M376 62 H388 V154 H382 Q376 154 376 148 Z" fill="url(#f-gloss)"/>
+      </g>
+
+      <!-- Bolsa separada en capas -->
+      <g id="f-sep" opacity="0" filter="url(#f-shadow)">
+        <g clip-path="url(#f-sepclip)">
+          <rect x="300" y="130" width="200" height="330" fill="url(#f-blood)"/>
+          <g id="f-capas" opacity="0">
+            <rect x="300" y="130" width="200" height="132" fill="url(#f-plasma)"/>
+            <rect x="300" y="262" width="200" height="16" fill="url(#f-plaq)"/>
+          </g>
+        </g>
+        <path d="M312 150 Q312 136 326 136 H474 Q488 136 488 150 V430 Q488 452 466 452 H334 Q312 452 312 430 Z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>
+        <path d="M322 150 H346 V440 H334 Q322 440 322 428 Z" fill="url(#f-gloss)"/>
+        <g id="f-etq" opacity="0" font-size="13" fill="#fff">
+          <line x1="492" y1="196" x2="540" y2="196" stroke="#fff" stroke-opacity=".5"/><text x="548" y="200">Plasma</text>
+          <line x1="492" y1="270" x2="540" y2="270" stroke="#fff" stroke-opacity=".5"/><text x="548" y="274">Plaquetas</text>
+          <line x1="492" y1="370" x2="540" y2="370" stroke="#fff" stroke-opacity=".5"/><text x="548" y="374">Glóbulos rojos</text>
+        </g>
+      </g>
+
+      <!-- Tres productos -->
+      {[
+        { x: 110, g: 'url(#f-blood)', n: 'Glóbulos rojos', v: '42 días', c: '2–6 °C' },
+        { x: 340, g: 'url(#f-plasma)', n: 'Plasma', v: '365 días', c: '−18 °C' },
+        { x: 570, g: 'url(#f-plaq)', n: 'Plaquetas', v: '7 días', c: '22 °C en agitación' },
+      ].map((p) => (
+        <g class="f-prod" opacity="0" filter="url(#f-shadow)">
+          <rect x={p.x} y="150" width="120" height="168" rx="22" fill={p.g}/>
+          <path d={`M${p.x + 10} 168 H${p.x + 34} V300 H${p.x + 22} Q${p.x + 10} 300 ${p.x + 10} 288 Z`} fill="url(#f-gloss)"/>
+          <rect x={p.x + 48} y="134" width="24" height="20" rx="4" fill="#C9D1DB"/>
+          <text x={p.x + 60} y="352" text-anchor="middle" font-size="16" font-weight="600" fill="#fff">{p.n}</text>
+          <text x={p.x + 60} y="374" text-anchor="middle" font-size="13" fill="#fff" fill-opacity=".65">{p.v} · {p.c}</text>
+        </g>
+      ))}
+    </svg>
+  </template>
+
+  <template id="svg-transfusion">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Una ambulancia lleva la sangre al hospital y tres pacientes la reciben">
+      <defs>
+        <linearGradient id="t-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070B14"/><stop offset=".7" stop-color="#1B2740"/><stop offset="1" stop-color="#3A2533"/></linearGradient>
+        <radialGradient id="t-moon"><stop offset="0" stop-color="#FFF6E0"/><stop offset=".3" stop-color="#FFF6E0" stop-opacity=".5"/><stop offset="1" stop-color="#FFF6E0" stop-opacity="0"/></radialGradient>
+        <linearGradient id="t-amb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#C9D1DB"/></linearGradient>
+        <linearGradient id="t-road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#232A35"/><stop offset="1" stop-color="#0D1117"/></linearGradient>
+        <linearGradient id="t-hosp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9EDF2"/><stop offset="1" stop-color="#9AA4B2"/></linearGradient>
+        <radialGradient id="t-beam" cx="0" cy=".5" r="1"><stop offset="0" stop-color="#FFF3C4" stop-opacity=".55"/><stop offset="1" stop-color="#FFF3C4" stop-opacity="0"/></radialGradient>
+        <filter id="t-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="14" stdDeviation="12" flood-color="#000" flood-opacity=".55"/></filter>
+        <filter id="t-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <rect width="800" height="600" fill="url(#t-sky)"/>
+      <circle cx="640" cy="110" r="120" fill="url(#t-moon)"/><circle cx="640" cy="110" r="28" fill="#FFF6E0"/>
+      <g fill="#fff">{[[60, 60], [150, 120], [240, 40], [330, 90], [430, 50], [520, 140], [90, 180], [760, 60], [380, 160], [700, 200]].map(([x, y], i) => <circle class="t-star" cx={x} cy={y} r={i % 3 ? 1.2 : 1.8} opacity=".7"/>)}</g>
+
+      <g id="t-lejos" fill="#121A29">{[[0, 300, 90], [80, 270, 70], [150, 320, 60], [210, 250, 80], [300, 290, 70], [380, 230, 60], [440, 300, 90], [540, 260, 70], [620, 310, 80], [700, 240, 90], [800, 280, 70], [880, 300, 90], [960, 250, 80]].map(([x, y, w]) => <rect x={x} y={y} width={w} height={460 - y}/>)}</g>
+      <g id="t-cerca" fill="#18223A">{[[-40, 340, 110], [90, 360, 90], [200, 330, 120], [340, 370, 80], [440, 340, 110], [570, 360, 90], [680, 330, 120], [820, 350, 110], [950, 340, 100]].map(([x, y, w]) => <g><rect x={x} y={y} width={w} height={470 - y}/>{Array.from({ length: 6 }, (_, k) => <rect x={x + 14 + (k % 3) * 28} y={y + 18 + Math.floor(k / 3) * 30} width="12" height="14" fill="#FFD27A" opacity={k % 2 ? 0.55 : 0.15}/>)}</g>)}</g>
+
+      <!-- Hospital -->
+      <g id="t-hospital" filter="url(#t-shadow)">
+        <rect x="560" y="250" width="230" height="220" fill="url(#t-hosp)"/>
+        <rect x="560" y="250" width="230" height="16" fill="#fff" opacity=".5"/>
+        <g fill="#5B9BD5" opacity=".55">{Array.from({ length: 12 }, (_, k) => <rect x={578 + (k % 4) * 52} y={282 + Math.floor(k / 4) * 46} width="34" height="28" rx="3"/>)}</g>
+        <rect x="640" y="410" width="70" height="60" fill="#2F3A4A"/>
+        <g transform="translate(675 220)" filter="url(#t-glow)"><rect x="-22" y="-8" width="44" height="16" rx="3" fill="#E5484D"/><rect x="-8" y="-22" width="16" height="44" rx="3" fill="#E5484D"/></g>
+      </g>
+
+      <rect y="468" width="800" height="132" fill="url(#t-road)"/>
+      <g id="t-lineas" fill="#F5D27A" opacity=".7">{Array.from({ length: 14 }, (_, k) => <rect x={k * 120 - 120} y="530" width="60" height="6" rx="3"/>)}</g>
+
+      <!-- Ambulancia -->
+      <g id="t-amb">
+        <ellipse cx="150" cy="512" rx="150" ry="10" fill="#000" opacity=".55"/>
+        <path d="M300 470 L 420 440 L 420 500 L 300 500 Z" fill="url(#t-beam)"/>
+        <g filter="url(#t-shadow)">
+          <rect x="20" y="390" width="200" height="110" rx="10" fill="url(#t-amb)"/>
+          <path d="M220 420 H262 Q280 420 290 440 L 304 470 V500 H220 Z" fill="url(#t-amb)"/>
+          <path d="M228 428 H260 Q270 428 276 440 L 288 464 H228 Z" fill="#20354A"/>
+          <rect x="20" y="452" width="284" height="12" fill="#CA2B2B"/>
+          <g transform="translate(110 424)"><rect x="-18" y="-6" width="36" height="12" rx="2" fill="#CA2B2B"/><rect x="-6" y="-18" width="12" height="36" rx="2" fill="#CA2B2B"/></g>
+          <rect x="296" y="478" width="10" height="10" rx="2" fill="#FFF3C4"/>
+          <g transform="translate(90 382)"><rect class="t-sirena-r" x="0" y="-4" width="22" height="12" rx="4" fill="#FF3B3B" filter="url(#t-glow)"/><rect class="t-sirena-a" x="26" y="-4" width="22" height="12" rx="4" fill="#3B8CFF" filter="url(#t-glow)"/></g>
+        </g>
+        {[80, 250].map((x) => (
+          <g transform={`translate(${x} 500)`}>
+            <circle r="24" fill="#11161E"/>
+            <g class="t-rueda"><circle r="12" fill="#9AA4B2"/><rect x="-2" y="-12" width="4" height="24" fill="#5B6574"/><rect x="-12" y="-2" width="24" height="4" fill="#5B6574"/></g>
+          </g>
+        ))}
+      </g>
+
+      <!-- Pacientes -->
+      {[
+        { x: 70, n: 'Cirugía', c: 'Glóbulos rojos', col: '#E5484D' },
+        { x: 300, n: 'Leucemia', c: 'Plaquetas', col: '#F5D27A' },
+        { x: 530, n: 'Quemaduras', c: 'Plasma', col: '#F0A93B' },
+      ].map((p) => (
+        <g class="t-paciente" opacity="0">
+          <rect x={p.x} y="96" width="200" height="150" rx="18" fill="#0E1520" fill-opacity=".85" stroke="#fff" stroke-opacity=".12" filter="url(#t-shadow)"/>
+          <g transform={`translate(${p.x + 40} 140)`}><path class="t-corazon" d="M0 -4 C -8 -16 -26 -8 -18 6 L 0 22 L 18 6 C 26 -8 8 -16 0 -4 Z" fill={p.col} filter="url(#t-glow)"/></g>
+          <text x={p.x + 72} y="138" font-size="15" font-weight="600" fill="#fff">{p.n}</text>
+          <text x={p.x + 72} y="158" font-size="12" fill="#fff" fill-opacity=".6">Recibe {p.c.toLowerCase()}</text>
+          <path class="t-ecg" d={`M${p.x + 16} 210 h44 l8 -22 l10 40 l8 -18 h18 l6 -8 l6 8 h${200 - 16 - 44 - 8 - 10 - 8 - 18 - 12 - 32}`} fill="none" stroke="#5EF08A" stroke-width="2.5" filter="url(#t-glow)"/>
+        </g>
+      ))}
+      <g id="t-vidas" opacity="0">
+        <rect x="230" y="262" width="340" height="54" rx="27" fill="#CA2B2B" filter="url(#t-shadow)"/>
+        <text x="400" y="297" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">450 ml → hasta 3 vidas</text>
+      </g>
+    </svg>
+  </template>
+</Layout>
+
+<style>
+  .hero-grid { background-image: linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(60% 60% at 60% 40%, #000, transparent); }
+  :global(.h-ola) { animation: ola 3s linear infinite; }
+  :global(.h-burbuja) { animation: burbuja 4.2s ease-in infinite; }
+  @keyframes burbuja { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .4; } 100% { transform: translateY(-150px); opacity: 0; } }
+  .h-gota { border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 35% 30%, #FF9A9E, #B3121A 70%); box-shadow: 0 10px 24px rgba(202, 43, 43, .5); animation: flota 5s ease-in-out infinite alternate; }
+  @keyframes flota { to { transform: translateY(-18px) rotate(8deg); } }
+  .hero-bolsa { animation: mece 6s ease-in-out infinite alternate; transform-origin: 50% 8%; }
+  @keyframes mece { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+  /* La entrada solo se activa cuando ya hay cuadros dibujándose: si no, el texto se ve directo (nunca queda oculto). */
+  .hero.animar .hero-in { animation: entra 900ms var(--ease-out) both; }
+  .hero-in:nth-child(2) { animation-delay: 80ms; } .hero-in:nth-child(3) { animation-delay: 160ms; } .hero-in:nth-child(4) { animation-delay: 240ms; } .hero-in:nth-child(5) { animation-delay: 320ms; } .hero-in:nth-child(6) { animation-delay: 400ms; }
+  @keyframes entra { from { opacity: 0; transform: translateY(18px); } }
+
+  .escena { height: 300vh; }
+  :global(.q-copo) { animation: copo 4.5s ease-in-out infinite alternate; }
+  @keyframes copo { to { transform: translate(6px, 14px); opacity: 0.15; } }
+  .escena-stage { top: var(--header-h); height: calc(100dvh - var(--header-h)); }
+  .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(202, 43, 43, 0.16), transparent 70%); }
+  .escena[data-escena='cita'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(123, 97, 255, 0.16), transparent 70%); }
+  .escena[data-escena='evaluacion'] .escena-fondo, .escena[data-escena='cuarentena'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
+  .escena[data-escena='serologia'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
+  .escena[data-escena='fraccionamiento'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
+  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 3rem); border-radius: 28px; box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06); }
+
+  /* El texto saliente se va rápido y el entrante llega después: nunca se ven dos encimados. */
+  .paso { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(-8px); transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out); pointer-events: none; }
+  .paso[data-activo] { opacity: 1; transform: none; transition-duration: 420ms; transition-delay: 120ms; }
+
+  .scroll-cue { width: 22px; height: 34px; border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 12px; position: relative; }
+  .scroll-cue::after { content: ''; position: absolute; left: 50%; top: 6px; width: 4px; height: 7px; margin-left: -2px; border-radius: 2px; background: #fff; animation: cue 1.6s var(--ease-in-out) infinite; }
+  @keyframes cue { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(12px); opacity: 0; } }
+
+  :global(.e-ola) { animation: ola 2.4s linear infinite; }
+  @keyframes ola { to { transform: translateX(60px); } }
+  :global(.t-sirena-r) { animation: sirena 0.9s steps(1) infinite; }
+  :global(.t-sirena-a) { animation: sirena 0.9s steps(1) infinite 0.45s; }
+  @keyframes sirena { 0% { opacity: 1; } 50% { opacity: 0.15; } }
+  :global(.t-star) { animation: titila 3s ease-in-out infinite alternate; }
+  @keyframes titila { to { opacity: 0.2; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .escena { height: auto; }
+    .escena-stage { position: relative; top: 0; height: auto; }
+    .pasos { min-height: 0; }
+    .paso { position: static; opacity: 1; transform: none; margin-bottom: 1.25rem; }
+    :global(.e-ola), :global(.t-sirena-r), :global(.t-sirena-a), :global(.t-star), .scroll-cue::after,
+    :global(.h-ola), :global(.h-burbuja), .h-gota, .hero-bolsa, .hero-in, :global(.q-copo) { animation: none; }
+  }
+</style>
+
+<script>
+  import { createTimeline, svg, utils } from 'animejs';
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce) requestAnimationFrame(() => document.querySelector('.hero')?.classList.add('animar'));
+  const $ = (s: string, r: ParentNode = document) => r.querySelector(s) as Element;
+
+  // Las ilustraciones viven en <template> para no repetir defs; se insertan en su escena.
+  document.querySelectorAll<HTMLElement>('[data-svg]').forEach((slot) => {
+    const tpl = document.getElementById(`svg-${slot.dataset.svg}`) as HTMLTemplateElement;
+    slot.replaceChildren(tpl.content.cloneNode(true));
+  });
+
+  const contador = (el: Element, fmt: (v: number) => string) => {
+    const o = { v: 0 };
+    return { o, render: () => (el.textContent = fmt(o.v)) };
+  };
+  const mmss = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  // ---------------- Extracción
+  function extraccion() {
+    const ml = contador($('#e-ml'), (v) => `${String(Math.round(v)).padStart(3, '0')} ml`);
+    const t = contador($('#e-tiempo'), (v) => mmss(v));
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#e-torniquete', { scale: [0.6, 1], opacity: [0, 1], duration: 600, ease: 'outCubic' }, 0)
+      .add('#e-aguja', { opacity: [0, 1], translateX: [40, 0], translateY: [40, 0], duration: 900, ease: 'outCubic' }, 500)
+      .add(svg.createDrawable('#e-tubo'), { draw: ['0 0', '0 1'], duration: 1400 }, 1500)
+      .add('.e-gota', { ...svg.createMotionPath('#e-tubo'), opacity: [0, 1, 0], duration: 1300, delay: (_: unknown, i: number) => i * 220, loop: 4, ease: 'linear' }, 2200)
+      .add('#e-liquido', { translateY: [118, 16], duration: 5200, ease: 'outQuad' }, 2700)
+      .add('#e-pelota', { scale: [1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1], duration: 5200, ease: 'inOutSine' }, 2700)
+      .add('#e-bolsa', { rotate: [-2.5, 2.5, -2, 2, -1.5, 1.5, 0], duration: 5200, ease: 'inOutSine' }, 2700)
+      .add(ml.o, { v: [0, 450], duration: 5200, ease: 'outQuad', onUpdate: ml.render }, 2700)
+      .add(t.o, { v: [0, 600], duration: 5200, ease: 'linear', onUpdate: t.render }, 2700)
+      .add(svg.createDrawable('#e-ecg'), { draw: ['0 0', '0 1', '1 1'], duration: 5200, ease: 'linear' }, 2700)
+      .add('#e-aguja', { opacity: 0, translateX: 30, translateY: 30, duration: 700 }, 8100)
+      .add('#e-torniquete', { opacity: 0, duration: 500 }, 8100)
+      .add('#e-din', { opacity: [0, 1], scale: [0.92, 1], duration: 700, ease: 'outCubic' }, 8400);
+    utils.set('#e-bolsa', { transformOrigin: '694px 398px' });
+    utils.set('#e-din', { transformOrigin: '690px 512px' });
+    utils.set('#e-torniquete', { transformOrigin: '541px 292px' });
+    utils.set('#e-pelota', { transformOrigin: '300px 320px' });
+    return tl;
+  }
+
+  // ---------------- Fraccionamiento
+  function fraccionamiento() {
+    const rpm = contador($('#f-rpm'), (v) => `${Math.round(v).toLocaleString('es-VE')} rpm`);
+    const blur = $('#f-blur-amt');
+    const vel = { v: 0 };
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#f-tapa', { translateY: [0, -150], opacity: [1, 0.0], duration: 900, ease: 'outCubic' }, 0)
+      .add('#f-bolsa-in', { translateY: [0, 210], scale: [1, 0.45], opacity: [1, 0], duration: 1300, ease: 'inOutQuad' }, 600)
+      .add('#f-tapa', { translateY: [-150, 0], opacity: [0, 1], duration: 800, ease: 'outCubic' }, 1900)
+      .add('#f-rotor', { rotate: [0, 2880], duration: 4200, ease: 'inOutQuad' }, 2700)
+      .add(vel, { v: [0, 4000, 4000, 0], duration: 4200, ease: 'inOutQuad', onUpdate: () => {
+        rpm.o.v = vel.v; rpm.render();
+        blur.setAttribute('stdDeviation', (vel.v / 4000 * 6).toFixed(2));
+      } }, 2700)
+      .add('#f-led', { opacity: [0.2, 1, 1, 0.2], duration: 4200 }, 2700)
+      .add('#f-maquina', { translateY: [0, 1.5, -1.5, 1, -1, 0], duration: 4200, ease: 'linear' }, 2700)
+      .add('#f-maquina', { opacity: [1, 0], scale: [1, 0.94], duration: 700, ease: 'outCubic' }, 7000)
+      .add('#f-sep', { opacity: [0, 1], scale: [0.94, 1], duration: 700, ease: 'outCubic' }, 7200)
+      .add('#f-capas', { opacity: [0, 1], duration: 1400 }, 7700)
+      .add('#f-etq', { opacity: [0, 1], translateX: [-10, 0], duration: 600, ease: 'outCubic' }, 9000)
+      .add('#f-sep', { opacity: 0, scale: 0.94, duration: 600, ease: 'outCubic' }, 10000)
+      .add('.f-prod', { opacity: [0, 1], translateY: [40, 0], scale: [0.94, 1], duration: 900, delay: (_: unknown, i: number) => i * 160, ease: 'outCubic' }, 10300);
+    utils.set('#f-rotor', { transformOrigin: '0px 0px' });
+    utils.set(['#f-maquina', '#f-sep'], { transformOrigin: '400px 300px' });
+    return tl;
+  }
+
+  // ---------------- Transfusión
+  function transfusion() {
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#t-amb', { translateX: [-360, 250], duration: 4000, ease: 'outQuad' }, 0)
+      .add('.t-rueda', { rotate: [0, 1440], duration: 4000, ease: 'outQuad' }, 0)
+      .add('#t-lineas', { translateX: [0, -480], duration: 4000, ease: 'outQuad' }, 0)
+      .add('#t-cerca', { translateX: [0, -160], duration: 4000, ease: 'outQuad' }, 0)
+      .add('#t-lejos', { translateX: [0, -60], duration: 4000, ease: 'outQuad' }, 0)
+      .add('#t-hospital', { translateX: [260, 0], duration: 4000, ease: 'outQuad' }, 0)
+      .add('.t-paciente', { opacity: [0, 1], translateY: [24, 0], duration: 800, delay: (_: unknown, i: number) => i * 250, ease: 'outCubic' }, 4600)
+      .add(svg.createDrawable('.t-ecg'), { draw: ['0 0', '0 1'], duration: 1600, delay: (_: unknown, i: number) => i * 250, ease: 'linear' }, 5100)
+      .add('.t-corazon', { scale: [1, 1.3, 1, 1.2, 1], duration: 1400, delay: (_: unknown, i: number) => i * 250 }, 5300)
+      .add('#t-vidas', { opacity: [0, 1], translateY: [12, 0], duration: 800, ease: 'outCubic' }, 7200);
+    utils.set('.t-rueda', { transformOrigin: '0px 0px' });
+    document.querySelectorAll<SVGElement>('.t-corazon').forEach((c) => utils.set(c, { transformOrigin: '0px 4px' }));
+    return tl;
+  }
+
+  // ---------------- Cita
+  function cita() {
+    const dia = { v: 3 };
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#c-telefono', { translateY: [60, 0], opacity: [0, 1], duration: 900, ease: 'outCubic' }, 0)
+      .add('#c-mapa', { translateX: [60, 0], opacity: [0, 1], duration: 900, ease: 'outCubic' }, 300)
+      .add(['#c-dia', '#c-dia-n'], { translateX: [0, 96], translateY: [0, 26], duration: 1200, ease: 'inOutCubic' }, 1000)
+      .add(dia, { v: [3, 12], duration: 1200, ease: 'inOutCubic', onUpdate: () => ($('#c-dia-n').textContent = String(Math.round(dia.v))) }, 1000)
+      .add('#c-slot', { translateX: [0, 56], duration: 800, ease: 'inOutCubic' }, 2500)
+      .add('#c-boton', { scale: [1, 0.94, 1], duration: 500 }, 3500)
+      .add('#c-ok', { opacity: [0, 1], duration: 500, ease: 'outCubic' }, 3900)
+      .add(svg.createDrawable('#c-check'), { draw: ['0 0', '0 1'], duration: 600, ease: 'outCubic' }, 4200)
+      .add(svg.createDrawable('#c-ruta'), { draw: ['0 0', '0 1'], duration: 1500, ease: 'inOutQuad' }, 4800)
+      .add('#c-pin', { translateY: [-70, 0], opacity: [0, 1], duration: 700, ease: 'outBounce' }, 6100)
+      .add('#c-eta', { opacity: [0, 1], translateY: [10, 0], duration: 500, ease: 'outCubic' }, 6600)
+      .add('#c-noti', { translateY: [-30, 0], opacity: [0, 1], duration: 700, ease: 'outCubic' }, 7000);
+    utils.set('#c-boton', { transformOrigin: '105px 338px' });
+    return tl;
+  }
+
+  // ---------------- Evaluación
+  function evaluacion() {
+    const peso = contador($('#v-peso'), (v) => v.toFixed(1));
+    const hb = contador($('#v-hb'), (v) => (v < 0.1 ? '--.-' : v.toFixed(1)));
+    const temp = contador($('#v-temp'), (v) => (v < 30 ? '--.- °C' : `${v.toFixed(1)} °C`));
+    const sis = { v: 0 };
+    const enRango = (n: number, at: number) =>
+      tl.add(`.v-estado-${n} .v-midiendo`, { opacity: [0.55, 0], duration: 200 }, at)
+        .add(`.v-estado-${n} .v-enrango`, { opacity: [0, 1], scale: [0.9, 1], duration: 400, ease: 'outCubic' }, at);
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('.v-card', { opacity: [0, 1], translateY: [24, 0], duration: 700, delay: (_: unknown, i: number) => i * 90, ease: 'outCubic' }, 0)
+      .add(peso.o, { v: [0, 72.4], duration: 1400, ease: 'outCubic', onUpdate: peso.render }, 600);
+    enRango(1, 2000);
+    tl.add('#v-aguja', { rotate: [-120, 40, -10], duration: 1600, ease: 'outCubic' }, 2200)
+      .add(sis, { v: [0, 120], duration: 1600, ease: 'outCubic', onUpdate: () => ($('#v-presion').textContent = sis.v < 1 ? '---/--' : `${Math.round(sis.v)}/${Math.round(sis.v * 0.667)}`) }, 2200);
+    enRango(2, 3800);
+    tl.add('#v-gota', { scale: [0, 1], opacity: [0, 1], duration: 500, ease: 'outBack' }, 4000)
+      .add('#v-gota', { translateX: [0, 130], translateY: [0, 10], opacity: [1, 0], duration: 700, ease: 'inQuad' }, 4600)
+      .add(hb.o, { v: [0, 14.2], duration: 1200, ease: 'outCubic', onUpdate: hb.render }, 5000);
+    enRango(3, 6200);
+    tl.add('#v-mercurio', { scaleY: [0.1, 0.78], duration: 1400, ease: 'outCubic' }, 6400)
+      .add(temp.o, { v: [30, 36.6], duration: 1400, ease: 'outCubic', onUpdate: temp.render }, 6400);
+    enRango(4, 7800);
+    tl.add('#v-sello', { opacity: [0, 1], scale: [1.5, 1], duration: 700, ease: 'outBack' }, 8300);
+    utils.set('#v-aguja', { transformOrigin: '0px 0px' });
+    utils.set('#v-mercurio', { transformOrigin: '15px 170px' });
+    utils.set('#v-gota', { transformOrigin: '138px 62px' });
+    utils.set('#v-sello', { transformOrigin: '400px 300px' });
+    document.querySelectorAll('.v-enrango').forEach((el) => utils.set(el, { transformOrigin: 'center', transformBox: 'fill-box' }));
+    return tl;
+  }
+
+  // ---------------- Cuarentena
+  function cuarentena() {
+    const n = contador($('#q-n'), (v) => String(Math.round(v)));
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#q-bolsa', { translateX: [-420, 0], rotate: [-12, 0], duration: 1600, ease: 'outCubic' }, 0)
+      .add('#q-tag', { opacity: [0, 1], rotate: [-30, 6, 0], duration: 900, ease: 'outCubic' }, 1500)
+      .add(n.o, { v: [2, 3], duration: 400, onUpdate: n.render }, 2000)
+      .add('#q-candado', { opacity: [0, 1], scale: [0.7, 1], duration: 500, ease: 'outBack' }, 2600)
+      .add('#q-arco', { translateY: [-10, 0], duration: 400, ease: 'inQuad' }, 3200)
+      .add('.q-tubo', { opacity: [0, 1], duration: 300, delay: (_: unknown, i: number) => i * 120 }, 4400)
+      .add('.q-tubo', { translateX: [0, 250], translateY: [0, 104], rotate: [0, 18], duration: 1700, delay: (_: unknown, i: number) => i * 140, ease: 'inOutCubic' }, 4800)
+      .add('#q-lab', { opacity: [0, 1], translateY: [10, 0], duration: 500, ease: 'outCubic' }, 6300)
+      .add('.q-tubo', { opacity: 0, scale: 0.6, duration: 400, delay: (_: unknown, i: number) => i * 80, ease: 'inQuad' }, 6500);
+    utils.set('#q-bolsa', { transformOrigin: '400px 293px' });
+    utils.set('#q-tag', { transformOrigin: '436px 252px' });
+    utils.set('#q-candado', { transformOrigin: '586px 286px' });
+    return tl;
+  }
+
+  // ---------------- Serología
+  function serologia() {
+    const n = contador($('#s-n'), (v) => `${Math.round(v)}/7 pruebas`);
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#s-laser', { translateX: [90, 700], duration: 5600, ease: 'linear' }, 0)
+      .add('.s-chip', { opacity: [0, 1], scale: [0.85, 1], duration: 400, delay: (_: unknown, i: number) => i * 760, ease: 'outBack' }, 700)
+      .add('#s-barra', { scaleX: [0, 1], duration: 5600, ease: 'linear' }, 0)
+      .add(n.o, { v: [0, 7], duration: 5300, ease: 'linear', onUpdate: n.render }, 700)
+      .add('#s-liberada', { opacity: [0, 1], translateY: [-16, 0], scale: [0.95, 1], duration: 800, ease: 'outBack' }, 6300);
+    utils.set('#s-barra', { transformOrigin: '108px 463px' });
+    utils.set('#s-liberada', { transformOrigin: '400px 70px' });
+    document.querySelectorAll('.s-chip').forEach((el) => utils.set(el, { transformOrigin: 'center', transformBox: 'fill-box' }));
+    return tl;
+  }
+
+  // ---------------- Inventario
+  function inventario() {
+    const total = contador($('#i-total'), (v) => String(Math.round(v)));
+    const omas = contador($('#i-omas'), (v) => String(Math.round(v)));
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('.i-col', { scaleY: [0, 1], opacity: [0, 1], duration: 1200, delay: (_: unknown, i: number) => i * 110, ease: 'outCubic' }, 0)
+      .add(total.o, { v: [0, 41], duration: 2000, ease: 'outCubic', onUpdate: total.render }, 0)
+      .add('.i-nueva', { opacity: [0, 1], translateY: [-140, 0], duration: 1000, delay: (_: unknown, i: number) => i * 260, ease: 'outBounce' }, 2600)
+      .add(total.o, { v: [41, 44], duration: 900, onUpdate: total.render }, 2800)
+      .add(omas.o, { v: [10, 13], duration: 900, onUpdate: omas.render }, 2800)
+      .add('.i-bajo', { opacity: [0, 1, 0.4, 1], scale: [0.8, 1], duration: 1200, ease: 'outCubic' }, 4400)
+      .add('#i-fifo', { opacity: [0, 1], translateX: [40, 0], duration: 800, ease: 'outCubic' }, 5600)
+      .add('#i-sale', { opacity: [0, 1], translateY: [8, 0], duration: 500, ease: 'outCubic' }, 6500);
+    document.querySelectorAll('.i-col').forEach((el) => utils.set(el, { transformOrigin: 'bottom', transformBox: 'fill-box' }));
+    document.querySelectorAll('.i-bajo').forEach((el) => utils.set(el, { transformOrigin: 'center', transformBox: 'fill-box' }));
+    return tl;
+  }
+
+  // ---------------- Solicitud
+  function solicitud() {
+    const tl = createTimeline({ autoplay: false, defaults: { ease: 'inOutSine' } });
+    tl.add('#r-orden', { translateY: [-80, 0], translateX: [-40, 0], rotate: [-10, 0], opacity: [0, 1], duration: 1100, ease: 'outCubic' }, 0)
+      .add(svg.createDrawable('#r-firma'), { draw: ['0 0', '0 1'], duration: 1200, ease: 'inOutSine' }, 1000)
+      .add('.r-ok', { opacity: [0, 1], scale: [0.9, 1], duration: 500, delay: (_: unknown, i: number) => i * 220, ease: 'outBack' }, 2600)
+      .add('#r-sello', { opacity: [0, 1], scale: [1.8, 1], duration: 600, ease: 'outBack' }, 4300)
+      .add('#r-unidad', { opacity: [0, 1], translateY: [30, 0], duration: 800, ease: 'outCubic' }, 5300);
+    utils.set('#r-orden', { transformOrigin: '180px 300px' });
+    utils.set('#r-sello', { transformOrigin: '676px 348px' });
+    document.querySelectorAll('.r-ok').forEach((el) => utils.set(el, { transformOrigin: 'center', transformBox: 'fill-box' }));
+    return tl;
+  }
+
+  const crear: Record<string, () => ReturnType<typeof createTimeline>> = { cita, evaluacion, extraccion, cuarentena, serologia, fraccionamiento, inventario, solicitud, transfusion };
+  const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
+    const tl = crear[el.dataset.escena!]();
+    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, actual: 0, meta: 0 };
+  });
+
+  if (reduce) {
+    // Sin movimiento: cada ilustración en su estado final y todos los textos visibles.
+    escenas.forEach((e) => { e.tl.seek(e.tl.duration); e.barra.style.transform = 'scaleX(1)'; });
+  } else {
+    const medir = () => {
+      const vh = innerHeight;
+      escenas.forEach((e) => {
+        const r = e.el.getBoundingClientRect();
+        e.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
+      });
+    };
+    // Scroll con inercia: la animación persigue la posición del scroll en vez de saltar a ella.
+    const frame = () => {
+      escenas.forEach((e) => {
+        const d = e.meta - e.actual;
+        if (Math.abs(d) < 0.0005) return;
+        e.actual += d * 0.12;
+        e.tl.seek(e.actual * e.tl.duration);
+        e.barra.style.transform = `scaleX(${e.actual})`;
+        let activo = 0;
+        e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= e.actual + 0.001) activo = i; });
+        e.pasos.forEach((p, i) => p.toggleAttribute('data-activo', i === activo));
+      });
+      requestAnimationFrame(frame);
+    };
+    addEventListener('scroll', medir, { passive: true });
+    addEventListener('resize', medir);
+    medir();
+    escenas.forEach((e) => { e.actual = e.meta; e.tl.seek(e.meta * e.tl.duration); });
+    requestAnimationFrame(frame);
+  }
+</script>

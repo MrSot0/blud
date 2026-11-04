@@ -1,8 +1,8 @@
 # BLUD
 
-Red de donación de sangre en tiempo real. Conecta donantes voluntarios con pacientes, bancos de sangre y centros de salud en Maracaibo y San Francisco (Zulia). .
+Red de donación de sangre en tiempo real. Conecta donantes voluntarios con pacientes, bancos de sangre y centros de salud en Maracaibo y San Francisco (Zulia).
 
-Construido con [Astro](https://astro.build) y Tailwind CSS v4.
+Construido con [Astro](https://astro.build) y Tailwind CSS v4. ......
 
 ## Comandos
 
@@ -23,7 +23,7 @@ src/
 │   ├── eligibility/   # Test de elegibilidad (20 preguntas)
 │   ├── info/          # Plantilla de las páginas de Infórmate
 │   ├── landing/       # Secciones de la página principal
-│   ├── Assistant.astro # Botón flotante del asistente de IA (aún sin funcionalidad)
+│   ├── Assistant.astro # Chat de Bluddie, el asistente de IA
 │   ├── Icon.astro     # Íconos Phosphor (ver src/lib/icons.ts)
 │   ├── LegalPage.astro
 │   ├── Logo.astro
@@ -39,7 +39,7 @@ src/
 │   ├── icons.ts       # Registro de íconos
 │   └── map.ts         # Utilidades de Leaflet compartidas
 ├── layouts/Layout.astro
-├── pages/             # index, centros, elegibilidad, informate/*, login, register, recuperar, privacidad, terminos, 404
+├── pages/             # api/chat (servidor), index, centros, elegibilidad, informate/*, login, register, recuperar, privacidad, terminos, 404
 └── styles/global.css  # Tokens de diseño (tema claro y oscuro)
 ```
 
@@ -52,19 +52,60 @@ src/
 - **Componentes base:** `.btn` + `.btn-primary` / `.btn-secondary` / `.btn-on-night`, `.field`, `.panel`, `.section-title`, `.section-lead`, `.link-arrow`.
 - **Movimiento:** añade `data-reveal` para que un elemento aparezca al entrar en pantalla. Todo respeta `prefers-reduced-motion`.
 
+## Asistente Bluddie (Gemini)
+
+Bluddie responde con **Gemini 3.1 Flash-Lite** (con reintento en 3.5 Flash-Lite) a través de `src/pages/api/chat.ts`, que se ejecuta en Vercel para que la clave nunca llegue al navegador. El resto del sitio sigue siendo estático.
+
+1. Crea una clave en [Google AI Studio](https://aistudio.google.com/apikey).
+2. En local, copia `.env.example` a `.env` y pega la clave en `GEMINI_API_KEY`.
+3. En Vercel, añade la variable `GEMINI_API_KEY` (Settings → Environment Variables) y vuelve a desplegar.
+
+Sin clave, el chat muestra un aviso en lugar de fallar.
+
+## Base de datos (Supabase)
+
+Sin variables de Supabase, el sitio funciona en **modo demo**: cuentas, citas y paneles viven en el navegador (`localStorage`) y el personal arranca con datos de ejemplo.
+
+Con base real, el sitio usa el esquema del proyecto **Bloodonor** (`usuario`, `donante`, `donacion`, `unidadsangre`, `solicitudtransfusion`, `prueba_serologica`…) y sus funciones de negocio (`evaluar_donante`, `registrar_donacion`, `reservar_unidades`…). [`supabase/migrations/20261102120000_blud_adaptador.sql`](supabase/migrations/20261102120000_blud_adaptador.sql) solo añade una capa de traducción, sin cambiar sus tablas ni funciones:
+
+- `blud_panel()` devuelve lo que el rol puede ver, con la forma de las colecciones del front.
+- `blud_guardar(coleccion, item)` aplica cada cambio con las funciones del esquema, que validan rol y reglas clínicas.
+
+Para conectarlo:
+
+1. En el SQL Editor de Bloodonor, ejecuta la migración y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; ambos se pueden repetir).
+2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
+3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
+
+Pruebas por rol: [`supabase/tests/adaptador.sql`](supabase/tests/adaptador.sql), sobre una copia de la base, después de la migración y el seed. Termina con un error a propósito para que todo se revierta; el mensaje trae los resultados.
+
+Con la base conectada, `localStorage` queda solo como caché. El esquema exige datos que el modo demo no pide: sexo y fecha de nacimiento del donante, signos vitales antes de la extracción, e indicación clínica y consentimiento en la orden médica.
+
+| Rol         | Ve                                                         | Puede                                                                                          |
+| :---------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| donante     | su registro, sus donaciones, sus citas y tickets           | pre-registrarse, agendar citas, abrir tickets                                                  |
+| operador    | donantes, donaciones, inventario, solicitudes y entregas   | registrar donaciones (entran en cuarentena), cargar solicitudes (quedan por aprobar), despachar |
+| laboratorio | donantes, donaciones, pruebas, fracciones y casos          | registrar pruebas, liberar o descartar unidades, fraccionar                                    |
+| soporte     | tickets y notas internas                                   | responder y cerrar tickets                                                                     |
+| dirección   | todo, salvo el detalle del laboratorio (recibe un resumen) | aprobar o rechazar solicitudes, crear y desactivar cuentas del personal                        |
+
+Nadie puede darse otro rol: lo asigna la dirección y lo protege la base.
+
 ## Cuentas de prueba
 
-Mientras no haya backend, el acceso funciona en el navegador (`localStorage`):
+Funcionan igual en modo demo y con Supabase (las crea `supabase/seed.sql`):
 
-| Correo            | Contraseña    |
-| :---------------- | :------------ |
-| `maria@blud.app`  | `Donante2026` |
-| `carlos@blud.app` | `Sangre2026`  |
+| Rol         | Correo                 | Contraseña        |
+| :---------- | :--------------------- | :---------------- |
+| dirección   | `maria@blud.app`       | `Donante2026`     |
+| donante     | `carlos@blud.app`      | `Sangre2026`      |
+| operador    | `operador@blud.app`    | `Operador2026`    |
+| laboratorio | `laboratorio@blud.app` | `Laboratorio2026` |
+| soporte     | `soporte@blud.app`     | `Soporte2026`     |
 
-Las cuentas creadas en `/register` y las citas agendadas desde «Agendar aquí» también se guardan en ese navegador.
+Cambia estas contraseñas (o borra las cuentas) antes de usar la base con datos reales.
 
 ## Pendiente
 
-- Las solicitudes urgentes, los centros (teléfonos ficticios, coordenadas aproximadas), el acceso y las citas usan datos de ejemplo; falta conectarlos a la API.
-- El asistente de IA solo muestra su ventana de presentación.
+- Las solicitudes urgentes y los centros (teléfonos ficticios, coordenadas aproximadas) usan datos de ejemplo.
 - Los textos de privacidad y términos son un borrador para revisión legal.

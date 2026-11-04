@@ -8,10 +8,11 @@ import { infoTopics, infoHref } from '../data/info';
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const inInfo = path.startsWith('/informate');
 const linkClass =
-  'nav-link relative rounded-control px-3 py-2 text-base font-medium text-ink-2 transition-colors duration-200 hover:text-ink';
+  'nav-link relative whitespace-nowrap rounded-control px-1.5 py-2 text-[0.9375rem] font-medium text-ink-2 transition-colors duration-200 hover:text-ink xl:px-3 xl:text-base';
 
 // Páginas que siguen a "Infórmate" (en escritorio y en el menú móvil).
 const pageLinks = [
+  { href: '/proceso', label: 'El proceso' },
   { href: '/centros', label: 'Centros' },
   { href: '/elegibilidad', label: 'Elegibilidad' },
 ];
@@ -22,7 +23,7 @@ const current = (href: string) => (path === href ? 'page' : undefined);
   id="site-header"
   class="sticky top-0 z-50 w-full border-b border-line bg-surface/85 backdrop-blur-lg supports-[not(backdrop-filter:blur(0))]:bg-surface"
 >
-  <div class="container-blud flex h-(--header-h) items-center justify-between gap-6">
+  <div class="container-blud flex h-(--header-h) items-center justify-between gap-4 xl:gap-6">
     <Logo size="lg" />
 
     <nav class="hidden lg:block" aria-label="Navegación principal">
@@ -82,7 +83,8 @@ const current = (href: string) => (path === href ? 'page' : undefined);
             <a href={link.href} aria-current={current(link.href)} class={linkClass}>{link.label}</a>
           </li>
         ))}
-        <li>
+        <!-- A 1024 px no cabe: FAQ sigue en el menú móvil y en el pie. -->
+        <li class="hidden xl:block">
           <a href="/#faq" data-nav-link="faq" class={linkClass}>FAQ</a>
         </li>
       </ul>
@@ -94,11 +96,11 @@ const current = (href: string) => (path === href ? 'page' : undefined);
         <a
           href="/login"
           aria-current={current('/login')}
-          class="rounded-control px-3 py-2 text-base font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-accent-ink"
+          class="whitespace-nowrap rounded-control px-1.5 py-2 text-[0.9375rem] font-medium text-ink-2 transition-colors hover:text-ink aria-[current=page]:text-accent-ink xl:px-3 xl:text-base"
         >
           Iniciar sesión
         </a>
-        <a href="/register" class="btn btn-primary btn-sm min-h-10 px-4 text-[0.9375rem]">Quiero ser donante</a>
+        <a href="/register" class="btn btn-primary btn-sm min-h-10 whitespace-nowrap px-3 xl:px-4 text-[0.9375rem]">Quiero ser donante</a>
       </div>
 
       <!-- Con sesión: menú de cuenta -->
@@ -302,7 +304,7 @@ const current = (href: string) => (path === href ? 'page' : undefined);
     var s = null;
     try { s = JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null'); } catch (e) {}
     if (!s || !s.name) return;
-    var parts = s.name.split(/\s+/).filter(Boolean);
+    var parts = s.name.replace(/^(?:(?:Dra?|Lic|Licda|Ing|Prof)\.?\s+)+/i, '').split(/\s+/).filter(Boolean);
     var ini = parts.slice(0, 2).map(function (p) { return p.charAt(0).toUpperCase(); }).join('');
     var set = function (sel, v) { document.querySelectorAll(sel).forEach(function (el) { el.textContent = v; }); };
     set('[data-user-initials]', ini);

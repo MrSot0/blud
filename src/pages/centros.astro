@@ -14,6 +14,7 @@ const chipClass =
 ---
 
 <Layout
+  compactFooter
   title="BLUD | Mapa de centros de donación"
   description="Encuentra bancos de sangre, hospitales y clínicas de la red BLUD en Maracaibo y San Francisco. Mira cuáles están abiertos, cómo llegar y agenda tu donación."
 >
@@ -42,7 +43,8 @@ const chipClass =
         />
       </div>
 
-      <div class="chip-row relative -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar centros">
+      <!-- Filtros: fila deslizable con barra visible y arrastre con el ratón -->
+      <div class="chip-row relative -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2.5 pt-0.5 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar centros">
         <label class="shrink-0">
           <input type="radio" name="kind" value="all" class="sr-only" checked />
           <span class={chipClass}>Todos</span>
@@ -149,7 +151,8 @@ const chipClass =
       grid-template-areas:
         "head map"
         "list map";
-      height: calc(100dvh - var(--header-h));
+      /* Ventana menos la barra superior (--header-h, con su borde) y el pie compacto: todo cabe sin desplazar la página. */
+      height: calc(100dvh - var(--header-h) - 1px - var(--footer-compact-h, 3.25rem));
     }
     .centros-head { grid-area: head; }
     .list-pane { grid-area: list; }
@@ -173,11 +176,16 @@ const chipClass =
     }
   }
 
+  /* La barra fina con acento viene de global.css; aquí solo el arrastre. */
   .chip-row {
-    scrollbar-width: none;
+    cursor: grab;
   }
-  .chip-row::-webkit-scrollbar {
-    display: none;
+  .chip-row.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+  .chip-row.is-dragging :global(.chip) {
+    pointer-events: none;
   }
   input:checked + :global(.chip) {
     border-color: var(--ink);
@@ -512,6 +520,50 @@ const chipClass =
   });
 
   isDesktop.addEventListener('change', () => requestAnimationFrame(() => map?.invalidateSize()));
+
+  // ----- Fila de filtros deslizable -----
+  const chipRow = document.querySelector<HTMLElement>('.chip-row');
+  if (chipRow) {
+    // Arrastrar con el ratón; un arrastre no cuenta como clic en el filtro.
+    let startX = 0;
+    let startScroll = 0;
+    let dragging = false;
+    let moved = false;
+    chipRow.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      dragging = true;
+      moved = false;
+      startX = e.clientX;
+      startScroll = chipRow.scrollLeft;
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) {
+        moved = true;
+        chipRow.classList.add('is-dragging');
+      }
+      if (moved) chipRow.scrollLeft = startScroll - dx;
+    });
+    window.addEventListener('pointerup', () => {
+      dragging = false;
+      chipRow.classList.remove('is-dragging');
+    });
+    chipRow.addEventListener(
+      'click',
+      (e) => {
+        if (moved) {
+          e.preventDefault();
+          e.stopPropagation();
+          moved = false;
+        }
+      },
+      true
+    );
+
+    // Al llegar con el teclado a un filtro oculto, se desliza para mostrarlo.
+    chipRow.addEventListener('focusin', (e) => (e.target as HTMLElement).closest('label')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  }
 
   refreshOpenStatus();
   applyFilters({ fit: false });

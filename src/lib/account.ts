@@ -8,11 +8,11 @@
 //   [data-role-cta]   → botón principal según rol
 //   [data-role-only="donante|operador|director"] → se muestra solo para ese rol (regla CSS en global.css)
 
-import { appointmentLabel, getSession, initials, nextAppointment } from './auth';
+import { appointmentLabel, getSession, initials, nextAppointment, sinTitulo } from './auth';
 import { ROLE_HOME, ROLE_LABEL, roleOf } from './roles';
 import type { Role } from './roles';
 import { centroById, fmtFecha, getCita, loadDonor } from './donante';
-import { kpis, operadorActual } from './operador';
+import { getPedidosPorAprobar, kpis, operadorActual } from './operador';
 import { kpisLab } from './laboratorio';
 import { kpisSoporte } from './soporte';
 
@@ -49,7 +49,7 @@ export function renderAccount(): boolean {
   root.dataset.role = role;
 
   fill('[data-user-initials]', initials(user.name));
-  fill('[data-user-first]', user.name.split(/\s+/)[0] ?? '');
+  fill('[data-user-first]', sinTitulo(user.name).split(/\s+/)[0] ?? '');
   fill('[data-user-name]', user.name);
   fill('[data-user-email]', user.email);
 
@@ -94,8 +94,11 @@ export function renderAccount(): boolean {
   }
 
   if (role === 'director') {
+    const porAprobar = getPedidosPorAprobar().length;
     fill('[data-user-blood]', ROLE_LABEL.director);
-    fill('[data-next-appointment-short]', 'Panel de dirección');
+    fill('[data-op-centro]', operadorActual().centro);
+    fill('[data-dir-pendientes]', String(porAprobar));
+    fill('[data-next-appointment-short]', porAprobar ? `${porAprobar} solicitudes por aprobar` : 'Sin solicitudes por aprobar');
     return true;
   }
 
