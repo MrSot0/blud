@@ -7,9 +7,10 @@
 // PRIVACIDAD: soporte ve datos de contacto y de cuenta, pero NUNCA resultados de laboratorio ni motivos de
 // diferimiento. Por eso aquí no se importa nada del laboratorio. En producción: permisos por rol en el servidor.
 
-import { buscarRegistro, codigoTicket, donaciones, normCedula, onDb, registro, tickets } from './db';
+import { buscarRegistro, codigoTicket, donaciones, normCedula, onDb, registro, ticketNotas, tickets } from './db';
 import type { EstadoTicket, MensajeTicket, RegistroDonante, Ticket } from './db';
 import { operadorActual } from './operador';
+import { seedDemo } from './demo';
 import { hoyISO, uid } from './ui';
 
 export { onDb, codigoTicket };
@@ -51,7 +52,13 @@ export function fmtFechaHora(iso: string) {
 
 // ------------------------------------------------------------------ Lectura
 export const getTickets = () => tickets.all().sort(masReciente);
-export const getTicket = (id: string) => tickets.get(id);
+/** Notas internas del ticket (las antiguas guardadas dentro del ticket y las nuevas, aparte). */
+export const notasDe = (id: string) => [...(tickets.get(id)?.notas ?? []), ...(ticketNotas.get(id)?.notas ?? [])];
+/** Ticket con sus notas internas: solo para el personal de soporte. */
+export const getTicket = (id: string) => {
+  const t = tickets.get(id);
+  return t ? { ...t, notas: notasDe(id) } : undefined;
+};
 export const ticketsDeDonante = (donanteId: string) => getTickets().filter((t) => t.donanteId === donanteId);
 
 /** Primero lo urgente y sin atender; dentro de cada grupo, lo más reciente. */
@@ -95,7 +102,6 @@ export function crearTicket(i: { donanteId: string; nombre: string; email: strin
     creado: ahora(),
     actualizado: ahora(),
     mensajes: [{ id: uid(), autor: 'donante', nombre: i.nombre.trim() || 'Donante', texto: mensaje, fecha: ahora() }],
-    notas: [],
   });
   return { ok: true, data: t };
 }
@@ -163,7 +169,9 @@ export function agregarNota(ticketId: string, texto: string): Resultado<Ticket> 
   const t = tickets.get(ticketId);
   if (!t) return fail('No encontramos la solicitud.');
   if (texto.trim().length < 2) return fail('Escribe la nota.');
-  return { ok: true, data: tickets.upsert({ ...t, notas: [...t.notas, { id: uid(), autor: soporteActual().nombre, texto: texto.trim(), fecha: ahora() }] }) };
+  const previas = ticketNotas.get(ticketId)?.notas ?? [];
+  ticketNotas.upsert({ id: ticketId, notas: [...previas, { id: uid(), autor: soporteActual().nombre, texto: texto.trim(), fecha: ahora() }] });
+  return { ok: true, data: getTicket(ticketId)! };
 }
 
 // ------------------------------------------------------------------ Consulta de donantes (solo lectura)
@@ -192,22 +200,5 @@ export function consultarDonante(query: string): FichaDonante | undefined {
 }
 
 // ------------------------------------------------------------------ Datos de ejemplo
-export function seedSoporteDemo() {
-  if (tickets.get('tk-demo1')) return;
-  const mk = (n: number, nombre: string, email: string, asunto: string, texto: string, prioridad: 'normal' | 'alta' = 'normal', mins = 0): void => {
-    const id = 'tk-demo' + n;
-    const fecha = new Date(Date.now() - mins * 60000).toISOString();
-    tickets.upsert({
-      id, codigo: codigoTicket(id), donanteId: 'BLD-DEMO0' + n, donanteNombre: nombre, donanteEmail: email, asunto,
-      estado: 'abierto', prioridad, creado: fecha, actualizado: fecha, notas: [],
-      mensajes: [{ id: uid(), autor: 'donante', nombre, texto, fecha }],
-    });
-  };
-  [['Luis Martínez', 'luis@correo.com', 'V-12345601'], ['Ana Rodríguez', 'ana@correo.com', 'V-12345602'], ['Pedro Gil', 'pedro@correo.com', 'V-12345603']].forEach(([nombre, email, cedula], i) => {
-    const id = 'BLD-DEMO0' + (i + 1);
-    if (!registro.get(id)) registro.upsert({ id, cedula, nombreCompleto: nombre, sangre: ['O+', 'A+', 'B-'][i], email, telefono: '+58 414 555010' + (i + 1), fechaRegistro: hoyISO(), estado: i === 1 ? 'preregistrado' : 'verificado', origen: 'app' });
-  });
-  mk(1, 'Luis Martínez', 'luis@correo.com', 'Mi cita', 'Agendé mi cita para el viernes pero tengo que viajar. ¿Cómo la cambio a la semana siguiente?', 'normal', 35);
-  mk(2, 'Ana Rodríguez', 'ana@correo.com', 'Verificación de identidad', 'Subí mi cédula pero mi perfil sigue diciendo que no estoy verificada. Necesito donar esta semana.', 'alta', 120);
-  mk(3, 'Pedro Gil', 'pedro@correo.com', 'Mi carnet o mi QR', 'El QR de mi carnet no se muestra, solo veo un recuadro en blanco.', 'normal', 600);
-}
+/** Un solo conjunto de datos de ejemplo para todos los roles (ver lib/demo). */
+export const seedSoporteDemo = seedDemo;

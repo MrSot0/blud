@@ -24,3 +24,5 @@ Thumbs.db
 .vercel
 
 src/api
+# Configuración local de herramientas (MCP de Claude Code)
+.mcp.json

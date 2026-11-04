@@ -31,21 +31,21 @@ import { BLOOD_TYPES } from '../../lib/db';
         <p class="text-xs text-ink-3"><span data-kpi="donacionesMes">0</span> en el mes</p>
       </a>
       <div class="panel p-5">
-        <p class="text-xs font-bold uppercase text-ink-3">Stock total</p>
+        <p class="text-xs font-bold uppercase text-ink-3">Stock vigente</p>
         <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="stockTotal">0</p>
-        <p class="text-xs text-ink-3">unidades disponibles</p>
+        <p class="text-xs text-ink-3"><span data-kpi="enCuarentena">0</span> bolsas en cuarentena</p>
       </div>
       <a href="/operador/entregas" class="panel p-5 transition-transform hover:-translate-y-0.5">
-        <p class="text-xs font-bold uppercase text-ink-3">Pedidos pendientes</p>
+        <p class="text-xs font-bold uppercase text-ink-3">Por despachar</p>
         <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi="pedidosPendientes">0</p>
-        <p class="text-xs text-ink-3">por despachar</p>
+        <p class="text-xs text-ink-3"><span data-kpi="porAprobar">0</span> en revisión de la dirección</p>
       </a>
     </div>
 
     <!-- Stock por tipo -->
     <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-stock">
       <div class="flex items-center justify-between gap-3">
-        <h2 id="h-stock" class="text-lg font-bold text-ink">Stock por tipo de sangre</h2>
+        <h2 id="h-stock" class="text-lg font-bold text-ink">Stock vigente por tipo de sangre</h2>
         <button type="button" id="btn-demo" class="btn btn-secondary btn-sm">Cargar datos de ejemplo</button>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="stock">
@@ -65,7 +65,7 @@ import { BLOOD_TYPES } from '../../lib/db';
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-ped">
         <div class="flex items-center justify-between border-b border-line pb-3">
-          <h2 id="h-ped" class="text-lg font-bold text-ink">Pedidos pendientes</h2>
+          <h2 id="h-ped" class="text-lg font-bold text-ink">Aprobadas por despachar</h2>
           <a href="/operador/entregas" class="link-arrow text-sm">Ver todos</a>
         </div>
         <ul id="lista-pedidos" class="divide-y divide-line"></ul>
@@ -113,7 +113,7 @@ import { BLOOD_TYPES } from '../../lib/db';
             <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${disp >= p.unidades ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${disp >= p.unidades ? 'Hay stock' : `Stock ${disp}`}</span>
           </li>`;
         }).join('')
-      : '<li class="py-6 text-center text-sm text-ink-3">No hay pedidos pendientes 🎉</li>';
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes aprobadas por despachar.</li>';
 
     const act = actividad().slice(0, 5);
     $('#lista-actividad').innerHTML = act.length

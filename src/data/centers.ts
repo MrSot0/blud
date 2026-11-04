@@ -1,4 +1,4 @@
-// Centros de salud de la red BLUD. Alimenta el mapa de la portada y la página /centros.
+// Centros de salud de la red BLUD. Alimenta la vista previa de la portada y la página /centros.
 // Datos de ejemplo hasta conectar la API: teléfonos ficticios y coordenadas aproximadas.
 
 export type CenterKind = 'banco' | 'hospital' | 'clinica';
@@ -137,9 +137,6 @@ export const centers: HealthCenter[] = [
     needs: ['O-', 'B-'],
   },
 ];
-
-/** Los tres centros que se muestran en la portada. */
-export const featuredCenters = centers.slice(0, 3);
 
 const dayShort = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 

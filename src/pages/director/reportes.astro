@@ -1,251 +1,105 @@
 ---
 // src/pages/director/reportes.astro
+// Reporte consolidado de la red en un rango de fechas: donaciones, entregas, solicitudes y laboratorio (agregado).
 import Layout from '../../layouts/LayoutD.astro';
-import Icon from '../../components/Icon.astro';
-
-const hemocomponentes = [
-  { din: "DIN-2026-0091", tipo: "Glóbulos Rojos", grupo: "O+", vol: "320 mL", estado: "Cuarentena", vencimiento: "2026-11-05", alerta: false },
-  { din: "DIN-2026-0084", tipo: "Plaquetas", grupo: "A-", vol: "250 mL", estado: "Disponible", vencimiento: "2026-09-30", alerta: true },
-  { din: "DIN-2026-0072", tipo: "Plasma Fresco", grupo: "B+", vol: "500 mL", estado: "Reservado", vencimiento: "2027-03-12", alerta: false },
-  { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", alerta: false },
-];
-
-const cambios = [
-  // 1. Ingreso reciente a stock en análisis inicial
-  { din: "DIN-2026-0091", tipo: "Glóbulos Rojos", grupo: "O+", vol: "320 mL", estado: "Cuarentena", vencimiento: "2026-11-05", cambio: "Registro inicial en sistema (Recepción)" },
-
-  // 2. Transición de estado tras pruebas serológicas aprobadas
-  { din: "DIN-2026-0084", tipo: "Plaquetas", grupo: "A-", vol: "250 mL", estado: "Disponible", vencimiento: "2026-09-30", cambio: "Cambio de estado: Cuarentena ➔ Disponible" },
-
-  // 3. Asignación directa a un paciente
-  { din: "DIN-2026-0072", tipo: "Plasma Fresco", grupo: "B+", vol: "500 mL", estado: "Reservado", vencimiento: "2027-03-12", cambio: "Asignación de reserva para paciente #4029" },
-
-  // 4. Baja de unidad vencida o no apta
-  { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", cambio: "Baja de stock por fecha de vencimiento alcanzada" },
-
-  // 5. Verificación física / Control de volumen
-  { din: "DIN-2026-0055", tipo: "Glóbulos Rojos", grupo: "A+", vol: "300 mL", estado: "Disponible", vencimiento: "2026-10-15", cambio: "Actualización de volumen medido (+10 mL ajustados)" },
-
-  // 6. Alerta o incidente preventivo
-  { din: "DIN-2026-0043", tipo: "Plaquetas", grupo: "B-", vol: "200 mL", estado: "Cuarentena", vencimiento: "2026-09-20", cambio: "Bloqueo preventivo por variación en sensor de temperatura" },
-
-  // 7. Reubicación en almacén o cámara fría
-  { din: "DIN-2026-0031", tipo: "Plasma Fresco", grupo: "O-", vol: "400 mL", estado: "Reservado", vencimiento: "2027-02-28", cambio: "Reubicación física: Congelador C-02 ➔ Congelador C-05" },
-
-  // 8. Descarte por alteración física
-  { din: "DIN-2026-0020", tipo: "Crioprecipitado", grupo: "AB-", vol: "100 mL", estado: "Descartado", vencimiento: "2026-07-15", cambio: "Descarte por ruptura de empaque secundario" },
-
-  // 9. Liberación de cuarentena
-  { din: "DIN-2026-0015", tipo: "Glóbulos Rojos", grupo: "A-", vol: "350 mL", estado: "Disponible", vencimiento: "2026-11-25", cambio: "Liberación de laboratorio tras serología negativa" },
-
-  // 10. Muestra retenida para control de calidad
-  { din: "DIN-2026-0008", tipo: "Plaquetas", grupo: "B+", vol: "220 mL", estado: "Cuarentena", vencimiento: "2026-10-05", cambio: "Retención temporaria para prueba de agitación" },
-
-  // 11. Evento de auditoría regular
-  { din: "DIN-2026-0091", tipo: "Glóbulos Rojos", grupo: "O+", vol: "320 mL", estado: "Cuarentena", vencimiento: "2026-11-05", cambio: "Verificación periódica de inventario sin novedades", alerta: false },
-
-  // 12. Generación de alerta por vencimiento próximo
-  { din: "DIN-2026-0084", tipo: "Plaquetas", grupo: "A-", vol: "250 mL", estado: "Disponible", vencimiento: "2026-09-30", cambio: "Generación de alerta automatizada: Vencimiento en 24h", alerta: true },
-
-  // 13. Confirmación de compatibilidad cruzada
-  { din: "DIN-2026-0072", tipo: "Plasma Fresco", grupo: "B+", vol: "500 mL", estado: "Reservado", vencimiento: "2027-03-12", cambio: "Prueba cruzada realizada con éxito", alerta: false },
-
-  // 14. Confirmación de disposición final
-  { din: "DIN-2026-0010", tipo: "Crioprecipitado", grupo: "AB+", vol: "150 mL", estado: "Descartado", vencimiento: "2026-08-01", cambio: "Confirmación de destrucción de residuos biológicos", alerta: false },
-];
 ---
 
-<Layout title="BLUD | Reportes Consolidados">
-  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 sm:px-8 text-ink">
-    <div class="container-blud space-y-8">
-      
-      <!-- Encabezado -->
-      <div class="border-b border-line pb-6">
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Reportes Consolidados</h1>
-        <p class="text-sm text-ink-2 mt-1">Generación de informes de hemovigilancia, mermas, descartes serológicos y trazabilidad inter-hospitalaria.</p>
+<Layout title="BLUD | Reportes">
+  <div class="container-blud py-8 space-y-8">
+    <div class="no-print pb-6 border-b border-line flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Reportes consolidados</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Lo que registraron operadores y laboratorio en el periodo que elijas.</p>
       </div>
-
-      <!-- Configuración del Reporte -->
-      <div class="panel p-6 space-y-4">
-        <h2 class="text-xs font-bold text-ink-3 uppercase tracking-wider">Parámetros del Reporte</h2>
-        <form class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4" onsubmit="event.preventDefault();">
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de Reporte</label>
-            <select class="field">
-              <option>Ingreso de unidades</option>
-              <option>Unidades vencidas</option>
-              <option>Unidades egresadas</option>
-              <option>Descartes de unidades</option>
-              <option>Descarte de transfusiones</option>
-              <option>Eliminacion de transfusiones</option>
-              <option>Transfusiones</option>
-              <option>Historial de Cambios</option>
-              <option>Donantes</option>
-
-            </select>
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Inicio</label>
-            <input type="date" class="field" />
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha Fin</label>
-            <input type="date" class="field" />
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Producto</label>
-            <select class="field">
-              <option>Sangre total</option>
-              <option>Plasma rico en plaquetas</option>
-              <option>Concentrado de hemacias</option>
-              <option>Concentrada de plaquetas</option>
-              <option>Plasma fresco congelado</option>
-              <option>Crioprecipitado</option>
-              <option>Plasma de 24 horas</option>
-            </select>
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Grupo Sanguíneo</label>
-            <select class="field">
-              <option>Grupo A</option>
-              <option>Grupo B</option>
-              <option>Grupo AB</option>
-              <option>Grupo O</option>
-            </select>          
-          </div>
-          <div class="space-y-1">
-            <label class="block text-xs font-bold uppercase tracking-wider text-ink-2">Formato de Exportación</label>
-            <select class="field">
-              <option>Documento PDF (.pdf)</option>
-              <option>Hoja de Cálculo Excel (.xlsx)</option>
-              <option>Vista Previa en pantalla</option>
-            </select>
-          </div>
-          <div class="md:col-span-4 flex justify-end gap-2 pt-2">
-            <button type="submit" class="btn btn-primary text-sm">
-              <Icon name="caret-down" class="size-4 -rotate-90" />
-              Generar Reporte
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div class="panel p-6 space-y-4" id="historial-cambios">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 class="text-lg font-bold text-ink">Vista Previa: Stock Actual y Trazable</h2>
-          <button type="button" class="btn btn-secondary text-xs">
-            Exportar esta vista
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-ink">
-            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-              <tr>
-                <th class="p-3 rounded-l-control">Código DIN</th>
-                <th class="p-3">Hemocomponente</th>
-                <th class="p-3">Grupo Sanguíneo</th>
-                <th class="p-3">Volumen</th>
-                <th class="p-3">Estado Trazable</th>
-                <th class="p-3">Vencimiento</th>
-                <th class="p-3 text-right rounded-r-control">Acción</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              {hemocomponentes.map((item) => (
-                <tr class="hover:bg-sunken/50 transition-colors">
-                  <td class="p-3 font-mono font-bold text-ink">{item.din}</td>
-                  <td class="p-3">{item.tipo}</td>
-                  <td class="p-3">
-                    <span class="font-bold text-accent-ink bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
-                      {item.grupo}
-                    </span>
-                  </td>
-                  <td class="p-3 text-ink-2">{item.vol}</td>
-                  <td class="p-3">
-                    <span class={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                      item.estado === 'Disponible' ? 'bg-ok-soft text-ok border-ok/30' :
-                      item.estado === 'Cuarentena' ? 'bg-warn-soft text-warn border-warn/30' :
-                      item.estado === 'Reservado' ? 'bg-sunken text-ink-2 border-line-strong' : 
-                      'bg-accent-soft text-accent-ink border-accent/30'
-                    }`}>
-                      {item.estado}
-                    </span>
-                  </td>
-                  <td class="p-3">
-                    <span class={item.alerta ? "text-accent-ink font-bold animate-pulse" : "text-ink-2"}>
-                      {item.vencimiento}
-                    </span>
-                  </td>
-                  <td class="p-3 text-right">
-                    <button class="btn btn-secondary text-xs py-1 px-2">
-                      Ver Historial
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-            <!-- Historial de cambios -->
-
-            <div class="panel p-6 space-y-4" id="historial-cambios">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h2 class="text-lg font-bold text-ink">Registro de cambios realizados en hemocomponentes</h2>
-          <button type="button" class="btn btn-secondary text-xs">
-            Exportar esta vista
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-ink">
-            <thead class="text-xs uppercase bg-sunken text-ink-3 border-b border-line">
-              <tr>
-                <th class="p-3 rounded-l-control">Código DIN</th>
-                <th class="p-3">Hemocomponente</th>
-                <th class="p-3">Grupo Sanguíneo</th>
-                <th class="p-3">Volumen</th>
-                <th class="p-3">Estado Trazable</th>
-                <th class="p-3">Fecha de Cambio</th>
-                <th class="p-3 text-right rounded-r-control">Cambios</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-line">
-              {cambios.map((item) => (
-                <tr class="hover:bg-sunken/50 transition-colors">
-                  <td class="p-3 font-mono font-bold text-ink">{item.din}</td>
-                  <td class="p-3">{item.tipo}</td>
-                  <td class="p-3">
-                    <span class="font-bold text-accent-ink bg-accent-soft px-2 py-0.5 rounded border border-accent/20">
-                      {item.grupo}
-                    </span>
-                  </td>
-                  <td class="p-3 text-ink-2">{item.vol}</td>
-                  <td class="p-3">
-                    <span class={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                      item.estado === 'Disponible' ? 'bg-ok-soft text-ok border-ok/30' :
-                      item.estado === 'Cuarentena' ? 'bg-warn-soft text-warn border-warn/30' :
-                      item.estado === 'Reservado' ? 'bg-sunken text-ink-2 border-line-strong' : 
-                      'bg-accent-soft text-accent-ink border-accent/30'
-                    }`}>
-                      {item.estado}
-                    </span>
-                  </td>
-                  <td class="p-3">
-                    <span class={item.alerta ? "text-accent-ink font-bold animate-pulse" : "text-ink-2"}>
-                      {item.vencimiento}
-                    </span>
-                  </td>
-                  <td class="p-3 text-right">
-                      {item.cambio}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <form id="form" class="flex flex-wrap items-end gap-2">
+        <label class="block"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Desde</span><input type="date" name="desde" class="field" required /></label>
+        <label class="block"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Hasta</span><input type="date" name="hasta" class="field" required /></label>
+        <button type="submit" class="btn btn-primary">Actualizar</button>
+        <button type="button" id="btn-csv" class="btn btn-secondary">CSV</button>
+        <button type="button" id="btn-print" class="btn btn-secondary">Imprimir</button>
+      </form>
     </div>
-  </section>
+
+    <p class="text-sm font-semibold text-ink" id="periodo"></p>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="kpis"></div>
+
+    <div class="grid gap-8 lg:grid-cols-2 items-start">
+      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por tipo</h2><ul id="por-tipo" class="space-y-2"></ul></section>
+      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por hemocomponente</h2><ul id="por-comp" class="space-y-2"></ul></section>
+      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Unidades entregadas por destino</h2><ul id="por-destino" class="space-y-2"></ul></section>
+      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Solicitudes por estado</h2><ul id="por-estado" class="space-y-2"></ul></section>
+    </div>
+    <p class="text-xs text-ink-3">El detalle de los casos reactivos (qué prueba y de quién) solo lo ve el laboratorio.</p>
+  </div>
 </Layout>
+
+<style is:global>
+  @media print {
+    #site-header, #sidebar-drawer, #sidebar-overlay, .no-print, #blud-toast { display: none !important; }
+    body { background: #fff; }
+  }
+</style>
+
+<script>
+  import { downloadFile, esc, fmtFecha, hoyISO, onDb, reporteDirector, sumarDias, toCSV } from '../../lib/director';
+  import type { ReporteDirector } from '../../lib/director';
+
+  const form = document.getElementById('form') as HTMLFormElement;
+  const input = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+  input('hasta').value = hoyISO();
+  input('desde').value = sumarDias(hoyISO(), -29);
+  let ultimo: ReporteDirector | null = null;
+
+  const barras = (datos: Record<string, number> | { k: string; v: number }[], vacio: string) => {
+    const filas = Array.isArray(datos) ? datos : Object.entries(datos).map(([k, v]) => ({ k, v })).sort((a, b) => b.v - a.v);
+    if (!filas.length) return `<li class="text-sm text-ink-3">${vacio}</li>`;
+    const max = Math.max(...filas.map((f) => f.v));
+    return filas.map((f) => `<li><div class="flex justify-between text-sm"><span class="text-ink">${esc(f.k)}</span><span class="font-bold text-ink tabular">${f.v}</span></div>
+      <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-line"><span class="block h-full rounded-full bg-accent" style="width:${Math.round((f.v / max) * 100)}%"></span></div></li>`).join('');
+  };
+
+  function render() {
+    const desde = input('desde').value, hasta = input('hasta').value;
+    if (!desde || !hasta || desde > hasta) return;
+    const r = reporteDirector(desde, hasta);
+    ultimo = r;
+    const f = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
+    document.getElementById('periodo')!.textContent = `Del ${f(desde)} al ${f(hasta)}`;
+    const kpis: [string, string | number, string][] = [
+      ['Donaciones', r.donaciones, `${(r.volumenMl / 1000).toLocaleString('es-VE', { maximumFractionDigits: 1 })} L extraídos`],
+      ['Unidades entregadas', r.unidadesEntregadas, `${r.entregasPorDestino.length} destinos`],
+      ['Pruebas de laboratorio', r.pruebas, `${r.descartadas} bolsas descartadas`],
+      ['Donantes nuevos', r.donantesNuevos, 'registrados en el periodo'],
+    ];
+    document.getElementById('kpis')!.innerHTML = kpis.map(([t, v, s]) => `<div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">${esc(t)}</p>
+      <p class="mt-1 text-3xl font-extrabold text-ink tabular">${esc(v)}</p><p class="text-xs text-ink-3">${esc(s)}</p></div>`).join('');
+    document.getElementById('por-tipo')!.innerHTML = barras(r.donacionesPorTipo, 'Sin donaciones en el periodo.');
+    document.getElementById('por-comp')!.innerHTML = barras(r.donacionesPorComponente, 'Sin donaciones en el periodo.');
+    document.getElementById('por-destino')!.innerHTML = barras(r.entregasPorDestino.map((d) => ({ k: d.destino, v: d.unidades })), 'Sin entregas en el periodo.');
+    document.getElementById('por-estado')!.innerHTML = barras(r.solicitudesPorEstado, 'Sin solicitudes en el periodo.');
+  }
+
+  form.addEventListener('submit', (e) => { e.preventDefault(); render(); });
+  document.getElementById('btn-print')!.addEventListener('click', () => print());
+  document.getElementById('btn-csv')!.addEventListener('click', () => {
+    if (!ultimo) return;
+    const r = ultimo;
+    const filas = [
+      { seccion: 'Resumen', concepto: 'Donaciones', valor: r.donaciones },
+      { seccion: 'Resumen', concepto: 'Volumen (ml)', valor: r.volumenMl },
+      { seccion: 'Resumen', concepto: 'Unidades entregadas', valor: r.unidadesEntregadas },
+      { seccion: 'Resumen', concepto: 'Pruebas', valor: r.pruebas },
+      { seccion: 'Resumen', concepto: 'Bolsas descartadas', valor: r.descartadas },
+      { seccion: 'Resumen', concepto: 'Donantes nuevos', valor: r.donantesNuevos },
+      ...Object.entries(r.donacionesPorTipo).map(([k, v]) => ({ seccion: 'Donaciones por tipo', concepto: k, valor: v })),
+      ...Object.entries(r.donacionesPorComponente).map(([k, v]) => ({ seccion: 'Donaciones por componente', concepto: k, valor: v })),
+      ...r.entregasPorDestino.map((d) => ({ seccion: 'Entregas por destino', concepto: d.destino, valor: d.unidades })),
+      ...Object.entries(r.solicitudesPorEstado).map(([k, v]) => ({ seccion: 'Solicitudes por estado', concepto: k, valor: v })),
+    ];
+    downloadFile(`blud-reporte-${r.desde}_${r.hasta}.csv`, toCSV(filas), 'text/csv');
+  });
+
+  render();
+  onDb(render);
+</script>

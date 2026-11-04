@@ -3,31 +3,15 @@
 // con una tarjeta encima. Todo lleva a /centros, donde vive el mapa interactivo.
 // Leaflet se carga solo cuando la franja está por entrar en pantalla.
 import Icon from '../Icon.astro';
-import DropField from '../DropField.astro';
 import { centers } from '../../data/centers';
 import '../../styles/map.css';
 
 const cities = new Set(centers.map((c) => c.city)).size;
 ---
 
-<section id="centros" class="relative isolate border-y border-line py-24 lg:py-32 dot-pattern-section" data-centers={JSON.stringify(centers)}>
-  <DropField seed={4} />
-
-  <div class="container-blud relative z-10 space-y-12">
-    <div class="flex flex-col items-center gap-6 text-center" data-reveal>
-      <div class="section-head">
-        <h2 class="section-title">Centros de salud <span class="text-accent">conectados</span></h2>
-        <p class="section-lead">
-          Bancos de sangre, hospitales y clínicas en {cities === 2 ? 'Maracaibo y San Francisco' : 'la región'}. Mira cuáles están abiertos, cómo llegar y agenda tu cita[cite: 9].
-        </p>
-      </div>
-      <a href="/centros" class="btn btn-secondary shrink-0">
-        <Icon name="map-trifold" class="size-5" />
-        Ver mapa completo
-      </a>
-    </div>
-
-    <div class="centers-preview group relative isolate overflow-hidden rounded-panel border border-line bg-sunken shadow-sm" data-reveal>
+<section id="centros" data-centers={JSON.stringify(centers)}>
+  <div class="container-blud">
+    <div class="centers-preview group relative isolate overflow-hidden rounded-panel border border-line bg-sunken" data-reveal>
       <!-- Mapa de fondo, solo decorativo: sin zoom ni arrastre -->
       <div class="relative h-56 sm:absolute sm:inset-0 sm:h-auto" aria-hidden="true">
         <div id="blud-map" class="blud-map pointer-events-none absolute inset-0"></div>
@@ -39,13 +23,13 @@ const cities = new Set(centers.map((c) => c.city)).size;
 
       <!-- Tarjeta -->
       <div class="pointer-events-none relative z-[500] p-4 sm:flex sm:min-h-[22rem] sm:items-center sm:p-8 lg:min-h-[24rem] lg:p-10">
-        <div class="preview-card panel p-6 sm:max-w-sm sm:p-7 shadow-sm bg-surface">
+        <div class="preview-card panel p-6 sm:max-w-sm sm:p-7">
           <h2 class="text-2xl font-bold leading-tight tracking-[-0.03em] text-ink sm:text-[1.75rem]">
-            {centers.length} centros de donación[cite: 9]
+            {centers.length} centros de donación
           </h2>
           <p class="mt-2 leading-relaxed text-ink-2">
             Bancos de sangre, hospitales y clínicas en {cities === 2 ? 'Maracaibo y San Francisco' : 'la región'}.
-            Mira cuáles están abiertos, cómo llegar y agenda tu cita[cite: 9].
+            Mira cuáles están abiertos, cómo llegar y agenda tu cita.
           </p>
           <p class="mt-4 flex items-center gap-2 text-sm font-medium text-ok" data-open-count hidden>
             <span class="live-dot" aria-hidden="true"></span>
@@ -62,23 +46,6 @@ const cities = new Set(centers.map((c) => c.city)).size;
 </section>
 
 <style>
-  /* Patrón de puntos optimizado para el fondo */
-  .dot-pattern-section {
-    position: relative;
-    background-color: var(--sunken, #f7f9fa);
-  }
-
-  .dot-pattern-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image: radial-gradient(color-mix(in srgb, var(--accent) 35%, #000000 15%) 1.5px, transparent 1.5px);
-    background-size: 24px 24px;
-    background-position: center;
-  }
-
   .centers-preview {
     transition: border-color 200ms ease;
   }
@@ -99,7 +66,7 @@ const cities = new Set(centers.map((c) => c.city)).size;
       transform: translateX(3px);
     }
   }
-  /* Los controles de Leaflet no hacen falta en una vista previa.[cite: 9] */
+  /* Los controles de Leaflet no hacen falta en una vista previa. */
   .centers-preview :global(.leaflet-control-container .leaflet-top) {
     display: none;
   }
@@ -118,7 +85,7 @@ const cities = new Set(centers.map((c) => c.city)).size;
   const skeleton = document.getElementById('map-skeleton');
   const openCount = section?.querySelector<HTMLElement>('[data-open-count]');
 
-  // Cuántos centros están abiertos según la hora local del visitante.[cite: 9]
+  // Cuántos centros están abiertos según la hora local del visitante.
   if (openCount) {
     const open = centers.filter((c) => openStatus(c).open).length;
     openCount.querySelector('span:last-child')!.textContent =
@@ -137,7 +104,7 @@ const cities = new Set(centers.map((c) => c.city)).size;
           map.off('focus click');
           centers.forEach((c) => L.marker(c.coords, { icon: centerIcon(L), keyboard: false, interactive: false }).addTo(map));
 
-          // En pantallas anchas la tarjeta tapa la izquierda: los pines se centran a la derecha.[cite: 9]
+          // En pantallas anchas la tarjeta tapa la izquierda: los pines se centran a la derecha.
           const wide = window.matchMedia('(min-width: 640px)').matches;
           map.fitBounds(L.latLngBounds(centers.map((c) => c.coords)), {
             paddingTopLeft: [wide ? Math.min(mapEl.clientWidth * 0.45, 460) : 24, 32],

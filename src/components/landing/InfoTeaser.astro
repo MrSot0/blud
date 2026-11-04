@@ -1,12 +1,10 @@
 ---
-import DropField from '../DropField.astro';
 // Acceso a la sección Infórmate desde la portada.
 import Icon from '../Icon.astro';
 import { infoTopics, infoHref } from '../../data/info';
 ---
 
-<section id="informate" class="relative isolate py-24 lg:py-32 stripe-pattern-section">
-  <DropField seed={5} />
+<section id="informate" class="relative isolate py-24 lg:py-32">
 
   <div class="container-blud relative z-10 flex flex-col gap-12">
     <div class="section-head" data-reveal>
@@ -45,26 +43,5 @@ import { infoTopics, infoHref } from '../../data/info';
   }
   @media (hover: hover) {
     .teaser-row:hover .teaser-arrow :global(svg) { transform: translateX(2px) rotate(-45deg); }
-  }
-
-  /* Fondo adaptativo con patrón de líneas diagonales usando variables del tema */
-  .stripe-pattern-section {
-    position: relative;
-    background-color: var(--canvas, #ffffff);
-  }
-
-  .stripe-pattern-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image: repeating-linear-gradient(
-      -45deg,
-      color-mix(in srgb, var(--accent) 12%, transparent),
-      color-mix(in srgb, var(--accent) 12%, transparent) 2px,
-      transparent 2px,
-      transparent 18px
-    );
   }
 </style>

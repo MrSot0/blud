@@ -16,9 +16,10 @@ import type {
   CasoPositivo, DonacionOp, EstadoLab, Fraccionamiento, Hemocomponente, ProductoFraccion,
   PruebaLab, ResultadoGlobal, ResultadoPrueba,
 } from './db';
-import { operadorActual, seedOperadorDemo } from './operador';
+import { operadorActual } from './operador';
+import { seedDemo } from './demo';
 import type { Resultado } from './operador';
-import { hoyISO, sumarDias, uid } from './ui';
+import { hoyISO, uid } from './ui';
 
 export { BLOOD_TYPES, COMPONENTES, PRUEBAS, codigoDonacion, onDb };
 export { uid, toast, esc, fmtFecha, hoyISO, downloadFile, toCSV } from './ui';
@@ -238,29 +239,6 @@ export function actividadLab(): EventoLab[] {
   return out.sort(porFechaDesc);
 }
 
-// ------------------------------------------------------------------ Datos de ejemplo (idempotente)
-export function seedLabDemo() {
-  seedOperadorDemo(); // donantes y donaciones base
-  const lab = laboratoristaActual();
-  const hoy = hoyISO();
-  const d = (n: number) => sumarDias(hoy, -n);
-  const res = (over: Record<string, ResultadoPrueba> = {}) =>
-    Object.fromEntries(PRUEBAS.map((p) => [p.id, over[p.id] ?? 'no_reactivo'])) as Record<string, ResultadoPrueba>;
-
-  registro.upsert({ id: 'demo-5', cedula: 'V-14555666', nombreCompleto: 'Pedro Sánchez', sangre: 'A+', fechaRegistro: d(60), fechaVerificacion: d(60), estado: 'verificado', origen: 'operador', operadorId: lab.id });
-  const don = (id: string, donante: string, nombre: string, ced: string, tipo: string, n: number, estadoLab: EstadoLab) =>
-    donaciones.upsert({ id, donanteId: donante, donanteNombre: nombre, donanteCedula: ced, tipoSangre: tipo, tipoHemocomponente: 'Sangre Total', volumenMl: 450, fecha: d(n), operadorId: lab.id, centroNombre: lab.centro, estadoLab });
-
-  don('demo-l1', 'demo-4', 'Luis Fernández', 'V-12444555', 'B+', 0, 'pendiente');
-  don('demo-l2', 'demo-3', 'Ana Morales', 'V-15333444', 'O-', 1, 'pendiente');
-
-  don('demo-l3', 'demo-4', 'Luis Fernández', 'V-12444555', 'B+', 30, 'liberada');
-  pruebas.upsert({ id: 'demo-pr3', donacionId: 'demo-l3', codigo: codigoDonacion('demo-l3'), fecha: d(29), resultados: res(), resultadoGlobal: 'negativo', tipoSangreConfirmado: 'B+', laboratoristaId: lab.id });
-  fracciones.upsert({ id: 'demo-fr3', donacionId: 'demo-l3', codigo: codigoDonacion('demo-l3'), fecha: d(29), productos: [{ componente: 'Concentrado Globular', unidades: 1, volumenMl: 250 }, { componente: 'Plasma Fresco Congelado', unidades: 1, volumenMl: 200 }], laboratoristaId: lab.id });
-
-  don('demo-l4', 'demo-5', 'Pedro Sánchez', 'V-14555666', 'A+', 15, 'descartada');
-  pruebas.upsert({ id: 'demo-pr4', donacionId: 'demo-l4', codigo: codigoDonacion('demo-l4'), fecha: d(14), resultados: res({ hbsag: 'reactivo' }), resultadoGlobal: 'positivo', tipoSangreConfirmado: 'A+', laboratoristaId: lab.id });
-  positivos.upsert({ id: 'demo-cs4', pruebaId: 'demo-pr4', donacionId: 'demo-l4', donanteId: 'demo-5', codigo: codigoDonacion('demo-l4'), prueba: 'hbsag', enfermedad: 'Hepatitis B (HBsAg)', fecha: d(14), estado: 'pendiente' });
-  const p = registro.get('demo-5');
-  if (p) registro.upsert({ ...p, diferido: { desde: d(14) } });
-}
+// ------------------------------------------------------------------ Datos de ejemplo
+/** Un solo conjunto de datos de ejemplo para todos los roles (ver lib/demo). */
+export const seedLabDemo = seedDemo;

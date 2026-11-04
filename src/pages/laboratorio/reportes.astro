@@ -90,11 +90,10 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
   .chip:hover { border-color: var(--accent); }
   .print-only { display: none; }
   @media print {
-    #site-header, #sidebar-drawer, #sidebar-overlay, .no-print, #blud-toast, .blud-cursor { display: none !important; }
+    #site-header, #sidebar-drawer, #sidebar-overlay, .no-print, #blud-toast { display: none !important; }
     .print-only { display: block !important; margin-bottom: 1rem; }
     body { background: #fff !important; color: #000 !important; }
     .panel { box-shadow: none !important; break-inside: avoid; border-color: #ccc !important; }
-    html.has-blud-cursor, html.has-blud-cursor * { cursor: auto !important; }
   }
 </style>
 

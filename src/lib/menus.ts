@@ -89,6 +89,21 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/laboratorio/configuracion', icon: 'settings' },
     ],
   },
+  director: {
+    titulo: 'Dirección',
+    items: [
+      { label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
+      { label: 'Solicitudes', hint: 'Aprobar y dar seguimiento', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { label: 'Nueva solicitud', hint: 'Solicitud de transfusión', href: '/director/solicitudes/registro', icon: 'file' },
+      { label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
+      { label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
+      { label: 'Reportes', hint: 'Consolidado y exportación', href: '/director/reportes', icon: 'chart' },
+    ],
+    cuenta: [
+      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
+      { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
+    ],
+  },
   soporte: {
     titulo: 'Soporte',
     items: [

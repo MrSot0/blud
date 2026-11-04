@@ -1,5 +1,4 @@
 ---
-import DropField from '../DropField.astro';
 // Alerts.astro - Solicitudes urgentes de sangre.
 // Vista pública: solo tipo de sangre, centro y urgencia. Los nombres de pacientes,
 // las unidades y el inventario son datos internos que solo gestionan los administradores.
@@ -58,8 +57,7 @@ const pretty = (t: string) => t.replace('-', '−');
 const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positivo');
 ---
 
-<section id="urgencias" class="relative isolate border-y border-line py-24 lg:py-28 dot-pattern-section">
-  <DropField seed={2} />
+<section id="urgencias" class="relative isolate border-y border-line py-24 lg:py-28 bg-sunken">
 
   <div class="container-blud relative z-10">
     <div class="section-head" data-reveal>
@@ -147,12 +145,3 @@ const spoken = (t: string) => t.replace('-', ' negativo').replace('+', ' positiv
   </div>
 </section>
 
-<style>
-  /* Combinamos el color de fondo sunken con el patrón de puntos para que se muestre correctamente */
-  .dot-pattern-section {
-    background-color: var(--sunken, #f7f9fa); /* Reemplaza o complementa bg-sunken */
-    background-image: radial-gradient(color-mix(in srgb, var(--accent) 40%, #000000 20%) 1.5px, transparent 1.5px);
-    background-size: 24px 24px;
-    background-position: center;
-  }
-</style>
