@@ -1,15 +1,48 @@
 ---
 // src/layouts/LayoutD.astro
-import LayoutPortal from './LayoutPortal.astro';
+import '../styles/global.css'; // ajusta la ruta si tu CSS global está en otro lado
+import Navbar from '../components/app/Navbar.astro';
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const { title = 'BLUD | Dirección', description = 'Panel de dirección de BLUD.' } = Astro.props;
+const { title = 'BLUD | Director', description = 'Panel de operación de BLUD.' } = Astro.props;
 ---
 
-<LayoutPortal role="director" title={title} description={description}>
-  <slot />
-</LayoutPortal>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+
+    <!-- Tema antes de pintar (mismo key que usa el Navbar) -->
+    <script is:inline>
+      (function () {
+        try {
+          var t = localStorage.getItem('blud-theme');
+          if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body class="min-h-dvh antialiased">
+    <Navbar role="director" />
+    <main id="main">
+      <slot />
+    </main>
+
+    <!-- Solo operadores: sin sesión va a /login; con otro rol, a su propia zona -->
+    <script>
+      import { guard } from '../lib/roles';
+      guard(['director']);
+    </script>
+  </body>
+</html>

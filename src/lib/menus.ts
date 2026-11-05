@@ -66,6 +66,8 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Prescribir', hint: 'Cargar orden médica', href: '/operador/prescribir', icon: 'file' },
       { label: 'Entregas', hint: 'Despachar pedidos', href: '/operador/entregas', icon: 'truck' },
       { label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
+      { label: 'Hemovigilancia', hint: 'Registro de eventos transfusionales', href: '/operador/hemovigilancia', icon: 'alert' },
+
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/operador/perfil', icon: 'user' },
@@ -112,6 +114,25 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/soporte/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/soporte/configuracion', icon: 'settings' },
+    ],
+  },
+    director: {
+    titulo: 'Director',
+    items: [
+      { label: 'Dashboard', hint: 'Resumen estadistico', href: '/director/dashboard', icon: 'dashboard' },
+      { label: 'Mis solicitudes', hint: 'Bandeja y respuestas', href: '/director/solicitudes/solicitudes', icon: 'inbox' },
+      { label: 'Historial de solicitudes', hint: 'Historial de solicitudes', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { label: 'Registro de solicitudes', hint: 'Registro de solicitudes', href: '/director/solicitudes/registro', icon: 'inbox' },
+      { label: 'Usuarios', hint: 'Gestionar usuarios del sistema', href: '/director/operadores/#registro', icon: 'users' },
+      { label: 'Reportes', hint: 'Estadísticas y exportación', href: '/director/reportes', icon: 'chart' },
+      { label: 'Inventario', hint: 'Gestionar inventario del sistema', href: '/director/inventario', icon: 'package' },
+      { label: 'Hemovigilancia', hint: 'Gestionar hemovigilancia', href: '/director/hemovigilancia', icon: 'alert' },
+
+
+    ],
+    cuenta: [
+      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
+      { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
     ],
   },
 };
