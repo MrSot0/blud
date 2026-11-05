@@ -2,7 +2,6 @@
 // src/layouts/LayoutD.astro
 import '../styles/global.css'; // ajusta la ruta si tu CSS global está en otro lado
 import Navbar from '../components/app/Navbar.astro';
-import CustomCursor from '../components/CustomCusor.astro';
 
 interface Props {
   title?: string;
@@ -35,7 +34,6 @@ const { title = 'BLUD | Director', description = 'Panel de operación de BLUD.' 
   </head>
 
   <body class="min-h-dvh antialiased">
-    <CustomCursor />
     <Navbar role="director" />
     <main id="main">
       <slot />
