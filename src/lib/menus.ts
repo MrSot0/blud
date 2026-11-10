@@ -93,11 +93,13 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     titulo: 'Dirección',
     items: [
       { label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
-      { label: 'Solicitudes', hint: 'Aprobar y dar seguimiento', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { label: 'Mis solicitudes', hint: 'Bandeja y respuestas', href: '/director/solicitudes/solicitudes', icon: 'inbox' },
+      { label: 'Historial', hint: 'Aprobar y dar seguimiento', href: '/director/solicitudes/historial', icon: 'clock' },
       { label: 'Nueva solicitud', hint: 'Solicitud de transfusión', href: '/director/solicitudes/registro', icon: 'file' },
       { label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
       { label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
       { label: 'Reportes', hint: 'Consolidado y exportación', href: '/director/reportes', icon: 'chart' },
+      { label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
@@ -114,25 +116,6 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/soporte/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/soporte/configuracion', icon: 'settings' },
-    ],
-  },
-    director: {
-    titulo: 'Director',
-    items: [
-      { label: 'Dashboard', hint: 'Resumen estadistico', href: '/director/dashboard', icon: 'dashboard' },
-      { label: 'Mis solicitudes', hint: 'Bandeja y respuestas', href: '/director/solicitudes/solicitudes', icon: 'inbox' },
-      { label: 'Historial de solicitudes', hint: 'Historial de solicitudes', href: '/director/solicitudes/historial', icon: 'inbox' },
-      { label: 'Registro de solicitudes', hint: 'Registro de solicitudes', href: '/director/solicitudes/registro', icon: 'inbox' },
-      { label: 'Usuarios', hint: 'Gestionar usuarios del sistema', href: '/director/operadores/#registro', icon: 'users' },
-      { label: 'Reportes', hint: 'Estadísticas y exportación', href: '/director/reportes', icon: 'chart' },
-      { label: 'Inventario', hint: 'Gestionar inventario del sistema', href: '/director/inventario', icon: 'package' },
-      { label: 'Hemovigilancia', hint: 'Gestionar hemovigilancia', href: '/director/hemovigilancia', icon: 'alert' },
-
-
-    ],
-    cuenta: [
-      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
-      { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
     ],
   },
 };
