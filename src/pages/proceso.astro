@@ -117,7 +117,7 @@ const escenas = [
 // La cola es una sola línea continua en zigzag: baja por el lado derecho de la etapa, cruza por la franja inferior y sigue bajando por el
 // izquierdo en la etapa siguiente (y al revés). Sale y entra en el mismo punto entre etapas, así que parece la misma línea.
 const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
-  const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 40;
+  const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 96;
   const r = Math.round;
   return `M${r(xs)} -28 L${r(xs)} ${r(yb - 90)} C ${r(xs)} ${r(yb - 30)}, ${r(xs + dir * 50)} ${yb}, ${r(xs + dir * 110)} ${yb} L${r(xe - dir * 110)} ${yb} C ${r(xe - dir * 50)} ${yb}, ${r(xe)} ${r(yb + 30)}, ${r(xe)} ${r(yb + 90)} L${r(xe)} ${H + 28}`;
 };
@@ -1014,10 +1014,10 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   .cola-flujo { animation: flujo 1.4s linear infinite; }
   .cola-marca { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FF6B70; border: 2px solid #fff; box-shadow: 0 0 0 5px rgba(217, 83, 79, 0.22), 0 4px 10px rgba(122, 9, 16, 0.4); will-change: transform; }
   /* Carril libre a la derecha: las etapas reservan ese espacio para la cola y su lupa. */
-  .escena-stage :global(.container-blud) { padding-inline: 6.6rem; padding-bottom: 5rem; }
-  @media (max-width: 1023px) { .escena-stage :global(.container-blud) { padding-inline: 1.9rem; padding-bottom: 4.2rem; } .lupa { display: none; } }
-  .lupa { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 0.35rem 0.35rem 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.94); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); opacity: var(--lo, 1); scale: var(--ls, 1); transform-origin: 100% 100%; will-change: transform; }
-  .lupa-cristal { position: relative; flex: none; width: 2.9rem; height: 2.9rem; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D8323A, #8E0F16 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 -6px 10px rgba(60, 0, 6, 0.35); }
+  .escena-stage :global(.container-blud) { padding-inline: 6.6rem; padding-top: 4.6rem; padding-bottom: 5rem; }
+  @media (max-width: 1023px) { .escena-stage :global(.container-blud) { padding-inline: 1.9rem; padding-top: 4.4rem; padding-bottom: 4.2rem; } .lupa { padding-right: 0.8rem; } .lupa-cristal { width: 2.2rem; height: 2.2rem; } .lupa-texto b { font-size: 0.85rem; } }
+  .lupa { position: absolute; left: 0; top: 0; display: flex; flex-direction: row; align-items: center; gap: 0.6rem; padding: 0.3rem 1.1rem 0.3rem 0.3rem; border-radius: 999px; background: rgba(255, 255, 255, 0.95); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); opacity: var(--lo, 1); scale: var(--ls, 1); transform-origin: 100% 50%; will-change: transform; }
+  .lupa-cristal { position: relative; flex: none; width: 2.5rem; height: 2.5rem; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D8323A, #8E0F16 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 -6px 10px rgba(60, 0, 6, 0.35); }
   .lupa-cristal::after { content: ''; position: absolute; left: 18%; top: 12%; width: 38%; height: 20%; border-radius: 50%; background: rgba(255, 255, 255, 0.5); transform: rotate(-30deg); }
   /* Glóbulos vistos de cerca: se acercan al aparecer la lupa y siguen a la deriva. */
   .lupa-cristal i { position: absolute; width: 1.3rem; height: 0.85rem; border-radius: 50%; background: radial-gradient(circle at 50% 50%, #7A0910 28%, #E5484D 30%); box-shadow: inset 0 0 0 1px rgba(255, 190, 192, 0.5); scale: var(--lz, 1); animation: lupa-deriva 5s ease-in-out infinite alternate; }
@@ -1025,7 +1025,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   .lupa-cristal i:nth-child(2) { left: 48%; top: 46%; rotate: 25deg; animation-delay: -1.7s; animation-duration: 4s; }
   .lupa-cristal i:nth-child(3) { left: 14%; top: 66%; rotate: 8deg; animation-delay: -3s; animation-duration: 6s; }
   @keyframes lupa-deriva { from { translate: -5px 0; } to { translate: 7px 2px; } }
-  .lupa-texto { display: flex; align-items: center; gap: 0.45rem; writing-mode: vertical-rl; rotate: 180deg; white-space: nowrap; line-height: 1; }
+  .lupa-texto { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; line-height: 1; }
   .lupa-texto small { font-size: 0.65rem; letter-spacing: 0.14em; color: #B3121A; font-weight: 700; }
   .lupa-texto b { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.02em; color: #1E2430; }
 
@@ -1037,7 +1037,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   .escena[data-escena='evaluacion'] .escena-fondo, .escena[data-escena='cuarentena'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
   .escena[data-escena='serologia'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
   .escena[data-escena='fraccionamiento'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
-  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 8rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
+  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 10.5rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
 
   /* El texto saliente se va rápido y el entrante llega después: nunca se ven dos encimados. */
   .paso { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(22px); filter: blur(3px); transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out), filter 140ms var(--ease-out); pointer-events: none; }
@@ -1329,7 +1329,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   const tramo = (v: number, a: number, b: number) => utils.clamp((v - a) / (b - a), 0, 1);
   // Misma forma que en el servidor (zigzag): baja por un carril, cruza por la franja inferior y sale por el otro lado.
   const colaD = (i: number, W: number, H: number, xL: number, xR: number) => {
-    const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 40;
+    const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 96;
     const r = Math.round;
     return `M${r(xs)} -28 L${r(xs)} ${r(yb - 90)} C ${r(xs)} ${r(yb - 30)}, ${r(xs + dir * 50)} ${yb}, ${r(xs + dir * 110)} ${yb} L${r(xe - dir * 110)} ${yb} C ${r(xe - dir * 50)} ${yb}, ${r(xe)} ${r(yb + 30)}, ${r(xe)} ${r(yb + 90)} L${r(xe)} ${H + 28}`;
   };
@@ -1358,7 +1358,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     e.cola.querySelector('svg')!.setAttribute('viewBox', `0 0 ${W} ${H}`);
     e.cola.querySelectorAll('.cola-p').forEach((p) => p.setAttribute('d', d));
     e.largo = e.ruta.getTotalLength();
-    e.tramo1 = H - 40 - 62; // largo del primer tramo recto (baja por el carril)
+    e.tramo1 = H - 96 - 62; // largo del primer tramo recto (baja por el carril)
     e.ancho = W;
     e.alto = H;
     e.derecha = Number(e.cola.dataset.i) % 2 === 0;
@@ -1389,10 +1389,11 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     const pt = e.ruta.getPointAtLength(Number.isFinite(largoPos) ? utils.clamp(largoPos, 0, e.largo) : 0);
     e.marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
     e.marca.style.opacity = String(tramo(m, 0.01, 0.05) * (1 - tramo(m, 0.97, 1)));
-    // La lupa (vertical) va junto al tramo recto: a la izquierda del tubo si baja por la derecha y a la derecha si baja por la izquierda.
-    const pw = e.lupa.offsetWidth, ph = e.lupa.offsetHeight;
-    const arriba = utils.clamp(pt.y - ph - 12, 8, e.alto - ph - 8);
-    e.lupa.style.transform = `translate(${e.derecha ? pt.x - 22 - pw : pt.x + 22}px, ${arriba}px)`;
+    // La lupa (horizontal) cuelga arriba del carril: a la izquierda del tubo si baja por la derecha y a la derecha si baja por la izquierda.
+    const pw = e.lupa.offsetWidth, carril = e.ruta.getPointAtLength(0).x;
+    const lx = utils.clamp(e.derecha ? carril - 20 - pw : carril + 20, 8, Math.max(8, e.ancho - pw - 8));
+    e.lupa.style.transformOrigin = e.derecha ? '100% 50%' : '0% 50%';
+    e.lupa.style.transform = `translate(${lx}px, 12px)`;
     // La lupa hace un zoom suave al entrar y se despide al llegar al final de la etapa.
     const entra = tramo(m, 0, 0.07), sale = tramo(m, 0.7, 0.8);
     e.lupa.style.setProperty('--ls', String(0.55 + entra * 0.45 - sale * 0.1));
