@@ -1,0 +1,134 @@
+// src/lib/ficha.ts
+// Ficha del donante para el personal: la usan /verificar (QR escaneado) y Operador → Donantes.
+// Con base real la entrega blud_donante_ficha() (solo roles del personal); en modo demo sale del registro local.
+
+import { buscarRegistro, donaciones, normCedula, type RegistroDonante } from './db';
+import { sb, usaSupabase } from './supabase';
+import { edadDe, fmtFecha } from './donante';
+
+export interface Ficha {
+  id: string;
+  nombres?: string;
+  apellidos?: string;
+  cedula?: string;
+  telefono?: string;
+  email?: string;
+  nacimiento?: string;
+  sexo?: string;
+  sangre?: string;
+  registrado?: string;
+  verificado?: boolean;
+  /** Ruta en el bucket fotos-donantes (base real) o data URL (demo). */
+  foto?: string;
+  donaciones?: number;
+  ultimaDonacion?: string;
+  proximaCita?: { centro: string; date: string; time: string };
+}
+
+/** Próxima cita del donante en el libro de citas de este navegador (modo demo). */
+function citaLocal(email?: string): Ficha['proximaCita'] {
+  if (!email) return undefined;
+  const hoy = new Date().toISOString().slice(0, 10);
+  try {
+    const book = JSON.parse(localStorage.getItem('blud-appointments') || '{}') as Record<string, { centerName: string; date: string; time: string }[]>;
+    const c = (book[email.toLowerCase()] ?? [])
+      .filter((a) => a.date >= hoy)
+      .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))[0];
+    return c ? { centro: c.centerName, date: c.date, time: c.time } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Ficha armada con el registro local (y con el perfil, si el donante usa este mismo navegador). */
+export function fichaDeRegistro(r: RegistroDonante): Ficha {
+  let perfil: Record<string, string> = {};
+  try { perfil = JSON.parse(localStorage.getItem('blud-donor') || '{}'); } catch {}
+  const mismo = perfil.id === r.id || (!!perfil.cedula && normCedula(perfil.cedula) === r.cedula);
+  const [nombres, ...resto] = r.nombreCompleto.split(/\s+/);
+  const dons = donaciones.all()
+    .filter((d) => d.donanteId === r.id || normCedula(d.donanteCedula) === r.cedula)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  return {
+    id: r.id,
+    nombres: mismo ? perfil.firstname : nombres,
+    apellidos: mismo ? perfil.lastname : resto.join(' '),
+    cedula: r.cedula, telefono: r.telefono, email: r.email, nacimiento: r.nacimiento, sexo: r.sexo, sangre: r.sangre,
+    registrado: r.fechaRegistro, verificado: r.estado === 'verificado', foto: mismo ? perfil.foto : undefined,
+    donaciones: dons.length, ultimaDonacion: dons[0]?.fecha, proximaCita: citaLocal(r.email),
+  };
+}
+
+/**
+ * Busca la ficha por el contenido del QR (enlace /verificar?id=…), el ID BLD-… o la cédula.
+ * Devuelve null si no existe; lanza un Error con el motivo si la base rechaza la consulta.
+ */
+export async function obtenerFicha(q: string): Promise<Ficha | null> {
+  if (!usaSupabase()) {
+    const r = buscarRegistro(q);
+    return r ? fichaDeRegistro(r) : null;
+  }
+  const { data, error } = await sb()!.rpc('blud_donante_ficha', { p_q: q });
+  if (error) throw new Error(error.message);
+  return (data as Ficha | null) ?? null;
+}
+
+/** URL para mostrar la foto: data URL (demo) o URL firmada de 10 minutos (el personal puede leer el bucket). */
+export async function urlFotoFicha(foto?: string): Promise<string | null> {
+  if (!foto) return null;
+  if (foto.startsWith('data:')) return foto;
+  const c = sb();
+  if (!c) return null;
+  const { data } = await c.storage.from('fotos-donantes').createSignedUrl(foto, 600);
+  return data?.signedUrl ?? null;
+}
+
+const nombreDe = (f: Ficha) => `${f.nombres ?? ''} ${f.apellidos ?? ''}`.trim() || 'Donante BLUD';
+
+/** Rellena un componente FichaDonante con la ficha. Devuelve cuando la foto (si hay) ya está puesta. */
+export async function pintarFicha(card: HTMLElement, f: Ficha): Promise<void> {
+  const set = (k: string, v: string | number | undefined | null) => {
+    const el = card.querySelector(`[data-ff="${k}"]`);
+    if (el) el.textContent = v === undefined || v === null || v === '' ? '—' : String(v);
+  };
+  const nombre = nombreDe(f);
+  set('nombre', nombre);
+  set('iniciales', nombre.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?');
+  set('id', f.id);
+  set('sangre', f.sangre);
+  set('cedula', f.cedula);
+  set('telefono', f.telefono);
+  const edad = f.nacimiento ? edadDe(f.nacimiento) : null;
+  set('nacimiento', f.nacimiento ? `${fmtFecha(f.nacimiento)}${edad !== null ? ` (${edad} años)` : ''}` : '');
+  set('sexo', f.sexo === 'F' ? 'Femenino' : f.sexo === 'M' ? 'Masculino' : '');
+  set('email', f.email);
+  set('registrado', f.registrado ? fmtFecha(f.registrado) : '');
+  set('donaciones', f.donaciones ?? 0);
+  set('ultima', f.ultimaDonacion ? fmtFecha(f.ultimaDonacion) : 'Primera vez');
+  set('cita', f.proximaCita
+    ? `${f.proximaCita.centro} · ${fmtFecha(f.proximaCita.date, { weekday: 'long', day: 'numeric', month: 'long' })} · ${f.proximaCita.time}`
+    : 'Sin cita agendada');
+
+  const estado = card.querySelector<HTMLElement>('[data-ff-estado]');
+  if (estado) {
+    estado.textContent = f.verificado ? 'Identidad verificada' : 'Sin verificar';
+    estado.dataset.ok = String(!!f.verificado);
+  }
+
+  const img = card.querySelector<HTMLImageElement>('[data-ff-foto]')!;
+  const sinFoto = card.querySelector<HTMLElement>('[data-ff-sinfoto]');
+  img.hidden = true;
+  img.removeAttribute('src');
+  card.hidden = false;
+  // Si se pinta otra ficha mientras llega la foto, la foto vieja no debe aparecer.
+  const turno = String(Math.random());
+  card.dataset.turno = turno;
+  const url = await urlFotoFicha(f.foto);
+  if (card.dataset.turno !== turno) return;
+  if (url) {
+    img.src = url;
+    img.alt = `Foto de ${nombre}`;
+    img.hidden = false;
+  }
+  if (sinFoto) sinFoto.hidden = !!url;
+}

@@ -1,5 +1,6 @@
 ---
 // src/pages/operador/donantes.astro
+import FichaDonante from '../../components/app/FichaDonante.astro';
 import LayoutOperador from '../../layouts/LayoutOperador.astro';
 import { BLOOD_TYPES } from '../../lib/db';
 ---
@@ -40,23 +41,17 @@ import { BLOOD_TYPES } from '../../lib/db';
             <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Buscar</button>
           </form>
 
-          <div id="resultado" class="hidden rounded-control border border-line bg-sunken p-4 space-y-3">
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p id="res-nombre" class="font-bold text-ink"></p>
-                <p id="res-cedula" class="text-xs text-ink-3"></p>
+          <div id="resultado" class="hidden mx-auto w-full max-w-xl">
+            <FichaDonante id="res-ficha">
+              <div id="res-verificar" class="space-y-3">
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" id="res-check" class="size-4 mt-0.5 rounded text-accent border-line-strong focus:ring-accent" />
+                  <span class="text-sm text-ink-2">Comprobé la cédula física: la foto y los datos coinciden con esta persona.</span>
+                </label>
+                <button type="button" id="btn-verificar" class="btn btn-primary w-full" disabled>Verificar y aprobar</button>
               </div>
-              <span id="res-sangre" class="blood-chip"></span>
-            </div>
-            <p class="text-xs text-ink-2">Estado: <span id="res-estado" class="font-bold"></span></p>
-            <div id="res-verificar" class="space-y-3">
-              <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" id="res-check" class="size-4 mt-0.5 rounded text-accent border-line-strong focus:ring-accent" />
-                <span class="text-sm text-ink-2">Comprobé la cédula física y coincide con estos datos.</span>
-              </label>
-              <button type="button" id="btn-verificar" class="btn btn-primary w-full" disabled>Verificar y aprobar</button>
-            </div>
-            <a id="res-donar" href="/operador/donaciones" class="hidden btn btn-secondary w-full">Registrar donación</a>
+              <a id="res-donar" href="/operador/donaciones" class="hidden btn btn-primary w-full">Registrar donación</a>
+            </FichaDonante>
           </div>
           <p id="res-vacio" class="hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn"></p>
         </div>
@@ -144,6 +139,8 @@ import { BLOOD_TYPES } from '../../lib/db';
 <script>
   import { buscarDonante, esc, fmtFecha, getDonantesOp, getPorVerificar, onDb, registrarDonanteOp, toast, verificarDonanteOp } from '../../lib/operador';
   import type { RegistroDonante } from '../../lib/operador';
+  import { fichaDeRegistro, obtenerFicha, pintarFicha } from '../../lib/ficha';
+  import { usaSupabase } from '../../lib/supabase';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -160,17 +157,21 @@ import { BLOOD_TYPES } from '../../lib/db';
       actual = d;
       $('#res-vacio').classList.add('hidden');
       $('#resultado').classList.remove('hidden');
-      $('#res-nombre').textContent = d.nombreCompleto;
-      $('#res-cedula').textContent = `${d.cedula} · ${d.id}`;
-      $('#res-sangre').textContent = d.sangre || '—';
       const ver = d.estado === 'verificado';
-      const est = $('#res-estado');
-      est.textContent = ver ? 'Verificado' : 'Pre-registrado en la app';
-      est.className = `font-bold ${ver ? 'text-ok' : 'text-warn'}`;
       $('#res-verificar').classList.toggle('hidden', ver);
       $('#res-donar').classList.toggle('hidden', !ver);
       ($('#res-check') as HTMLInputElement).checked = false;
       ($('#btn-verificar') as HTMLButtonElement).disabled = true;
+
+      // Primero lo que ya está en el registro; luego la ficha completa (foto, teléfono, citas) de la base.
+      const card = $('#res-ficha');
+      pintarFicha(card, fichaDeRegistro(d));
+      if (usaSupabase()) {
+        obtenerFicha(d.id)
+          .then((f) => { if (f && actual?.id === d.id) pintarFicha(card, { ...f, verificado: f.verificado || ver }); })
+          .catch(() => {});
+      }
+      $('#resultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     };
 
     const buscar = (q: string) => {
@@ -206,7 +207,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       if (!actual) return;
       const r = verificarDonanteOp(actual.id);
       if (!r.ok) return toast(r.motivo);
-      toast('¡Donante verificado! Ya puede donar.');
+      toast('Donante verificado. Ya puede donar.');
       mostrar(r.data);
     });
 
@@ -226,7 +227,7 @@ import { BLOOD_TYPES } from '../../lib/db';
         return;
       }
       err.classList.add('hidden');
-      toast(r.aviso ?? '¡Donante registrado!');
+      toast(r.aviso ?? 'Donante registrado.');
       ($('#form-nuevo') as HTMLFormElement).reset();
       mostrar(r.data);
     });
