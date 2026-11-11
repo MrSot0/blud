@@ -1,0 +1,69 @@
+<!--
+  BLUD · Correo de confirmación de registro.
+  Supabase → Authentication → Emails → Templates → "Confirm signup".
+  Asunto: Confirma tu correo para activar tu cuenta de BLUD
+  El enlace lleva directo a /login con un código de un solo uso; la página lo valida (verifyOtp)
+  e inicia sesión. Necesita que Site URL apunte al sitio (https://blud-khaki.vercel.app).
+-->
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light only" />
+    <title>Confirma tu correo</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1d2129;">
+    <div style="display:none;max-height:0;overflow:hidden;">Abre el enlace para activar tu cuenta de donante.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #e4e6eb;">
+            <tr>
+              <td style="background:#CA2B2B;padding:28px 32px;">
+                <p style="margin:0;font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;">BLUD<span style="color:#ffd5d5;">.</span></p>
+                <p style="margin:6px 0 0;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#ffd5d5;">Red de donación de sangre</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:800;color:#1d2129;">
+                  Confirma tu correo{{ if .Data.full_name }}, {{ .Data.full_name }}{{ end }}
+                </h1>
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a505c;">
+                  Gracias por unirte a BLUD. Para activar tu cuenta de donante y entrar por primera vez, confirma que
+                  <strong style="color:#1d2129;">{{ .Email }}</strong> es tu correo.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                  <tr>
+                    <td style="border-radius:12px;background:#CA2B2B;">
+                      <a href="{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">Confirmar mi correo</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6b7280;">
+                  Al confirmar entrarás directo a tu perfil. Allí completas tus datos y tu foto para recibir tu carnet digital y agendar tu primera donación.
+                </p>
+                <p style="margin:0;font-size:13px;line-height:1.6;color:#6b7280;">
+                  El enlace funciona una sola vez. Si vence, entra en BLUD con tu correo y pide uno nuevo.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;background:#f8f9fb;border-top:1px solid #e4e6eb;">
+                <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#6b7280;">
+                  Si el botón no funciona, copia este enlace en tu navegador:<br />
+                  <a href="{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&type=email" style="color:#CA2B2B;word-break:break-all;">{{ .SiteURL }}/login?token_hash={{ .TokenHash }}&amp;type=email</a>
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;">
+                  Si no creaste una cuenta en BLUD, ignora este correo: sin confirmarlo, la cuenta no se activa.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-size:11px;color:#9aa0aa;">BLUD · Maracaibo y San Francisco, Zulia</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

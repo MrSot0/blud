@@ -180,7 +180,8 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
     });
 
     // Vuelve del enlace del correo de confirmación (/login?confirmado=1): entra directo.
-    if (new URLSearchParams(location.search).has('confirmado') || /error_description|access_token/.test(location.hash)) {
+    const qs = new URLSearchParams(location.search);
+    if (qs.has('confirmado') || qs.has('token_hash') || /error_description|access_token/.test(location.hash)) {
       completarConfirmacion().then((r) => {
         history.replaceState(null, '', '/login');
         if (!r) return showSuccess('Tu correo está confirmado. Ya puedes iniciar sesión.');

@@ -133,7 +133,7 @@ import Icon from '../components/Icon.astro';
       resetForm.classList.remove('hidden');
       resetForm.classList.add('flex');
       pass.focus();
-    });
+    }, (error) => showError(`${error} Escribe tu correo para recibir otro enlace.`));
 
     [pass, conf].forEach((i) => i.addEventListener('input', () => showError(null)));
     resetForm.addEventListener('submit', (e) => {

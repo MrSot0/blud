@@ -219,11 +219,38 @@ export async function solicitarRecuperacion(email: string): Promise<{ ok: true }
   }
 }
 
-/** Avisa cuando el visitante llega desde el enlace del correo (sesión temporal de recuperación). */
-export function alLlegarDeRecuperacion(cb: () => void): void {
+/**
+ * Enlaces de los correos de BLUD (supabase/templates): llevan ?token_hash=…&type=… directo a la página.
+ * Se valida aquí con verifyOtp, así no dependen de la lista de redirecciones de Supabase. Limpia la URL.
+ */
+async function verificarEnlace(tipos: string[]): Promise<{ ok: true } | { ok: false; error: string } | null> {
+  const c = sb();
+  const p = new URLSearchParams(location.search);
+  const token_hash = p.get('token_hash');
+  const type = p.get('type') ?? '';
+  if (!c || !token_hash || !tipos.includes(type)) return null;
+  history.replaceState(null, '', location.pathname);
+  const { error } = await c.auth.verifyOtp({ token_hash, type: type as 'email' | 'signup' | 'recovery' });
+  if (!error) return { ok: true };
+  return { ok: false, error: /expired|invalid|not found/i.test(error.message)
+    ? 'El enlace venció o ya se usó. Pide uno nuevo.'
+    : 'No pudimos validar el enlace. Pide uno nuevo.' };
+}
+
+/**
+ * Avisa cuando el visitante llega desde el enlace del correo de recuperación (sesión temporal).
+ * Acepta el enlace de las plantillas de BLUD (?token_hash) y el de Supabase por defecto (#access_token).
+ */
+export function alLlegarDeRecuperacion(cb: () => void, alFallar?: (error: string) => void): void {
   const c = sb();
   if (!c) return;
-  c.auth.onAuthStateChange((evento) => { if (evento === 'PASSWORD_RECOVERY') cb(); });
+  let avisado = false;
+  const listo = () => { if (!avisado) { avisado = true; cb(); } };
+  c.auth.onAuthStateChange((evento) => { if (evento === 'PASSWORD_RECOVERY') listo(); });
+  verificarEnlace(['recovery']).then((r) => {
+    if (r?.ok) listo();
+    else if (r && !r.ok) alFallar?.(r.error);
+  });
 }
 
 /** Guarda la contraseña nueva y cierra la sesión temporal: después se entra con ella de forma normal. */
@@ -304,6 +331,9 @@ export async function reenviarConfirmacion(email: string): Promise<{ ok: true } 
 export async function completarConfirmacion(): Promise<{ ok: true; user: Session } | { ok: false; error: string } | null> {
   const c = sb();
   if (!c) return null;
+  // Enlace de la plantilla de BLUD: /login?token_hash=…&type=email
+  const enlace = await verificarEnlace(['email', 'signup']);
+  if (enlace && !enlace.ok) return { ok: false, error: `${enlace.error} Inicia sesión para recibir otro.` };
   const params = new URLSearchParams(location.hash.slice(1) || location.search);
   const fallo = params.get('error_description') ?? new URLSearchParams(location.search).get('error_description');
   if (fallo) {

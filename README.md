@@ -78,7 +78,8 @@ Para conectarlo:
 3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
 4. En Supabase, **Authentication → Sign In / Providers → Email**, deja activado **Confirm email**: quien se registra debe abrir el enlace que le llega por correo antes de poder entrar.
 5. En **Authentication → URL Configuration**, pon la dirección del sitio en **Site URL** (por ejemplo `https://blud-khaki.vercel.app`) y añade `https://blud-khaki.vercel.app/**` en **Redirect URLs**. Sin esto, los enlaces de confirmación y de recuperación de contraseña llevan a `localhost`.
-6. El correo de Supabase por defecto solo envía unos pocos mensajes por hora. Para usuarios reales, configura un SMTP propio en **Authentication → Emails → SMTP Settings**.
+6. En **Authentication → Emails → Templates**, pega las plantillas de BLUD: [`supabase/templates/confirmacion.html`](supabase/templates/confirmacion.html) en **Confirm signup** y [`supabase/templates/recuperacion.html`](supabase/templates/recuperacion.html) en **Reset Password** (el asunto está en el comentario de cada archivo). Sus enlaces llevan directo a `/login` y `/recuperar` con un código de un solo uso que la página valida, así que no dependen de las Redirect URLs.
+7. El correo de Supabase por defecto solo envía unos pocos mensajes por hora. Para usuarios reales, configura un SMTP propio en **Authentication → Emails → SMTP Settings**.
 
 Pruebas por rol: [`supabase/tests/adaptador.sql`](supabase/tests/adaptador.sql), sobre una copia de la base, después de la migración y el seed. Termina con un error a propósito para que todo se revierta; el mensaje trae los resultados.
 
