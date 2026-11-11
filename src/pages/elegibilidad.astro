@@ -1,5 +1,5 @@
 ---
-// elegibilidad.astro - Test de elegibilidad para donar sangre (20 preguntas)
+// elegibilidad.astro - Test de elegibilidad para donar sangre (ficha de datos físicos + preguntas)
 import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
 import BackButton from '../components/BackButton.astro';
@@ -9,7 +9,7 @@ import { questions } from '../data/eligibility';
 
 <Layout
   title="BLUD | Test de elegibilidad"
-  description="Responde 20 preguntas y descubre si puedes donar sangre o cuánto tiempo debes esperar. Es una guía orientativa; la decisión final es del personal médico."
+  description={`Indica tu edad, peso y altura, responde ${questions.length} preguntas y descubre si puedes donar sangre o cuánto tiempo debes esperar. Es una guía orientativa; la decisión final es del personal médico.`}
 >
   <!-- Encabezado con color estilo Footer -->
   <section data-cursor-white class="relative overflow-hidden bg-[color-mix(in_srgb,var(--accent)_86%,black)] text-white py-6 sm:py-8 lg:py-10 shadow-md">

@@ -4,7 +4,7 @@ import type { APIRoute } from 'astro';
 import { GEMINI_API_KEY } from 'astro:env/server';
 import { centers, hoursLabel, prettyBloodType } from '../../data/centers';
 import { infoTopics, infoHref } from '../../data/info';
-import { questions } from '../../data/eligibility';
+import { questions, requisitosFisicos } from '../../data/eligibility';
 
 export const prerender = false;
 
@@ -60,12 +60,13 @@ Reglas:
 - No inventes centros, horarios ni teléfonos: usa solo los datos de abajo.
 
 Páginas útiles del sitio:
-- Test de elegibilidad (20 preguntas): /elegibilidad
+- Test de elegibilidad (ficha de edad, peso y altura + preguntas): /elegibilidad
 - Mapa de centros y agenda de citas («Agendar aquí»): /centros
 - Crear cuenta: /register · Iniciar sesión: /login
 ${topicLines}
 
 Criterios de elegibilidad (pregunta del test y plazos de espera):
+${requisitosFisicos}
 ${eligibilityLines}
 
 Centros de la red:

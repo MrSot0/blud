@@ -1,5 +1,5 @@
 ---
-// Test de elegibilidad: una pregunta a la vez, con temas, progreso y regreso.
+// Test de elegibilidad: ficha de datos físicos y luego una pregunta a la vez, con temas, progreso y descarte inmediato.
 import Icon from '../Icon.astro';
 import { categories, questions } from '../../data/eligibility';
 
@@ -18,7 +18,7 @@ const countByCategory = Object.fromEntries(
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-line">
           <h2 class="text-xs font-bold uppercase tracking-wider text-ink-3">Categorías evaluadas</h2>
           <span class="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent-ink">
-            {questions.length} preguntas
+            Ficha + {questions.length} preguntas
           </span>
         </div>
         
@@ -50,6 +50,7 @@ const countByCategory = Object.fromEntries(
             </p>
           </div>
           
+          <span id="quiz-estado" class="quiz-estado inline-flex items-center gap-1.5 rounded-full bg-ok-soft px-3 py-1 text-xs font-bold text-ok" aria-live="polite"></span>
           <button
             type="button"
             id="quiz-back"
@@ -108,6 +109,7 @@ const countByCategory = Object.fromEntries(
   .quiz-bar {
     transition: transform 420ms var(--ease-out);
   }
+  :global(.f-frac) { transition: transform 300ms var(--ease-out), background-color 200ms ease; }
 
   /* Estilos interactivos de la lista de temas (Integrados) */
   .topic { 
@@ -166,16 +168,17 @@ const countByCategory = Object.fromEntries(
 
   @media (prefers-reduced-motion: reduce) {
     :global(.quiz-enter), :global(.quiz-enter-back) { animation: none; }
-    .quiz-bar { transition: none; }
+    .quiz-bar, :global(.f-frac) { transition: none; }
   }
 </style>
 
 <script>
   import { iconSvg } from '../../lib/icons';
-  import type { CategoryId, Option, Question } from '../../data/eligibility';
+  import { FISICO, volemiaMl } from '../../data/eligibility';
+  import type { CategoryId, Option, Question, Sexo } from '../../data/eligibility';
 
   const quiz = document.getElementById('quiz');
-  const questions: Question[] = JSON.parse(quiz?.dataset.questions || '[]');
+  const todas: Question[] = JSON.parse(quiz?.dataset.questions || '[]');
   const categories: { id: CategoryId; label: string }[] = JSON.parse(quiz?.dataset.categories || '[]');
 
   const body = document.getElementById('quiz-body');
@@ -184,38 +187,208 @@ const countByCategory = Object.fromEntries(
   const stepLabel = document.getElementById('quiz-step-label');
   const bar = document.getElementById('quiz-bar');
   const backBtn = document.getElementById('quiz-back') as HTMLButtonElement | null;
+  const estado = document.getElementById('quiz-estado');
   const topics = document.querySelectorAll<HTMLElement>('[data-topic]');
 
+  /** Con este número de motivos de espera el test se detiene: la persona ya no podría donar pronto. */
+  const MAX_MOTIVOS = 3;
+
+  interface Perfil { sexo: Sexo; edad: number; peso: number; altura: number }
+  interface Motivo { title: string; text: string; badge?: string; permanent?: boolean }
+
+  let perfil: Perfil = { sexo: 'F', edad: 25, peso: 65, altura: 165 };
+  let questions: Question[] = todas;
   let step = 0;
   const answers: (number | undefined)[] = [];
 
   const escapeHtml = (s: string) =>
     s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
-
   const categoryLabel = (id: CategoryId) => categories.find((c) => c.id === id)?.label ?? '';
+  const personalizar = (t: string) => t.replace(/\{meses\}/g, perfil.sexo === 'M' ? '3' : '4');
+  const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function updateTopics(finished = false) {
+  // ------------------------------------------------------------ Ficha inicial
+  function evaluarPerfil(p: Perfil) {
+    const volemia = volemiaMl(p.sexo, p.peso, p.altura);
+    const fraccion = FISICO.volumenDonacionMl / volemia;
+    const motivos: Motivo[] = [];
+    if (p.edad < FISICO.edadMin) motivos.push({ title: 'Minoría de edad', text: 'El sistema circulatorio y la masa sanguínea todavía están en desarrollo. Extraer 450 ml puede provocar una bajada de presión importante.', badge: `Diferido hasta cumplir ${FISICO.edadMin} años.` });
+    if (p.edad > FISICO.edadMax) motivos.push({ title: 'Límite de edad superior', text: 'Después de los 65 años, perder volumen de sangre puede comprometer el riego de órganos vitales. Se necesita una valoración médica previa.', badge: 'Sujeto a autorización médica especializada.' });
+    if (p.peso < FISICO.pesoMin) motivos.push({ title: 'Peso corporal insuficiente', text: `La bolsa recoge ${FISICO.volumenDonacionMl} ml. Con menos de ${FISICO.pesoMin} kg esa cantidad es demasiado para tu cuerpo y aumenta el riesgo de desmayo.`, badge: `Diferido hasta alcanzar ${FISICO.pesoMin} kg.` });
+    else if (fraccion > FISICO.maxFraccionVolemia) motivos.push({ title: 'Volumen de sangre bajo para tu tamaño', text: `Por tu peso y tu altura, ${FISICO.volumenDonacionMl} ml serían el ${Math.round(fraccion * 100)} % de tu sangre, por encima del ${FISICO.maxFraccionVolemia * 100} % permitido.`, badge: 'Consulta en el banco: podrían valorar otra modalidad de donación.' });
+    return { volemia, fraccion, motivos };
+  }
+
+  function campo(id: keyof Perfil, label: string, unidad: string, min: number, max: number) {
+    const v = perfil[id] as number;
+    return `
+      <div class="rounded-control border border-line bg-surface p-4">
+        <div class="flex items-baseline justify-between gap-3">
+          <label for="f-${id}" class="text-sm font-semibold text-ink">${label}</label>
+          <span class="flex items-baseline gap-1">
+            <input id="f-${id}-n" type="number" inputmode="numeric" min="${min}" max="${max}" value="${v}" class="w-20 rounded-control border border-line-strong bg-surface px-2 py-1 text-right text-lg font-bold tabular text-ink" aria-label="${label} (${unidad})" />
+            <span class="text-sm text-ink-3">${unidad}</span>
+          </span>
+        </div>
+        <input id="f-${id}" type="range" min="${min}" max="${max}" step="1" value="${v}" class="mt-3 w-full accent-[var(--accent)]" />
+        <p id="f-${id}-chk" class="mt-2 text-xs font-semibold" aria-live="polite"></p>
+      </div>`;
+  }
+
+  function renderPerfil() {
+    if (!body) return;
+    progress?.classList.add('hidden');
+    updateTopics(-1);
+    body.innerHTML = `
+      <div class="quiz-enter">
+        <div class="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">Antes de empezar</div>
+        <h3 id="quiz-question" tabindex="-1" class="mt-4 text-2xl font-bold leading-snug tracking-tight text-ink focus:outline-none sm:text-3xl">Cuéntanos sobre ti</h3>
+        <p class="mt-2.5 max-w-[62ch] text-base leading-relaxed text-ink-2">Con tu sexo, edad, peso y altura calculamos cuánta sangre tienes y si los 450 ml de una donación son seguros para ti. Estos datos no se guardan.</p>
+
+        <div class="mt-7" role="radiogroup" aria-label="Sexo biológico">
+          <p class="mb-2 text-sm font-semibold text-ink">Sexo biológico</p>
+          <div class="grid grid-cols-2 gap-3">
+            ${(['F', 'M'] as Sexo[]).map((s) => `
+              <button type="button" role="radio" data-sexo="${s}" aria-checked="${perfil.sexo === s}" class="sexo rounded-control border p-3.5 text-left font-semibold transition-colors duration-200">
+                ${s === 'F' ? 'Mujer' : 'Hombre'}
+                <span class="block text-xs font-normal text-ink-3">${s === 'F' ? 'Espera 4 meses entre donaciones' : 'Espera 3 meses entre donaciones'}</span>
+              </button>`).join('')}
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          ${campo('edad', 'Edad', 'años', 16, 80)}
+          ${campo('peso', 'Peso', 'kg', 35, 150)}
+          ${campo('altura', 'Altura', 'cm', 130, 210)}
+        </div>
+
+        <div class="mt-4 rounded-control border border-line bg-sunken/40 p-5" aria-live="polite">
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <p class="text-sm font-semibold text-ink">Tu sangre</p>
+            <p class="text-sm text-ink-2">≈ <strong id="f-volemia" class="tabular text-ink"></strong> en total</p>
+          </div>
+          <div class="mt-3 h-3 overflow-hidden rounded-full bg-line">
+            <div id="f-frac" class="f-frac h-full origin-left rounded-full"></div>
+          </div>
+          <p id="f-frac-txt" class="mt-2 text-sm text-ink-2"></p>
+        </div>
+
+        <p id="f-error" class="mt-4 hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn" role="alert"></p>
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button type="button" id="f-empezar" class="btn btn-primary"></button>
+          <span class="text-xs text-ink-3"><span id="f-n">${todas.length}</span> preguntas después de esta ficha</span>
+        </div>
+      </div>`;
+
+    const leer = (id: keyof Perfil) => Number((body.querySelector<HTMLInputElement>(`#f-${id}-n`))!.value);
+    const pintar = () => {
+      const p: Perfil = { sexo: perfil.sexo, edad: leer('edad'), peso: leer('peso'), altura: leer('altura') };
+      const { volemia, fraccion, motivos } = evaluarPerfil(p);
+      const chk = (id: string, ok: boolean, txt: string) => {
+        const el = body.querySelector<HTMLElement>(`#f-${id}-chk`)!;
+        el.textContent = (ok ? '✓ ' : '✕ ') + txt;
+        el.className = `mt-2 text-xs font-semibold ${ok ? 'text-ok' : 'text-warn'}`;
+      };
+      chk('edad', p.edad >= FISICO.edadMin && p.edad <= FISICO.edadMax, `De ${FISICO.edadMin} a ${FISICO.edadMax} años`);
+      chk('peso', p.peso >= FISICO.pesoMin, `${FISICO.pesoMin} kg o más`);
+      chk('altura', fraccion <= FISICO.maxFraccionVolemia, `IMC ${(p.peso / (p.altura / 100) ** 2).toFixed(1)}`);
+      body.querySelector('#f-volemia')!.textContent = `${(volemia / 1000).toFixed(1).replace('.', ',')} litros`;
+      const frac = body.querySelector<HTMLElement>('#f-frac')!;
+      frac.style.transform = `scaleX(${Math.min(1, fraccion / 0.2)})`;
+      frac.style.background = fraccion <= FISICO.maxFraccionVolemia ? 'var(--ok)' : 'var(--warn)';
+      body.querySelector('#f-frac-txt')!.textContent =
+        `Una donación (${FISICO.volumenDonacionMl} ml) es el ${Math.round(fraccion * 100)} % de tu sangre. ` +
+        (fraccion <= FISICO.maxFraccionVolemia ? 'Tu cuerpo la repone en pocas semanas.' : `Supera el ${FISICO.maxFraccionVolemia * 100} % recomendado.`);
+      const btn = body.querySelector<HTMLButtonElement>('#f-empezar')!;
+      btn.innerHTML = motivos.length ? `Ver mi resultado ${iconSvg('arrow-right', 'size-4')}` : `Empezar el test ${iconSvg('arrow-right', 'size-4')}`;
+      const n = todas.filter((q) => !(q.soloMujer && p.sexo === 'M')).length;
+      body.querySelector('#f-n')!.textContent = String(n);
+      body.querySelectorAll<HTMLElement>('[data-sexo]').forEach((b) => {
+        const on = b.dataset.sexo === p.sexo;
+        b.setAttribute('aria-checked', String(on));
+        b.className = `sexo rounded-control border p-3.5 text-left font-semibold transition-colors duration-200 ${on ? 'border-accent bg-accent-soft/60 text-ink ring-1 ring-accent' : 'border-line-strong bg-surface text-ink-2 hover:border-ink-3'}`;
+      });
+    };
+
+    (['edad', 'peso', 'altura'] as const).forEach((id) => {
+      const rango = body.querySelector<HTMLInputElement>(`#f-${id}`)!;
+      const num = body.querySelector<HTMLInputElement>(`#f-${id}-n`)!;
+      rango.addEventListener('input', () => { num.value = rango.value; pintar(); });
+      num.addEventListener('input', () => {
+        body.querySelector('#f-error')!.classList.add('hidden');
+        if (num.value !== '') rango.value = num.value;
+        pintar();
+      });
+    });
+    body.querySelectorAll<HTMLElement>('[data-sexo]').forEach((b) => b.addEventListener('click', () => { perfil.sexo = b.dataset.sexo as Sexo; pintar(); }));
+
+    body.querySelector('#f-empezar')!.addEventListener('click', () => {
+      const err = body.querySelector<HTMLElement>('#f-error')!;
+      const fuera = (['edad', 'peso', 'altura'] as const).find((id) => {
+        const el = body.querySelector<HTMLInputElement>(`#f-${id}-n`)!;
+        const v = Number(el.value);
+        return el.value === '' || !Number.isFinite(v) || v < Number(el.min) || v > Number(el.max);
+      });
+      if (fuera) {
+        const el = body.querySelector<HTMLInputElement>(`#f-${fuera}-n`)!;
+        err.textContent = `Revisa tu ${fuera}: debe estar entre ${el.min} y ${el.max}.`;
+        err.classList.remove('hidden');
+        el.focus();
+        return;
+      }
+      perfil = { sexo: perfil.sexo, edad: leer('edad'), peso: leer('peso'), altura: leer('altura') };
+      const { motivos } = evaluarPerfil(perfil);
+      if (motivos.length) return showResult('ficha');
+      questions = todas.filter((q) => !(q.soloMujer && perfil.sexo === 'M'));
+      step = 0;
+      answers.length = 0;
+      progress?.classList.remove('hidden');
+      renderQuestion('forward', true);
+    });
+    pintar();
+  }
+
+  // ------------------------------------------------------------ Preguntas
+  function updateTopics(currentIndex: number) {
     const order = categories.map((c) => c.id);
-    const currentIndex = finished ? order.length : order.indexOf(questions[step].category);
     topics.forEach((topic) => {
       const i = order.indexOf(topic.dataset.topic as CategoryId);
-      topic.dataset.state = i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
+      topic.dataset.state = currentIndex < 0 ? 'todo' : i < currentIndex ? 'done' : i === currentIndex ? 'current' : 'todo';
     });
+  }
+
+  /** Motivos de espera de las respuestas dadas hasta la pregunta `hasta` (incluida). */
+  function motivosRespuestas(hasta = questions.length - 1): Motivo[] {
+    const out: Motivo[] = [];
+    for (let i = 0; i <= hasta; i++) {
+      const opt = questions[i]?.options[answers[i] ?? -1];
+      if (opt && !opt.eligible) out.push({ title: opt.reasonTitle || 'Motivo de espera', text: opt.medicalReason || '', badge: opt.timeframe, permanent: opt.permanent });
+    }
+    return out;
+  }
+
+  function pintarEstado() {
+    if (!estado) return;
+    const n = motivosRespuestas(step - 1).length;
+    estado.className = `quiz-estado inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${n ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'}`;
+    estado.innerHTML = n
+      ? `${iconSvg('warning-circle', 'size-3.5')} ${n} de ${MAX_MOTIVOS} motivos de espera`
+      : `${iconSvg('check-circle', 'size-3.5')} Sin motivos de espera`;
+    estado.title = n ? `Con ${MAX_MOTIVOS} motivos el test se detiene` : '';
+    if (!reduce()) estado.animate([{ transform: 'scale(0.92)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
   }
 
   function updateProgress() {
     if (stepLabel) stepLabel.textContent = `Pregunta ${step + 1} de ${questions.length}`;
-    if (backBtn) backBtn.disabled = step === 0;
+    if (backBtn) backBtn.disabled = false;
     if (bar) bar.style.transform = `scaleX(${(step + 1) / questions.length})`;
-    updateTopics();
+    updateTopics(categories.map((c) => c.id).indexOf(questions[step].category));
+    pintarEstado();
   }
 
   function keepQuizInView() {
     if (!quiz) return;
-    if (quiz.getBoundingClientRect().top < 64) {
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      quiz.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-    }
+    if (quiz.getBoundingClientRect().top < 64) quiz.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'start' });
   }
 
   function renderQuestion(direction: 'forward' | 'back' = 'forward', moveFocus = false) {
@@ -228,47 +401,38 @@ const countByCategory = Object.fromEntries(
         <div class="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">
           <span>${escapeHtml(categoryLabel(q.category))}</span>
         </div>
-
-        <h3 id="quiz-question" tabindex="-1" class="mt-4 text-2xl font-bold leading-snug tracking-tight text-ink focus:outline-none sm:text-3xl">
-          ${escapeHtml(q.title)}
-        </h3>
-        
+        <h3 id="quiz-question" tabindex="-1" class="mt-4 text-2xl font-bold leading-snug tracking-tight text-ink focus:outline-none sm:text-3xl">${escapeHtml(personalizar(q.title))}</h3>
         <p class="mt-2.5 max-w-[62ch] text-base leading-relaxed text-ink-2">${escapeHtml(q.description)}</p>
-        
         <div class="mt-8 grid gap-3.5" role="group" aria-labelledby="quiz-question">
-          ${q.options
-            .map((opt, idx) => {
-              const selected = answers[step] === idx;
-              return `
-                <button
-                  type="button"
-                  data-option="${idx}"
-                  aria-pressed="${selected}"
-                  class="group relative flex w-full items-center gap-4 rounded-control border p-4 sm:p-5 text-left transition-all duration-200 active:scale-[0.995] ${
-                    selected
-                      ? 'border-accent bg-accent-soft/60 shadow-sm ring-1 ring-accent'
-                      : 'border-line-strong bg-surface hover:border-ink-3 hover:bg-sunken/40 hover:shadow-sm'
-                  }"
-                >
-                  <span class="grid size-5 shrink-0 place-items-center rounded-full border-2 transition-all duration-200 ${
-                    selected ? 'border-accent bg-accent scale-110' : 'border-line-strong group-hover:border-ink-3'
-                  }">
-                    <span class="size-2 rounded-full ${selected ? 'bg-white' : 'bg-transparent'}"></span>
-                  </span>
-                  <span class="font-semibold text-base leading-snug text-ink flex-1">${escapeHtml(opt.label)}</span>${iconSvg('arrow-right', 'size-4 opacity-0 -translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-ink-3')}
-                </button>`;
-            })
-            .join('')}
+          ${q.options.map((opt, idx) => {
+            const selected = answers[step] === idx;
+            return `
+              <button type="button" data-option="${idx}" aria-pressed="${selected}"
+                class="group relative flex w-full items-center gap-4 rounded-control border p-4 sm:p-5 text-left transition-all duration-200 active:scale-[0.995] ${
+                  selected ? 'border-accent bg-accent-soft/60 shadow-sm ring-1 ring-accent' : 'border-line-strong bg-surface hover:border-ink-3 hover:bg-sunken/40 hover:shadow-sm'
+                }">
+                <span class="grid size-5 shrink-0 place-items-center rounded-full border-2 transition-all duration-200 ${selected ? 'border-accent bg-accent scale-110' : 'border-line-strong group-hover:border-ink-3'}">
+                  <span class="size-2 rounded-full ${selected ? 'bg-white' : 'bg-transparent'}"></span>
+                </span>
+                <span class="font-semibold text-base leading-snug text-ink flex-1">${escapeHtml(personalizar(opt.label))}</span>${iconSvg('arrow-right', 'size-4 opacity-0 -translate-x-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-ink-3')}
+              </button>`;
+          }).join('')}
         </div>
-      </div>
-    `;
+        <p id="quiz-aviso" class="mt-5 hidden rounded-control px-4 py-3 text-sm font-medium" role="status"></p>
+      </div>`;
 
     body.querySelectorAll<HTMLButtonElement>('[data-option]').forEach((btn) => {
       btn.addEventListener('click', () => {
         answers[step] = Number(btn.dataset.option);
+        const opt = q.options[answers[step]!];
+        const motivos = motivosRespuestas(step);
+        // Descarte inmediato: exclusión permanente o demasiados motivos de espera.
+        if (opt.permanent) return showResult('permanente');
+        if (motivos.length >= MAX_MOTIVOS) return showResult('acumulado');
         if (step < questions.length - 1) {
           step++;
           renderQuestion('forward', true);
+          if (!opt.eligible) avisar(`Anotamos un motivo de espera: ${opt.reasonTitle}. ${motivos.length === MAX_MOTIVOS - 1 ? 'Uno más y el test se detiene.' : ''}`);
         } else {
           showResult();
         }
@@ -281,128 +445,119 @@ const countByCategory = Object.fromEntries(
     }
   }
 
+  function avisar(texto: string) {
+    const el = body?.querySelector<HTMLElement>('#quiz-aviso');
+    if (!el) return;
+    el.textContent = texto.trim();
+    el.className = 'mt-5 rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn';
+  }
+
+  // ------------------------------------------------------------ Resultado
   const listItem = (title: string, text: string, badge?: string, tone: 'warn' | 'ok' = 'warn') => `
     <li class="py-4 first:pt-0 last:pb-0">
       <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <h4 class="font-bold text-ink text-base">${escapeHtml(title)}</h4>
-        ${
-          badge
-            ? `<span class="inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                tone === 'warn' ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'
-              }">${iconSvg('clock', 'size-3.5 shrink-0')}<span>${escapeHtml(badge)}</span></span>`
-            : ''
-        }
+        ${badge ? `<span class="inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${tone === 'warn' ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'}">${iconSvg('clock', 'size-3.5 shrink-0')}<span>${escapeHtml(badge)}</span></span>` : ''}
       </div>
       <p class="mt-1.5 max-w-[65ch] text-sm leading-relaxed text-ink-2">${escapeHtml(text)}</p>
     </li>`;
 
-  function showResult() {
+  function showResult(detenido?: 'ficha' | 'permanente' | 'acumulado') {
     if (!body || !result || !progress) return;
-
-    const chosen = questions.map((q, i) => ({ q, opt: q.options[answers[i] ?? 0] as Option }));
-    const reasons = chosen.filter(({ opt }) => !opt.eligible);
-    const notes = chosen.filter(({ opt }) => opt.eligible && opt.note);
+    const fisico = evaluarPerfil(perfil);
+    const respondidas = detenido === 'ficha' ? 0 : answers.length;
+    const reasons = [...fisico.motivos, ...(detenido === 'ficha' ? [] : motivosRespuestas(respondidas - 1))];
+    const notes = questions.slice(0, respondidas)
+      .map((q, i) => ({ q, opt: q.options[answers[i] ?? 0] as Option }))
+      .filter(({ opt }) => opt.eligible && opt.note);
     const eligible = reasons.length === 0;
 
     body.classList.add('hidden');
     progress.classList.add('hidden');
     result.classList.remove('hidden');
-    updateTopics(true);
+    updateTopics(detenido ? -1 : categories.length);
 
-    const reasonsHtml = reasons
-      .map(({ opt }) => listItem(opt.reasonTitle || 'Motivo de espera', opt.medicalReason || '', opt.timeframe))
-      .join('');
-    const notesHtml = notes.map(({ q, opt }) => listItem(q.title, opt.note || '')).join('');
+    const titulo = eligible ? '¡Puedes ser candidato a donar!' : detenido ? 'Detuvimos el test: por ahora no puedes donar' : 'Por ahora no es recomendable donar';
+    const intro = eligible
+      ? 'Tus respuestas cumplen los criterios básicos de elegibilidad. El siguiente paso es agendar tu cita o acudir a un centro autorizado donde el personal médico realizará la verificación final.'
+      : detenido === 'ficha'
+        ? 'Con tus datos físicos, donar 450 ml no sería seguro para ti hoy, así que no hace falta seguir con las preguntas:'
+        : detenido === 'permanente'
+          ? `Tu respuesta en la pregunta ${respondidas} es un motivo de exclusión permanente, así que no hace falta seguir con el resto:`
+          : detenido === 'acumulado'
+            ? `Con ${MAX_MOTIVOS} motivos de espera en ${respondidas} preguntas, no podrías donar pronto, así que detuvimos el test:`
+            : `Según tus respuestas, hemos detectado ${reasons.length === 1 ? 'un motivo' : `${reasons.length} motivos`} por el que debes diferir tu donación temporalmente:`;
 
-    const tips = [
-      'Duerme bien la noche anterior (mínimo 6 horas).',
-      'Come algo ligero y sin grasa antes de acudir.',
-      'Mantente bien hidratado, bebe suficiente agua.',
-      'Lleva tu documento de identidad vigente.',
-    ];
+    const pct = Math.round(fisico.fraccion * 100);
+    const tips = ['Duerme bien la noche anterior (mínimo 6 horas).', 'Come algo ligero y sin grasa antes de acudir.', 'Mantente bien hidratado, bebe suficiente agua.', 'Lleva tu documento de identidad vigente.'];
 
     result.innerHTML = `
       <div class="quiz-enter">
         <div class="flex items-center gap-4">
-          <span class="grid size-14 place-items-center rounded-panel ${eligible ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'} shadow-xs">
-            ${iconSvg(eligible ? 'check-circle' : 'warning-circle', 'size-8')}
-          </span>
+          <span class="grid size-14 place-items-center rounded-panel ${eligible ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'} shadow-xs">${iconSvg(eligible ? 'check-circle' : 'warning-circle', 'size-8')}</span>
           <div>
-            <span class="text-xs font-bold tracking-wider uppercase text-ink-3">Evaluación preliminar</span>
-            <h3 id="quiz-result-title" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink focus:outline-none">
-              ${eligible ? '¡Puedes ser candidato a donar!' : 'Por ahora no es recomendable donar'}
-            </h3>
+            <span class="text-xs font-bold tracking-wider uppercase text-ink-3">Evaluación preliminar${detenido ? ' · descarte inmediato' : ''}</span>
+            <h3 id="quiz-result-title" tabindex="-1" class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink focus:outline-none">${titulo}</h3>
           </div>
         </div>
 
-        <p class="mt-4 max-w-[60ch] text-base leading-relaxed text-ink-2">
-          ${
-            eligible
-              ? 'Tus respuestas cumplen los criterios básicos de elegibilidad. El siguiente paso es agendar tu cita o acudir a un centro autorizado donde el personal médico realizará la verificación final.'
-              : `Según tus respuestas, hemos detectado ${reasons.length === 1 ? 'un motivo' : `${reasons.length} motivos`} por el que debes diferir tu donación temporalmente:`
-          }
-        </p>
+        <dl class="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          ${[['Edad', `${perfil.edad} años`], ['Peso', `${perfil.peso} kg`], ['Altura', `${perfil.altura} cm`], ['450 ml son', `el ${pct} % de tu sangre`]]
+            .map(([k, v]) => `<div class="rounded-control bg-sunken/50 px-3 py-2"><dt class="text-xs text-ink-3">${k}</dt><dd class="font-bold text-ink tabular">${v}</dd></div>`).join('')}
+        </dl>
 
-        ${eligible ? '' : `<div class="mt-6 rounded-control border border-line bg-sunken/30 p-5"><ul class="divide-y divide-line">${reasonsHtml}</ul></div>`}
-
-        ${
-          notes.length
-            ? `<div class="mt-6 rounded-control border border-line bg-sunken/30 p-5">
-                 <h4 class="text-xs font-bold uppercase tracking-wider text-ink-3 mb-3">Notas para comentar con el personal médico</h4>
-                 <ul class="divide-y divide-line">${notesHtml}</ul>
-               </div>`
-            : ''
-        }
-
-        ${
-          eligible
-            ? `<div class="mt-6 rounded-control border border-line-strong bg-sunken/40 p-6">
-                 <h4 class="text-sm font-bold text-ink">Recomendaciones para tu donación</h4>
-                 <ul class="mt-3 grid gap-3 text-sm text-ink-2 sm:grid-cols-2">
-                   ${tips.map((t) => `<li class="flex items-start gap-2.5">${iconSvg('check-circle', 'mt-0.5 size-4 shrink-0 text-ok')}<span>${t}</span></li>`).join('')}
-                 </ul>
-               </div>`
-            : ''
-        }
+        <p class="mt-5 max-w-[60ch] text-base leading-relaxed text-ink-2">${intro}</p>
+        ${eligible ? '' : `<div class="mt-6 rounded-control border border-line bg-sunken/30 p-5"><ul class="divide-y divide-line">${reasons.map((r) => listItem(r.title, r.text, r.badge)).join('')}</ul></div>`}
+        ${notes.length ? `<div class="mt-6 rounded-control border border-line bg-sunken/30 p-5"><h4 class="text-xs font-bold uppercase tracking-wider text-ink-3 mb-3">Notas para comentar con el personal médico</h4><ul class="divide-y divide-line">${notes.map(({ q, opt }) => listItem(personalizar(q.title), opt.note || '')).join('')}</ul></div>` : ''}
+        ${eligible ? `<div class="mt-6 rounded-control border border-line-strong bg-sunken/40 p-6"><h4 class="text-sm font-bold text-ink">Recomendaciones para tu donación</h4><ul class="mt-3 grid gap-3 text-sm text-ink-2 sm:grid-cols-2">${tips.map((t) => `<li class="flex items-start gap-2.5">${iconSvg('check-circle', 'mt-0.5 size-4 shrink-0 text-ok')}<span>${t}</span></li>`).join('')}</ul></div>` : ''}
 
         <div class="mt-6 flex items-start gap-3 rounded-control bg-sunken/50 p-4 text-xs leading-relaxed text-ink-3">
           ${iconSvg('info', 'mt-0.5 size-4 shrink-0 text-ink-2')}
-          <span>Recuerda que este test es puramente orientativo. La aptitud definitiva la determina el profesional médico en la entrevista previa del banco de sangre.</span>
+          <span>Este test es orientativo. La aptitud definitiva la determina el profesional médico en la entrevista previa del banco de sangre.</span>
         </div>
 
         <div class="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          ${
-            eligible
-              ? `<a href="/register" class="btn btn-primary">Quiero ser donante ${iconSvg('arrow-right', 'size-4')}</a>
-                 <a href="/centros" class="btn btn-secondary">Ver centros cercanos</a>`
-              : `<a href="/#faq" class="btn btn-secondary">Leer preguntas frecuentes</a>`
-          }
-          <button type="button" id="quiz-restart" class="btn border border-line hover:bg-sunken text-ink-2 hover:text-ink">
-            ${iconSvg('arrow-clockwise', 'size-4')} Reiniciar test
-          </button>
+          ${eligible
+            ? `<a href="/register" class="btn btn-primary">Quiero ser donante ${iconSvg('arrow-right', 'size-4')}</a><a href="/centros" class="btn btn-secondary">Ver centros cercanos</a>`
+            : `<a href="/#faq" class="btn btn-secondary">Leer preguntas frecuentes</a>`}
+          ${detenido && detenido !== 'ficha' ? `<button type="button" id="quiz-revisar" class="btn border border-line hover:bg-sunken text-ink-2 hover:text-ink">${iconSvg('arrow-left', 'size-4')} Cambiar mi última respuesta</button>` : ''}
+          <button type="button" id="quiz-restart" class="btn border border-line hover:bg-sunken text-ink-2 hover:text-ink">${iconSvg('arrow-clockwise', 'size-4')} Reiniciar test</button>
         </div>
-      </div>
-    `;
+      </div>`;
 
     result.querySelector<HTMLElement>('#quiz-result-title')?.focus({ preventScroll: true });
     keepQuizInView();
     result.querySelector('#quiz-restart')?.addEventListener('click', restart);
+    result.querySelector('#quiz-revisar')?.addEventListener('click', () => {
+      answers.length = step;
+      volverAlTest();
+      renderQuestion('back', true);
+    });
+  }
+
+  function volverAlTest() {
+    result?.classList.add('hidden');
+    body?.classList.remove('hidden');
+    progress?.classList.remove('hidden');
   }
 
   function restart() {
     step = 0;
     answers.length = 0;
-    result?.classList.add('hidden');
-    progress?.classList.remove('hidden');
-    body?.classList.remove('hidden');
-    renderQuestion('back', true);
+    volverAlTest();
+    renderPerfil();
+    keepQuizInView();
   }
 
   backBtn?.addEventListener('click', () => {
-    if (step === 0) return;
+    if (step === 0) {
+      answers.length = 0;
+      return renderPerfil();
+    }
     step--;
+    answers.length = step + 1;
     renderQuestion('back', true);
   });
 
-  if (questions.length) renderQuestion();
+  if (todas.length) renderPerfil();
 </script>
