@@ -165,6 +165,51 @@ const avisos = [
           </form>
         </div>
 
+        <!-- RF-T6: verificación en dos pasos -->
+        <div class="panel p-6 sm:p-8 space-y-5" data-mfa>
+          <div class="flex items-start justify-between gap-4 border-b border-line pb-4">
+            <div>
+              <h2 class="text-lg font-bold text-ink">Verificación en dos pasos</h2>
+              <p class="text-xs sm:text-sm text-ink-3">Además de tu contraseña, al entrar te pediremos un código de 6 dígitos de una app de autenticación (Google Authenticator, Microsoft Authenticator, Authy).</p>
+            </div>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold bg-sunken text-ink-3" data-mfa-estado>…</span>
+          </div>
+
+          <p class="hidden text-sm text-ink-3" data-mfa-sin-servidor>Disponible cuando BLUD está conectado al servidor.</p>
+
+          <div class="hidden flex-col sm:flex-row sm:items-center justify-between gap-3" data-mfa-inactiva>
+            <p class="text-sm text-ink-2">{esDonante ? 'Protege tu cuenta aunque alguien conozca tu contraseña.' : 'Recomendada para el personal: tu cuenta da acceso a datos de donantes.'}</p>
+            <button type="button" class="btn btn-primary shrink-0" data-mfa-activar>Activar</button>
+          </div>
+
+          <div class="hidden space-y-5" data-mfa-alta>
+            <ol class="grid gap-5 sm:grid-cols-2">
+              <li class="space-y-3">
+                <p class="text-sm font-semibold text-ink"><span class="text-accent-ink">1.</span> Escanea este código con tu app</p>
+                <div class="grid place-items-center rounded-control bg-white p-3 w-fit mx-auto sm:mx-0 border border-line">
+                  <img alt="Código QR para tu app de autenticación" class="size-44" data-mfa-qr />
+                </div>
+                <p class="text-xs text-ink-3">¿No puedes escanearlo? Escribe esta clave en la app:</p>
+                <code class="block break-all rounded-control bg-sunken px-3 py-2 font-mono text-xs text-ink" data-mfa-clave></code>
+              </li>
+              <li class="space-y-3">
+                <p class="text-sm font-semibold text-ink"><span class="text-accent-ink">2.</span> Escribe el código que muestra la app</p>
+                <input class="field text-center font-mono text-2xl tracking-[0.5em]" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" data-mfa-codigo aria-label="Código de 6 dígitos" />
+                <p class="hidden text-sm font-medium text-accent-ink" role="alert" data-mfa-err></p>
+              </li>
+            </ol>
+            <div class="flex flex-col-reverse sm:flex-row justify-center gap-3">
+              <button type="button" class="btn btn-secondary sm:px-8" data-mfa-cancelar>Cancelar</button>
+              <button type="button" class="btn btn-primary sm:px-10" data-mfa-confirmar>Confirmar y activar</button>
+            </div>
+          </div>
+
+          <div class="hidden flex-col sm:flex-row sm:items-center justify-between gap-3" data-mfa-activa>
+            <p class="text-sm text-ink-2" data-mfa-desde></p>
+            <button type="button" class="btn btn-secondary shrink-0" data-mfa-desactivar>Desactivar</button>
+          </div>
+        </div>
+
         <div class="panel p-6 sm:p-8 space-y-4">
           <div class="border-b border-line pb-4">
             <h2 class="text-lg font-bold text-ink">Sesiones</h2>
@@ -447,6 +492,72 @@ const avisos = [
       await sb()?.auth.signOut({ scope: 'global' }).catch(() => {});
       logout();
       location.href = '/login';
+    });
+
+    // ---------- Verificación en dos pasos (RF-T6) ----------
+    const mfa = q('[data-mfa]')!;
+    const mq$ = <T extends HTMLElement>(sel: string) => mfa.querySelector<T>(sel)!;
+    const vistaMfa = (v: 'inactiva' | 'alta' | 'activa' | 'sin-servidor') => {
+      (['inactiva', 'alta', 'activa', 'sin-servidor'] as const).forEach((k) => {
+        const el = mq$(`[data-mfa-${k}]`);
+        el.classList.toggle('hidden', k !== v);
+        if (k !== 'alta' && k !== 'sin-servidor') el.classList.toggle('flex', k === v);
+      });
+      const est = mq$('[data-mfa-estado]');
+      est.textContent = v === 'activa' ? 'Activada' : v === 'alta' ? 'Configurando' : 'Desactivada';
+      est.className = `shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${v === 'activa' ? 'bg-ok-soft text-ok' : 'bg-sunken text-ink-3'}`;
+    };
+    let factorAlta = '';
+    let factorActivo = '';
+    async function cargarMfa() {
+      if (!usaSupabase()) return vistaMfa('sin-servidor');
+      const { factoresActivos } = await import('../../lib/mfa');
+      try {
+        const f = await factoresActivos();
+        factorActivo = f[0]?.id ?? '';
+        if (f[0]) {
+          mq$('[data-mfa-desde]').textContent = `Activada desde el ${new Date(f[0].creado).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' })}. Te pediremos el código cada vez que entres.`;
+          vistaMfa('activa');
+        } else vistaMfa('inactiva');
+      } catch { vistaMfa('inactiva'); }
+    }
+    cargarMfa();
+    const mfaErr = (m: string) => { const e = mq$('[data-mfa-err]'); e.textContent = m; e.classList.toggle('hidden', !m); };
+    mq$('[data-mfa-activar]').addEventListener('click', async () => {
+      const { empezarAlta } = await import('../../lib/mfa');
+      try {
+        const a = await empezarAlta();
+        factorAlta = a.factorId;
+        mq$<HTMLImageElement>('[data-mfa-qr]').src = a.qr;
+        mq$('[data-mfa-clave]').textContent = a.clave;
+        mfaErr('');
+        vistaMfa('alta');
+        mq$<HTMLInputElement>('[data-mfa-codigo]').focus();
+      } catch (e) { toast((e as Error).message); }
+    });
+    mq$('[data-mfa-cancelar]').addEventListener('click', () => { vistaMfa('inactiva'); });
+    const codigoMfa = mq$<HTMLInputElement>('[data-mfa-codigo]');
+    codigoMfa.addEventListener('input', () => { codigoMfa.value = codigoMfa.value.replace(/\D/g, '').slice(0, 6); mfaErr(''); });
+    mq$('[data-mfa-confirmar]').addEventListener('click', async () => {
+      const { verificarCodigo } = await import('../../lib/mfa');
+      const btn = mq$<HTMLButtonElement>('[data-mfa-confirmar]');
+      btn.disabled = true;
+      try {
+        await verificarCodigo(codigoMfa.value, factorAlta);
+        codigoMfa.value = '';
+        await cargarMfa();
+        toast('Verificación en dos pasos activada.');
+      } catch (e) { mfaErr((e as Error).message); }
+      finally { btn.disabled = false; }
+    });
+    mq$('[data-mfa-desactivar]').addEventListener('click', async () => {
+      if (!confirm('¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo por la contraseña.')) return;
+      const { desactivar } = await import('../../lib/mfa');
+      try {
+        await desactivar(factorActivo);
+        await cargarMfa();
+        toast('Verificación en dos pasos desactivada.');
+      } catch (e) { toast((e as Error).message); }
     });
 
     // ---------- Apariencia ----------

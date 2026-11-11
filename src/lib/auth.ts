@@ -4,6 +4,7 @@
 // En ambos, la sesión se resume en 'blud-session' para que la interfaz la lea sin esperar a la red.
 
 import { PERFILES_KEY, limpiarCache, sb, sincronizar, usaSupabase } from './supabase';
+import { faltaSegundoPaso, verificarCodigo } from './mfa';
 
 /** Rol del usuario. Lo asigna el sistema, NUNCA el formulario de registro público. */
 export type Role = 'donante' | 'operador' | 'laboratorio' | 'soporte' | 'director';
@@ -152,7 +153,9 @@ export function logout() {
   window.dispatchEvent(new CustomEvent('blud:auth'));
 }
 
-export type LoginResult = { ok: true; user: Session; confirmar?: boolean } | { ok: false; error: string; noConfirmado?: boolean };
+export type LoginResult =
+  | { ok: true; user: Session; confirmar?: boolean }
+  | { ok: false; error: string; noConfirmado?: boolean; segundoPaso?: boolean };
 
 // ---------- Supabase ----------
 interface PerfilRemoto {
@@ -189,6 +192,37 @@ async function loginRemoto(email: string, password: string, remember: boolean): 
       const noConfirmado = error?.code === 'email_not_confirmed' || /not confirmed/i.test(error?.message ?? '');
       return { ok: false, error: mensajeAuth(error), noConfirmado };
     }
+    // RF-T6: si la cuenta tiene verificación en dos pasos, falta el código antes de abrir la sesión de BLUD.
+    if (await faltaSegundoPaso()) {
+      recordarSesion = remember;
+      return { ok: false, error: '', segundoPaso: true };
+    }
+    return terminarLoginRemoto(remember);
+  } catch (e) {
+    return { ok: false, error: mensajeAuth({ message: String((e as Error)?.message ?? e), status: 0 }) };
+  }
+}
+
+let recordarSesion = true;
+
+/** Segundo paso del inicio de sesión: valida el código de la app de autenticación y abre la sesión. */
+export async function completarSegundoPaso(code: string): Promise<LoginResult> {
+  try {
+    await verificarCodigo(code);
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, segundoPaso: true };
+  }
+  return terminarLoginRemoto(recordarSesion);
+}
+
+/** Cancela un inicio de sesión que quedó esperando el código. */
+export async function cancelarSegundoPaso(): Promise<void> {
+  await sb()?.auth.signOut();
+}
+
+async function terminarLoginRemoto(remember: boolean): Promise<LoginResult> {
+  const c = sb()!;
+  try {
     const perfil = await perfilRemoto();
     if (!perfil) {
       await c.auth.signOut();
@@ -280,6 +314,11 @@ export async function verificarSesionRemota(): Promise<boolean> {
   if (!c) return true;
   const { data } = await c.auth.getSession();
   const uid = data.session?.user.id;
+  // Una sesión que no pasó el segundo paso no vale para entrar al portal.
+  if (uid && (await faltaSegundoPaso())) {
+    logout();
+    return false;
+  }
   const perfil = uid ? await perfilRemoto() : null;
   if (!perfil?.active) {
     logout();

@@ -74,8 +74,30 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
       <SubmitButton label="Iniciar sesión" loadingLabel="Iniciando sesión" />
     </form>
 
+    <!-- RF-T6: segundo paso, si la cuenta tiene verificación en dos pasos -->
+    <form id="codigo-form" novalidate class="hidden flex-col gap-6">
+      <div class="flex items-start gap-4 rounded-control bg-sunken p-4">
+        <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        </span>
+        <div>
+          <p class="font-semibold text-ink">Verificación en dos pasos</p>
+          <p class="text-sm text-ink-3">Abre tu app de autenticación y escribe el código de 6 dígitos de BLUD.</p>
+        </div>
+      </div>
+      <div>
+        <label for="codigo" class="mb-2 block text-sm font-semibold text-ink">Código</label>
+        <input id="codigo" name="codigo" class="field text-center font-mono text-2xl tracking-[0.5em]" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="000000" />
+        <p id="codigo-error" class="mt-2 hidden text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <div class="flex flex-col-reverse sm:flex-row justify-center gap-3">
+        <button type="button" class="btn btn-secondary sm:px-8" id="codigo-cancelar">Usar otra cuenta</button>
+        <button type="submit" class="btn btn-primary sm:px-10" id="codigo-enviar">Verificar y entrar</button>
+      </div>
+    </form>
+
     <!-- Cuentas de prueba: existen en modo demo y en la base real (las crea supabase/seed.sql) -->
-    <div class="mt-8 rounded-panel border border-dashed border-line-strong p-4 sm:p-5">
+    <div class="mt-8 rounded-panel border border-dashed border-line-strong p-4 sm:p-5" data-demo-list>
       <p class="flex items-center gap-2 text-sm font-semibold text-ink">
         <Icon name="info" class="size-4 text-ink-3" />
         Cuentas de prueba
@@ -121,7 +143,7 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
     validateEmailField,
     withSubmitting,
   } from '../lib/forms';
-  import { completarConfirmacion, login, reenviarConfirmacion, safeNext } from '../lib/auth';
+  import { cancelarSegundoPaso, completarConfirmacion, completarSegundoPaso, login, reenviarConfirmacion, safeNext, type Session } from '../lib/auth';
   import { homeFor } from '../lib/roles';
 
   const form = document.getElementById('login-form') as HTMLFormElement | null;
@@ -223,6 +245,11 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
 
       withSubmitting(submit, async () => {
         const result = await login(emailInput.value, passwordInput.value, rememberInput.checked);
+        if (!result.ok && result.segundoPaso) {
+          submit.disabled = false;
+          mostrarSegundoPaso();
+          return;
+        }
         if (!result.ok) {
           submit.disabled = false;
           showFormError(result.noConfirmado ? 'Aún no confirmas tu correo. Abre el enlace que te enviamos al registrarte.' : result.error);
@@ -230,19 +257,64 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
           passwordInput.select();
           return;
         }
-        // Vuelve a donde iba (?next=) o, si no, a la página de inicio de su rol.
-        const pedido = new URLSearchParams(window.location.search).get('next');
-        const targetUrl = pedido ? safeNext(pedido) : homeFor(result.user.role);
-
-        const firstName = result.user.name.split(/\s+/)[0];
-        const text = successBanner?.querySelector('[data-success-text]');
-        if (text) text.textContent = `¡Hola, ${firstName}! Sesión iniciada. Te llevamos de vuelta…`;
-        successBanner?.classList.remove('hidden');
-        successBanner?.classList.add('flex');
-        form.classList.add('opacity-60', 'pointer-events-none');
-        window.setTimeout(() => location.assign(targetUrl), 1100);
+        entrar(result.user);
 
       });
+    });
+
+    /** Vuelve a donde iba (?next=) o, si no, a la página de inicio de su rol. */
+    function entrar(user: Session) {
+      const pedido = new URLSearchParams(window.location.search).get('next');
+      const targetUrl = pedido ? safeNext(pedido) : homeFor(user.role);
+      const firstName = user.name.split(/\s+/)[0];
+      const text = successBanner?.querySelector('[data-success-text]');
+      if (text) text.textContent = `Hola, ${firstName}. Sesión iniciada. Te llevamos de vuelta…`;
+      successBanner?.classList.remove('hidden');
+      successBanner?.classList.add('flex');
+      form!.classList.add('opacity-60', 'pointer-events-none');
+      codigoForm.classList.add('opacity-60', 'pointer-events-none');
+      window.setTimeout(() => location.assign(targetUrl), 1100);
+    }
+
+    // ---------- Segundo paso (RF-T6) ----------
+    const codigoForm = document.getElementById('codigo-form') as HTMLFormElement;
+    const codigo = document.getElementById('codigo') as HTMLInputElement;
+    const codigoErr = document.getElementById('codigo-error') as HTMLElement;
+    function mostrarSegundoPaso() {
+      showFormError(null);
+      form!.classList.add('hidden');
+      form!.classList.remove('flex');
+      document.querySelector<HTMLElement>('[data-demo-list]')?.classList.add('hidden');
+      codigoForm.classList.remove('hidden');
+      codigoForm.classList.add('flex');
+      codigo.value = '';
+      codigo.focus();
+    }
+    codigo.addEventListener('input', () => {
+      codigo.value = codigo.value.replace(/\D/g, '').slice(0, 6);
+      codigoErr.classList.add('hidden');
+      if (codigo.value.length === 6) codigoForm.requestSubmit();
+    });
+    codigoForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('codigo-enviar') as HTMLButtonElement;
+      btn.disabled = true;
+      const r = await completarSegundoPaso(codigo.value);
+      btn.disabled = false;
+      if (r.ok) return entrar(r.user);
+      codigoErr.textContent = r.error;
+      codigoErr.classList.remove('hidden');
+      codigo.select();
+    });
+    document.getElementById('codigo-cancelar')!.addEventListener('click', async () => {
+      await cancelarSegundoPaso();
+      codigoForm.classList.add('hidden');
+      codigoForm.classList.remove('flex');
+      form!.classList.remove('hidden');
+      form!.classList.add('flex');
+      passwordInput.value = '';
+      document.querySelector<HTMLElement>('[data-demo-list]')?.classList.remove('hidden');
+      emailInput.focus();
     });
 
     bindPasswordToggles(form);

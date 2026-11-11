@@ -102,6 +102,11 @@ Operador, soporte, dirección y laboratorio pueden abrir una conversación con u
 
 - **Notificaciones** (`src/lib/notificaciones.ts`): en cualquier página del portal, un mensaje nuevo del otro lado pone el contador de no leídos en *Mensajes* del menú, un punto en el botón del menú y `(N)` en el título de la pestaña, y muestra un aviso con el remitente y el inicio del mensaje. Si la pestaña no está a la vista y el usuario activó los avisos del navegador (botón en *Mensajes*), sale una notificación del sistema. Los no leídos los cuenta la base. Con la app cerrada no llega nada: para eso hace falta Web Push o correo.
 
+### Seguridad de la sesión
+
+- **Verificación en dos pasos (RF-T6):** opcional por usuario, en *Configuración → Seguridad*, con una app de autenticación (TOTP de Supabase Auth, activado por defecto en todos los proyectos). Al entrar se pide el código de 6 dígitos. La base también la exige: si la cuenta la tiene activada y la sesión no pasó el segundo paso, `_uid()` y `mi_rol()` no reconocen a quien llama ([`20261111200000_blud_mfa.sql`](supabase/migrations/20261111200000_blud_mfa.sql)).
+- **Cierre por inactividad (RF-T8):** 15 minutos para el personal y 30 para el donante, con aviso «¿Sigues ahí?» un minuto antes. También se puede cerrar la sesión en todos los dispositivos desde *Configuración → Seguridad*.
+
 ### Datos del donante para donar
 
 - **Pre-registro (RF-D11):** además de lo anterior, dirección, ocupación y contacto de emergencia (nombre, teléfono y parentesco).
