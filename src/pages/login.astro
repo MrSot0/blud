@@ -181,6 +181,9 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
 
     // Vuelve del enlace del correo de confirmación (/login?confirmado=1): entra directo.
     const qs = new URLSearchParams(location.search);
+    if (qs.get('motivo') === 'inactividad') {
+      showSuccess('Cerramos tu sesión por inactividad para proteger tus datos. Vuelve a entrar para continuar.');
+    }
     if (qs.has('confirmado') || qs.has('token_hash') || /error_description|access_token/.test(location.hash)) {
       completarConfirmacion().then((r) => {
         history.replaceState(null, '', '/login');

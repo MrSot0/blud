@@ -68,6 +68,8 @@ const { role, title, description } = Astro.props;
 
       const role = document.body.dataset.portalRole as Role;
       if (guard([role])) {
+        // RF-T8: cierre de sesión por inactividad (15 min personal, 30 min donante).
+        import('../lib/inactividad').then((m) => m.iniciarCierrePorInactividad());
         if (usaSupabase()) {
           // Base real: los datos de ejemplo viven en supabase/seed.sql, no en el navegador.
           document.querySelectorAll<HTMLElement>('#btn-demo').forEach((b) => ((b.closest('p') ?? b).hidden = true));
