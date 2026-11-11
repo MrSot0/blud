@@ -1074,7 +1074,6 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reduce) requestAnimationFrame(() => document.querySelector('.hero')?.classList.add('animar'));
-  if (!reduce) document.documentElement.classList.add('proceso-anim');
   const $ = (s: string, r: ParentNode = document) => r.querySelector(s) as Element;
 
   // Las ilustraciones viven en <template> para no repetir defs; se insertan en su escena.
@@ -1313,7 +1312,8 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
 
   const crear: Record<string, () => ReturnType<typeof createTimeline>> = { cita, evaluacion, extraccion, cuarentena, serologia, fraccionamiento, inventario, solicitud, transfusion };
   const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
-    const tl = crear[el.dataset.escena!]();
+    let tl: ReturnType<typeof createTimeline>;
+    try { tl = crear[el.dataset.escena!](); } catch (err) { console.error('proceso: falló la animación', el.dataset.escena, err); tl = createTimeline({ autoplay: false }); }
     const cola = el.querySelector<HTMLElement>('.cola')!;
     return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280, alto: 700, tramo1: 600, derecha: true };
   });
@@ -1349,6 +1349,9 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     document.querySelectorAll('.h-cola path').forEach((p) => p.setAttribute('d', d));
   };
   const trazar = (e: (typeof escenas)[number]) => {
+    try { trazarSeguro(e); } catch (err) { console.error('proceso: cola', err); }
+  };
+  const trazarSeguro = (e: (typeof escenas)[number]) => {
     const W = Math.round(e.cola.clientWidth), H = Math.round(e.cola.clientHeight);
     const { xL, xR } = carriles();
     const d = colaD(Number(e.cola.dataset.i), W, H, xL, xR);
@@ -1370,6 +1373,9 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${x} -6 C ${x} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
   };
   const pintar = (e: (typeof escenas)[number]) => {
+    try { pintarSeguro(e); } catch (err) { console.error('proceso: pintar', err); }
+  };
+  const pintarSeguro = (e: (typeof escenas)[number]) => {
     const m = e.m;
     e.actual = m;
     e.tl.seek(m * e.tl.duration);
@@ -1380,7 +1386,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     // La gota baja por el carril durante casi toda la etapa y, al final, cruza por la franja inferior hacia el otro lado.
     const baja = tramo(m, 0, 0.8);
     const largoPos = m < 0.8 ? e.tramo1 * (0.03 + 0.97 * baja) : e.tramo1 + tramo(m, 0.8, 1) * (e.largo - e.tramo1 - 20);
-    const pt = e.ruta.getPointAtLength(largoPos);
+    const pt = e.ruta.getPointAtLength(Number.isFinite(largoPos) ? utils.clamp(largoPos, 0, e.largo) : 0);
     e.marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
     e.marca.style.opacity = String(tramo(m, 0.01, 0.05) * (1 - tramo(m, 0.97, 1)));
     // La lupa (vertical) va junto al tramo recto: a la izquierda del tubo si baja por la derecha y a la derecha si baja por la izquierda.
@@ -1394,6 +1400,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     e.lupa.style.setProperty('--lz', String(1.7 - entra * 0.7));
   };
 
+  if (!reduce) document.documentElement.classList.add('proceso-anim');
   if (reduce) {
     // Sin movimiento: cada ilustración en su estado final y todos los textos visibles.
     escenas.forEach((e) => { trazar(e); e.m = 0; pintar(e); e.tl.seek(e.tl.duration); e.barra.style.transform = 'scaleX(1)'; });
