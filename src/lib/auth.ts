@@ -362,7 +362,12 @@ export async function register(input: RegisterInput): Promise<LoginResult> {
       options: { data: { full_name: input.name.trim(), blood_type: input.bloodType }, emailRedirectTo: urlConfirmacion() },
     });
     if (error) {
-      return { ok: false, error: /registered|exists/i.test(error.message) ? 'Ya existe una cuenta con este correo.' : `No pudimos crear la cuenta: ${error.message}` };
+      if (/registered|exists/i.test(error.message)) return { ok: false, error: 'Ya existe una cuenta con este correo.' };
+      if (error.status === 429 || /rate limit|too many/i.test(error.message)) {
+        return { ok: false, error: 'Hay muchos registros en este momento y no pudimos enviarte el correo de confirmación. Inténtalo de nuevo en unos minutos.' };
+      }
+      if (/password/i.test(error.message)) return { ok: false, error: 'La contraseña no cumple los requisitos: usa al menos 8 caracteres con letras y números.' };
+      return { ok: false, error: 'No pudimos crear la cuenta. Inténtalo de nuevo en unos minutos.' };
     }
     // Con la confirmación por correo activada, Supabase no da error si el correo ya existe: devuelve un usuario sin identidades.
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
