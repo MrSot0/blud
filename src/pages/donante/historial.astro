@@ -28,7 +28,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
           </div>
         </div>
         <div class="flex gap-2">
-          <a href="/donante/donar" class="cita-btn">Cambiar</a>
+          <a href="/donante/citas" class="cita-btn">Ver mis citas</a>
           <button type="button" id="cita-cancel" class="cita-btn cita-btn-ghost">Cancelar</button>
         </div>
       </div>
@@ -153,10 +153,10 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
         .join('');
     }
 
-    $('#cita-cancel').addEventListener('click', () => {
+    $('#cita-cancel').addEventListener('click', async () => {
       if (!confirm('¿Seguro que quieres cancelar tu cita?')) return;
-      // TODO: DELETE /api/citas/:id
-      cancelCita();
+      const res = await cancelCita();
+      if (!res.ok) return toast(res.error);
       renderCita();
       toast('Cita cancelada. Cuando quieras, agenda otra 💙');
     });

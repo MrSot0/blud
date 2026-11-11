@@ -75,8 +75,8 @@ export function sincronizar(): Promise<void> {
     if (panel.perfiles) guardarCache(PERFILES_KEY, panel.perfiles);
     if (panel.citas) {
       // Citas del donante con la forma que usa lib/auth (libro por correo).
-      const citas = (panel.citas as { id: string; centerName: string; date: string; time: string }[]).map((x) => ({
-        id: x.id, centerName: x.centerName, date: x.date, time: x.time,
+      const citas = (panel.citas as { id: string; centerName: string; date: string; time: string; estado?: string }[]).map((x) => ({
+        id: x.id, centerName: x.centerName, date: x.date, time: x.time, estado: x.estado,
         centerId: centers.find((ce) => ce.name === x.centerName)?.id ?? '', createdAt: x.date,
       }));
       guardarCache(CITAS_KEY, { [correoSesion()]: citas });
@@ -114,7 +114,7 @@ export function borrar(key: string, id: string) {
 /** Al cerrar sesión con base real, se vacía la caché para que la próxima persona no vea datos ajenos. */
 export function limpiarCache() {
   try {
-    [...COLECCIONES, UNIDADES_KEY, PERFILES_KEY, CITAS_KEY, 'blud-donor', 'blud-donor-cita', 'blud-donor-historial']
+    [...COLECCIONES, UNIDADES_KEY, PERFILES_KEY, CITAS_KEY, 'blud-donor', 'blud-donor-cita', 'blud-donor-historial', 'blud-donor-foto']
       .forEach((k) => localStorage.removeItem(k));
   } catch {}
 }

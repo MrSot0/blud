@@ -28,7 +28,7 @@ let n = 0;
 <div id="sidebar-overlay" data-open="false" aria-hidden="true"></div>
 
 <!-- Menú lateral por debajo del Navbar (z-40) -->
-<aside id="sidebar-drawer" data-open="false" inert aria-label={`Navegación de ${menu.titulo.toLowerCase()}`}>
+<aside id="sidebar-drawer" data-open="false" data-role={role} inert aria-label={`Navegación de ${menu.titulo.toLowerCase()}`}>
   <div class="flex items-center justify-between px-6 py-4 border-b border-line shrink-0">
     <div class="flex items-center gap-3">
       <div class="grid size-9 place-items-center rounded-control bg-accent/10 text-accent-ink">
@@ -57,13 +57,17 @@ let n = 0;
                 href={item.href}
                 class="nav-link group flex items-center gap-3 rounded-control px-3 py-3 text-ink transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
                 aria-current={isActive(item.href) ? 'page' : undefined}
+                data-menu={item.href}
               >
                 <span class="nav-ico grid size-10 shrink-0 place-items-center rounded-full bg-sunken text-accent-ink transition-colors group-aria-[current=page]:bg-accent group-aria-[current=page]:text-white">
                   <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_PATHS[item.icon]} />
                 </span>
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                   <span class="block text-sm font-semibold leading-tight">{item.label}</span>
-                  <span class="block text-xs text-ink-3 group-aria-[current=page]:text-accent-ink/80">{item.hint}</span>
+                  <span class="block text-xs text-ink-3 group-aria-[current=page]:text-accent-ink/80" data-menu-hint>{item.hint}</span>
+                </span>
+                <span class="nav-lock hidden size-7 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" data-menu-lock aria-hidden="true">
+                  <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" set:html={ICON_PATHS.lock} />
                 </span>
               </a>
             </li>
@@ -318,7 +322,22 @@ let n = 0;
     })
   );
 
+  /** Donante: «Donar sangre» queda con candado hasta que el perfil tenga todos los datos necesarios. */
+  async function renderBloqueoDonar() {
+    const link = document.querySelector<HTMLElement>('#sidebar-drawer[data-role="donante"] [data-menu="/donante/donar"]');
+    if (!link) return;
+    const { faltantes, loadDonor } = await import('../../lib/donante');
+    const n = faltantes(loadDonor()).length;
+    link.querySelector('[data-menu-lock]')?.classList.toggle('hidden', !n);
+    link.querySelector('[data-menu-lock]')?.classList.toggle('grid', !!n);
+    const hint = link.querySelector('[data-menu-hint]');
+    if (hint) hint.textContent = n ? 'Completa tu perfil primero' : 'Agenda tu donación';
+    link.title = n ? 'Completa tu perfil para poder donar' : '';
+  }
+
   renderSidebarAuth();
+  renderBloqueoDonar();
+  window.addEventListener('blud:donor', renderBloqueoDonar);
   window.addEventListener('blud:auth', renderSidebarAuth);
   window.addEventListener('storage', (e) => {
     if (e.key === null || e.key.startsWith('blud-')) renderSidebarAuth();
@@ -328,5 +347,6 @@ let n = 0;
   document.addEventListener('astro:page-load', () => {
     initSidebar();
     renderSidebarAuth();
+    renderBloqueoDonar();
   });
 </script>

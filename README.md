@@ -73,11 +73,20 @@ Con base real, el sitio usa el esquema del proyecto **Bloodonor** (`usuario`, `d
 
 Para conectarlo:
 
-1. En el SQL Editor de Bloodonor, ejecuta la migración y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; ambos se pueden repetir).
+1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
 2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
 3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
 
 Pruebas por rol: [`supabase/tests/adaptador.sql`](supabase/tests/adaptador.sql), sobre una copia de la base, después de la migración y el seed. Termina con un error a propósito para que todo se revierta; el mensaje trae los resultados.
+
+La segunda migración añade el carnet con foto y la ficha del QR:
+
+- `fotos-donantes`: bucket privado de Storage. Cada donante solo sube y ve su carpeta; el personal puede ver todas.
+- `blud_mi_ficha()`: los datos del donante tal como están en la base (rellenan su perfil y su carnet).
+- `blud_donante_ficha(q)`: el personal consulta un donante por el QR, el ID `BLD-000123` o la cédula.
+- `blud_cancelar_cita(id)`: el donante cancela su cita.
+
+El QR del carnet es un enlace a `/verificar?id=BLD-000123`: escaneado con la cámara del teléfono, el personal con sesión iniciada ve la ficha completa (foto, nombres, apellidos, cédula, teléfono, tipo de sangre, donaciones y próxima cita); cualquier otra persona solo ve que el carnet existe. Un donante no puede agendar hasta tener foto, nombres, apellidos, cédula, teléfono, fecha de nacimiento, sexo y tipo de sangre guardados (en `/donante/donar` ve lo que le falta). Sus citas están en `/donante/citas`.
 
 Con la base conectada, `localStorage` queda solo como caché. El esquema exige datos que el modo demo no pide: sexo y fecha de nacimiento del donante, signos vitales antes de la extracción, e indicación clínica y consentimiento en la orden médica.
 

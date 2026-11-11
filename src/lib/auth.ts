@@ -36,6 +36,8 @@ export interface Appointment {
   /** Hora HH:MM. */
   time: string;
   createdAt: string;
+  /** Estado en la base (Programada, Atendida…). En modo demo no se usa. */
+  estado?: string;
 }
 
 const USERS_KEY = 'blud-users';
@@ -540,11 +542,50 @@ export function addAppointment(email: string, data: Omit<Appointment, 'id' | 'cr
   return appointment;
 }
 
+/**
+ * Agenda una cita y espera la respuesta de la base (con Supabase), para poder mostrar su motivo si la rechaza
+ * (plazo entre donaciones, otra cita activa…). Si `reemplazar` trae una cita, primero se cancela.
+ */
+export async function agendarCita(
+  email: string, data: Omit<Appointment, 'id' | 'createdAt'>, reemplazar?: string,
+): Promise<{ ok: true; appointment: Appointment } | { ok: false; error: string }> {
+  if (reemplazar) {
+    const c = await cancelarCita(email, reemplazar);
+    if (!c.ok) return c;
+  }
+  if (!usaSupabase()) return { ok: true, appointment: addAppointment(email, data) };
+  const { data: id, error } = await sb()!.rpc('blud_agendar_cita', { p_centro: data.centerName, p_fecha: data.date, p_hora: data.time });
+  if (error) return { ok: false, error: error.message };
+  await sincronizar();
+  window.dispatchEvent(new CustomEvent('blud:auth'));
+  const appointment = getAppointments(email).find((a) => a.id === id)
+    ?? { ...data, id: String(id), createdAt: new Date().toISOString() };
+  return { ok: true, appointment };
+}
+
+/** Cancela una cita del donante (en la base, si está conectada). */
+export async function cancelarCita(email: string, id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (usaSupabase()) {
+    const { error } = await sb()!.rpc('blud_cancelar_cita', { p_id: id });
+    if (error) return { ok: false, error: error.message };
+    await sincronizar();
+  } else {
+    const book = read<AppointmentBook>(local(), APPOINTMENTS_KEY, {});
+    const key = normalize(email);
+    book[key] = (book[key] ?? []).filter((a) => a.id !== id);
+    write(local(), APPOINTMENTS_KEY, book);
+  }
+  window.dispatchEvent(new CustomEvent('blud:auth'));
+  return { ok: true };
+}
+
+/** Cita activa: futura y sin atender ni cancelar. */
+export const citaActiva = (a: Appointment, hoy = toDateKey(new Date())) =>
+  a.date >= hoy && (!a.estado || a.estado === 'Programada');
+
 /** Próxima cita futura del usuario, si la hay. */
 export function nextAppointment(email: string): Appointment | null {
-  const today = new Date();
-  const todayKey = toDateKey(today);
-  return getAppointments(email).find((a) => a.date >= todayKey) ?? null;
+  return getAppointments(email).find((a) => citaActiva(a)) ?? null;
 }
 
 export const toDateKey = (d: Date) =>

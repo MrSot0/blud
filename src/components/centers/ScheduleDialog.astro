@@ -200,7 +200,8 @@ import { centers } from '../../data/centers';
 </style>
 
 <script>
-  import { addAppointment, appointmentLabel, getSession, toDateKey } from '../../lib/auth';
+  import { agendarCita, appointmentLabel, getSession, toDateKey } from '../../lib/auth';
+  import { puedeDonar } from '../../lib/donante';
   import { withSubmitting } from '../../lib/forms';
   import { hoursLabel, type HealthCenter } from '../../data/centers';
 
@@ -331,13 +332,18 @@ import { centers } from '../../data/centers';
       const { day, time } = selection();
       if (!user || !center || !day || !time) return;
       const chosen = center;
-      withSubmitting(submit, () => {
-        const appointment = addAppointment(user.email, {
+      withSubmitting(submit, async () => {
+        const res = await agendarCita(user.email, {
           centerId: chosen.id,
           centerName: chosen.name,
           date: day,
           time,
         });
+        if (!res.ok) {
+          summary.textContent = res.error;
+          return;
+        }
+        const appointment = res.appointment;
         const doneText = dialog.querySelector<HTMLElement>('[data-done-text]');
         if (doneText) doneText.textContent = `${chosen.name}, ${appointmentLabel(appointment)}.`;
         showStep('done');
@@ -357,7 +363,14 @@ import { centers } from '../../data/centers';
       dialog.querySelector('[data-center-name]')!.textContent = center.name;
       dialog.querySelector('[data-center-meta]')!.textContent = `${center.address} · ${hoursLabel(center.hours)}`;
 
-      if (getSession()) {
+      const sesion = getSession();
+      // Un donante con el perfil incompleto todavía no puede agendar: en /donante/donar ve qué le falta.
+      if (sesion?.role === 'donante' && !puedeDonar()) {
+        location.href = `/donante/donar?centro=${encodeURIComponent(center.id)}`;
+        return;
+      }
+
+      if (sesion) {
         form.reset();
         submit.disabled = true;
         renderDays();

@@ -302,7 +302,7 @@ export function upsertDesdePerfil(p: {
   });
 }
 
-/** Acepta cédula, ID del carnet (BLD-XXXXXX) o el contenido JSON del QR. */
+/** Acepta cédula, ID del carnet (BLD-XXXXXX) o el contenido del QR (enlace /verificar?id=… o JSON antiguo). */
 export function buscarRegistro(query: string): RegistroDonante | undefined {
   const q = query.trim();
   if (!q) return undefined;
@@ -311,6 +311,7 @@ export function buscarRegistro(query: string): RegistroDonante | undefined {
     const j = JSON.parse(q);
     if (j && typeof j.id === 'string') id = j.id;
   } catch {}
+  if (!id) id = q.match(/[?&]id=(BLD-[A-Z0-9]{4,})/i)?.[1]?.toUpperCase() ?? ''; // enlace del QR (/verificar?id=…)
   if (!id && /^BLD-[A-Z0-9]{4,}$/i.test(q)) id = q.toUpperCase();
   if (id) return registro.get(id);
   const ced = normCedula(q);

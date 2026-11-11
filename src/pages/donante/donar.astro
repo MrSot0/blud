@@ -23,13 +23,31 @@ const checks = [
       <p class="text-ink-2 text-sm sm:text-base mt-2">Agenda tu cita paso a paso de forma rápida y segura.</p>
     </div>
 
+    <!-- Perfil incompleto: no se puede agendar -->
+    <section id="bloqueo" class="reveal hidden panel p-6 sm:p-10 space-y-6 w-full shadow-lg" style="--d:40ms" aria-labelledby="h-bloqueo">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5 pb-5 border-b border-line">
+        <span class="lock-badge grid size-14 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <div>
+          <h2 id="h-bloqueo" class="text-xl font-extrabold text-ink">Antes de donar, completa tu perfil</h2>
+          <p class="text-sm text-ink-2 mt-1">El banco de sangre necesita identificarte el día de tu cita. Te falta:</p>
+        </div>
+      </div>
+      <ul id="bloqueo-lista" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></ul>
+      <div class="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-5 border-t border-line">
+        <a href="/donante/citas" class="btn btn-secondary">Ver mis citas</a>
+        <a href="/donante/perfil?vista=datos" class="btn btn-primary px-8">Completar mis datos</a>
+      </div>
+    </section>
+
     <!-- Cita existente -->
     <div id="cita-actual" class="reveal hidden panel p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-accent" style="--d:40ms">
       <p class="text-sm text-ink-2">Ya tienes una cita activa el <strong class="text-ink" id="cita-actual-txt"></strong>. Si confirmas una nueva, reemplazarás la anterior.</p>
-      <a href="/donante/historial" class="btn btn-secondary self-start sm:self-auto text-sm shrink-0">Ver mi cita</a>
+      <a href="/donante/citas" class="btn btn-secondary self-start sm:self-auto text-sm shrink-0">Ver mi cita</a>
     </div>
 
-    <div id="form-view" class="w-full space-y-6">
+    <div id="form-view" class="hidden w-full space-y-6">
 
       <!-- Indicador de Pasos -->
       <div class="flex items-center justify-between px-2 text-xs font-bold text-ink-3 uppercase tracking-wider">
@@ -173,6 +191,8 @@ const checks = [
           </div>
         </div>
 
+        <p id="error-cita" class="hidden rounded-xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink" role="alert"></p>
+
         <p id="kyc-nudge" class="hidden rounded-xl bg-sunken px-4 py-3 text-xs sm:text-sm text-ink-2 border border-line">
           💡 <strong>Tip:</strong> <a href="/donante/perfil" class="font-bold text-accent-ink underline">Verifica tu identidad</a> para agilizar notablemente tu atención presencial.
         </p>
@@ -195,7 +215,7 @@ const checks = [
       <p class="text-xs text-ink-3 bg-sunken py-2 px-4 rounded-lg inline-block">Lleva tu cédula de identidad y muestra tu carnet digital con el código QR.</p>
       <div class="flex flex-col sm:flex-row gap-3 pt-4">
         <a href="/donante/perfil" class="btn btn-secondary flex-1 py-3">Ver mi carnet</a>
-        <a href="/donante/historial" class="btn btn-primary flex-1 py-3 shadow-md">Ir a mi historial</a>
+        <a href="/donante/citas" class="btn btn-primary flex-1 py-3 shadow-md">Ver mis citas</a>
       </div>
     </div>
   </div>
@@ -213,6 +233,7 @@ const checks = [
   .chip:hover span { border-color: var(--color-blud-flag-red); transform: translateY(-1px); }
   .chip:has(input:checked) span { background: var(--color-blud-flag-red); border-color: var(--color-blud-flag-red); color: #fff; transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
+  .lock-badge { animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1); }
   .ok-badge { animation: pop 600ms cubic-bezier(0.34, 1.56, 0.64, 1); }
   @keyframes pop { from { transform: scale(0); } }
   .ok-path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw 500ms 350ms ease-out forwards; }
@@ -220,14 +241,15 @@ const checks = [
 
   @media (prefers-reduced-motion: reduce) {
     .reveal { animation: none; opacity: 1; transform: none; }
-    .drop-emoji, .ok-badge, .ok-path { animation: none; stroke-dashoffset: 0; }
+    .drop-emoji, .ok-badge, .lock-badge, .ok-path { animation: none; stroke-dashoffset: 0; }
     .chip span { transition: none; }
   }
 </style>
 
 <script>
   import { centers } from '../../data/centers';
-  import { getCita, getDonor, saveCita, fmtFecha, uid, toast } from '../../lib/donante';
+  import { cargarFicha, getCita, getDonor, requisitos, fmtFecha, toast, type Donor } from '../../lib/donante';
+  import { agendarCita, getSession } from '../../lib/auth';
 
   const centerById = (id: string) => centers.find((c) => c.id === id);
 
@@ -290,12 +312,48 @@ const checks = [
     prevTo2.addEventListener('click', () => goToStep(2));
     prevTo3.addEventListener('click', () => goToStep(3));
 
-    const donor = getDonor();
-    const donorFullName = `${donor.firstname || ''} ${donor.lastname || ''}`.trim() || 'Donante BLUD';
-    
-    $('#d-name').textContent = donorFullName;
-    $('#d-blood').textContent = donor.sangre || 'Sin tipo';
-    $('#d-cedula').textContent = donor.cedula ? `Cédula: ${donor.cedula}` : 'Cédula sin registrar';
+    let donor = getDonor();
+
+    // Sin todos los datos del perfil no se puede agendar: se muestra qué falta en lugar del asistente.
+    function aplicarBloqueo(d: Donor): boolean {
+      const reqs = requisitos(d);
+      const bloqueado = reqs.some((r) => !r.ok);
+      $('#bloqueo').classList.toggle('hidden', !bloqueado);
+      root!.classList.toggle('hidden', bloqueado);
+      pintarCitaActual(!bloqueado);
+      if (bloqueado) {
+        $('#bloqueo-lista').innerHTML = reqs
+          .map((r) => `
+            <li class="flex items-center gap-3 rounded-xl border-2 px-4 py-3 text-sm ${r.ok ? 'border-line bg-surface text-ink-3' : 'border-accent/40 bg-accent-soft font-semibold text-accent-ink'}">
+              <span class="grid size-6 shrink-0 place-items-center rounded-full ${r.ok ? 'bg-ok text-white' : 'border-2 border-current'}" aria-hidden="true">${r.ok ? '<svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>' : ''}</span>
+              <span>${r.label}</span><span class="sr-only">${r.ok ? '(listo)' : '(pendiente)'}</span>
+            </li>`)
+          .join('');
+      }
+      return bloqueado;
+    }
+    aplicarBloqueo(donor);
+    // La base manda: puede que el perfil ya esté completo allí (u otro navegador lo haya cambiado).
+    cargarFicha().then((d) => {
+      donor = d;
+      aplicarBloqueo(d);
+      pintarDonante();
+    });
+
+    function pintarDonante() {
+      const donorFullName = `${donor.firstname || ''} ${donor.lastname || ''}`.trim() || 'Donante BLUD';
+      $('#d-name').textContent = donorFullName;
+      $('#d-blood').textContent = donor.sangre || 'Sin tipo';
+      $('#d-cedula').textContent = donor.cedula ? `Cédula: ${donor.cedula}` : 'Cédula sin registrar';
+      $('#kyc-nudge').classList.toggle('hidden', donor.kyc === 'verified');
+    }
+    pintarDonante();
+
+    function pintarCitaActual(visible: boolean) {
+      const actual = getCita();
+      $('#cita-actual').classList.toggle('hidden', !(visible && actual));
+      if (actual) $('#cita-actual-txt').textContent = `${fmtFecha(actual.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${actual.hora}`;
+    }
 
     const iso = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
     const today = new Date();
@@ -303,13 +361,6 @@ const checks = [
     fecha.min = iso(today);
     fecha.max = iso(max);
 
-    if (donor.kyc !== 'verified') $('#kyc-nudge').classList.remove('hidden');
-
-    const actual = getCita();
-    if (actual) {
-      $('#cita-actual').classList.remove('hidden');
-      $('#cita-actual-txt').textContent = `${fmtFecha(actual.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${actual.hora}`;
-    }
 
     const pre = new URLSearchParams(location.search).get('centro');
     if (pre && centers.some((c) => c.id === pre)) {
@@ -369,18 +420,28 @@ const checks = [
     fecha.addEventListener('input', update);
     update();
 
-    btnConfirmar.addEventListener('click', () => {
+    btnConfirmar.addEventListener('click', async () => {
       if (btnConfirmar.disabled) return;
       const centro = centerById(centroSelect.value)!;
       const hora = pickedHora('hora');
+      const errorBox = $('#error-cita');
+      errorBox.classList.add('hidden');
 
-      saveCita({
-        id: uid(),
-        centroId: centro.id,
-        fecha: fecha.value,
-        hora,
-        creada: new Date().toISOString()
-      });
+      btnConfirmar.disabled = true;
+      const label = btnConfirmar.textContent;
+      btnConfirmar.textContent = 'Agendando…';
+      const res = await agendarCita(
+        getSession()?.email ?? '',
+        { centerId: centro.id, centerName: centro.name, date: fecha.value, time: hora },
+        getCita()?.id, // si ya había una cita activa, se reemplaza
+      );
+      btnConfirmar.textContent = label;
+      btnConfirmar.disabled = false;
+      if (!res.ok) {
+        errorBox.textContent = res.error;
+        errorBox.classList.remove('hidden');
+        return;
+      }
 
       $('#ok-txt').textContent = `${centro.name} · ${fmtFecha(fecha.value, { weekday: 'long', day: 'numeric', month: 'long' })} a las ${hora}.`;
       root.classList.add('hidden');

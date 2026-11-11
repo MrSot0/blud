@@ -1,0 +1,261 @@
+---
+// src/pages/donante/citas.astro
+// Citas agendadas del donante: la próxima, las activas y las pasadas. Con base real salen de la tabla cita.
+import LayoutDonante from '../../layouts/LayoutDonante.astro';
+---
+
+<LayoutDonante title="BLUD | Mis citas">
+  <div class="container-blud py-8 space-y-8" data-citas>
+
+    <div class="reveal flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-line" style="--d:0ms">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Mis citas</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Tus citas agendadas para donar, en un solo lugar.</p>
+      </div>
+      <a href="/donante/donar" class="btn btn-primary self-start sm:self-auto" data-agendar>Agendar donación</a>
+    </div>
+
+    <!-- Próxima cita -->
+    <section id="proxima" class="reveal hidden cita-card p-6 sm:p-8" style="--d:60ms" aria-label="Próxima cita">
+      <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div class="flex items-center gap-4">
+          <span class="grid size-14 shrink-0 place-items-center rounded-full bg-white/20 pulse" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-white/75">Tu próxima cita · <span id="proxima-faltan"></span></p>
+            <p class="text-xl font-extrabold leading-tight" id="proxima-fecha"></p>
+            <p class="text-sm text-white/85" id="proxima-centro"></p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a href="/donante/perfil" class="cita-btn">Ver mi carnet</a>
+          <button type="button" class="cita-btn cita-btn-ghost" id="proxima-cancelar">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estadísticas -->
+    <div class="reveal grid grid-cols-1 sm:grid-cols-3 gap-4 text-center" style="--d:120ms">
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular" data-stat="activas">0</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Citas activas</span>
+      </div>
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular" data-stat="pasadas">0</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Citas pasadas</span>
+      </div>
+      <div class="p-5 rounded-control bg-sunken">
+        <span class="block text-3xl font-extrabold text-ink tabular" data-stat="dias">—</span>
+        <span class="text-xs font-semibold text-ink-3 uppercase">Días para tu cita</span>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <section class="reveal panel p-6 sm:p-8" style="--d:180ms" aria-labelledby="h-lista">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+        <h2 id="h-lista" class="text-lg font-bold text-ink">Citas agendadas</h2>
+        <div class="seg" role="tablist" aria-label="Filtrar citas">
+          <button type="button" role="tab" aria-selected="true" data-filtro="proximas">Próximas</button>
+          <button type="button" role="tab" aria-selected="false" data-filtro="pasadas">Pasadas</button>
+          <button type="button" role="tab" aria-selected="false" data-filtro="todas">Todas</button>
+        </div>
+      </div>
+
+      <ol id="lista" class="relative mt-6 space-y-5"></ol>
+
+      <div id="vacio" class="hidden py-10 text-center space-y-3">
+        <span class="mx-auto grid size-16 place-items-center rounded-full bg-accent-soft text-accent-ink drop-float" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </span>
+        <p class="font-bold text-ink" id="vacio-titulo">No tienes citas agendadas</p>
+        <p class="text-sm text-ink-3 max-w-sm mx-auto" id="vacio-texto">Cuando agendes una donación aparecerá aquí con su fecha, hora y centro.</p>
+        <a href="/donante/donar" class="btn btn-primary inline-flex" data-agendar>Agendar una cita</a>
+      </div>
+    </section>
+  </div>
+</LayoutDonante>
+
+<style>
+  .reveal { opacity: 0; transform: translateY(14px); animation: rise 600ms var(--ease-out, ease-out) forwards; animation-delay: var(--d, 0ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  .cita-card {
+    position: relative; overflow: hidden; border-radius: 1.5rem; color: #fff;
+    background: linear-gradient(135deg, var(--color-blud-flag-red, #CA2B2B), var(--color-blud-oxblood, #A30008));
+    box-shadow: 0 20px 40px -18px rgb(0 0 0 / 0.4);
+  }
+  .cita-card::after { content: ''; position: absolute; width: 14rem; height: 14rem; right: -4rem; top: -6rem; border-radius: 9999px; background: rgb(255 255 255 / 0.1); pointer-events: none; }
+  .cita-btn {
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1.1rem; border-radius: 9999px;
+    font-size: 0.875rem; font-weight: 700; background: #fff; color: var(--color-blud-flag-red, #CA2B2B); cursor: pointer; transition: transform 150ms;
+  }
+  .cita-btn:hover { transform: translateY(-2px); }
+  .cita-btn-ghost { background: rgb(255 255 255 / 0.18); color: #fff; }
+
+  .pulse { animation: pulse 2s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(255 255 255 / 0.5); } 70%, 100% { box-shadow: 0 0 0 14px rgb(255 255 255 / 0); } }
+  .drop-float { animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+
+  /* Filtro segmentado */
+  .seg { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border-radius: 9999px; background: var(--sunken); }
+  .seg button {
+    padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2);
+    cursor: pointer; transition: background 200ms, color 200ms;
+  }
+  .seg button[aria-selected='true'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+
+  /* Línea de tiempo (elementos creados por JS => :global) */
+  #lista:not(:empty)::before { content: ''; position: absolute; left: 1.75rem; top: 0.5rem; bottom: 0.5rem; width: 2px; background: var(--line); }
+  #lista :global(.item) { position: relative; display: flex; gap: 1rem; opacity: 0; transform: translateX(-12px); animation: slide 450ms var(--ease-out, ease-out) forwards; animation-delay: calc(var(--i) * 90ms + 150ms); }
+  @keyframes slide { to { opacity: 1; transform: none; } }
+  #lista :global(.fecha) {
+    position: relative; z-index: 1; display: grid; place-items: center; align-content: center; width: 3.5rem; height: 3.5rem; flex-shrink: 0;
+    border-radius: 1rem; background: var(--color-blud-flag-red, #CA2B2B); color: #fff; box-shadow: 0 0 0 4px var(--surface); line-height: 1;
+  }
+  #lista :global(.fecha[data-pasada='true']) { background: var(--sunken); color: var(--ink-2); }
+  #lista :global(.card) { flex: 1; min-width: 0; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); transition: transform 200ms, box-shadow 200ms; }
+  #lista :global(.card:hover) { transform: translateY(-2px); box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.35); }
+  #lista :global(.chip) { display: inline-flex; align-items: center; gap: 0.25rem; border-radius: 9999px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 700; }
+  #lista :global(.chip-activa) { background: var(--accent-soft); color: var(--accent-ink); }
+  #lista :global(.chip-ok) { background: var(--ok-soft); color: var(--ok); }
+  #lista :global(.chip-pasada) { background: var(--sunken); color: var(--ink-3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal, #lista :global(.item) { animation: none; opacity: 1; transform: none; }
+    .pulse, .drop-float { animation: none; }
+  }
+</style>
+
+<script>
+  import { centroById, getCitas, cancelCita, cargarFicha, puedeDonar, loadDonor, esc, toast } from '../../lib/donante';
+  import { onDb } from '../../lib/db';
+  import { hoyISO } from '../../lib/ui';
+
+  type Filtro = 'proximas' | 'pasadas' | 'todas';
+  type CitaVista = ReturnType<typeof getCitas>[number];
+
+  const activa = (c: CitaVista, hoy: string) => c.fecha >= hoy && (!c.estado || c.estado === 'Programada');
+  const dias = (iso: string) => Math.round((new Date(iso + 'T00:00:00').getTime() - new Date(hoyISO() + 'T00:00:00').getTime()) / 86400000);
+  const faltan = (n: number) => (n === 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`);
+  const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + 'T00:00:00').toLocaleDateString('es-VE', o);
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  function estadoDe(c: CitaVista, hoy: string): { txt: string; cls: string } {
+    if (activa(c, hoy)) return { txt: 'Agendada', cls: 'chip-activa' };
+    if (c.estado && /atendida|complet|realizad/i.test(c.estado)) return { txt: '✓ Atendida', cls: 'chip-ok' };
+    if (c.estado && /no ?asist/i.test(c.estado)) return { txt: 'No asististe', cls: 'chip-pasada' };
+    return { txt: 'Pasada', cls: 'chip-pasada' };
+  }
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-citas]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    let filtro: Filtro = 'proximas';
+
+    async function cancelar(id: string, btn?: HTMLButtonElement | null) {
+      if (!confirm('¿Seguro que quieres cancelar esta cita?')) return;
+      if (btn) btn.disabled = true;
+      const res = await cancelCita(id);
+      if (btn) btn.disabled = false;
+      if (!res.ok) return toast(res.error);
+      render();
+      toast('Cita cancelada. Cuando quieras, agenda otra 💙');
+    }
+
+    function render() {
+      const hoy = hoyISO();
+      const citas = getCitas();
+      const activas = citas.filter((c) => activa(c, hoy)).sort((a, b) => `${a.fecha}${a.hora}`.localeCompare(`${b.fecha}${b.hora}`));
+      const pasadas = citas.filter((c) => !activa(c, hoy)).sort((a, b) => `${b.fecha}${b.hora}`.localeCompare(`${a.fecha}${a.hora}`));
+      const prox = activas[0];
+
+      // Próxima cita
+      $('#proxima').classList.toggle('hidden', !prox);
+      if (prox) {
+        $('#proxima-fecha').textContent = `${cap(fmt(prox.fecha, { weekday: 'long', day: 'numeric', month: 'long' }))} · ${prox.hora}`;
+        $('#proxima-centro').textContent = prox.centroNombre || centroById(prox.centroId)?.name || 'Centro de donación';
+        $('#proxima-faltan').textContent = faltan(dias(prox.fecha));
+        $('#proxima-cancelar').dataset.id = prox.id;
+      }
+
+      $('[data-stat="activas"]').textContent = String(activas.length);
+      $('[data-stat="pasadas"]').textContent = String(pasadas.length);
+      $('[data-stat="dias"]').textContent = prox ? String(dias(prox.fecha)) : '—';
+
+      const lista = filtro === 'proximas' ? activas : filtro === 'pasadas' ? pasadas : [...activas, ...pasadas];
+      $('#lista').innerHTML = lista
+        .map((c, i) => {
+          const e = estadoDe(c, hoy);
+          const esActiva = activa(c, hoy);
+          const centro = c.centroNombre || centroById(c.centroId)?.name || 'Centro de donación';
+          const dir = centroById(c.centroId)?.address;
+          return `
+          <li class="item" style="--i:${i}">
+            <span class="fecha" data-pasada="${!esActiva}" aria-hidden="true">
+              <span class="text-xl font-extrabold">${fmt(c.fecha, { day: 'numeric' })}</span>
+              <span class="text-[0.625rem] font-bold uppercase tracking-wider">${esc(fmt(c.fecha, { month: 'short' }).replace('.', ''))}</span>
+            </span>
+            <div class="card">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <p class="font-bold text-ink truncate">${esc(centro)}</p>
+                <span class="chip ${e.cls}">${e.txt}</span>
+              </div>
+              <p class="mt-0.5 text-sm text-ink-3">${esc(cap(fmt(c.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })))} · ${esc(c.hora)}</p>
+              ${dir ? `<p class="mt-0.5 text-xs text-ink-3">${esc(dir)}</p>` : ''}
+              ${esActiva ? `
+              <div class="mt-3 flex flex-wrap gap-2">
+                <a href="/donante/centros" class="btn btn-secondary text-xs px-3 py-1.5">Cómo llegar</a>
+                <button type="button" class="btn btn-secondary text-xs px-3 py-1.5" data-cancelar="${esc(c.id)}">Cancelar cita</button>
+              </div>` : ''}
+            </div>
+          </li>`;
+        })
+        .join('');
+
+      const vacio = lista.length === 0;
+      $('#vacio').classList.toggle('hidden', !vacio);
+      if (vacio) {
+        $('#vacio-titulo').textContent = filtro === 'pasadas' ? 'Aún no tienes citas pasadas' : 'No tienes citas agendadas';
+        $('#vacio-texto').textContent = filtro === 'pasadas'
+          ? 'Aquí verás las citas a las que ya asististe.'
+          : 'Cuando agendes una donación aparecerá aquí con su fecha, hora y centro.';
+      }
+
+      // Con el perfil incompleto, los botones de agendar llevan a completar los datos.
+      const listo = puedeDonar(loadDonor());
+      root.querySelectorAll<HTMLAnchorElement>('[data-agendar]').forEach((a) => {
+        a.href = listo ? '/donante/donar' : '/donante/perfil?vista=datos';
+        a.textContent = listo ? (a.closest('#vacio') ? 'Agendar una cita' : 'Agendar donación') : 'Completa tu perfil para donar';
+      });
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) =>
+      b.addEventListener('click', () => {
+        filtro = b.dataset.filtro as Filtro;
+        root.querySelectorAll('[data-filtro]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+        render();
+      }),
+    );
+    $('#lista').addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cancelar]');
+      if (btn) cancelar(btn.dataset.cancelar!, btn);
+    });
+    $('#proxima-cancelar').addEventListener('click', (e) => {
+      const id = (e.currentTarget as HTMLElement).dataset.id;
+      if (id) cancelar(id, e.currentTarget as HTMLButtonElement);
+    });
+
+    render();
+    cargarFicha().then(render);
+    onDb(render); // la sincronización con la base trae las citas al día
+    window.addEventListener('blud:auth', render);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

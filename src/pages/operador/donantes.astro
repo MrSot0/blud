@@ -191,6 +191,13 @@ import { BLOOD_TYPES } from '../../lib/db';
       buscar(q);
     });
 
+    // Llega desde /verificar (QR escaneado): busca de una vez.
+    const pre = new URLSearchParams(location.search).get('q');
+    if (pre) {
+      ($('#buscar') as HTMLInputElement).value = pre;
+      buscar(pre);
+    }
+
     $('#res-check').addEventListener('change', (e) => {
       ($('#btn-verificar') as HTMLButtonElement).disabled = !(e.target as HTMLInputElement).checked;
     });

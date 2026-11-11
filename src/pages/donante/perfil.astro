@@ -55,6 +55,22 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       <div class="lg:col-span-8 space-y-6">
         <!-- Sección: Carnet Digital -->
         <div data-frame="carnet" class="space-y-6">
+          <section id="req-panel" class="hidden panel p-6 sm:p-8 space-y-4 border-l-4 border-accent" aria-labelledby="h-req">
+            <div class="flex items-start gap-4">
+              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+              </span>
+              <div class="min-w-0 flex-1">
+                <h2 id="h-req" class="text-lg font-bold text-ink">Completa tu perfil para poder donar</h2>
+                <p class="text-sm text-ink-3 mt-0.5">El banco de sangre necesita estos datos antes de tu primera cita.</p>
+              </div>
+            </div>
+            <ul id="req-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></ul>
+            <div class="flex justify-end">
+              <button type="button" class="btn btn-primary" data-ir-datos>Completar mis datos</button>
+            </div>
+          </section>
+
           <section class="panel p-6 sm:p-8 space-y-5 w-full" aria-label="Carnet de donante">
             <div class="scene" id="carnet-scene">
               <div class="tilt" id="carnet-tilt">
@@ -79,7 +95,10 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                     </div>
 
                     <div class="relative flex items-center gap-3 mt-5">
-                      <span class="grid size-14 shrink-0 place-items-center rounded-full bg-white text-lg font-extrabold text-blud-flag-red shadow-lg ring-4 ring-white/25" data-d="initials">?</span>
+                      <span class="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-white text-lg font-extrabold text-blud-flag-red shadow-lg ring-4 ring-white/25">
+                        <span data-d="initials">?</span>
+                        <img data-foto alt="Foto del donante" class="absolute inset-0 size-full object-cover" hidden />
+                      </span>
                       <div class="min-w-0">
                         <p class="truncate text-lg font-extrabold leading-tight" data-d="fullname">Donante BLUD</p>
                         <p class="text-xs font-medium text-white/80">ID <span class="font-mono tracking-wider" data-d="id">BLD-000000</span></p>
@@ -110,7 +129,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                     <div class="relative flex flex-1 flex-col items-center justify-center text-center gap-3">
                       <div class="qr-tile size-40" data-qr role="img" aria-label="Código QR ampliado del donante"></div>
                       <p class="text-sm font-bold">Muestra este código en el centro</p>
-                      <p class="text-xs text-white/80 max-w-[16rem]">El personal lo escanea para confirmar tu identidad y tu tipo de sangre.</p>
+                      <p class="text-xs text-white/80 max-w-[16rem]">El personal lo escanea y ve tu ficha de donante: foto, datos y tipo de sangre.</p>
                       <p class="font-mono text-xs tracking-widest text-white/90" data-d="id">BLD-000000</p>
                     </div>
                   </div>
@@ -150,13 +169,29 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
             </div>
 
             <form id="donor-form" class="space-y-4" novalidate>
+              <div class="flex flex-col sm:flex-row sm:items-center gap-4 rounded-control bg-sunken p-4">
+                <span class="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-full bg-accent-soft text-2xl font-extrabold text-accent-ink ring-4 ring-surface">
+                  <span data-d="initials">?</span>
+                  <img data-foto alt="Tu foto" class="absolute inset-0 size-full object-cover" hidden />
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="font-bold text-ink">Foto del carnet <span class="text-accent">*</span></p>
+                  <p class="text-xs text-ink-3 mt-0.5">De frente, con buena luz, sin lentes oscuros ni gorra. El personal la usa para confirmar que eres tú.</p>
+                </div>
+                <label for="foto-input" class="btn btn-secondary shrink-0 cursor-pointer self-start sm:self-auto" id="foto-btn" tabindex="0">
+                  <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                  <span id="foto-btn-txt">Subir foto</span>
+                </label>
+                <input type="file" id="foto-input" accept="image/jpeg,image/png,image/webp" class="sr-only" tabindex="-1" />
+              </div>
+
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label for="firstname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombres</label>
+                  <label for="firstname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombres <span class="text-accent">*</span></label>
                   <input type="text" id="firstname" name="firstname" class="field" autocomplete="given-name" required />
                 </div>
                 <div class="space-y-1.5">
-                  <label for="lastname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Apellidos</label>
+                  <label for="lastname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Apellidos <span class="text-accent">*</span></label>
                   <input type="text" id="lastname" name="lastname" class="field" autocomplete="family-name" required />
                 </div>
               </div>
@@ -165,25 +200,26 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                 <div class="space-y-1.5">
                   <label for="email" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Correo electrónico</label>
                   <input type="email" id="email" name="email" class="field" autocomplete="email" required />
+                  <p class="hidden text-xs text-ink-3" id="email-lock">Es el correo con el que inicias sesión.</p>
                 </div>
                 <div class="space-y-1.5">
-                  <label for="telefono" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Teléfono</label>
+                  <label for="telefono" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Teléfono <span class="text-accent">*</span></label>
                   <input type="tel" id="telefono" name="telefono" class="field" autocomplete="tel" placeholder="+58 414 1234567" />
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label for="cedula" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cédula</label>
+                  <label for="cedula" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cédula <span class="text-accent">*</span></label>
                   <input type="text" id="cedula" name="cedula" class="field" inputmode="numeric" placeholder="V-12345678" autocomplete="off" />
                   <p class="hidden text-xs text-ink-3" id="cedula-lock">Verificada: para cambiarla, contacta a soporte.</p>
                 </div>
                 <div class="space-y-1.5">
-                  <label for="nacimiento" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha de nacimiento</label>
+                  <label for="nacimiento" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha de nacimiento <span class="text-accent">*</span></label>
                   <input type="date" id="nacimiento" name="nacimiento" class="field" autocomplete="bday" />
                 </div>
                 <div class="space-y-1.5">
-                  <label for="sexo" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Sexo</label>
+                  <label for="sexo" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Sexo <span class="text-accent">*</span></label>
                   <select id="sexo" name="sexo" class="field">
                     <option value="">Selecciona…</option>
                     <option value="F">Femenino</option>
@@ -195,7 +231,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
-                  <label for="sangre" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de sangre</label>
+                  <label for="sangre" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Tipo de sangre <span class="text-accent">*</span></label>
                   <select id="sangre" name="sangre" class="field">
                     <option value="">Selecciona…</option>
                     {bloodTypes.map((t) => <option value={t}>{t}</option>)}
@@ -436,67 +472,15 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 <script>
   import QRCode from 'qrcode';
-
-  const STORE_KEY = 'blud-donor';
-  type Kyc = 'none' | 'review' | 'verified';
-
-  interface Donor {
-    id: string;
-    firstname: string;
-    lastname: string;
-    email: string;
-    telefono: string;
-    cedula: string;
-    nacimiento: string;
-    sangre: string;
-    ciudad: string;
-    since: string;
-    kyc: Kyc;
-    donaciones: number;
-  }
+  import {
+    cargarFicha, guardarPerfil, loadDonor, qrDe, requisitos, subirFoto, urlFoto, toast, type Donor, type Kyc,
+  } from '../../lib/donante';
+  import { usaSupabase } from '../../lib/supabase';
 
   const q = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) =>
     root.querySelector<T>(sel);
   const qa = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) =>
     Array.from(root.querySelectorAll<T>(sel));
-
-  const genId = () => 'BLD-' + Math.random().toString(36).slice(2, 8).toUpperCase();
-
-  function readSession(): Record<string, any> {
-    try {
-      return JSON.parse(localStorage.getItem('blud-session') || sessionStorage.getItem('blud-session') || 'null') ?? {};
-    } catch {
-      return {};
-    }
-  }
-
-  function loadDonor(): Donor {
-    const s = readSession();
-    const parts = String(s.name ?? '').split(/\s+/).filter(Boolean);
-    const base: Donor = {
-      id: genId(),
-      firstname: s.firstname ?? parts[0] ?? '',
-      lastname: s.lastname ?? parts.slice(1).join(' '),
-      email: s.email ?? '',
-      telefono: s.telefono ?? '',
-      cedula: '',
-      nacimiento: '',
-      sangre: '',
-      ciudad: '',
-      since: new Date().toISOString().slice(0, 10),
-      kyc: 'none',
-      donaciones: 0,
-    };
-    let saved: Partial<Donor> = {};
-    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch {}
-    const donor = { ...base, ...saved };
-    persist(donor);
-    return donor;
-  }
-
-  function persist(d: Donor) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); } catch {}
-  }
 
   const fullName = (d: Donor) => `${d.firstname} ${d.lastname}`.trim() || 'Donante BLUD';
   const initialsOf = (d: Donor) =>
@@ -508,24 +492,38 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const setText = (key: string, value: string) =>
     qa(`[data-d="${key}"]`).forEach((el) => (el.textContent = value));
 
-  const qrPayload = (d: Donor) =>
-    JSON.stringify({ v: 1, id: d.id, n: fullName(d), t: d.sangre || null, kyc: d.kyc === 'verified' });
-
   let qrToken = 0;
+  let qrHecho = '';
   async function renderQR(d: Donor) {
+    const payload = qrDe(d);
+    if (payload === qrHecho) return;
     const token = ++qrToken;
     try {
-      const svg = await QRCode.toString(qrPayload(d), {
+      const svg = await QRCode.toString(payload, {
         type: 'svg',
         margin: 0,
         errorCorrectionLevel: 'M',
         color: { dark: '#1f0a0c', light: '#ffffff' },
       });
       if (token !== qrToken) return;
+      qrHecho = payload;
       qa('[data-qr]').forEach((el) => (el.innerHTML = svg));
     } catch (err) {
       console.error('No se pudo generar el QR', err);
     }
+  }
+
+  let fotoHecha: string | undefined;
+  async function renderFoto(d: Donor) {
+    if (d.foto === fotoHecha) return;
+    fotoHecha = d.foto;
+    const url = await urlFoto(d.foto);
+    qa<HTMLImageElement>('[data-foto]').forEach((img) => {
+      if (url) img.src = url;
+      img.hidden = !url;
+    });
+    const txt = q('#foto-btn-txt');
+    if (txt) txt.textContent = url ? 'Cambiar foto' : 'Subir foto';
   }
 
   const KYC_COPY: Record<Kyc, { chip: string; title: string; text: string; cta: string }> = {
@@ -569,6 +567,21 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     lock?.classList.toggle('hidden', !locked);
   }
 
+  function renderRequisitos(d: Donor) {
+    const reqs = requisitos(d);
+    const falta = reqs.some((r) => !r.ok);
+    q('#req-panel')?.classList.toggle('hidden', !falta);
+    const list = q('#req-list');
+    if (!list) return;
+    list.innerHTML = reqs
+      .map((r) => `
+        <li class="flex items-center gap-2.5 rounded-control px-3 py-2 text-sm ${r.ok ? 'bg-sunken text-ink-3' : 'bg-accent-soft font-semibold text-accent-ink'}">
+          <span class="grid size-5 shrink-0 place-items-center rounded-full ${r.ok ? 'bg-ok text-white' : 'border-2 border-current'}" aria-hidden="true">${r.ok ? '<svg viewBox="0 0 24 24" class="size-3" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>' : ''}</span>
+          <span>${r.label}</span><span class="sr-only">${r.ok ? '(listo)' : '(pendiente)'}</span>
+        </li>`)
+      .join('');
+  }
+
   function renderCard(d: Donor) {
     setText('firstname', d.firstname || 'donante');
     setText('fullname', fullName(d));
@@ -578,7 +591,9 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     setText('cedula-mask', maskCedula(d.cedula));
     setText('since', fmtSince(d.since));
     renderQR(d);
+    renderFoto(d);
     renderKyc(d);
+    renderRequisitos(d);
   }
 
   function countUp(el: HTMLElement, to: number) {
@@ -594,16 +609,6 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     requestAnimationFrame(tick);
   }
 
-  let toastTimer: number | undefined;
-  function toast(msg: string) {
-    const el = q('#toast');
-    if (!el) return;
-    el.textContent = msg;
-    el.dataset.show = 'true';
-    clearTimeout(toastTimer);
-    toastTimer = window.setTimeout(() => (el.dataset.show = 'false'), 3200);
-  }
-
   function init() {
     const root = q<HTMLElement>('[data-profile]');
     if (!root || root.dataset.ready) return;
@@ -613,20 +618,42 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
     const form = q<HTMLFormElement>('#donor-form', root)!;
     const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sexo', 'sangre', 'ciudad'] as const;
-    fields.forEach((f) => {
+    const fillForm = (d: Donor) => fields.forEach((f) => {
       const input = form.elements.namedItem(f) as HTMLInputElement | null;
-      if (input) input.value = (donor as any)[f] ?? '';
+      if (input) input.value = String((d as unknown as Record<string, unknown>)[f] ?? '');
     });
+    const renderStats = (d: Donor) => {
+      countUp(q('[data-count="donaciones"]', root)!, d.donaciones);
+      countUp(q('[data-count="vidas"]', root)!, d.donaciones * 3);
+    };
 
+    // Con base real el correo es el de inicio de sesión: no se cambia desde aquí.
+    if (usaSupabase()) {
+      const email = form.elements.namedItem('email') as HTMLInputElement;
+      email.readOnly = true;
+      email.classList.add('opacity-70');
+      q('#email-lock', root)?.classList.remove('hidden');
+    }
+
+    fillForm(donor);
     renderCard(donor);
-    countUp(q('[data-count="donaciones"]', root)!, donor.donaciones);
-    countUp(q('[data-count="vidas"]', root)!, donor.donaciones * 3);
+    renderStats(donor);
+
+    // La base manda: al abrir el perfil se traen los datos guardados en ella.
+    cargarFicha().then((d) => {
+      const cambio = JSON.stringify(d) !== JSON.stringify(donor);
+      donor = d;
+      if (!cambio) return;
+      fillForm(d);
+      renderCard(d);
+      renderStats(d);
+    });
 
     form.addEventListener('input', () => {
       const draft = { ...donor } as Donor;
       fields.forEach((f) => {
         const input = form.elements.namedItem(f) as HTMLInputElement | null;
-        if (input && !input.disabled) (draft as any)[f] = input.value.trim();
+        if (input && !input.disabled) (draft as unknown as Record<string, string>)[f] = input.value.trim();
       });
       renderCard(draft);
     });
@@ -638,7 +665,34 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       if (field) (form.elements.namedItem(field) as HTMLElement | null)?.focus();
     };
 
-    form.addEventListener('submit', (e) => {
+    // ---------- Foto ----------
+    const fotoInput = q<HTMLInputElement>('#foto-input', root)!;
+    const fotoBtn = q('#foto-btn', root)!;
+    fotoBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fotoInput.click(); }
+    });
+    fotoInput.addEventListener('change', async () => {
+      const file = fotoInput.files?.[0];
+      fotoInput.value = '';
+      if (!file) return;
+      fotoBtn.setAttribute('aria-busy', 'true');
+      fotoBtn.classList.add('opacity-60', 'pointer-events-none');
+      const txt = q('#foto-btn-txt', root)!;
+      const antes = txt.textContent;
+      txt.textContent = 'Subiendo…';
+      const res = await subirFoto(file);
+      fotoBtn.removeAttribute('aria-busy');
+      fotoBtn.classList.remove('opacity-60', 'pointer-events-none');
+      txt.textContent = antes;
+      if (!res.ok) return toast(res.error);
+      donor = { ...donor, foto: res.donor.foto };
+      renderCard(donor);
+      toast('¡Foto lista! Ya aparece en tu carnet 📸');
+    });
+
+    // ---------- Datos ----------
+    const submitBtn = q<HTMLButtonElement>('button[type="submit"]', form)!;
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errorBox.classList.add('hidden');
       const fd = new FormData(form);
@@ -647,8 +701,9 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       if (!get('firstname')) return fail('Escribe tus nombres.', 'firstname');
       if (!get('lastname')) return fail('Escribe tus apellidos.', 'lastname');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(get('email'))) return fail('Revisa tu correo electrónico.', 'email');
+      if (get('telefono') && get('telefono').replace(/\D/g, '').length < 10) return fail('Revisa tu teléfono: +58 414 1234567.', 'telefono');
 
-      const ced = get('cedula');
+      const ced = donor.kyc === 'verified' ? donor.cedula : get('cedula');
       if (donor.kyc !== 'verified' && ced && !/^[VEve]?-?\d{6,9}$/.test(ced)) {
         return fail('La cédula debe verse así: V-12345678.', 'cedula');
       }
@@ -658,9 +713,12 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         const age = (Date.now() - b.getTime()) / (365.25 * 24 * 3600 * 1000);
         if (isNaN(age) || age < 18) return fail('Para donar necesitas tener 18 años o más.', 'nacimiento');
       }
+      if (usaSupabase() && !ced) return fail('Escribe tu cédula: la necesitamos para registrarte en el banco de sangre.', 'cedula');
 
-      donor = {
-        ...donor,
+      submitBtn.disabled = true;
+      const label = submitBtn.textContent;
+      submitBtn.textContent = 'Guardando…';
+      const res = await guardarPerfil({
         firstname: get('firstname'),
         lastname: get('lastname'),
         email: get('email'),
@@ -670,10 +728,14 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         sexo: (get('sexo') || undefined) as Donor['sexo'],
         sangre: get('sangre'),
         ciudad: get('ciudad'),
-      };
-      persist(donor);
+      });
+      submitBtn.disabled = false;
+      submitBtn.textContent = label;
+      if (!res.ok) return fail(res.error);
+      donor = res.donor;
+      fillForm(donor);
       renderCard(donor);
-      toast('¡Listo! Tu carnet está actualizado 🎉');
+      toast(res.aviso ?? '¡Listo! Tu carnet está actualizado 🎉');
     });
 
     const carnet = q('#carnet', root)!;
@@ -698,8 +760,6 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         const y = (e.clientY - r.top) / r.height;
         tilt.style.setProperty('--ry', `${(x - 0.5) * 14}deg`);
         tilt.style.setProperty('--rx', `${(0.5 - y) * 14}deg`);
-        scene.style.setProperty('--mx', `${x * 100}%`);
-        scene.style.setProperty('--my', `${y * 100}%`);
         qa('.shine', scene).forEach((s) => {
           s.style.setProperty('--mx', `${x * 100}%`);
           s.style.setProperty('--my', `${y * 100}%`);
@@ -711,6 +771,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       });
     }
 
+    // ---------- Verificación de identidad ----------
     const dlg = q<HTMLDialogElement>('#kyc-dialog')!;
     const nextBtn = q<HTMLButtonElement>('#kyc-next', dlg)!;
     const backBtn = q<HTMLButtonElement>('#kyc-back', dlg)!;
@@ -787,8 +848,9 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
       await new Promise((r) => setTimeout(r, 900));
 
-      donor = { ...donor, kyc: 'review' };
-      persist(donor);
+      // El sello definitivo lo pone el personal al escanear el QR en el centro.
+      donor = { ...loadDonor(), kyc: 'review' };
+      try { localStorage.setItem('blud-donor', JSON.stringify(donor)); } catch {}
       renderCard(donor);
       dlg.close();
       resetKyc();
@@ -798,6 +860,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     q('#kyc-open', root)?.addEventListener('click', () => {
       if (!donor.cedula || !donor.nacimiento) {
         toast('Primero guarda tu cédula y tu fecha de nacimiento.');
+        setVista('datos');
         (form.elements.namedItem(donor.cedula ? 'nacimiento' : 'cedula') as HTMLElement)?.focus();
         return;
       }
@@ -809,12 +872,12 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     dlg.addEventListener('close', resetKyc);
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
-    // Lógica del índice lateral (pestañas)
+    // ---------- Índice lateral (pestañas) ----------
     type Vista = 'carnet' | 'datos' | 'kyc';
     const frames = root.querySelectorAll<HTMLElement>('[data-frame]');
     const botones = root.querySelectorAll<HTMLButtonElement>('[data-vista]');
 
-    const setVista = (v: Vista) => {
+    function setVista(v: Vista) {
       frames.forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
       botones.forEach((b) => {
         const on = b.dataset.vista === v;
@@ -824,17 +887,19 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         b.classList.toggle('text-ink-2', !on);
         b.classList.toggle('hover:bg-sunken', !on);
       });
-      if (v === 'datos') q<HTMLInputElement>('#firstname', root)?.focus({ preventScroll: true });
-    };
+      if (v === 'datos') {
+        // Lleva al primer dato que falta (o a Nombres).
+        const falta = requisitos(donor).find((r) => !r.ok)?.key;
+        const target = falta === 'foto' ? q('#foto-btn', root) : q<HTMLElement>(`#${falta}`, root) ?? q('#firstname', root);
+        target?.focus({ preventScroll: true });
+      }
+    }
 
-    botones.forEach((b) => {
-      b.addEventListener('click', () => {
-        const v = b.dataset.vista as Vista;
-        setVista(v);
-      });
-    });
+    botones.forEach((b) => b.addEventListener('click', () => setVista(b.dataset.vista as Vista)));
+    qa('[data-ir-datos]', root).forEach((b) => b.addEventListener('click', () => setVista('datos')));
 
-    setVista('carnet');
+    const pedida = new URLSearchParams(location.search).get('vista');
+    setVista(pedida === 'datos' || pedida === 'kyc' ? pedida : 'carnet');
   }
 
   init();

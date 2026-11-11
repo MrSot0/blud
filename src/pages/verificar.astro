@@ -1,0 +1,228 @@
+---
+// src/pages/verificar.astro
+// Adónde lleva el QR del carnet (/verificar?id=BLD-000123). El personal de salud ve la ficha completa del donante
+// (foto, nombre, cédula, teléfono, tipo de sangre…); cualquier otra persona solo ve que el carnet existe.
+// Con base real los datos los entrega blud_donante_ficha(), que exige un rol del personal.
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="BLUD | Verificar carnet" description="Verificación del carnet de donante BLUD.">
+  <section class="container-blud py-10 sm:py-14 min-h-[calc(100dvh-var(--header-h))]">
+    <div class="mx-auto max-w-2xl space-y-6" id="verificar">
+      <div class="pb-6 border-b border-line">
+        <p class="font-mono text-xs font-semibold uppercase tracking-widest text-accent-ink">Carnet de donante</p>
+        <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Verificar donante</h1>
+        <p class="mt-1 text-sm sm:text-base text-ink-2">Ficha del donante leída desde el código QR de su carnet.</p>
+      </div>
+
+      <!-- Cargando -->
+      <div data-v="cargando" class="panel p-8 text-center text-sm text-ink-3">Buscando al donante…</div>
+
+      <!-- Mensajes (sin sesión, sin permiso, no encontrado) -->
+      <div data-v="aviso" hidden class="panel p-8 text-center space-y-4">
+        <span class="mx-auto grid size-14 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <h2 class="text-lg font-bold text-ink" data-aviso-titulo></h2>
+        <p class="text-sm text-ink-2 max-w-md mx-auto" data-aviso-texto></p>
+        <a href="/login" class="btn btn-primary" data-aviso-cta hidden>Iniciar sesión</a>
+      </div>
+
+      <!-- Ficha -->
+      <article data-v="ficha" hidden class="panel overflow-hidden">
+        <div class="ficha-top p-6 sm:p-8 text-white">
+          <div class="relative flex flex-col sm:flex-row sm:items-center gap-5">
+            <span class="relative grid size-28 shrink-0 place-items-center overflow-hidden rounded-panel bg-white text-3xl font-extrabold text-blud-flag-red shadow-lg ring-4 ring-white/25">
+              <span data-f="iniciales">?</span>
+              <img data-f-foto alt="Foto del donante" class="absolute inset-0 size-full object-cover" hidden />
+            </span>
+            <div class="min-w-0 flex-1">
+              <span class="estado" data-f-estado>Sin verificar</span>
+              <p class="mt-2 text-2xl font-extrabold leading-tight" data-f="nombre">—</p>
+              <p class="mt-1 font-mono text-sm tracking-wider text-white/85" data-f="id">—</p>
+            </div>
+            <div class="text-left sm:text-right">
+              <p class="text-[0.625rem] font-semibold uppercase tracking-widest text-white/75">Sangre</p>
+              <p class="text-5xl font-black leading-none" data-f="sangre">—</p>
+            </div>
+          </div>
+        </div>
+
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-px bg-line">
+          <div class="dato"><dt>Nombres</dt><dd data-f="nombres">—</dd></div>
+          <div class="dato"><dt>Apellidos</dt><dd data-f="apellidos">—</dd></div>
+          <div class="dato"><dt>Cédula</dt><dd class="font-mono" data-f="cedula">—</dd></div>
+          <div class="dato"><dt>Teléfono</dt><dd data-f="telefono">—</dd></div>
+          <div class="dato"><dt>Fecha de nacimiento</dt><dd data-f="nacimiento">—</dd></div>
+          <div class="dato"><dt>Sexo</dt><dd data-f="sexo">—</dd></div>
+          <div class="dato"><dt>Correo</dt><dd class="truncate" data-f="email">—</dd></div>
+          <div class="dato"><dt>Donante desde</dt><dd data-f="registrado">—</dd></div>
+          <div class="dato"><dt>Donaciones</dt><dd data-f="donaciones">—</dd></div>
+          <div class="dato"><dt>Última donación</dt><dd data-f="ultima">—</dd></div>
+          <div class="dato sm:col-span-2"><dt>Próxima cita</dt><dd data-f="cita">—</dd></div>
+        </dl>
+
+        <div class="flex flex-col sm:flex-row gap-3 p-6 sm:p-8 border-t border-line">
+          <a href="/operador/donantes" class="btn btn-primary flex-1" data-f-operar hidden>Verificar o registrar donación</a>
+          <a href="/" class="btn btn-secondary flex-1" data-f-volver>Volver a mi panel</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .ficha-top {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--color-blud-flag-red) 0%, var(--color-blud-flag-red) 35%, var(--color-blud-oxblood) 100%);
+  }
+  .ficha-top::after {
+    content: '';
+    position: absolute;
+    width: 16rem; height: 16rem; top: -6rem; right: -5rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.1);
+    pointer-events: none;
+  }
+  .estado {
+    display: inline-flex; padding: 0.2rem 0.6rem; border-radius: 9999px;
+    font-size: 0.6875rem; font-weight: 700;
+    background: rgb(255 255 255 / 0.2); color: #fff;
+  }
+  .estado[data-ok='true'] { background: #fff; color: #15803d; }
+  .dato { background: var(--surface); padding: 1rem 1.5rem; }
+  .dato dt { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+  .dato dd { margin-top: 0.25rem; font-weight: 600; color: var(--ink); }
+  @media (min-width: 640px) { .dato { padding-inline: 2rem; } }
+</style>
+
+<script>
+  import { getSession } from '../lib/auth';
+  import { buscarRegistro, donaciones, normCedula } from '../lib/db';
+  import { ROLE_HOME } from '../lib/roles';
+  import { sb, usaSupabase } from '../lib/supabase';
+  import { edadDe, fmtFecha } from '../lib/donante';
+
+  interface Ficha {
+    id: string; nombres?: string; apellidos?: string; cedula?: string; telefono?: string; email?: string;
+    nacimiento?: string; sexo?: string; sangre?: string; registrado?: string; verificado?: boolean;
+    foto?: string; donaciones?: number; ultimaDonacion?: string;
+    proximaCita?: { centro: string; date: string; time: string };
+  }
+
+  const STAFF = ['operador', 'laboratorio', 'soporte', 'director'];
+  const root = document.getElementById('verificar')!;
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  const ver = (v: 'cargando' | 'aviso' | 'ficha') =>
+    root.querySelectorAll<HTMLElement>('[data-v]').forEach((el) => (el.hidden = el.dataset.v !== v));
+
+  function aviso(titulo: string, texto: string, login = false) {
+    $('[data-aviso-titulo]').textContent = titulo;
+    $('[data-aviso-texto]').textContent = texto;
+    const cta = $<HTMLAnchorElement>('[data-aviso-cta]');
+    cta.hidden = !login;
+    cta.href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+    ver('aviso');
+  }
+
+  const set = (k: string, v: string | number | undefined | null) => {
+    const el = root.querySelector(`[data-f="${k}"]`);
+    if (el) el.textContent = v === undefined || v === null || v === '' ? '—' : String(v);
+  };
+
+  async function mostrar(f: Ficha, rol: string) {
+    const nombre = `${f.nombres ?? ''} ${f.apellidos ?? ''}`.trim() || 'Donante BLUD';
+    set('nombre', nombre);
+    set('iniciales', nombre.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join(''));
+    set('id', f.id);
+    set('sangre', f.sangre);
+    set('nombres', f.nombres);
+    set('apellidos', f.apellidos);
+    set('cedula', f.cedula);
+    set('telefono', f.telefono);
+    const edad = f.nacimiento ? edadDe(f.nacimiento) : null;
+    set('nacimiento', f.nacimiento ? `${fmtFecha(f.nacimiento)}${edad !== null ? ` (${edad} años)` : ''}` : '');
+    set('sexo', f.sexo === 'F' ? 'Femenino' : f.sexo === 'M' ? 'Masculino' : '');
+    set('email', f.email);
+    set('registrado', f.registrado ? fmtFecha(f.registrado) : '');
+    set('donaciones', f.donaciones ?? 0);
+    set('ultima', f.ultimaDonacion ? fmtFecha(f.ultimaDonacion) : 'Primera vez');
+    set('cita', f.proximaCita ? `${f.proximaCita.centro} · ${fmtFecha(f.proximaCita.date, { weekday: 'long', day: 'numeric', month: 'long' })} · ${f.proximaCita.time}` : 'Sin cita agendada');
+
+    const estado = $('[data-f-estado]');
+    estado.textContent = f.verificado ? '✓ Identidad verificada' : 'Sin verificar';
+    estado.dataset.ok = String(!!f.verificado);
+
+    const operar = $<HTMLAnchorElement>('[data-f-operar]');
+    operar.hidden = rol !== 'operador';
+    operar.href = `/operador/donantes?q=${encodeURIComponent(f.id)}`;
+    $<HTMLAnchorElement>('[data-f-volver]').href = ROLE_HOME[rol as keyof typeof ROLE_HOME] ?? '/';
+
+    // Foto: data URL (demo) o URL firmada del bucket privado (base real; el personal puede leerla).
+    let url: string | null = null;
+    if (f.foto?.startsWith('data:')) url = f.foto;
+    else if (f.foto && sb()) url = (await sb()!.storage.from('fotos-donantes').createSignedUrl(f.foto, 600)).data?.signedUrl ?? null;
+    const img = $<HTMLImageElement>('[data-f-foto]');
+    if (url) { img.src = url; img.hidden = false; }
+    ver('ficha');
+  }
+
+  /** Modo demo: próxima cita del donante en el libro de citas de este navegador. */
+  function citaLocal(email?: string): Ficha['proximaCita'] {
+    if (!email) return undefined;
+    const hoy = new Date().toISOString().slice(0, 10);
+    try {
+      const book = JSON.parse(localStorage.getItem('blud-appointments') || '{}') as Record<string, { centerName: string; date: string; time: string }[]>;
+      const c = (book[email.toLowerCase()] ?? []).filter((a) => a.date >= hoy).sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))[0];
+      return c ? { centro: c.centerName, date: c.date, time: c.time } : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Modo demo: la ficha sale del registro local (y del perfil, si el donante usa este mismo navegador). */
+  function fichaLocal(q: string): Ficha | null {
+    const r = buscarRegistro(q);
+    if (!r) return null;
+    let perfil: Record<string, string> = {};
+    try { perfil = JSON.parse(localStorage.getItem('blud-donor') || '{}'); } catch {}
+    const mismo = perfil.id === r.id || (perfil.cedula && normCedula(perfil.cedula) === r.cedula);
+    const [nombres, ...resto] = r.nombreCompleto.split(/\s+/);
+    const dons = donaciones.all().filter((d) => d.donanteId === r.id || normCedula(d.donanteCedula) === r.cedula)
+      .sort((a, b) => b.fecha.localeCompare(a.fecha));
+    return {
+      id: r.id, nombres: mismo ? perfil.firstname : nombres, apellidos: mismo ? perfil.lastname : resto.join(' '),
+      cedula: r.cedula, telefono: r.telefono, email: r.email, nacimiento: r.nacimiento, sexo: r.sexo, sangre: r.sangre,
+      registrado: r.fechaRegistro, verificado: r.estado === 'verificado', foto: mismo ? perfil.foto : undefined,
+      donaciones: dons.length, ultimaDonacion: dons[0]?.fecha, proximaCita: citaLocal(r.email),
+    };
+  }
+
+  async function init() {
+    const id = new URLSearchParams(location.search).get('id')?.trim() ?? '';
+    if (!id) return aviso('Falta el código del carnet', 'Escanea de nuevo el código QR del carnet del donante.');
+
+    const s = getSession();
+    if (!s) return aviso('Este carnet es de un donante BLUD', 'Solo el personal de salud puede ver la ficha del donante. Si trabajas en un centro, inicia sesión con tu cuenta.', true);
+    if (!STAFF.includes(s.role)) {
+      return aviso('Carnet de donante BLUD', 'Este código identifica a un donante registrado. Sus datos solo los ve el personal de salud del centro.');
+    }
+
+    if (!usaSupabase()) {
+      const f = fichaLocal(id);
+      return f ? mostrar(f, s.role) : aviso('No encontramos a este donante', `No hay ningún donante con el carnet ${id}. Pídele que abra su perfil en la app para actualizar el código.`);
+    }
+
+    const { data, error } = await sb()!.rpc('blud_donante_ficha', { p_q: id });
+    if (error) {
+      return /42501|permiso|sesión/i.test(`${error.code} ${error.message}`)
+        ? aviso('Inicia sesión de nuevo', 'Tu sesión expiró o tu cuenta no tiene permiso para ver fichas de donantes.', true)
+        : aviso('No pudimos consultar la ficha', error.message);
+    }
+    if (!data) return aviso('No encontramos a este donante', `No hay ningún donante con el carnet ${id} en el banco de sangre. Si se acaba de registrar, pídele que guarde sus datos en su perfil.`);
+    mostrar(data as Ficha, s.role);
+  }
+
+  init();
+</script>
