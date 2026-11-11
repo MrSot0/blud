@@ -164,7 +164,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       if (btn) btn.disabled = false;
       if (!res.ok) return toast(res.error);
       render();
-      toast('Cita cancelada. Cuando quieras, agenda otra 💙');
+      toast('Cita cancelada.');
     }
 
     function render() {

@@ -131,7 +131,7 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
       const r = notificarCaso(abierto, { ente: $<HTMLInputElement>('#ente').value, referencia: $<HTMLInputElement>('#ref').value });
       if (!r.ok) { $('#dlg-error').textContent = r.motivo; $('#dlg-error').classList.remove('hidden'); return; }
       dlg.close();
-      toast('Notificación registrada ✅');
+      toast('Notificación registrada.');
     });
 
     $('#btn-csv').addEventListener('click', () => {

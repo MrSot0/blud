@@ -174,7 +174,7 @@ const opciones = [
       if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
       err.classList.add('hidden');
       const g = r.data.global;
-      toast(g === 'negativo' ? 'Resultados negativos: unidad liberada al stock ✅' : g === 'positivo' ? 'Resultado reactivo: unidad descartada y caso abierto' : 'Resultado indeterminado: repite la prueba');
+      toast(g === 'negativo' ? 'Resultados negativos: unidad liberada al stock.' : g === 'positivo' ? 'Resultado reactivo: unidad descartada y caso abierto' : 'Resultado indeterminado: repite la prueba');
       form.reset();
       history.replaceState(null, '', location.pathname);
       renderSelect();

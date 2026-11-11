@@ -157,7 +157,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         return;
       }
       err.classList.add('hidden');
-      toast('¡Despacho registrado! 🩸');
+      toast('Despacho registrado.');
       form.reset();
       hint.classList.add('hidden');
     });
@@ -171,7 +171,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       if (disp < p.unidades && !confirmar(`El stock registrado de ${p.tipoSangre} ${p.tipoHemocomponente} es de ${disp} u. y el pedido pide ${p.unidades}.`)) return;
       const r = registrarEntrega({ ...p, pedidoId: p.id });
       if (!r.ok) return toast(r.motivo);
-      toast(`Pedido de ${p.pacienteNombre} despachado ✅`);
+      toast(`Pedido de ${p.pacienteNombre} despachado.`);
     });
 
     const render = () => {

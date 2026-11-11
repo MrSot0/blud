@@ -45,15 +45,16 @@ const filtros = [
 </style>
 
 <script>
+  import { ICON_PATHS, type IconKey } from '../../lib/menus';
   import { actividadLab, downloadFile, esc, fmtFecha, onDb, toCSV, toast } from '../../lib/laboratorio';
   import type { EventoLab } from '../../lib/laboratorio';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
-  const ETIQUETA: Record<EventoLab['tipo'], { icono: string; clase: string }> = {
-    prueba: { icono: '🧪', clase: 'bg-accent-soft text-accent-ink' },
-    fraccionamiento: { icono: '🩸', clase: 'bg-ok-soft text-ok' },
-    caso: { icono: '📋', clase: 'bg-warn-soft text-warn' },
+  const ETIQUETA: Record<EventoLab['tipo'], { icono: IconKey; clase: string }> = {
+    prueba: { icono: 'flask', clase: 'bg-accent-soft text-accent-ink' },
+    fraccionamiento: { icono: 'layers', clase: 'bg-ok-soft text-ok' },
+    caso: { icono: 'alert', clase: 'bg-warn-soft text-warn' },
   };
 
   function init() {
@@ -78,7 +79,7 @@ const filtros = [
       const vis = visibles();
       $('#vacio').classList.toggle('hidden', vis.length > 0);
       lista.innerHTML = vis.map((e) => `<li class="flex items-start gap-4 py-4">
-        <span class="grid size-10 shrink-0 place-items-center rounded-full ${ETIQUETA[e.tipo].clase}" aria-hidden="true">${ETIQUETA[e.tipo].icono}</span>
+        <span class="grid size-10 shrink-0 place-items-center rounded-full ${ETIQUETA[e.tipo].clase}" aria-hidden="true"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[ETIQUETA[e.tipo].icono]}</svg></span>
         <div class="min-w-0 flex-1"><p class="font-semibold text-ink">${esc(e.titulo)}</p><p class="text-sm text-ink-2">${esc(e.detalle)}</p></div>
         <span class="shrink-0 text-xs text-ink-3">${esc(fmtFecha(e.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</span></li>`).join('');
     };

@@ -85,7 +85,7 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
     const an = porAnalizar().slice(0, 6);
     $('#lista-analizar').innerHTML = an.length
       ? an.map((d) => fila(d, `/laboratorio/pruebas?donacion=${encodeURIComponent(d.id)}`)).join('')
-      : '<li class="py-6 text-center text-sm text-ink-3">No hay donaciones esperando análisis 🎉</li>';
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay donaciones esperando análisis.</li>';
 
     const fr = fraccionables().slice(0, 6);
     $('#lista-fraccionar').innerHTML = fr.length

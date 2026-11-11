@@ -73,7 +73,7 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
           <div class="min-w-0"><p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span>${t.prioridad === 'alta' ? '<span class="rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-white">Urgente</span>' : ''}</p>
           <p class="truncate text-sm text-ink-2">${esc(t.donanteNombre)} · ${esc(fmtFechaHora(t.actualizado))} · ${esc(t.asignadoA ? 'Atiende ' + t.asignadoA.nombre : 'Sin asignar')}</p></div>
           <a href="/soporte/tickets?id=${esc(t.id)}" class="btn btn-secondary btn-sm">Abrir</a></li>`).join('')
-      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes pendientes 🎉</li>';
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes pendientes.</li>';
   }
 
   function init() {

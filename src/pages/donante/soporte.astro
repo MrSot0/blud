@@ -71,7 +71,7 @@ const faqs = [
             </details>
           ))}
         </div>
-        <p id="faq-vacio" class="hidden text-sm text-ink-3 text-center py-4">No encontramos esa duda. Escríbenos y te ayudamos 👉</p>
+        <p id="faq-vacio" class="hidden text-sm text-ink-3 text-center py-4">No encontramos esa duda. Escríbenos y te ayudamos.</p>
       </section>
 
       <!-- Contacto -->
@@ -82,12 +82,12 @@ const faqs = [
 
           <div class="grid gap-3">
             <a href={`mailto:${EMAIL}`} class="contact">
-              <span class="ico" aria-hidden="true">✉️</span>
+              <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 5L2 7"/></svg></span>
               <span class="min-w-0"><span class="block text-sm font-semibold text-ink">Correo</span><span class="block text-xs text-ink-3 truncate">{EMAIL}</span></span>
             </a>
             {WHATSAPP && (
               <a href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noopener noreferrer" class="contact">
-                <span class="ico" aria-hidden="true">💬</span>
+                <span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></span>
                 <span class="min-w-0"><span class="block text-sm font-semibold text-ink">WhatsApp</span><span class="block text-xs text-ink-3">Respuesta rápida</span></span>
               </a>
             )}
@@ -144,7 +144,7 @@ const faqs = [
 
   .contact { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 1rem; transition: transform 200ms, border-color 200ms; }
   .contact:hover { transform: translateY(-2px); border-color: var(--color-blud-flag-red, #CA2B2B); }
-  .ico { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--accent-soft); font-size: 1.1rem; }
+  .ico { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--accent-soft); color: var(--accent-ink); }
 
   @media (prefers-reduced-motion: reduce) {
     .reveal { animation: none; opacity: 1; transform: none; }
@@ -195,7 +195,7 @@ const faqs = [
       form.reset();
       abiertas.add(r.data.id);
       renderMis();
-      toast('¡Mensaje enviado! Te responderemos pronto 💙');
+      toast('Mensaje enviado. Te responderemos pronto.');
     });
 
     // Mis solicitudes: estado y respuestas del equipo de soporte
@@ -239,7 +239,7 @@ const faqs = [
       const d = getDonor();
       const r = responderComoDonante(id, inp.value, `${d.firstname} ${d.lastname}`.trim() || 'Donante');
       if (!r.ok) return toast(r.motivo);
-      toast('Mensaje enviado 💙');
+      toast('Mensaje enviado.');
     });
     renderMis();
     onDb(renderMis);

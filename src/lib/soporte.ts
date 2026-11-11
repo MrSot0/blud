@@ -34,7 +34,7 @@ export const RESPUESTAS_RAPIDAS: { titulo: string; texto: string }[] = [
   { titulo: 'Verificación de identidad', texto: 'Hola, la verificación se completa cuando un operador del centro confirma tu cédula física. Lleva tu cédula el día de tu cita y quedará verificada en el momento.' },
   { titulo: 'Corregir datos con cédula verificada', texto: 'Hola, como tu cédula ya fue verificada no puedes cambiarla desde la app. Envíanos una foto legible de tu cédula con el dato correcto y lo actualizamos.' },
   { titulo: 'Carnet o QR no carga', texto: 'Hola, prueba cerrar sesión y volver a entrar; tu carnet se vuelve a generar al abrir "Mi perfil". Si sigue sin aparecer, cuéntanos qué dispositivo y navegador usas.' },
-  { titulo: 'Cierre amable', texto: 'Quedamos atentos por si necesitas algo más. ¡Gracias por donar y por cuidar a otros! 💙' },
+  { titulo: 'Cierre amable', texto: 'Quedamos atentos por si necesitas algo más. Gracias por donar.' },
 ];
 
 export const soporteActual = operadorActual;

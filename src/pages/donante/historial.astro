@@ -158,7 +158,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       const res = await cancelCita();
       if (!res.ok) return toast(res.error);
       renderCita();
-      toast('Cita cancelada. Cuando quieras, agenda otra 💙');
+      toast('Cita cancelada.');
     });
 
     renderCita();

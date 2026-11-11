@@ -142,7 +142,7 @@ const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
       const err = $('#error');
       if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
       err.classList.add('hidden');
-      toast('Fraccionamiento registrado ✅');
+      toast('Fraccionamiento registrado.');
       $<HTMLInputElement>('#obs').value = '';
       history.replaceState(null, '', location.pathname);
       renderSelect();

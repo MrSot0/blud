@@ -46,16 +46,17 @@ const filtros = [
 </style>
 
 <script>
+  import { ICON_PATHS, type IconKey } from '../../lib/menus';
   import { actividad, downloadFile, esc, fmtFecha, onDb, toCSV, toast } from '../../lib/operador';
   import type { Evento } from '../../lib/operador';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
-  const ETIQUETA: Record<Evento['tipo'], { icono: string; clase: string }> = {
-    donante: { icono: '🪪', clase: 'bg-ok-soft text-ok' },
-    donacion: { icono: '🩸', clase: 'bg-accent-soft text-accent-ink' },
-    pedido: { icono: '📋', clase: 'bg-warn-soft text-warn' },
-    entrega: { icono: '🚚', clase: 'bg-sunken text-ink-2' },
+  const ETIQUETA: Record<Evento['tipo'], { icono: IconKey; clase: string }> = {
+    donante: { icono: 'verify', clase: 'bg-ok-soft text-ok' },
+    donacion: { icono: 'drop', clase: 'bg-accent-soft text-accent-ink' },
+    pedido: { icono: 'file', clase: 'bg-warn-soft text-warn' },
+    entrega: { icono: 'truck', clase: 'bg-sunken text-ink-2' },
   };
 
   function init() {
@@ -80,7 +81,7 @@ const filtros = [
       const vis = visibles();
       $('#vacio').classList.toggle('hidden', vis.length > 0);
       lista.innerHTML = vis.map((e) => `<li class="flex items-start gap-4 py-4">
-        <span class="grid size-10 shrink-0 place-items-center rounded-full ${ETIQUETA[e.tipo].clase}" aria-hidden="true">${ETIQUETA[e.tipo].icono}</span>
+        <span class="grid size-10 shrink-0 place-items-center rounded-full ${ETIQUETA[e.tipo].clase}" aria-hidden="true"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[ETIQUETA[e.tipo].icono]}</svg></span>
         <div class="min-w-0 flex-1"><p class="font-semibold text-ink">${esc(e.titulo)}</p><p class="text-sm text-ink-2">${esc(e.detalle)}</p></div>
         <span class="shrink-0 text-xs text-ink-3">${esc(fmtFecha(e.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</span></li>`).join('');
     };

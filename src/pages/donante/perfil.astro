@@ -11,7 +11,6 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
           ¡Hola, <span class="text-accent" data-d="firstname">donante</span>!
-          <span class="wave" aria-hidden="true">👋</span>
         </h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">
           Gestiona tu carnet digital, verifica tu identidad y mantén tus datos al día.
@@ -169,6 +168,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
             </div>
 
             <form id="donor-form" class="space-y-4" novalidate>
+              <p class="text-xs text-ink-3">Los campos con <span class="text-accent">*</span> son obligatorios para poder donar.</p>
               <div class="flex flex-col sm:flex-row sm:items-center gap-4 rounded-control bg-sunken p-4">
                 <span class="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-full bg-accent-soft text-2xl font-extrabold text-accent-ink ring-4 ring-surface">
                   <span data-d="initials">?</span>
@@ -189,10 +189,12 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                 <div class="space-y-1.5">
                   <label for="firstname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombres <span class="text-accent">*</span></label>
                   <input type="text" id="firstname" name="firstname" class="field" autocomplete="given-name" required />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-firstname" role="alert"></p>
                 </div>
                 <div class="space-y-1.5">
                   <label for="lastname" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Apellidos <span class="text-accent">*</span></label>
                   <input type="text" id="lastname" name="lastname" class="field" autocomplete="family-name" required />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-lastname" role="alert"></p>
                 </div>
               </div>
 
@@ -200,23 +202,34 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                 <div class="space-y-1.5">
                   <label for="email" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Correo electrónico</label>
                   <input type="email" id="email" name="email" class="field" autocomplete="email" required />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-email" role="alert"></p>
                   <p class="hidden text-xs text-ink-3" id="email-lock">Es el correo con el que inicias sesión.</p>
                 </div>
                 <div class="space-y-1.5">
                   <label for="telefono" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Teléfono <span class="text-accent">*</span></label>
                   <input type="tel" id="telefono" name="telefono" class="field" autocomplete="tel" placeholder="+58 414 1234567" />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-telefono" role="alert"></p>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1.5">
                   <label for="cedula" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Cédula <span class="text-accent">*</span></label>
-                  <input type="text" id="cedula" name="cedula" class="field" inputmode="numeric" placeholder="V-12345678" autocomplete="off" />
+                  <div class="flex gap-2">
+                    <select id="cedula-tipo" name="cedula-tipo" class="field w-24 shrink-0" aria-label="Tipo de cédula">
+                      <option value="V">V-</option>
+                      <option value="E">E-</option>
+                    </select>
+                    <input type="text" id="cedula" name="cedula" class="field min-w-0 flex-1" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="12345678" autocomplete="off" aria-describedby="cedula-ayuda" />
+                  </div>
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-cedula" role="alert"></p>
+                  <p class="text-xs text-ink-3" id="cedula-ayuda">V: venezolano · E: extranjero residente.</p>
                   <p class="hidden text-xs text-ink-3" id="cedula-lock">Verificada: para cambiarla, contacta a soporte.</p>
                 </div>
                 <div class="space-y-1.5">
                   <label for="nacimiento" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Fecha de nacimiento <span class="text-accent">*</span></label>
                   <input type="date" id="nacimiento" name="nacimiento" class="field" autocomplete="bday" />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-nacimiento" role="alert"></p>
                 </div>
                 <div class="space-y-1.5">
                   <label for="sexo" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Sexo <span class="text-accent">*</span></label>
@@ -225,6 +238,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                     <option value="F">Femenino</option>
                     <option value="M">Masculino</option>
                   </select>
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-sexo" role="alert"></p>
                   <p class="text-xs text-ink-3">Define el tiempo de espera entre donaciones (90 o 120 días).</p>
                 </div>
               </div>
@@ -236,17 +250,19 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                     <option value="">Selecciona…</option>
                     {bloodTypes.map((t) => <option value={t}>{t}</option>)}
                   </select>
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-sangre" role="alert"></p>
                 </div>
                 <div class="space-y-1.5">
                   <label for="ciudad" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Ciudad</label>
                   <input type="text" id="ciudad" name="ciudad" class="field" autocomplete="address-level2" placeholder="Maracaibo" />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-ciudad" role="alert"></p>
                 </div>
               </div>
 
               <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" id="form-error" role="alert"></p>
 
-              <div class="flex justify-end pt-2">
-                <button type="submit" class="btn btn-primary sm:px-10 min-h-12">Guardar cambios</button>
+              <div class="flex justify-center pt-2">
+                <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Guardar cambios</button>
               </div>
             </form>
           </section>
@@ -346,14 +362,6 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 </LayoutDonante>
 
 <style>
-  .wave { display: inline-block; transform-origin: 70% 70%; animation: wave 2.2s ease-in-out 700ms 2; }
-  @keyframes wave {
-    0%, 60%, 100% { transform: rotate(0); }
-    10%, 30% { transform: rotate(14deg); }
-    20%, 40% { transform: rotate(-8deg); }
-    50% { transform: rotate(10deg); }
-  }
-
   /* ---------- Carnet ---------- */
   .scene { perspective: 1100px; max-width: 28rem; margin-inline: auto; }
   .tilt {
@@ -465,7 +473,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   .toast[data-show="true"] { transform: translate(-50%, 0); opacity: 1; }
 
   @media (prefers-reduced-motion: reduce) {
-    .wave, .blob, .blood, .kyc-badge, .kyc-dialog[open], .step:not([hidden]) { animation: none !important; }
+    .blob, .blood, .kyc-badge, .kyc-dialog[open], .step:not([hidden]) { animation: none !important; }
     .tilt, .carnet { transition: none; }
   }
 </style>
@@ -473,9 +481,10 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 <script>
   import QRCode from 'qrcode';
   import {
-    cargarFicha, guardarPerfil, loadDonor, qrDe, requisitos, subirFoto, urlFoto, toast, type Donor, type Kyc,
+    cargarFicha, edadDe, guardarPerfil, loadDonor, qrDe, requisitos, subirFoto, urlFoto, toast, type Donor, type Kyc,
   } from '../../lib/donante';
   import { usaSupabase } from '../../lib/supabase';
+  import { clearError, emailPattern, setError } from '../../lib/forms';
 
   const q = <T extends HTMLElement = HTMLElement>(sel: string, root: ParentNode = document) =>
     root.querySelector<T>(sel);
@@ -564,6 +573,8 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     const lock = q('#cedula-lock');
     const locked = d.kyc === 'verified';
     if (cedula) cedula.disabled = locked;
+    const tipo = q<HTMLSelectElement>('#cedula-tipo');
+    if (tipo) tipo.disabled = locked;
     lock?.classList.toggle('hidden', !locked);
   }
 
@@ -618,10 +629,30 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
     const form = q<HTMLFormElement>('#donor-form', root)!;
     const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sexo', 'sangre', 'ciudad'] as const;
-    const fillForm = (d: Donor) => fields.forEach((f) => {
-      const input = form.elements.namedItem(f) as HTMLInputElement | null;
-      if (input) input.value = String((d as unknown as Record<string, unknown>)[f] ?? '');
+    // La cédula se edita en dos partes: tipo (V/E) y número.
+    const cedTipo = q<HTMLSelectElement>('#cedula-tipo', root)!;
+    const cedNum = q<HTMLInputElement>('#cedula', root)!;
+    const setCedula = (c: string) => {
+      const m = String(c ?? '').toUpperCase().match(/^([VE])?-?(\d*)/);
+      cedTipo.value = m?.[1] ?? 'V';
+      cedNum.value = m?.[2] ?? '';
+    };
+    const getCedula = () => {
+      const n = cedNum.value.replace(/\D/g, '');
+      return n ? `${cedTipo.value}-${n}` : '';
+    };
+    cedNum.addEventListener('input', () => {
+      const limpio = cedNum.value.replace(/\D/g, '').slice(0, 9);
+      if (limpio !== cedNum.value) cedNum.value = limpio;
     });
+
+    const fillForm = (d: Donor) => {
+      fields.forEach((f) => {
+        const input = form.elements.namedItem(f) as HTMLInputElement | null;
+        if (input) input.value = String((d as unknown as Record<string, unknown>)[f] ?? '');
+      });
+      setCedula(d.cedula);
+    };
     const renderStats = (d: Donor) => {
       countUp(q('[data-count="donaciones"]', root)!, d.donaciones);
       countUp(q('[data-count="vidas"]', root)!, d.donaciones * 3);
@@ -655,6 +686,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         const input = form.elements.namedItem(f) as HTMLInputElement | null;
         if (input && !input.disabled) (draft as unknown as Record<string, string>)[f] = input.value.trim();
       });
+      if (!cedNum.disabled) draft.cedula = getCedula();
       renderCard(draft);
     });
 
@@ -664,6 +696,78 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       errorBox.classList.remove('hidden');
       if (field) (form.elements.namedItem(field) as HTMLElement | null)?.focus();
     };
+
+    // ---------- Validación de cada campo ----------
+    type Campo = 'firstname' | 'lastname' | 'email' | 'telefono' | 'cedula' | 'nacimiento' | 'sexo' | 'sangre' | 'ciudad';
+    const val = (k: string) => String((form.elements.namedItem(k) as HTMLInputElement | null)?.value ?? '').trim();
+    const NOMBRE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .-]+$/;
+    const REGLAS: Record<Campo, () => string> = {
+      firstname: () => {
+        const v = val('firstname');
+        if (!v) return 'Escribe tus nombres.';
+        if (v.length < 2 || !NOMBRE.test(v)) return 'Usa solo letras (mínimo 2).';
+        return '';
+      },
+      lastname: () => {
+        const v = val('lastname');
+        if (!v) return 'Escribe tus apellidos.';
+        if (v.length < 2 || !NOMBRE.test(v)) return 'Usa solo letras (mínimo 2).';
+        return '';
+      },
+      email: () => {
+        const v = val('email');
+        if (!v) return 'Escribe tu correo electrónico.';
+        return emailPattern.test(v) ? '' : 'Escribe un correo válido, por ejemplo nombre@correo.com.';
+      },
+      telefono: () => {
+        const v = val('telefono');
+        if (!v) return 'Escribe tu teléfono.';
+        if (/[^\d\s+()-]/.test(v)) return 'Usa solo números, espacios y el signo +.';
+        const d = v.replace(/\D/g, '');
+        if (d.length < 10 || d.length > 13) return 'Revisa el número: por ejemplo +58 414 1234567 o 0414 1234567.';
+        return '';
+      },
+      cedula: () => {
+        if (cedNum.disabled) return '';
+        const v = cedNum.value.replace(/\D/g, '');
+        if (!v) return 'Escribe el número de tu cédula.';
+        if (v.length < 6 || v.length > 9) return 'La cédula debe tener entre 6 y 9 dígitos.';
+        return '';
+      },
+      nacimiento: () => {
+        const v = val('nacimiento');
+        if (!v) return 'Indica tu fecha de nacimiento.';
+        const edad = edadDe(v);
+        if (edad === null || new Date(v + 'T00:00:00') > new Date()) return 'Revisa la fecha.';
+        if (edad < 18) return 'Para donar necesitas tener 18 años o más.';
+        if (edad > 65) return 'Para donar debes tener 65 años o menos.';
+        return '';
+      },
+      sexo: () => (val('sexo') ? '' : 'Selecciona tu sexo.'),
+      sangre: () => (val('sangre') ? '' : 'Selecciona tu tipo de sangre. Si no lo sabes, aparece en tus exámenes o pregunta en el centro.'),
+      ciudad: () => {
+        const v = val('ciudad');
+        return !v || NOMBRE.test(v) ? '' : 'Usa solo letras.';
+      },
+    };
+    const CAMPOS = Object.keys(REGLAS) as Campo[];
+    const inputDe = (k: Campo) => form.elements.namedItem(k) as HTMLElement;
+    const errDe = (k: Campo) => q(`#err-${k}`, root)!;
+    /** Valida un campo y pinta su error. Devuelve true si está bien. */
+    function validar(k: Campo): boolean {
+      const msg = REGLAS[k]();
+      if (msg) setError(inputDe(k), errDe(k), msg);
+      else clearError(inputDe(k), errDe(k));
+      return !msg;
+    }
+    const tocados = new Set<Campo>();
+    CAMPOS.forEach((k) => {
+      const el = inputDe(k);
+      el.setAttribute('aria-describedby', [el.getAttribute('aria-describedby'), `err-${k}`].filter(Boolean).join(' '));
+      // Se valida al salir del campo; después, mientras se corrige, en cada cambio.
+      el.addEventListener('blur', () => { tocados.add(k); validar(k); });
+      el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { if (tocados.has(k)) validar(k); });
+    });
 
     // ---------- Foto ----------
     const fotoInput = q<HTMLInputElement>('#foto-input', root)!;
@@ -687,7 +791,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       if (!res.ok) return toast(res.error);
       donor = { ...donor, foto: res.donor.foto };
       renderCard(donor);
-      toast('¡Foto lista! Ya aparece en tu carnet 📸');
+      toast('Foto guardada. Ya aparece en tu carnet.');
     });
 
     // ---------- Datos ----------
@@ -698,22 +802,16 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       const fd = new FormData(form);
       const get = (k: string) => String(fd.get(k) ?? '').trim();
 
-      if (!get('firstname')) return fail('Escribe tus nombres.', 'firstname');
-      if (!get('lastname')) return fail('Escribe tus apellidos.', 'lastname');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(get('email'))) return fail('Revisa tu correo electrónico.', 'email');
-      if (get('telefono') && get('telefono').replace(/\D/g, '').length < 10) return fail('Revisa tu teléfono: +58 414 1234567.', 'telefono');
-
-      const ced = donor.kyc === 'verified' ? donor.cedula : get('cedula');
-      if (donor.kyc !== 'verified' && ced && !/^[VEve]?-?\d{6,9}$/.test(ced)) {
-        return fail('La cédula debe verse así: V-12345678.', 'cedula');
+      // Todos los campos a la vez: se marcan los que fallan y se lleva el foco al primero.
+      CAMPOS.forEach((k) => tocados.add(k));
+      const malos = CAMPOS.filter((k) => !validar(k));
+      if (malos.length) {
+        fail(malos.length === 1 ? 'Revisa el campo marcado en rojo.' : `Revisa los ${malos.length} campos marcados en rojo.`);
+        inputDe(malos[0]).focus();
+        return;
       }
+      const ced = donor.kyc === 'verified' ? donor.cedula : getCedula();
       const nac = get('nacimiento');
-      if (nac) {
-        const b = new Date(nac);
-        const age = (Date.now() - b.getTime()) / (365.25 * 24 * 3600 * 1000);
-        if (isNaN(age) || age < 18) return fail('Para donar necesitas tener 18 años o más.', 'nacimiento');
-      }
-      if (usaSupabase() && !ced) return fail('Escribe tu cédula: la necesitamos para registrarte en el banco de sangre.', 'cedula');
 
       submitBtn.disabled = true;
       const label = submitBtn.textContent;
@@ -735,7 +833,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       donor = res.donor;
       fillForm(donor);
       renderCard(donor);
-      toast(res.aviso ?? '¡Listo! Tu carnet está actualizado 🎉');
+      toast(res.aviso ?? 'Datos guardados.');
     });
 
     const carnet = q('#carnet', root)!;
@@ -854,7 +952,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       renderCard(donor);
       dlg.close();
       resetKyc();
-      toast('¡Enviado! Revisaremos tu identidad pronto.');
+      toast('Fotos enviadas. Te avisaremos cuando revisemos tu identidad.');
     });
 
     q('#kyc-open', root)?.addEventListener('click', () => {

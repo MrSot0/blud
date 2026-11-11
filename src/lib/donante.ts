@@ -336,7 +336,7 @@ export function requisitos(d: Donor): Requisito[] {
     { key: 'lastname', label: 'Apellidos', ok: !!d.lastname.trim() },
     { key: 'cedula', label: 'Cédula', ok: /^[VEJ]-\d{5,9}$/.test(normCedula(d.cedula)) },
     { key: 'telefono', label: 'Teléfono', ok: d.telefono.replace(/\D/g, '').length >= 10 },
-    { key: 'nacimiento', label: 'Fecha de nacimiento (18 años o más)', ok: edad !== null && edad >= 18 },
+    { key: 'nacimiento', label: 'Fecha de nacimiento (18 a 65 años)', ok: edad !== null && edad >= 18 && edad <= 65 },
     { key: 'sexo', label: 'Sexo', ok: d.sexo === 'M' || d.sexo === 'F' },
     { key: 'sangre', label: 'Tipo de sangre', ok: SANGRES.includes(d.sangre) },
     // Con base real, además, la ficha tiene que estar guardada en el banco de sangre (ID BLD-000123).

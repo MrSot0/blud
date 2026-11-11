@@ -18,7 +18,7 @@ const checks = [
 
     <div class="reveal pb-6 border-b border-line text-center sm:text-left" style="--d:0ms">
       <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-ink">
-        Donar sangre <span class="drop-emoji" aria-hidden="true">🩸</span>
+        Donar sangre
       </h1>
       <p class="text-ink-2 text-sm sm:text-base mt-2">Agenda tu cita paso a paso de forma rápida y segura.</p>
     </div>
@@ -74,13 +74,13 @@ const checks = [
         <!-- Tarjeta compacta (Centro Precargado) -->
         <div id="centro-locked-card" class="hidden p-5 rounded-2xl border-2 border-accent bg-accent-soft flex items-center justify-between gap-4">
           <div class="flex items-center gap-4 min-w-0">
-            <span class="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-white font-bold text-lg shadow-sm">📍</span>
+            <span class="grid size-12 shrink-0 place-items-center rounded-xl bg-accent text-white shadow-sm"><svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
             <div class="min-w-0">
               <p class="font-bold text-ink text-base leading-tight truncate" id="locked-centro-nombre">—</p>
               <p class="text-xs text-ink-2 mt-1" id="locked-centro-direccion">—</p>
             </div>
           </div>
-          <span class="shrink-0 rounded-full bg-accent px-3 py-1 text-xs font-extrabold text-white shadow-sm">✓ Seleccionado</span>
+          <span class="shrink-0 rounded-full bg-accent px-3 py-1 text-xs font-extrabold text-white shadow-sm">Seleccionado</span>
         </div>
 
         <!-- Dropdown Selector Mejorado -->
@@ -97,7 +97,7 @@ const checks = [
             </select>
           </div>
           <p id="dropdown-need-badge" class="hidden text-xs font-bold text-accent-ink pt-1.5 flex items-center gap-1.5">
-            <span>⚠️</span> ¡Este centro necesita urgentemente tu tipo de sangre!
+            Este centro necesita tu tipo de sangre.
           </p>
         </div>
 
@@ -194,7 +194,7 @@ const checks = [
         <p id="error-cita" class="hidden rounded-xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink" role="alert"></p>
 
         <p id="kyc-nudge" class="hidden rounded-xl bg-sunken px-4 py-3 text-xs sm:text-sm text-ink-2 border border-line">
-          💡 <strong>Tip:</strong> <a href="/donante/perfil" class="font-bold text-accent-ink underline">Verifica tu identidad</a> para agilizar notablemente tu atención presencial.
+          <a href="/donante/perfil?vista=kyc" class="font-bold text-accent-ink underline">Verifica tu identidad</a> y te atenderán más rápido en el centro.
         </p>
 
         <div class="flex justify-between pt-6 border-t border-line">
@@ -210,7 +210,7 @@ const checks = [
       <span class="ok-badge mx-auto grid size-20 place-items-center rounded-full bg-ok text-white shadow-md">
         <svg viewBox="0 0 24 24" class="size-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="ok-path" d="m5 12 5 5 9-10"/></svg>
       </span>
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-ink">¡Cita confirmada con éxito!</h2>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-ink">Cita confirmada</h2>
       <p class="text-sm sm:text-base text-ink-2" id="ok-txt"></p>
       <p class="text-xs text-ink-3 bg-sunken py-2 px-4 rounded-lg inline-block">Lleva tu cédula de identidad y muestra tu carnet digital con el código QR.</p>
       <div class="flex flex-col sm:flex-row gap-3 pt-4">
@@ -224,8 +224,6 @@ const checks = [
 <style>
   .reveal { opacity: 0; transform: translateY(14px); animation: rise 600ms var(--ease-out, ease-out) forwards; animation-delay: var(--d, 0ms); }
   @keyframes rise { to { opacity: 1; transform: none; } }
-  .drop-emoji { display: inline-block; animation: bob 2.4s ease-in-out infinite; }
-  @keyframes bob { 50% { transform: translateY(-4px) scale(1.08); } }
 
   .num { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; font-size: 0.875rem; font-weight: 800; }
 
@@ -241,7 +239,7 @@ const checks = [
 
   @media (prefers-reduced-motion: reduce) {
     .reveal { animation: none; opacity: 1; transform: none; }
-    .drop-emoji, .ok-badge, .lock-badge, .ok-path { animation: none; stroke-dashoffset: 0; }
+    .ok-badge, .lock-badge, .ok-path { animation: none; stroke-dashoffset: 0; }
     .chip span { transition: none; }
   }
 </style>
@@ -448,7 +446,7 @@ const checks = [
       $('#cita-actual').classList.add('hidden');
       $('#ok-view').classList.remove('hidden');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast('¡Cita agendada con éxito! 💪');
+      toast('Cita agendada.');
     });
   }
 

@@ -182,7 +182,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       }).join('');
       const vacio = $('#lista-vacia');
       vacio.classList.toggle('hidden', vis.length > 0);
-      vacio.textContent = q ? 'Ninguna solicitud coincide con tu búsqueda.' : vista === 'resueltos' ? 'Todavía no hay solicitudes resueltas.' : vista === 'mios' ? 'No tienes casos asignados. Toma uno de la bandeja.' : 'No hay solicitudes pendientes 🎉';
+      vacio.textContent = q ? 'Ninguna solicitud coincide con tu búsqueda.' : vista === 'resueltos' ? 'Todavía no hay solicitudes resueltas.' : vista === 'mios' ? 'No tienes casos asignados. Toma uno de la bandeja.' : 'No hay solicitudes pendientes.';
     }
     $('#lista').addEventListener('click', (e) => {
       const id = (e.target as HTMLElement).closest<HTMLElement>('[data-abrir]')?.dataset.abrir;
@@ -238,7 +238,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       if (a === 'tomar') { tomarCaso(abierto); toast('Caso asignado a ti.'); }
       if (a === 'soltar') { soltarCaso(abierto); toast('Caso devuelto a la bandeja.'); }
       if (a === 'urgente') marcarUrgente(abierto, t.prioridad !== 'alta');
-      if (a === 'resolver') { cambiarEstado(abierto, 'resuelto'); toast('Solicitud marcada como resuelta ✅'); }
+      if (a === 'resolver') { cambiarEstado(abierto, 'resuelto'); toast('Solicitud marcada como resuelta.'); }
       if (a === 'reabrir') { cambiarEstado(abierto, 'en_proceso'); toast('Solicitud reabierta.'); }
     });
 
@@ -257,7 +257,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       err.classList.add('hidden');
       $<HTMLTextAreaElement>('#resp').value = '';
       $<HTMLSelectElement>('#rapida').value = '';
-      toast(resolver ? 'Respuesta enviada y solicitud resuelta ✅' : 'Respuesta enviada al donante.');
+      toast(resolver ? 'Respuesta enviada y solicitud resuelta.' : 'Respuesta enviada al donante.');
     };
     form.addEventListener('submit', (e) => { e.preventDefault(); enviar(false); });
     $('#btn-enviar-resolver').addEventListener('click', () => enviar(true));
