@@ -219,12 +219,25 @@ export async function cargarFicha(): Promise<Donor> {
     since: f.registrado ?? local.since,
     kyc: f.verificado ? 'verified' : local.kyc === 'verified' ? 'none' : local.kyc,
     donaciones: Math.max(f.donaciones ?? 0, local.donaciones),
-    foto: f.foto ?? local.foto,
+    // Con base real la foto es la de la base (una foto guardada solo en el navegador no la ve nadie más).
+    foto: f.foto,
     qr: f.qr ?? local.qr,
   };
   guardarLocal(d);
+  // Foto de cuando el sitio estaba en modo demo (solo en este navegador): se sube a la base una vez.
+  if (!f.foto && local.foto?.startsWith('data:') && f.id && !migrandoFoto) {
+    migrandoFoto = true;
+    try {
+      const blob = await (await fetch(local.foto)).blob();
+      const res = await subirBlob(blob);
+      if (res.ok) return res.donor;
+    } catch {} finally {
+      migrandoFoto = false;
+    }
+  }
   return d;
 }
+let migrandoFoto = false;
 
 /**
  * Guarda los datos personales. Con base real espera a que la base los acepte (blud_guardar → g_donante),
@@ -287,6 +300,12 @@ export async function subirFoto(file: File): Promise<{ ok: true; donor: Donor } 
     write(K_DONOR, donor);
     return { ok: true, donor };
   }
+  return subirBlob(blob);
+}
+
+/** Sube un JPEG ya comprimido a la carpeta del donante y lo enlaza a su ficha (solo con base real). */
+async function subirBlob(blob: Blob): Promise<{ ok: true; donor: Donor } | { ok: false; error: string }> {
+  const c = sb()!;
   const { data: ses } = await c.auth.getSession();
   const uidAuth = ses.session?.user.id;
   if (!uidAuth) return { ok: false, error: 'Inicia sesión de nuevo.' };
