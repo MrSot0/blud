@@ -30,13 +30,15 @@ const home = ROLE_HOME[role];
       <button
         type="button"
         id="desktop-sidebar-btn"
-        class="grid size-10 place-items-center rounded-control text-ink transition-colors hover:bg-sunken active:scale-95 cursor-pointer"
+        class="relative grid size-10 place-items-center rounded-control text-ink transition-colors hover:bg-sunken active:scale-95 cursor-pointer"
         aria-label="Alternar menú lateral"
         aria-controls="sidebar-drawer"
         aria-expanded="false"
         title="Menú"
       >
         <span class="menu-icon" aria-hidden="true"><span></span><span></span></span>
+        <!-- Mensajes sin leer (lo enciende lib/notificaciones) -->
+        <span class="absolute right-1.5 top-1.5 hidden size-2.5 rounded-full bg-accent ring-2 ring-surface" data-avisos-punto aria-hidden="true"></span>
       </button>
 
       <a href={home} aria-label={`BLUD, ir a mi espacio de ${ROLE_LABEL[role].toLowerCase()}`}>

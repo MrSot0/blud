@@ -74,7 +74,11 @@ const { role, title, description } = Astro.props;
           // Valida la sesión con Supabase, refresca rol y descarga lo que este rol puede ver.
           verificarSesionRemota().then((viva) => {
             if (!viva) location.replace(`/login?next=${encodeURIComponent(location.pathname)}`);
-            else guard([role]);
+            else {
+              guard([role]);
+              // Avisos de mensajes nuevos (contador, aviso en la página y notificación del sistema).
+              import('../lib/notificaciones').then((m) => m.iniciarAvisosMensajes());
+            }
           });
           // La base explica por qué rechaza un cambio (p. ej. «No apto para donar…», «Stock insuficiente…»).
           const motivo = (e: Event) => (e as CustomEvent<{ mensaje?: string }>).detail?.mensaje;

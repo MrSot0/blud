@@ -100,6 +100,8 @@ Operador, soporte, dirección y laboratorio pueden abrir una conversación con u
 - **Persistencia:** `chat_conversacion` y `chat_mensaje` en Postgres, con RLS y sin políticas: se leen y escriben solo con `blud_chat_abrir`, `blud_chat_conversaciones`, `blud_chat_mensajes`, `blud_chat_enviar` y `blud_chat_cerrar`, que validan el rol.
 - **Entrega:** al guardar un mensaje, la base lo emite con `realtime.send` a `chat:<conversación>` y avisa en `buzon:donante:<id>` y `buzon:personal`. Quién puede escuchar cada canal lo decide la política sobre `realtime.messages` (`blud_chat_canal_ok`): el donante solo los suyos; el personal, todos.
 
+- **Notificaciones** (`src/lib/notificaciones.ts`): en cualquier página del portal, un mensaje nuevo del otro lado pone el contador de no leídos en *Mensajes* del menú, un punto en el botón del menú y `(N)` en el título de la pestaña, y muestra un aviso con el remitente y el inicio del mensaje. Si la pestaña no está a la vista y el usuario activó los avisos del navegador (botón en *Mensajes*), sale una notificación del sistema. Los no leídos los cuenta la base. Con la app cerrada no llega nada: para eso hace falta Web Push o correo.
+
 ### Datos del donante para donar
 
 - **Pre-registro (RF-D11):** además de lo anterior, dirección, ocupación y contacto de emergencia (nombre, teléfono y parentesco).

@@ -24,6 +24,21 @@ const personal = role !== 'donante';
     </span>
   </div>
 
+  <!-- Avisos del navegador: se piden con un clic (los navegadores no permiten pedirlos solos) -->
+  <div class="hidden panel p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3" data-permiso>
+    <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+      <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </span>
+    <div class="min-w-0 flex-1">
+      <p class="font-semibold text-ink text-sm">Recibe un aviso cuando te escriban</p>
+      <p class="text-xs text-ink-3" data-permiso-texto>Te avisamos en este dispositivo aunque tengas BLUD en otra pestaña.</p>
+    </div>
+    <div class="flex gap-2 shrink-0">
+      <button type="button" class="btn btn-secondary btn-sm" data-permiso-no>Ahora no</button>
+      <button type="button" class="btn btn-primary btn-sm" data-permiso-si>Activar avisos</button>
+    </div>
+  </div>
+
   <div class="hidden panel p-8 text-center space-y-2" data-sin-servidor>
     <p class="font-semibold text-ink">El chat no está disponible</p>
     <p class="text-sm text-ink-3">Necesita conexión con el servidor del banco de sangre. Inténtalo más tarde.</p>
@@ -329,6 +344,7 @@ const personal = role !== 'donante';
         const c = conversaciones.find((x) => x.id === id);
         if (c) c.noLeidos = 0;
         pintarLista();
+        window.dispatchEvent(new Event('blud:chat-leido')); // el contador del menú se pone al día
         try { history.replaceState(null, '', `?c=${encodeURIComponent(id)}`); } catch {}
         if (foco && !texto.disabled && matchMedia('(min-width: 1024px)').matches) texto.focus();
         // Tiempo real de esta conversación.
@@ -336,7 +352,7 @@ const personal = role !== 'donante';
           alMensaje: (m) => {
             if (actual?.id !== id) return;
             agregar(m, true);
-            abrirConversacion(id).catch(() => {}); // marca como leído
+            abrirConversacion(id).then(() => window.dispatchEvent(new Event('blud:chat-leido'))).catch(() => {}); // marca como leído
           },
           alEstado: (estado) => { if (actual?.id === id) { actual.estado = estado as Conversacion['estado']; pintarCabecera(actual); } },
         });
@@ -440,6 +456,24 @@ const personal = role !== 'donante';
         cargarLista().then(() => iniciar(qs.get('donante')!, qs.get('asunto') || MOTIVOS[motivo], motivo));
       }
     }
+
+    // ---------- Permiso para notificaciones del sistema ----------
+    import('../../lib/notificaciones').then(({ permisoNotificaciones, pedirPermisoNotificaciones }) => {
+      const caja = $('[data-permiso]');
+      let descartado = false;
+      try { descartado = sessionStorage.getItem('blud-avisos-ahora-no') === '1'; } catch {}
+      if (permisoNotificaciones() !== 'default' || descartado) return;
+      caja.classList.remove('hidden');
+      $('[data-permiso-no]').addEventListener('click', () => {
+        caja.classList.add('hidden');
+        try { sessionStorage.setItem('blud-avisos-ahora-no', '1'); } catch {}
+      });
+      $('[data-permiso-si]').addEventListener('click', async () => {
+        const r = await pedirPermisoNotificaciones();
+        caja.classList.add('hidden');
+        toast(r === 'granted' ? 'Listo: te avisaremos cuando te escriban.' : 'No activaste los avisos. Puedes cambiarlo en los ajustes del navegador.');
+      });
+    });
 
     // ---------- Arranque y buzón en tiempo real ----------
     const qs = new URLSearchParams(location.search);
