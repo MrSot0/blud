@@ -1,0 +1,175 @@
+---
+// DropField.astro - Fondo decorativo de las secciones: gotas, jeringas, cruces, hospitales
+// y otros íconos médicos en rojo muy suave, repartidos sobre todo hacia los bordes.
+import drop from '@phosphor-icons/core/assets/fill/drop-fill.svg?raw';
+import syringe from '@phosphor-icons/core/assets/fill/syringe-fill.svg?raw';
+import plus from '@phosphor-icons/core/assets/bold/plus-bold.svg?raw';
+import hospital from '@phosphor-icons/core/assets/fill/hospital-fill.svg?raw';
+import heart from '@phosphor-icons/core/assets/fill/heart-fill.svg?raw';
+import kit from '@phosphor-icons/core/assets/fill/first-aid-kit-fill.svg?raw';
+import heartbeat from '@phosphor-icons/core/assets/fill/heartbeat-fill.svg?raw';
+import stethoscope from '@phosphor-icons/core/assets/fill/stethoscope-fill.svg?raw';
+import pill from '@phosphor-icons/core/assets/fill/pill-fill.svg?raw';
+import bandaids from '@phosphor-icons/core/assets/fill/bandaids-fill.svg?raw';
+import thermometer from '@phosphor-icons/core/assets/fill/thermometer-fill.svg?raw';
+
+interface Props {
+  seed?: number;
+  count?: number;
+}
+
+const { seed = 1, count = 14 } = Astro.props;
+
+const makeRand = (n: number) => {
+  let state = (Math.imul(n, 2654435761) ^ 0x9e3779b9) >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const rand = makeRand(seed);
+const motion = makeRand(seed + 1000);
+const sign = () => (motion() < 0.5 ? -1 : 1);
+
+const pool = [drop, drop, drop, syringe, plus, hospital, heart, kit, heartbeat, stethoscope, pill, bandaids, thermometer];
+const bag = pool
+  .map((svg) => ({ k: rand(), svg }))
+  .sort((a, b) => a.k - b.k)
+  .map((entry) => entry.svg);
+
+const items = Array.from({ length: count }, (_, i) => {
+  const onEdge = rand() < 0.8;
+  const left = i % 2 === 0;
+  const x = onEdge ? (left ? 2 + rand() * 13 : 85 + rand() * 13) : 20 + rand() * 60;
+  const y = onEdge ? 3 + ((i + rand() * 0.7) / count) * 94 : rand() < 0.5 ? 2 + rand() * 8 : 90 + rand() * 8;
+  return {
+    svg: bag[i % bag.length],
+    x: x.toFixed(1),
+    y: y.toFixed(1),
+    size: Math.round(24 + rand() * 24),
+    rot: Math.round(-18 + rand() * 36),
+    opacity: (0.12 + rand() * 0.08).toFixed(2),
+    dx: Math.round(sign() * (8 + motion() * 12)),
+    dy: Math.round(sign() * (14 + motion() * 16)),
+    dr: Math.round(sign() * (8 + motion() * 12)),
+    dur: (6 + motion() * 5).toFixed(1),
+    delay: (-motion() * 10).toFixed(1),
+    // Nuevos valores aleatorios para el desvanecimiento (aparición/desaparición)
+    fadeDur: (4 + motion() * 4).toFixed(1),
+    fadeDelay: (-motion() * 8).toFixed(1),
+  };
+});
+---
+
+<div class="drop-field" aria-hidden="true">
+  {items.map((item) => (
+    <span
+      class="drop"
+      style={`
+        left: ${item.x}%;
+        top: ${item.y}%;
+        --s: ${item.size}px;
+        --r: ${item.rot}deg;
+        --o: ${item.opacity};
+        --dx: ${item.dx}px;
+        --dy: ${item.dy}px;
+        --dr: ${item.dr}deg;
+        --dur: ${item.dur}s;
+        --delay: ${item.delay}s;
+        --fade-dur: ${item.fadeDur}s;
+        --fade-delay: ${item.fadeDelay}s;
+      `}
+    >
+      <Fragment set:html={item.svg} />
+    </span>
+  ))}
+</div>
+
+<style>
+  .drop-field {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .drop {
+    position: absolute;
+    width: var(--s);
+    height: var(--s);
+    color: var(--accent);
+    /* Aplicamos tanto la animación de flotación como la de desvanecimiento en paralelo */
+    transform: translate(-50%, -50%) rotate(var(--r));
+    animation: 
+      drop-float var(--dur) ease-in-out var(--delay) infinite alternate,
+      drop-fade var(--fade-dur) ease-in-out var(--fade-delay) infinite alternate;
+  }
+
+  @keyframes drop-float {
+    from {
+      transform: translate(-50%, -50%) rotate(var(--r));
+    }
+    to {
+      transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(calc(var(--r) + var(--dr)));
+    }
+  }
+
+  /* Animación independiente para que aparezcan y desaparezcan gradualmente */
+  @keyframes drop-fade {
+    0% {
+      opacity: 0;
+      scale: 0.85;
+    }
+    50% {
+      opacity: var(--o);
+      scale: 1;
+    }
+    100% {
+      opacity: 0.02; /* Casi imperceptible, simulando que se desvanecen en el fondo */
+      scale: 0.95;
+    }
+  }
+
+  .drop-field[data-offscreen] .drop {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drop {
+      animation: none;
+    }
+  }
+
+  .drop :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 639px) {
+    .drop:nth-child(even) {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const fields = document.querySelectorAll<HTMLElement>('.drop-field');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const el = entry.target as HTMLElement;
+        if (entry.isIntersecting) {
+          el.removeAttribute('data-offscreen');
+        } else {
+          el.setAttribute('data-offscreen', '');
+        }
+      });
+    });
+    fields.forEach((field) => io.observe(field));
+  }
+</script>

@@ -1,4 +1,5 @@
 ---
+import DropField from '../DropField.astro';
 // FAQ.astro - Preguntas frecuentes de la plataforma BLUD
 import Icon from '../Icon.astro';
 
@@ -44,6 +45,7 @@ const faqs = [
 ---
 
 <section id="faq" class="relative isolate border-t border-line py-24 lg:py-32 dot-pattern-section">
+  <DropField seed={6} />
   
   <div class="container-blud relative z-10">
     <!-- Encabezado con búsqueda -->
