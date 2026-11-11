@@ -113,6 +113,25 @@ const escenas = [
     ],
   },
 ];
+
+// Zoom entre etapas: células generadas con un generador determinista (mismo resultado en cada build).
+const azar = (semilla: number) => () => { semilla = (semilla * 1664525 + 1013904223) % 4294967296; return semilla / 4294967296; };
+const CAPAS = [
+  { n: 20, r: [22, 44], plaq: 14 }, // lejos
+  { n: 12, r: [44, 78], plaq: 6 }, // medio
+  { n: 6, r: [86, 140], plaq: 0 }, // cerca
+];
+const celula = (x: number, y: number, r: number, rot: number) =>
+  `<g transform="translate(${x} ${y}) rotate(${rot}) scale(1 .64)"><circle r="${r}" fill="url(#zc-cel)"/><ellipse rx="${(r * 0.46).toFixed(1)}" ry="${(r * 0.46).toFixed(1)}" fill="#4A0409" opacity=".42"/><circle r="${r}" fill="none" stroke="#FF8D92" stroke-opacity=".28" stroke-width="2"/></g>`;
+const zoomCapas = escenas.map((_, zi) => {
+  const rnd = azar(1234 + zi * 977);
+  return CAPAS.map((c) => {
+    let o = '';
+    for (let i = 0; i < c.n; i++) o += celula(Math.round(rnd() * 1000), Math.round(rnd() * 600), c.r[0] + rnd() * (c.r[1] - c.r[0]), Math.round(rnd() * 180 - 90));
+    for (let i = 0; i < c.plaq; i++) o += `<circle cx="${Math.round(rnd() * 1000)}" cy="${Math.round(rnd() * 600)}" r="${(4 + rnd() * 6).toFixed(1)}" fill="#F3D98B" opacity=".75"/>`;
+    return o;
+  });
+});
 ---
 
 <Layout title="BLUD | El viaje de una bolsa" description="Sigue una bolsa de sangre desde la extracción hasta el paciente, paso a paso.">
@@ -122,7 +141,7 @@ const escenas = [
     <div class="hero-grid absolute inset-0 opacity-[0.07]" aria-hidden="true"></div>
     <div class="container-blud relative grid min-h-[calc(100dvh-var(--header-h))] items-center gap-10 py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
       <div>
-        <p class="hero-in font-mono text-xs tracking-[0.3em] text-[#B85558]">DON-26000001 · SANGRE TOTAL · O+</p>
+        <p class="hero-in tag-don"><span class="tag-punto" aria-hidden="true"></span><span>DON-26000001</span><i aria-hidden="true">/</i><span>SANGRE TOTAL</span><i aria-hidden="true">/</i><b>O+</b></p>
         <h1 class="hero-in mt-5 max-w-3xl text-5xl font-bold leading-[1.02] tracking-tight sm:text-7xl" aria-label="El viaje de una bolsa de sangre">
           {tituloA.map((w, i) => (<><span class="pal" style={`--w:${i}`} aria-hidden="true">{w}</span>{' '}</>))}
           <span class="text-[#D9534F]">{tituloB.map((w, i) => (<><span class="pal" style={`--w:${i + tituloA.length}`} aria-hidden="true">{w}</span>{i < tituloB.length - 1 ? ' ' : ''}</>))}</span>
@@ -137,12 +156,10 @@ const escenas = [
             </div>
           ))}
         </dl>
-        <ol class="hero-in mt-10 flex flex-wrap gap-2" aria-label="Etapas del recorrido">
-          {escenas.map((e) => (
-            <li>
-              <a href={`#etapa-${e.id}`} class="block rounded-full border border-[#E6DED7] bg-white/70 px-3 py-1 text-xs text-[#4A5363] transition-colors duration-200 hover:border-[#E8908C] hover:bg-[#FCEDEB] hover:text-[#1E2430]">
-                <span class="font-mono text-[#8A92A0]">{e.num}</span> {e.titulo}
-              </a>
+        <ol class="hero-in mt-10 flex max-w-2xl flex-wrap gap-2.5" aria-label="Etapas del recorrido">
+          {escenas.map((e, i) => (
+            <li style={`--n:${i}`}>
+              <a href={`#etapa-${e.id}`} class="etq"><span class="etq-n">{e.num}</span>{e.titulo}</a>
             </li>
           ))}
         </ol>
@@ -198,26 +215,31 @@ const escenas = [
     </div>
   </section>
 
-  <!-- Vena de progreso: la cola de la bolsa sigue el recorrido hasta el final -->
-  <nav id="vena" class="vena" aria-label="Progreso del viaje">
-    <div class="vena-pista" aria-hidden="true"><div class="vena-sangre"></div></div>
-    <ol class="vena-nodos">
-      {escenas.map((e, i) => (
-        <li style={`--i:${i}`}>
-          <a href={`#etapa-${e.id}`} class="vena-nodo" data-vena={i} aria-label={`Etapa ${e.num}: ${e.titulo}`}>
-            <span class="vena-num">{e.num}</span>
-            <span class="vena-tip">{e.titulo}</span>
-          </a>
-        </li>
-      ))}
-    </ol>
-    <svg class="vena-gota" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="currentColor"/></svg>
-  </nav>
+  <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="zc-cel" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#F0565B"/><stop offset=".6" stop-color="#C81E26"/><stop offset="1" stop-color="#8E0F16"/></radialGradient>
+    </defs>
+  </svg>
 
-  {escenas.map((e) => (
+  {escenas.map((e, zi) => (
+    <>
+    <section class="zoom" data-zoom aria-hidden="true">
+      <div class="zoom-stage">
+        <div class="zoom-sangre">
+          {zoomCapas[zi].map((c, li) => (<svg class={`zoom-capa capa-${li}`} viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" set:html={c}></svg>))}
+          <div class="zoom-luz"></div>
+        </div>
+        <p class="zoom-pre font-mono">{zi === 0 ? 'La cola de la bolsa sigue…' : `Seguimos a la etapa ${e.num}`}</p>
+        <div class="zoom-titulo">
+          <p class="zoom-etapa font-mono">ETAPA {e.num} / 09</p>
+          <p class="zoom-nombre">{e.titulo}</p>
+          <p class="zoom-sub">{e.pasos[0].t}</p>
+        </div>
+      </div>
+    </section>
     <section id={`etapa-${e.id}`} class="escena relative bg-[#FBF7F3] text-[#1E2430]" data-escena={e.id} aria-labelledby={`h-${e.id}`}>
       <div class="escena-stage sticky overflow-hidden">
-        <div class="escena-fondo absolute inset-0" aria-hidden="true"><span class="escena-num">{e.num}</span></div>
+        <div class="escena-fondo absolute inset-0" aria-hidden="true"></div>
         <div class="container-blud relative grid h-full items-center gap-6 py-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
           <div class="escena-texto order-2 lg:order-1">
             <p class="font-mono text-xs tracking-[0.3em] text-[#6B7383]">ETAPA {e.num} / 09</p>
@@ -238,6 +260,7 @@ const escenas = [
         </div>
       </div>
     </section>
+    </>
   ))}
 
   <section class="fin bg-[#FBF7F3] py-24 text-center text-[#1E2430]">
@@ -949,9 +972,6 @@ const escenas = [
 
   .escena { height: 300vh; }
 
-  /* Número gigante de la etapa: se desliza mientras avanza el scroll. */
-  .escena-num { position: absolute; right: 2%; top: 2%; font-size: clamp(10rem, 28vw, 25rem); font-weight: 800; line-height: 0.8; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 2px rgba(202, 43, 43, 0.12); user-select: none; translate: calc(var(--p, 0) * -90px) calc(var(--p, 0) * 70px); }
-
   /* Entrada de cada etapa: la lámina sube y el texto llega de costado. Solo si hay JS y movimiento. */
   :global(html.proceso-anim) .escena-lamina { opacity: 0; transform: translateY(56px) scale(0.94) rotate(0.8deg); transition: opacity 800ms var(--ease-out), transform 1000ms var(--ease-out); }
   :global(html.proceso-anim) .escena.dentro .escena-lamina { opacity: 1; transform: none; }
@@ -971,24 +991,42 @@ const escenas = [
   .fin.dentro .fin-gota { animation: gota-salta 2.4s var(--ease-out) 0.6s infinite; }
   @keyframes gota-salta { 0%, 100% { translate: 0 0; } 18% { translate: 0 -14px; } 34% { translate: 0 0; } 44% { translate: 0 -5px; } 54% { translate: 0 0; } }
 
-  /* Vena de progreso (escritorio ancho): la sangre sube por el tubo y llena la gota del final. */
-  .vena { position: fixed; z-index: 30; left: 1.25rem; top: calc(var(--header-h) + 3rem); bottom: 3rem; width: 2.25rem; display: none; opacity: 0; transform: translateX(-14px); transition: opacity 500ms var(--ease-out), transform 500ms var(--ease-out); pointer-events: none; }
-  @media (min-width: 1360px) { .vena { display: block; } }
-  .vena.visible { opacity: 1; transform: none; pointer-events: auto; }
-  .vena-pista { position: absolute; left: 50%; top: 0; bottom: 0.6rem; width: 6px; margin-left: -3px; border-radius: 999px; background: rgba(30, 36, 48, 0.12); overflow: hidden; }
-  .vena-sangre { position: absolute; top: 0; left: 0; right: 0; height: calc((100% - 2.2rem) * var(--a, 0) + 2.2rem * var(--b, 0)); background: linear-gradient(#F0565B, #B3121A); border-radius: 999px; }
-  .vena-sangre::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0 7px, transparent 7px 22px) 0 0 / 100% 22px; animation: vena-flujo 1.1s linear infinite; }
-  @keyframes vena-flujo { to { background-position-y: -22px; } }
-  .vena-nodos { list-style: none; margin: 0; padding: 0; position: absolute; inset: 0 0 2.2rem 0; }
-  .vena-nodos li { position: absolute; left: 50%; top: calc(var(--i) / 8 * 100%); translate: -50% -50%; }
-  .vena-nodo { position: relative; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 999px; border: 2px solid #D9CFC7; background: #FBF7F3; color: #8A92A0; font: 600 0.5rem/1 var(--font-mono); transition: transform 300ms var(--ease-out), background 300ms, border-color 300ms, color 300ms, box-shadow 300ms; }
-  .vena-nodo[data-estado='hecho'] { background: #E36F6B; border-color: #E36F6B; color: #fff; }
-  .vena-nodo[aria-current='step'] { transform: scale(1.3); background: #fff; border-color: #CA2B2B; color: #CA2B2B; box-shadow: 0 0 0 5px rgba(202, 43, 43, 0.16); }
-  .vena-tip { position: absolute; left: calc(100% + 0.7rem); top: 50%; translate: -6px -50%; white-space: nowrap; padding: 0.2rem 0.6rem; border-radius: 0.5rem; background: #1E2430; color: #fff; font: 600 0.75rem/1.2 var(--font-sans, system-ui); opacity: 0; transition: opacity 200ms, translate 250ms var(--ease-out); pointer-events: none; }
-  .vena-nodo:hover .vena-tip, .vena-nodo:focus-visible .vena-tip, .vena-nodo[aria-current='step'] .vena-tip { opacity: 1; translate: 0 -50%; }
-  .vena-gota { position: absolute; left: 50%; bottom: 0; width: 1.6rem; height: 1.6rem; translate: -50% 0; color: rgba(30, 36, 48, 0.18); transition: color 500ms, scale 500ms var(--ease-out); }
-  .vena-gota.llena { color: #CA2B2B; animation: vena-pop 700ms var(--ease-out); }
-  @keyframes vena-pop { 0% { scale: 0.6; } 55% { scale: 1.35; } 100% { scale: 1; } }
+  /* ---------- Etiquetas del inicio ---------- */
+  .tag-don { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.9rem 0.4rem 0.7rem; border-radius: 999px; background: #fff; border: 1px solid #EBD9D3; box-shadow: 0 10px 24px -14px rgba(160, 40, 40, 0.45); font: 600 0.72rem/1 var(--font-mono); letter-spacing: 0.16em; color: #6B4A4A; }
+  .tag-don i { font-style: normal; color: #D9A9A6; }
+  .tag-don b { color: #B3121A; font-weight: 800; padding: 0.2rem 0.45rem; border-radius: 6px; background: #FCE4E2; letter-spacing: 0.08em; }
+  .tag-punto { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #D9534F; }
+  .tag-punto::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid #D9534F; opacity: 0; animation: tag-onda 2.2s ease-out infinite; }
+  @keyframes tag-onda { 0% { transform: scale(0.4); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }
+
+  .etq { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.85rem 0.3rem 0.3rem; border-radius: 999px; background: rgba(255, 255, 255, 0.85); border: 1px solid #EADFD8; color: #3A4252; font-size: 0.8125rem; font-weight: 600; box-shadow: 0 6px 16px -12px rgba(80, 40, 30, 0.5); transition: transform 250ms var(--ease-out), background 250ms, border-color 250ms, color 250ms, box-shadow 250ms; animation: etq-pulso 9s ease-in-out infinite; animation-delay: calc(var(--n) * 0.5s + 3s); }
+  .etq-n { display: grid; place-items: center; min-width: 1.6rem; height: 1.6rem; border-radius: 999px; background: #FCE4E2; color: #B3121A; font: 700 0.6875rem/1 var(--font-mono); transition: background 250ms, color 250ms, transform 300ms var(--ease-out); }
+  .etq:hover { transform: translateY(-3px); background: #CA2B2B; border-color: #CA2B2B; color: #fff; box-shadow: 0 14px 24px -12px rgba(202, 43, 43, 0.7); }
+  .etq:hover .etq-n { background: #fff; color: #CA2B2B; transform: rotate(-8deg) scale(1.08); }
+  .etq:active { transform: scale(0.96); }
+  /* Un destello recorre las etapas, como la sangre que avanza. */
+  @keyframes etq-pulso { 0%, 9%, 100% { border-color: #EADFD8; box-shadow: 0 6px 16px -12px rgba(80, 40, 30, 0.5); } 4% { border-color: #E8908C; box-shadow: 0 0 0 4px rgba(217, 83, 79, 0.16), 0 6px 16px -12px rgba(80, 40, 30, 0.5); } }
+  .hero.animar .tag-don { animation: etq-in 800ms var(--ease-out) both; }
+  .hero.animar .etq { animation: etq-in 700ms var(--ease-out) calc(1.1s + var(--n) * 70ms) both, etq-pulso 9s ease-in-out calc(var(--n) * 0.5s + 4s) infinite; }
+  @keyframes etq-in { from { opacity: 0; transform: translateY(14px) scale(0.8) rotate(-4deg); } }
+
+  /* ---------- Zoom entre etapas ---------- */
+  /* La cola de la bolsa cruza la pantalla, engorda hasta ser todo el cuadro y nos mete dentro de la sangre; ahí aparece la etapa. */
+  .zoom { position: relative; height: 260vh; background: #FBF7F3; --z: 0; --t: clamp(0, calc((var(--z) - 0.04) / 0.38), 1); --ti: clamp(0, calc((var(--z) - 0.4) / 0.22), 1); --to: clamp(0, calc((var(--z) - 0.8) / 0.18), 1); }
+  .zoom-stage { position: sticky; top: var(--header-h); height: calc(100dvh - var(--header-h)); overflow: hidden; }
+  .zoom-sangre { position: absolute; inset: 0; background: radial-gradient(70% 80% at 50% 50%, #B3121A, #7A0910 75%, #4F050A); clip-path: inset(calc(50% - 9px - var(--t) * (50% - 9px)) 0 round calc((1 - var(--t)) * 999px)); opacity: calc(1 - var(--to)); }
+  .zoom-capa { position: absolute; inset: 0; width: 100%; height: 100%; transform: scale(calc(1 + var(--z) * var(--k))); animation: deriva var(--dur) ease-in-out infinite alternate; }
+  .capa-0 { --k: 1.1; --dur: 11s; opacity: 0.7; }
+  .capa-1 { --k: 2.8; --dur: 8s; }
+  .capa-2 { --k: 6.5; --dur: 6s; filter: blur(3px); opacity: 0.85; }
+  @keyframes deriva { from { translate: 3% 0; } to { translate: -3% 0; } }
+  .zoom-luz { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 14%, transparent 86%, rgba(0, 0, 0, 0.22)); pointer-events: none; }
+  .zoom-pre { position: absolute; left: 50%; top: calc(50% - 2.4rem); translate: -50% 0; font-size: 0.75rem; letter-spacing: 0.28em; text-transform: uppercase; color: #6B7383; white-space: nowrap; opacity: clamp(0, calc(1 - var(--t) * 3.2), 1); }
+  .zoom-titulo { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.6rem; padding: 0 1.25rem; text-align: center; color: #fff; pointer-events: none; opacity: calc(var(--ti) * (1 - var(--to))); transform: scale(calc(0.55 + var(--ti) * 0.45 + var(--to) * 0.9)); filter: blur(calc((1 - var(--ti)) * 12px + var(--to) * 10px)); }
+  .zoom-etapa { font-size: 0.8125rem; letter-spacing: 0.4em; color: #FFC9CB; }
+  .zoom-nombre { font-size: clamp(3rem, 12vw, 9.5rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.055em; text-shadow: 0 6px 40px rgba(60, 0, 6, 0.55); }
+  .zoom-sub { max-width: 32rem; font-size: clamp(1rem, 1.6vw, 1.25rem); color: #FFE3E4; }
+
   :global(.q-copo) { animation: copo 4.5s ease-in-out infinite alternate; }
   @keyframes copo { to { transform: translate(6px, 14px); opacity: 0.15; } }
   .escena-stage { top: var(--header-h); height: calc(100dvh - var(--header-h)); }
@@ -1021,10 +1059,10 @@ const escenas = [
     .escena-stage { position: relative; top: 0; height: auto; }
     .pasos { min-height: 0; }
     .paso { position: static; opacity: 1; transform: none; filter: none; margin-bottom: 1.25rem; }
-    .vena { display: none; }
-    .hero-bolsa, .h-gota, .escena-num { translate: none; rotate: none; }
+    .zoom { display: none; }
+    .hero-bolsa, .h-gota { translate: none; rotate: none; }
     :global(.e-ola), :global(.t-sirena-r), :global(.t-sirena-a), :global(.t-star), .scroll-cue::after,
-    :global(.h-ola), :global(.h-burbuja), .h-gota, .hero-bolsa, .hero-in, :global(.q-copo), :global(.h-flujo), :global(.pal) { animation: none; }
+    :global(.h-ola), :global(.h-burbuja), .h-gota, .hero-bolsa, .hero-in, .tag-punto::after, .etq, :global(.q-copo), :global(.h-flujo), :global(.pal) { animation: none; }
     :global(.h-gotita) { display: none; }
   }
 </style>
@@ -1284,26 +1322,8 @@ const escenas = [
   );
   document.querySelectorAll('.escena, .fin').forEach((el) => io.observe(el));
 
-  // Vena de progreso.
-  const vena = document.getElementById('vena') as HTMLElement;
-  const nodos = [...vena.querySelectorAll<HTMLElement>('.vena-nodo')];
-  const gotaVena = vena.querySelector('.vena-gota')!;
-  const pintarVena = (t: number) => {
-    const actual = Math.min(8, Math.floor(t + 0.0001));
-    vena.style.setProperty('--a', String(utils.clamp(t / 8, 0, 1)));
-    vena.style.setProperty('--b', String(utils.clamp(t - 8, 0, 1)));
-    nodos.forEach((n, i) => {
-      n.dataset.estado = i < actual ? 'hecho' : '';
-      if (i === actual) n.setAttribute('aria-current', 'step'); else n.removeAttribute('aria-current');
-    });
-    gotaVena.classList.toggle('llena', t >= 8.98);
-  };
-  const cierre = document.querySelector('.fin')!;
-  // Aparece al empezar las etapas y se despide cuando llega el cierre (para no encimarse al pie de página).
-  const mostrarVena = () =>
-    vena.classList.toggle('visible', escenas[0].el.getBoundingClientRect().top < innerHeight * 0.7 && cierre.getBoundingClientRect().bottom > innerHeight * 0.98);
-  addEventListener('scroll', mostrarVena, { passive: true });
-  mostrarVena();
+  // Zoom entre etapas: --z (0 a 1) con la misma inercia que las etapas.
+  const zooms = [...document.querySelectorAll<HTMLElement>('.zoom')].map((el) => ({ el, actual: 0, meta: 0 }));
 
   if (reduce) {
     // Sin movimiento: cada ilustración en su estado final y todos los textos visibles.
@@ -1314,6 +1334,10 @@ const escenas = [
       escenas.forEach((e) => {
         const r = e.el.getBoundingClientRect();
         e.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
+      });
+      zooms.forEach((z) => {
+        const r = z.el.getBoundingClientRect();
+        z.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
       });
     };
     // Scroll con inercia: la animación persigue la posición del scroll en vez de saltar a ella.
@@ -1329,12 +1353,18 @@ const escenas = [
         e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= e.actual + 0.001) activo = i; });
         e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
       });
-      pintarVena(escenas.reduce((suma, e) => suma + e.actual, 0));
+      zooms.forEach((z) => {
+        const d = z.meta - z.actual;
+        if (Math.abs(d) < 0.0005) return;
+        z.actual += d * 0.14;
+        z.el.style.setProperty('--z', z.actual.toFixed(4));
+      });
       requestAnimationFrame(frame);
     };
     addEventListener('scroll', medir, { passive: true });
     addEventListener('resize', medir);
     medir();
+    zooms.forEach((z) => { z.actual = z.meta; z.el.style.setProperty('--z', z.meta.toFixed(4)); });
     escenas.forEach((e) => { e.actual = e.meta; e.el.style.setProperty('--p', e.meta.toFixed(4)); e.tl.seek(e.meta * e.tl.duration); });
     requestAnimationFrame(frame);
   }
