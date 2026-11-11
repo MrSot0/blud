@@ -367,36 +367,56 @@ const grupos = categories.map((c) => ({ ...c, preguntas: questions.filter((q) =>
             <ul class="hidden space-y-2" data-salud-alertas></ul>
           </section>
 
-          <form id="salud-form" class="panel p-6 sm:p-8 space-y-8" novalidate>
-            <div class="border-b border-line pb-4">
-              <h2 class="text-lg font-bold text-ink">Responde con sinceridad</h2>
-              <p class="text-xs sm:text-sm text-ink-3">Tus respuestas son confidenciales: solo las ve el personal de salud. Protegen tu salud y la de quien recibe tu sangre.</p>
+          <form id="salud-form" class="space-y-5" novalidate>
+            <!-- Indicador de partes (igual que en Donar sangre) -->
+            <div class="flex items-center justify-between px-2 text-xs font-bold uppercase tracking-wider">
+              <span class="text-accent font-extrabold" data-salud-paso>Parte 1 de {grupos.length}</span>
+              <div class="flex gap-2" aria-hidden="true">
+                {grupos.map((_, i) => <span class={`salud-dot size-3 rounded-full transition-all shadow-sm ${i === 0 ? 'bg-accent' : 'bg-line'}`} data-dot={i}></span>)}
+              </div>
             </div>
-            {grupos.map((g) => (
-              <fieldset class="space-y-4">
-                <legend class="text-xs font-bold uppercase tracking-widest text-accent-ink mb-1">{g.label}</legend>
-                {g.preguntas.map((q) => (
-                  <div class="pregunta rounded-control border border-line p-4 space-y-3" data-pregunta={q.id} data-solo-mujer={q.soloMujer ? '1' : undefined}>
-                    <div>
-                      <p class="font-semibold text-ink text-sm sm:text-base" id={`q-${q.id}`}>{q.title}</p>
-                      <p class="text-xs text-ink-3 mt-0.5">{q.description}</p>
+            <div class="h-1.5 overflow-hidden rounded-full bg-sunken" role="progressbar" aria-label="Preguntas respondidas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-salud-barra>
+              <div class="h-full w-0 rounded-full bg-accent transition-all duration-500" data-salud-relleno></div>
+            </div>
+
+            {grupos.map((g, gi) => (
+              <section class={`salud-parte panel p-6 sm:p-10 space-y-6 shadow-lg ${gi === 0 ? '' : 'hidden'}`} data-parte={gi} aria-labelledby={`parte-${gi}`}>
+                <div class="pb-4 border-b border-line">
+                  <h2 id={`parte-${gi}`} class="flex items-center gap-3 text-xl font-extrabold text-ink">
+                    <span class="num">{gi + 1}</span> {g.label}
+                  </h2>
+                  <p class="text-xs sm:text-sm text-ink-3 mt-2">Tus respuestas son confidenciales: solo las ve el personal de salud.</p>
+                </div>
+                <div class="space-y-6">
+                  {g.preguntas.map((q) => (
+                    <div class="pregunta space-y-3" data-pregunta={q.id} data-solo-mujer={q.soloMujer ? '1' : undefined}>
+                      <div>
+                        <p class="font-bold text-ink text-sm sm:text-base leading-snug" id={`q-${q.id}`}>{q.title}</p>
+                        <p class="text-xs text-ink-3 mt-1">{q.description}</p>
+                      </div>
+                      <div class="grid gap-2.5 sm:grid-cols-2" role="radiogroup" aria-labelledby={`q-${q.id}`}>
+                        {q.options.map((o, i) => (
+                          <label class="opcion">
+                            <input type="radio" name={`q${q.id}`} value={i} class="sr-only" />
+                            <span data-plantilla={o.label}>{o.label.replace(/\{meses\}/g, '3')}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                    <div class="grid gap-2" role="radiogroup" aria-labelledby={`q-${q.id}`}>
-                      {q.options.map((o, i) => (
-                        <label class="opcion">
-                          <input type="radio" name={`q${q.id}`} value={i} class="sr-only" />
-                          <span data-plantilla={o.label}>{o.label.replace(/\{meses\}/g, '3')}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </fieldset>
+                  ))}
+                </div>
+
+                <p class="hidden rounded-xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink" data-parte-error role="alert"></p>
+
+                <div class="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 border-t border-line">
+                  {gi > 0 && <button type="button" class="btn btn-secondary w-full sm:w-auto px-8 py-3" data-anterior>Anterior</button>}
+                  {gi < grupos.length - 1
+                    ? <button type="button" class="btn btn-primary w-full sm:w-auto px-10 py-3 text-base shadow-md" data-siguiente>Siguiente</button>
+                    : <button type="submit" class="btn btn-primary w-full sm:w-auto px-10 py-3 text-base shadow-md">Guardar mis respuestas</button>}
+                </div>
+              </section>
             ))}
-            <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" id="salud-error" role="alert"></p>
-            <div class="flex justify-center">
-              <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Guardar mis respuestas</button>
-            </div>
+            <p class="hidden rounded-xl bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink" id="salud-error" role="alert"></p>
           </form>
         </div>
 
@@ -495,15 +515,21 @@ const grupos = categories.map((c) => ({ ...c, preguntas: questions.filter((q) =>
 
 <style>
   /* ---------- Cuestionario de salud ---------- */
-  .opcion { display: block; cursor: pointer; }
+  .num { display: grid; place-items: center; flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 9999px; background: var(--color-blud-flag-red); color: #fff; font-size: 0.875rem; font-weight: 800; }
+  .salud-parte { animation: rise 450ms var(--ease-out, ease-out); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+  .opcion { display: block; height: 100%; cursor: pointer; }
   .opcion span {
-    display: block; padding: 0.65rem 0.9rem; border-radius: 0.75rem; border: 2px solid var(--line);
-    font-size: 0.875rem; font-weight: 600; color: var(--ink-2); transition: border-color 150ms, background 150ms, color 150ms;
+    display: flex; align-items: center; height: 100%; padding: 0.8rem 1rem; border-radius: 0.75rem; border: 2px solid var(--line);
+    background: var(--surface); font-size: 0.875rem; font-weight: 700; color: var(--ink-2); line-height: 1.35;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .opcion:hover span { border-color: var(--line-strong); }
-  .opcion:has(input:checked) span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .opcion:hover span { border-color: var(--color-blud-flag-red); transform: translateY(-1px); }
+  .opcion:has(input:checked) span { background: var(--color-blud-flag-red); border-color: var(--color-blud-flag-red); color: #fff; box-shadow: 0 4px 12px rgb(0 0 0 / 0.1); }
   .opcion:has(input:focus-visible) span { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .pregunta[data-falta='true'] { border-color: var(--accent); }
+  .pregunta[data-falta='true'] p:first-child { color: var(--accent-ink); }
+  .pregunta[data-falta='true'] .opcion span { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  @media (prefers-reduced-motion: reduce) { .salud-parte { animation: none; } .opcion span { transition: none; } }
   [data-salud-icono][data-estado='none'] { background: var(--sunken); color: var(--ink-2); }
   [data-salud-icono][data-estado='ok'] { background: var(--ok-soft); color: var(--ok); }
   [data-salud-icono][data-estado='alerta'] { background: var(--accent-soft); color: var(--accent-ink); }
@@ -1251,41 +1277,89 @@ const grupos = categories.map((c) => ({ ...c, preguntas: questions.filter((q) =>
         const input = salud.querySelector<HTMLInputElement>(`input[name="q${rsp.id}"][value="${i}"]`);
         if (input) input.checked = true;
       });
+      progreso();
     };
     pintarSalud(donor);
-    salud.addEventListener('change', (e) => {
-      (e.target as HTMLElement).closest<HTMLElement>('[data-pregunta]')?.removeAttribute('data-falta');
+    // ---- Partes (una categoría por pantalla)
+    const partes = qa<HTMLElement>('[data-parte]', salud);
+    let parte = 0;
+    const preguntasDe = (el: HTMLElement) => qa<HTMLElement>('[data-pregunta]', el).filter((x) => !x.hidden);
+    function respondida(el: HTMLElement) { return !!salud.querySelector(`input[name="q${el.dataset.pregunta}"]:checked`); }
+    function progreso() {
+      const todas = visibles();
+      const hechas = todas.filter(respondida).length;
+      const pct = todas.length ? Math.round((hechas / todas.length) * 100) : 0;
+      q<HTMLElement>('[data-salud-relleno]', salud)!.style.width = pct + '%';
+      q('[data-salud-barra]', salud)!.setAttribute('aria-valuenow', String(pct));
+    }
+    function irAParte(n: number, desplazar = true) {
+      parte = Math.max(0, Math.min(partes.length - 1, n));
+      partes.forEach((el, i) => el.classList.toggle('hidden', i !== parte));
+      q('[data-salud-paso]', salud)!.textContent = `Parte ${parte + 1} de ${partes.length}`;
+      qa('[data-dot]', salud).forEach((d, i) => {
+        d.classList.toggle('bg-accent', i <= parte);
+        d.classList.toggle('bg-line', i > parte);
+      });
       saludErr.classList.add('hidden');
+      if (desplazar) q('[data-salud-paso]', salud)!.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    /** Marca las preguntas sin responder de una parte; devuelve true si está completa. */
+    function revisarParte(el: HTMLElement): boolean {
+      const faltan = preguntasDe(el).filter((x) => !respondida(x));
+      faltan.forEach((x) => (x.dataset.falta = 'true'));
+      const err = q('[data-parte-error]', el)!;
+      err.classList.toggle('hidden', !faltan.length);
+      if (faltan.length) {
+        err.textContent = faltan.length === 1 ? 'Falta 1 pregunta por responder.' : `Faltan ${faltan.length} preguntas por responder.`;
+        faltan[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return !faltan.length;
+    }
+    partes.forEach((el, i) => {
+      q('[data-siguiente]', el)?.addEventListener('click', () => { if (revisarParte(el)) irAParte(i + 1); });
+      q('[data-anterior]', el)?.addEventListener('click', () => irAParte(i - 1));
     });
+    salud.addEventListener('change', (e) => {
+      const p = (e.target as HTMLElement).closest<HTMLElement>('[data-pregunta]');
+      p?.removeAttribute('data-falta');
+      const actual = partes[parte];
+      if (actual && preguntasDe(actual).every(respondida)) q('[data-parte-error]', actual)?.classList.add('hidden');
+      saludErr.classList.add('hidden');
+      progreso();
+    });
+    progreso();
+
     salud.addEventListener('submit', async (e) => {
       e.preventDefault();
+      // Revisa todas las partes; si alguna está incompleta, lleva a la primera con faltantes.
+      const incompleta = partes.findIndex((el) => !preguntasDe(el).every(respondida));
+      if (incompleta >= 0) {
+        irAParte(incompleta, false);
+        revisarParte(partes[incompleta]);
+        return;
+      }
       const respuestas: RespuestaCuestionario[] = [];
       const alertas: AlertaCuestionario[] = [];
-      let primeraSinResponder: HTMLElement | null = null;
       for (const el of visibles()) {
         const id = Number(el.dataset.pregunta);
         const qq = questions.find((x) => x.id === id)!;
-        const marcada = salud.querySelector<HTMLInputElement>(`input[name="q${id}"]:checked`);
-        if (!marcada) { el.dataset.falta = 'true'; primeraSinResponder ??= el; continue; }
+        const marcada = salud.querySelector<HTMLInputElement>(`input[name="q${id}"]:checked`)!;
         const o = qq.options[Number(marcada.value)];
         respuestas.push({ id, pregunta: qq.title, respuesta: personalizar(o.label, donor), alerta: !o.eligible });
         if (!o.eligible) alertas.push({ pregunta: qq.title, motivo: o.reasonTitle ?? qq.title, plazo: o.timeframe && personalizar(o.timeframe, donor), permanente: !!o.permanent });
       }
-      if (primeraSinResponder) {
-        const n = visibles().filter((el) => el.dataset.falta === 'true').length;
-        saludErr.textContent = n === 1 ? 'Falta 1 pregunta por responder.' : `Faltan ${n} preguntas por responder.`;
-        saludErr.classList.remove('hidden');
-        (primeraSinResponder as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
       const btn = salud.querySelector<HTMLButtonElement>('button[type="submit"]')!;
       btn.disabled = true;
+      const texto = btn.textContent;
+      btn.textContent = 'Guardando…';
       const res = await guardarCuestionario(respuestas, alertas);
       btn.disabled = false;
+      btn.textContent = texto;
       if (!res.ok) { saludErr.textContent = res.error; saludErr.classList.remove('hidden'); return; }
       donor = res.donor;
       pintarSalud(donor);
       renderCard(donor);
+      irAParte(0, false);
       q('[data-salud-estado]', root)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       toast(alertas.length ? 'Respuestas guardadas. Revisa las indicaciones.' : 'Cuestionario guardado.');
     });
