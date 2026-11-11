@@ -258,7 +258,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
         <path class="fin-p" stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
       </g>
     </svg>
-    <svg class="fin-in fin-gota mx-auto mb-6 size-14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#CA2B2B"/><ellipse cx="9.6" cy="12.4" rx="1.1" ry="2" transform="rotate(28 9.6 12.4)" fill="#fff" opacity=".45"/></svg>
+    <svg class="fin-in fin-gota mx-auto mb-6 size-16" viewBox="0 0 48 48" aria-hidden="true"><defs><radialGradient id="fin-sangrito" cx="35%" cy="35%" r="75%"><stop offset="0" stop-color="#E5484D"/><stop offset="1" stop-color="#B42121"/></radialGradient></defs><path d="M24 3.5c-1.2 1.6-14 17-14 27.2A14 14 0 0 0 24 44.7a14 14 0 0 0 14-14C38 20.5 25.2 5.1 24 3.5Z" fill="url(#fin-sangrito)"/><ellipse cx="17.6" cy="20" rx="2.4" ry="4.2" transform="rotate(28 17.6 20)" fill="#fff" opacity="0.35"/><g fill="#1A202C"><ellipse cx="19" cy="29.5" rx="2" ry="2.7"/><ellipse cx="29" cy="29.5" rx="2" ry="2.7"/></g><circle cx="15.6" cy="34" r="2" fill="#FF9A9A" opacity="0.55"/><circle cx="32.4" cy="34" r="2" fill="#FF9A9A" opacity="0.55"/><path d="M20.5 35.2c1.9 2.2 5.1 2.2 7 0" fill="none" stroke="#1A202C" stroke-width="1.9" stroke-linecap="round"/></svg>
     <p class="fin-in font-mono text-xs tracking-[0.3em] text-[#6B7383]">FIN DEL VIAJE · DON-26000001</p>
     <p class="fin-in mx-auto mt-4 max-w-2xl text-3xl font-bold sm:text-4xl">La próxima bolsa puede ser la tuya.</p>
     <p class="fin-in mx-auto mt-4 max-w-xl text-[#4A5363]">10 minutos en un sillón. Hasta 3 personas que siguen adelante.</p>
@@ -984,8 +984,10 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   :global(html.proceso-anim) .fin.dentro .fin-in:nth-child(3) { transition-delay: 220ms; }
   :global(html.proceso-anim) .fin.dentro .fin-in:nth-child(4) { transition-delay: 320ms; }
   :global(html.proceso-anim) .fin.dentro .fin-in:nth-child(5) { transition-delay: 420ms; }
-  .fin.dentro .fin-gota { animation: gota-salta 2.4s var(--ease-out) 0.6s infinite; }
-  @keyframes gota-salta { 0%, 100% { translate: 0 0; } 18% { translate: 0 -14px; } 34% { translate: 0 0; } 44% { translate: 0 -5px; } 54% { translate: 0 0; } }
+  /* Sangrito se queda enchufado al tubo: solo se balancea desde la punta. */
+  .fin-gota { transform-origin: 50% 8%; }
+  .fin.dentro .fin-gota { animation: gota-salta 3s ease-in-out 0.8s infinite; }
+  @keyframes gota-salta { 0%, 100% { rotate: 0deg; scale: 1; } 25% { rotate: -5deg; scale: 1.04; } 75% { rotate: 5deg; scale: 1.04; } }
 
   /* ---------- Etiquetas del inicio ---------- */
   .tag-don { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.9rem 0.4rem 0.7rem; border-radius: 999px; background: #fff; border: 1px solid #EBD9D3; box-shadow: 0 10px 24px -14px rgba(160, 40, 40, 0.45); font: 600 0.72rem/1 var(--font-mono); letter-spacing: 0.16em; color: #6B4A4A; }
@@ -1014,8 +1016,8 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   .cola-flujo { animation: flujo 1.4s linear infinite; }
   .cola-marca { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FF6B70; border: 2px solid #fff; box-shadow: 0 0 0 5px rgba(217, 83, 79, 0.22), 0 4px 10px rgba(122, 9, 16, 0.4); will-change: transform; }
   /* Carril libre a la derecha: las etapas reservan ese espacio para la cola y su lupa. */
-  .escena-stage :global(.container-blud) { padding-inline: 6.6rem; padding-top: 4.6rem; padding-bottom: 5rem; }
-  @media (max-width: 1023px) { .escena-stage :global(.container-blud) { padding-inline: 1.9rem; padding-top: 4.4rem; padding-bottom: 4.2rem; } .lupa { padding-right: 0.8rem; } .lupa-cristal { width: 2.2rem; height: 2.2rem; } .lupa-texto b { font-size: 0.85rem; } }
+  .escena-stage :global(.container-blud) { padding-inline: 6.6rem; padding-top: 4.6rem; padding-bottom: 6.6rem; }
+  @media (max-width: 1023px) { .escena-stage :global(.container-blud) { padding-inline: 1.9rem; padding-top: 4.4rem; padding-bottom: 8.2rem; } .lupa { padding-right: 0.8rem; } .lupa-cristal { width: 2.2rem; height: 2.2rem; } .lupa-texto b { font-size: 0.85rem; } }
   .lupa { position: absolute; left: 0; top: 0; display: flex; flex-direction: row; align-items: center; gap: 0.6rem; padding: 0.3rem 1.1rem 0.3rem 0.3rem; border-radius: 999px; background: rgba(255, 255, 255, 0.95); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); opacity: var(--lo, 1); scale: var(--ls, 1); transform-origin: 100% 50%; will-change: transform; }
   .lupa-cristal { position: relative; flex: none; width: 2.5rem; height: 2.5rem; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D8323A, #8E0F16 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 -6px 10px rgba(60, 0, 6, 0.35); }
   .lupa-cristal::after { content: ''; position: absolute; left: 18%; top: 12%; width: 38%; height: 20%; border-radius: 50%; background: rgba(255, 255, 255, 0.5); transform: rotate(-30deg); }
@@ -1037,7 +1039,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   .escena[data-escena='evaluacion'] .escena-fondo, .escena[data-escena='cuarentena'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
   .escena[data-escena='serologia'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
   .escena[data-escena='fraccionamiento'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
-  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 10.5rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
+  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 12rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
 
   /* El texto saliente se va rápido y el entrante llega después: nunca se ven dos encimados. */
   .paso { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(22px); filter: blur(3px); transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out), filter 140ms var(--ease-out); pointer-events: none; }
@@ -1370,7 +1372,9 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
     const W = Math.round(document.documentElement.clientWidth);
     const x = carriles().xL;
     f.setAttribute('viewBox', `0 0 ${W} 96`);
-    f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${x} -6 C ${x} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
+    // Baja por el carril izquierdo, cruza hasta el centro y entra recta por arriba en Sangrito.
+    const c = Math.round(W / 2), k = Math.round(Math.min(80, (c - x) / 2)), q = Math.round(k * 0.45);
+    f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${x} -6 L${x} 4 C ${x} ${4 + q}, ${x + q} 36, ${x + k} 36 L${c - k} 36 C ${c - q} 36, ${c} ${36 + q}, ${c} ${36 + k} L${c} 99`));
   };
   const pintar = (e: (typeof escenas)[number]) => {
     try { pintarSeguro(e); } catch (err) { console.error('proceso: pintar', err); }
