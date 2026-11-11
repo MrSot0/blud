@@ -121,15 +121,19 @@ const CAPAS = [
   { n: 12, r: [44, 78], plaq: 6 }, // medio
   { n: 6, r: [86, 140], plaq: 0 }, // cerca
 ];
-const celula = (x: number, y: number, r: number, rot: number) =>
-  `<g transform="translate(${x} ${y}) rotate(${rot}) scale(1 .64)"><circle r="${r}" fill="url(#zc-cel)"/><ellipse rx="${(r * 0.46).toFixed(1)}" ry="${(r * 0.46).toFixed(1)}" fill="#4A0409" opacity=".42"/><circle r="${r}" fill="none" stroke="#FF8D92" stroke-opacity=".28" stroke-width="2"/></g>`;
+const celula = (x: number, y: number, r: number, rot: number, anima: boolean, rnd: () => number) => {
+  const cuerpo = `<circle r="${r}" fill="url(#zc-cel)"/><ellipse rx="${(r * 0.46).toFixed(1)}" ry="${(r * 0.46).toFixed(1)}" fill="#3F0308" opacity=".45"/><ellipse cx="${(-r * 0.32).toFixed(1)}" cy="${(-r * 0.4).toFixed(1)}" rx="${(r * 0.3).toFixed(1)}" ry="${(r * 0.13).toFixed(1)}" fill="#fff" opacity=".2" transform="rotate(-30 ${(-r * 0.32).toFixed(1)} ${(-r * 0.4).toFixed(1)})"/><circle r="${r}" fill="none" stroke="#FF8D92" stroke-opacity=".3" stroke-width="2"/>`;
+  const dentro = anima ? `<g class="rueda" style="--d:${(4 + rnd() * 4).toFixed(1)}s;--dl:-${(rnd() * 6).toFixed(1)}s;--r:${Math.round(10 + rnd() * 16)}deg">${cuerpo}</g>` : cuerpo;
+  return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(1 .64)">${dentro}</g>`;
+};
 const zoomCapas = escenas.map((_, zi) => {
   const rnd = azar(1234 + zi * 977);
-  return CAPAS.map((c) => {
+  return CAPAS.map((c, li) => {
     let o = '';
-    for (let i = 0; i < c.n; i++) o += celula(Math.round(rnd() * 1000), Math.round(rnd() * 600), c.r[0] + rnd() * (c.r[1] - c.r[0]), Math.round(rnd() * 180 - 90));
+    for (let i = 0; i < c.n; i++) o += celula(Math.round(rnd() * 1000), Math.round(rnd() * 600), c.r[0] + rnd() * (c.r[1] - c.r[0]), Math.round(rnd() * 180 - 90), li > 0, rnd);
     for (let i = 0; i < c.plaq; i++) o += `<circle cx="${Math.round(rnd() * 1000)}" cy="${Math.round(rnd() * 600)}" r="${(4 + rnd() * 6).toFixed(1)}" fill="#F3D98B" opacity=".75"/>`;
-    return o;
+    // Se repite desplazado 1000 para que el flujo horizontal sea continuo.
+    return o + `<g transform="translate(1000 0)">${o}</g>`;
   });
 });
 ---
@@ -222,21 +226,6 @@ const zoomCapas = escenas.map((_, zi) => {
   </svg>
 
   {escenas.map((e, zi) => (
-    <>
-    <section class="zoom" data-zoom aria-hidden="true">
-      <div class="zoom-stage">
-        <div class="zoom-sangre">
-          {zoomCapas[zi].map((c, li) => (<svg class={`zoom-capa capa-${li}`} viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice" set:html={c}></svg>))}
-          <div class="zoom-luz"></div>
-        </div>
-        <p class="zoom-pre font-mono">{zi === 0 ? 'La cola de la bolsa sigue…' : `Seguimos a la etapa ${e.num}`}</p>
-        <div class="zoom-titulo">
-          <p class="zoom-etapa font-mono">ETAPA {e.num} / 09</p>
-          <p class="zoom-nombre">{e.titulo}</p>
-          <p class="zoom-sub">{e.pasos[0].t}</p>
-        </div>
-      </div>
-    </section>
     <section id={`etapa-${e.id}`} class="escena relative bg-[#FBF7F3] text-[#1E2430]" data-escena={e.id} aria-labelledby={`h-${e.id}`}>
       <div class="escena-stage sticky overflow-hidden">
         <div class="escena-fondo absolute inset-0" aria-hidden="true"></div>
@@ -258,9 +247,36 @@ const zoomCapas = escenas.map((_, zi) => {
           </div>
           <div class="escena-lamina order-1 lg:order-2" set:html={''} data-svg={e.id}></div>
         </div>
+
+        <!-- Entrada: dentro de la sangre, el título de la etapa y la sangre se aparta. -->
+        <div class="cortina cortina-in" aria-hidden="true">
+          <div class="cortina-sangre">
+            {zoomCapas[zi].map((c, li) => (<svg class={`c-capa capa-${li}`} viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice"><g class="fl" set:html={c}></g></svg>))}
+            <div class="cortina-luz"></div>
+          </div>
+          <div class="cortina-titulo">
+            <p class="cortina-etapa font-mono">ETAPA {e.num} / 09</p>
+            <p class="cortina-nombre">{e.titulo}</p>
+            <p class="cortina-sub">{e.pasos[0].t}</p>
+          </div>
+        </div>
+        <!-- Salida: la cola de la bolsa cruza la pantalla y se abre hasta cubrirla. -->
+        {zi < escenas.length - 1 && (
+          <div class="cortina cortina-out" aria-hidden="true">
+            <div class="cortina-banda">
+              <div class="cortina-sangre">
+                {zoomCapas[zi + 1].map((c, li) => (<svg class={`c-capa capa-${li}`} viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice"><g class="fl" set:html={c}></g></svg>))}
+                <div class="cortina-luz"></div>
+              </div>
+              <div class="cortina-piel">
+                <span class="piel-brillo"></span><span class="piel-flujo"></span>
+                {[0, 1, 2].map((i) => <span class="piel-gota" style={`--i:${i}`}></span>)}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
-    </>
   ))}
 
   <section class="fin bg-[#FBF7F3] py-24 text-center text-[#1E2430]">
@@ -970,7 +986,7 @@ const zoomCapas = escenas.map((_, zi) => {
   .hero-in:nth-child(2) { animation-delay: 80ms; } .hero-in:nth-child(3) { animation-delay: 160ms; } .hero-in:nth-child(4) { animation-delay: 240ms; } .hero-in:nth-child(5) { animation-delay: 320ms; } .hero-in:nth-child(6) { animation-delay: 400ms; }
   @keyframes entra { from { opacity: 0; transform: translateY(18px); } }
 
-  .escena { height: 300vh; }
+  .escena { height: 420vh; }
 
   /* Entrada de cada etapa: la lámina sube y el texto llega de costado. Solo si hay JS y movimiento. */
   :global(html.proceso-anim) .escena-lamina { opacity: 0; transform: translateY(56px) scale(0.94) rotate(0.8deg); transition: opacity 800ms var(--ease-out), transform 1000ms var(--ease-out); }
@@ -1010,22 +1026,39 @@ const zoomCapas = escenas.map((_, zi) => {
   .hero.animar .etq { animation: etq-in 700ms var(--ease-out) calc(1.1s + var(--n) * 70ms) both, etq-pulso 9s ease-in-out calc(var(--n) * 0.5s + 4s) infinite; }
   @keyframes etq-in { from { opacity: 0; transform: translateY(14px) scale(0.8) rotate(-4deg); } }
 
-  /* ---------- Zoom entre etapas ---------- */
-  /* La cola de la bolsa cruza la pantalla, engorda hasta ser todo el cuadro y nos mete dentro de la sangre; ahí aparece la etapa. */
-  .zoom { position: relative; height: 260vh; background: #FBF7F3; --z: 0; --t: clamp(0, calc((var(--z) - 0.04) / 0.38), 1); --ti: clamp(0, calc((var(--z) - 0.4) / 0.22), 1); --to: clamp(0, calc((var(--z) - 0.8) / 0.18), 1); }
-  .zoom-stage { position: sticky; top: var(--header-h); height: calc(100dvh - var(--header-h)); overflow: hidden; }
-  .zoom-sangre { position: absolute; inset: 0; background: radial-gradient(70% 80% at 50% 50%, #B3121A, #7A0910 75%, #4F050A); clip-path: inset(calc(50% - 9px - var(--t) * (50% - 9px)) 0 round calc((1 - var(--t)) * 999px)); opacity: calc(1 - var(--to)); }
-  .zoom-capa { position: absolute; inset: 0; width: 100%; height: 100%; transform: scale(calc(1 + var(--z) * var(--k))); animation: deriva var(--dur) ease-in-out infinite alternate; }
-  .capa-0 { --k: 1.1; --dur: 11s; opacity: 0.7; }
-  .capa-1 { --k: 2.8; --dur: 8s; }
-  .capa-2 { --k: 6.5; --dur: 6s; filter: blur(3px); opacity: 0.85; }
-  @keyframes deriva { from { translate: 3% 0; } to { translate: -3% 0; } }
-  .zoom-luz { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 14%, transparent 86%, rgba(0, 0, 0, 0.22)); pointer-events: none; }
-  .zoom-pre { position: absolute; left: 50%; top: calc(50% - 2.4rem); translate: -50% 0; font-size: 0.75rem; letter-spacing: 0.28em; text-transform: uppercase; color: #6B7383; white-space: nowrap; opacity: clamp(0, calc(1 - var(--t) * 3.2), 1); }
-  .zoom-titulo { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.6rem; padding: 0 1.25rem; text-align: center; color: #fff; pointer-events: none; opacity: calc(var(--ti) * (1 - var(--to))); transform: scale(calc(0.55 + var(--ti) * 0.45 + var(--to) * 0.9)); filter: blur(calc((1 - var(--ti)) * 12px + var(--to) * 10px)); }
-  .zoom-etapa { font-size: 0.8125rem; letter-spacing: 0.4em; color: #FFC9CB; }
-  .zoom-nombre { font-size: clamp(3rem, 12vw, 9.5rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.055em; text-shadow: 0 6px 40px rgba(60, 0, 6, 0.55); }
-  .zoom-sub { max-width: 32rem; font-size: clamp(1rem, 1.6vw, 1.25rem); color: #FFE3E4; }
+  /* ---------- Cortina de sangre entre etapas ---------- */
+  /* Todo ocurre dentro de la etapa fija: la cola cruza, se abre y cubre la pantalla; el título aparece dentro y la sangre se aparta.
+     Así el texto simplemente cambia, sin sensación de bajar por la página. */
+  .escena:not(.viva) .cortina { visibility: hidden; }
+  .cortina { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  .cortina-in { opacity: var(--bi, 1); }
+  .cortina-sangre { position: absolute; inset: 0; overflow: hidden; background: radial-gradient(70% 80% at 50% 50%, #B3121A, #7A0910 75%, #4F050A); }
+  .c-capa { position: absolute; inset: 0; width: 100%; height: 100%; transform-origin: 50% 50%; }
+  .capa-0 { --k: 0.9; --v: 70s; opacity: 0.7; }
+  .capa-1 { --k: 2.2; --v: 36s; }
+  .capa-2 { --k: 4.5; --v: 20s; filter: blur(3px); opacity: 0.85; }
+  .cortina-in .c-capa { transform: scale(calc(1 + var(--k) + var(--ii, 0) * var(--k) * 0.5)); }
+  .cortina-out .c-capa { transform: scale(calc(1 + var(--t, 0) * var(--k))); }
+  :global(.fl) { animation: corre var(--v, 40s) linear infinite; }
+  @keyframes corre { to { transform: translateX(-1000px); } }
+  :global(.rueda) { transform-box: fill-box; transform-origin: center; animation: rueda var(--d, 5s) ease-in-out var(--dl, 0s) infinite alternate; }
+  @keyframes rueda { from { transform: rotate(calc(var(--r, 10deg) * -1)) scale(1, 1); } to { transform: rotate(var(--r, 10deg)) scale(0.9, 1.1); } }
+  .cortina-luz { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 14%, transparent 86%, rgba(0, 0, 0, 0.22)); }
+
+  .cortina-out { filter: drop-shadow(0 7px 5px rgba(122, 9, 16, calc(0.3 * (1 - var(--t, 0))))); }
+  .cortina-banda { position: absolute; inset: 0; --y: calc(50% - 9px - var(--t, 0) * (50% - 9px)); clip-path: inset(var(--y) calc((1 - var(--d, 0)) * 100%) var(--y) 0 round calc((1 - var(--t, 0)) * 999px)); }
+  /* La misma piel de tubo que la cola del inicio: rojo, brillo y flujo rosado. Se desvanece al abrirse. */
+  .cortina-piel { position: absolute; inset: 0; background: #C81E26; opacity: clamp(0, calc(1 - var(--t, 0) * 4), 1); }
+  .piel-brillo { position: absolute; left: 0; right: 0; top: calc(50% - 6px); height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.35); }
+  .piel-flujo { position: absolute; left: 0; right: 0; top: calc(50% - 2px); height: 4px; border-radius: 4px; background: repeating-linear-gradient(90deg, #FF9AA0 0 16px, transparent 16px 62px); animation: piel-corre 1.4s linear infinite; }
+  @keyframes piel-corre { to { background-position-x: 62px; } }
+  .piel-gota { position: absolute; top: calc(50% - 5px); left: 0; width: 11px; height: 11px; border-radius: 50%; background: #FF6B70; border: 1.5px solid rgba(255, 255, 255, 0.55); animation: piel-gota 4.5s linear infinite; animation-delay: calc(var(--i) * -1.5s); }
+  @keyframes piel-gota { from { translate: -20px 0; } to { translate: calc(100vw + 20px) 0; } }
+
+  .cortina-titulo { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 0.6rem; padding: 0 1.25rem; text-align: center; color: #fff; opacity: calc(var(--ti, 0) * (1 - var(--to, 0))); transform: scale(calc(0.6 + var(--ti, 0) * 0.4 + var(--to, 0) * 0.8)); filter: blur(calc((1 - var(--ti, 0)) * 12px + var(--to, 0) * 10px)); }
+  .cortina-etapa { font-size: 0.8125rem; letter-spacing: 0.4em; color: #FFC9CB; }
+  .cortina-nombre { font-size: clamp(3rem, 12vw, 9.5rem); font-weight: 800; line-height: 0.95; letter-spacing: -0.055em; text-shadow: 0 6px 40px rgba(60, 0, 6, 0.55); }
+  .cortina-sub { max-width: 32rem; font-size: clamp(1rem, 1.6vw, 1.25rem); color: #FFE3E4; }
 
   :global(.q-copo) { animation: copo 4.5s ease-in-out infinite alternate; }
   @keyframes copo { to { transform: translate(6px, 14px); opacity: 0.15; } }
@@ -1059,7 +1092,7 @@ const zoomCapas = escenas.map((_, zi) => {
     .escena-stage { position: relative; top: 0; height: auto; }
     .pasos { min-height: 0; }
     .paso { position: static; opacity: 1; transform: none; filter: none; margin-bottom: 1.25rem; }
-    .zoom { display: none; }
+    .cortina { display: none; }
     .hero-bolsa, .h-gota { translate: none; rotate: none; }
     :global(.e-ola), :global(.t-sirena-r), :global(.t-sirena-a), :global(.t-star), .scroll-cue::after,
     :global(.h-ola), :global(.h-burbuja), .h-gota, .hero-bolsa, .hero-in, .tag-punto::after, .etq, :global(.q-copo), :global(.h-flujo), :global(.pal) { animation: none; }
@@ -1312,7 +1345,7 @@ const zoomCapas = escenas.map((_, zi) => {
   const crear: Record<string, () => ReturnType<typeof createTimeline>> = { cita, evaluacion, extraccion, cuarentena, serologia, fraccionamiento, inventario, solicitud, transfusion };
   const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
     const tl = crear[el.dataset.escena!]();
-    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, actual: 0, meta: 0 };
+    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0 };
   });
 
   // Entrada de cada etapa y del cierre al llegar a la pantalla.
@@ -1322,8 +1355,26 @@ const zoomCapas = escenas.map((_, zi) => {
   );
   document.querySelectorAll('.escena, .fin').forEach((el) => io.observe(el));
 
-  // Zoom entre etapas: --z (0 a 1) con la misma inercia que las etapas.
-  const zooms = [...document.querySelectorAll<HTMLElement>('.zoom')].map((el) => ({ el, actual: 0, meta: 0 }));
+  // Una sola línea de tiempo por etapa (m, de 0 a 1):
+  // 0–0.17 entra desde la sangre · 0.17–0.79 la animación y los textos · 0.74–0.93 la cola se abre y cubre la pantalla.
+  const tramo = (v: number, a: number, b: number) => utils.clamp((v - a) / (b - a), 0, 1);
+  const pintar = (e: (typeof escenas)[number]) => {
+    const m = e.m;
+    const st = e.el.style;
+    st.setProperty('--ii', tramo(m, 0, 0.17).toFixed(4));
+    st.setProperty('--bi', (1 - tramo(m, 0.11, 0.17)).toFixed(4));
+    st.setProperty('--ti', tramo(m, 0.015, 0.065).toFixed(4));
+    st.setProperty('--to', tramo(m, 0.11, 0.16).toFixed(4));
+    st.setProperty('--d', tramo(m, 0.74, 0.8).toFixed(4));
+    st.setProperty('--t', tramo(m, 0.8, 0.93).toFixed(4));
+    e.el.classList.toggle('viva', m < 0.2 || m > 0.72);
+    e.actual = tramo(m, 0.17, 0.79);
+    e.tl.seek(e.actual * e.tl.duration);
+    e.barra.style.transform = `scaleX(${e.actual})`;
+    let activo = 0;
+    e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= e.actual + 0.001) activo = i; });
+    e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
+  };
 
   if (reduce) {
     // Sin movimiento: cada ilustración en su estado final y todos los textos visibles.
@@ -1335,37 +1386,21 @@ const zoomCapas = escenas.map((_, zi) => {
         const r = e.el.getBoundingClientRect();
         e.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
       });
-      zooms.forEach((z) => {
-        const r = z.el.getBoundingClientRect();
-        z.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
-      });
     };
     // Scroll con inercia: la animación persigue la posición del scroll en vez de saltar a ella.
     const frame = () => {
       escenas.forEach((e) => {
-        const d = e.meta - e.actual;
-        if (Math.abs(d) < 0.0005) return;
-        e.actual += d * 0.12;
-        e.el.style.setProperty('--p', e.actual.toFixed(4));
-        e.tl.seek(e.actual * e.tl.duration);
-        e.barra.style.transform = `scaleX(${e.actual})`;
-        let activo = 0;
-        e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= e.actual + 0.001) activo = i; });
-        e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
-      });
-      zooms.forEach((z) => {
-        const d = z.meta - z.actual;
-        if (Math.abs(d) < 0.0005) return;
-        z.actual += d * 0.14;
-        z.el.style.setProperty('--z', z.actual.toFixed(4));
+        const d = e.meta - e.m;
+        if (Math.abs(d) < 0.0004) return;
+        e.m += d * 0.12;
+        pintar(e);
       });
       requestAnimationFrame(frame);
     };
     addEventListener('scroll', medir, { passive: true });
     addEventListener('resize', medir);
     medir();
-    zooms.forEach((z) => { z.actual = z.meta; z.el.style.setProperty('--z', z.meta.toFixed(4)); });
-    escenas.forEach((e) => { e.actual = e.meta; e.el.style.setProperty('--p', e.meta.toFixed(4)); e.tl.seek(e.meta * e.tl.duration); });
+    escenas.forEach((e) => { e.m = e.meta; pintar(e); });
     requestAnimationFrame(frame);
   }
 </script>
