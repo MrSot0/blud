@@ -8,7 +8,7 @@ const countByCategory = Object.fromEntries(
 );
 ---
 
-<section class="stripe-quiz-section relative isolate py-12 lg:py-20">
+<section class="relative isolate">
   <div class="container-blud relative z-10 max-w-4xl mx-auto">
     <!-- Panel Principal Unificado -->
     <div class="panel scroll-mt-24 overflow-hidden shadow-xl border-line-strong bg-surface" id="quiz" data-questions={JSON.stringify(questions)} data-categories={JSON.stringify(categories)}>
@@ -386,9 +386,15 @@ const countByCategory = Object.fromEntries(
     pintarEstado();
   }
 
+  // Tras responder (o cambiar de pantalla) la pregunta queda arriba, justo bajo el header: no hay que bajar a mano.
   function keepQuizInView() {
-    if (!quiz) return;
-    if (quiz.getBoundingClientRect().top < 64) quiz.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'start' });
+    let ancla = document.getElementById('quiz-progress');
+    if (!ancla || ancla.classList.contains('hidden')) ancla = quiz;
+    if (!ancla) return;
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--header-h').trim();
+    const header = (parseFloat(v) || 4) * (v.endsWith('rem') ? parseFloat(getComputedStyle(document.documentElement).fontSize) : 1);
+    const top = ancla.getBoundingClientRect().top + window.scrollY - header - 12;
+    window.scrollTo({ top: Math.max(0, top), behavior: reduce() ? 'auto' : 'smooth' });
   }
 
   function renderQuestion(direction: 'forward' | 'back' = 'forward', moveFocus = false) {

@@ -2,7 +2,7 @@
 // elegibilidad.astro - Test de elegibilidad para donar sangre (ficha de datos físicos + preguntas)
 import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
-import BackButton from '../components/BackButton.astro';
+import DropField from '../components/DropField.astro';
 import EligibilityQuiz from '../components/eligibility/EligibilityQuiz.astro';
 import { questions } from '../data/eligibility';
 ---
@@ -11,67 +11,44 @@ import { questions } from '../data/eligibility';
   title="BLUD | Test de elegibilidad"
   description={`Indica tu edad, peso y altura, responde ${questions.length} preguntas y descubre si puedes donar sangre o cuánto tiempo debes esperar. Es una guía orientativa; la decisión final es del personal médico.`}
 >
-  <!-- Encabezado con color estilo Footer -->
-  <section data-cursor-white class="relative overflow-hidden bg-[color-mix(in_srgb,var(--accent)_86%,black)] text-white py-6 sm:py-8 lg:py-10 shadow-md">
-    <!-- Sutil iluminación de fondo -->
-    <div class="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/20 pointer-events-none"></div>
-
-    <div class="container-blud relative z-10">
-      
-      <!-- Fila superior: Botón Atrás a la izquierda y Badge -->
-      <div class="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-        <div class="flex-shrink-0">
-          <BackButton href="/" label="Volver al inicio" />
-        </div>
-
-        <span class="inline-flex self-start sm:self-auto items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white border border-white/15 backdrop-blur-sm">
-          <Icon name="clipboard-text" class="size-3.5" />
+  <!-- Encabezado: mismo lenguaje que Infórmate y el resto del sitio -->
+  <header class="relative isolate overflow-hidden border-b border-line bg-sunken">
+    <DropField seed={4} />
+    <div class="container-blud relative z-10 py-10 lg:py-16">
+      <div class="flex flex-wrap items-center justify-between gap-3" data-reveal>
+        <a href="/" class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm font-semibold text-ink-2 transition-colors hover:border-ink-3 hover:text-ink">
+          <Icon name="arrow-left" class="size-4" />
+          Volver al inicio
+        </a>
+        <span class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-ink-2">
+          <Icon name="clipboard-text" class="size-4 text-accent" />
           Test rápido de evaluación
         </span>
       </div>
 
-      <!-- Contenido del encabezado -->
-      <div class="max-w-3xl mx-auto flex flex-col items-center text-center">
-        <!-- Título Principal -->
-        <h1 class="text-2xl font-extrabold tracking-tight text-white sm:text-3xl lg:text-4xl drop-shadow-xs">
-          ¿Puedes donar sangre?
-        </h1>
-
-        <!-- Subtítulo -->
-        <p class="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-white/90">
+      <div class="section-head mt-10" data-reveal style="--reveal-delay:1">
+        <h1 class="section-title text-[clamp(2.5rem,1.6rem+3.6vw,4.25rem)]">¿Puedes donar <span class="text-accent">sangre</span>?</h1>
+        <p class="section-lead">
           {questions.length} preguntas basadas en los criterios oficiales de selección de donantes. Al finalizar obtendrás un resultado orientativo inmediato.
         </p>
-
-        <!-- Métricas / Badges centrados -->
-        <ul class="mt-4 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs font-medium text-white">
-          <li class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur-sm shadow-xs">
-            <Icon name="clipboard-text" class="size-3.5 text-white" />
-            <span>{questions.length} preguntas</span>
-          </li>
-          <li class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur-sm shadow-xs">
-            <Icon name="clock" class="size-3.5 text-white" />
-            <span>Unos 4 minutos</span>
-          </li>
-          <li class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 backdrop-blur-sm shadow-xs">
-            <Icon name="shield-check" class="size-3.5 text-white" />
-            <span>100% privado</span>
-          </li>
+        <ul class="mt-6 flex flex-wrap justify-center gap-2 text-sm font-medium text-ink-2" data-reveal style="--reveal-delay:2">
+          <li class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5"><Icon name="clipboard-text" class="size-4 text-accent" />{questions.length} preguntas</li>
+          <li class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5"><Icon name="clock" class="size-4 text-accent" />Unos 4 minutos</li>
+          <li class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5"><Icon name="shield-check" class="size-4 text-accent" />100% privado</li>
         </ul>
-
-        <!-- Aviso Médico Compacto -->
-        <div class="mt-5 flex max-w-2xl items-start gap-3 rounded-panel border border-white/20 bg-black/20 p-3 sm:p-4 text-left text-xs leading-relaxed text-white/95 backdrop-blur-md shadow-xs">
-          <Icon name="first-aid-kit" class="mt-0.5 size-4 shrink-0 text-white" />
-          <p>
-            <strong class="font-bold text-white">Guía orientativa:</strong> No reemplaza la entrevista médica presencial. La decisión final la toma el personal del banco de sangre tras la prueba física y de hemoglobina.
-          </p>
-        </div>
       </div>
 
+      <div class="mx-auto mt-8 flex max-w-2xl items-start gap-3 rounded-panel border border-accent/15 bg-accent-soft p-4 text-left text-sm leading-relaxed text-ink-2" data-reveal style="--reveal-delay:3">
+        <Icon name="first-aid-kit" class="mt-0.5 size-5 shrink-0 text-accent" />
+        <p>
+          <strong class="font-bold text-ink">Guía orientativa:</strong> no reemplaza la entrevista médica presencial. La decisión final la toma el personal del banco de sangre tras la prueba física y de hemoglobina.
+        </p>
+      </div>
     </div>
-  </section>
+  </header>
 
   <!-- Sección del Quiz con Patrón Diagonal (Stripes) -->
-  <section class="stripe-section relative isolate py-8 lg:py-14 border-b border-line overflow-hidden">
+  <section class="stripe-section relative isolate py-6 lg:py-10 border-b border-line overflow-hidden">
     <div class="container-blud relative z-10">
       <EligibilityQuiz />
     </div>
