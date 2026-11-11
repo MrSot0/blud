@@ -150,7 +150,7 @@ export function logout() {
   window.dispatchEvent(new CustomEvent('blud:auth'));
 }
 
-export type LoginResult = { ok: true; user: Session; confirmar?: boolean } | { ok: false; error: string };
+export type LoginResult = { ok: true; user: Session; confirmar?: boolean } | { ok: false; error: string; noConfirmado?: boolean };
 
 // ---------- Supabase ----------
 interface PerfilRemoto {
@@ -182,7 +182,10 @@ async function loginRemoto(email: string, password: string, remember: boolean): 
   try {
     await cerrando;
     const { data, error } = await c.auth.signInWithPassword({ email, password });
-    if (error || !data.user) return { ok: false, error: mensajeAuth(error) };
+    if (error || !data.user) {
+      const noConfirmado = error?.code === 'email_not_confirmed' || /not confirmed/i.test(error?.message ?? '');
+      return { ok: false, error: mensajeAuth(error), noConfirmado };
+    }
     const perfil = await perfilRemoto();
     if (!perfil) {
       await c.auth.signOut();
@@ -280,6 +283,44 @@ export async function login(email: string, password: string, remember: boolean):
   return { ok: true, user };
 }
 
+// ---------- Confirmación del correo ----------
+/** Adónde vuelve el enlace del correo de confirmación (debe estar en las Redirect URLs de Supabase). */
+const urlConfirmacion = () => `${location.origin}/login?confirmado=1`;
+
+/** Vuelve a enviar el correo de confirmación del registro. */
+export async function reenviarConfirmacion(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const c = sb();
+  if (!c) return { ok: false, error: 'En modo demo no se envían correos.' };
+  const { error } = await c.auth.resend({ type: 'signup', email: normalize(email), options: { emailRedirectTo: urlConfirmacion() } });
+  if (!error) return { ok: true };
+  if (error.status === 429 || /rate|seconds/i.test(error.message)) return { ok: false, error: 'Espera un minuto antes de pedir otro correo.' };
+  return { ok: false, error: 'No pudimos reenviar el correo. Revisa la dirección e inténtalo de nuevo.' };
+}
+
+/**
+ * Al volver del enlace del correo (/login?confirmado=1): Supabase ya creó la sesión con el enlace.
+ * Si es válida, se inicia sesión en BLUD. Si el enlace venció, devuelve el motivo.
+ */
+export async function completarConfirmacion(): Promise<{ ok: true; user: Session } | { ok: false; error: string } | null> {
+  const c = sb();
+  if (!c) return null;
+  const params = new URLSearchParams(location.hash.slice(1) || location.search);
+  const fallo = params.get('error_description') ?? new URLSearchParams(location.search).get('error_description');
+  if (fallo) {
+    return { ok: false, error: /expired|invalid/i.test(fallo)
+      ? 'El enlace de confirmación venció o ya se usó. Inicia sesión para pedir uno nuevo.'
+      : 'No pudimos confirmar tu correo. Inicia sesión para pedir un enlace nuevo.' };
+  }
+  const { data } = await c.auth.getSession();
+  if (!data.session) return null;
+  const perfil = await perfilRemoto();
+  if (!perfil?.active) return { ok: false, error: CUENTA_INACTIVA };
+  const user = sesionDePerfil(perfil);
+  startSession(user, true);
+  await sincronizar();
+  return { ok: true, user };
+}
+
 export type RegisterInput = { name: string; email: string; password: string; bloodType: string };
 
 export async function register(input: RegisterInput): Promise<LoginResult> {
@@ -288,10 +329,14 @@ export async function register(input: RegisterInput): Promise<LoginResult> {
     // El rol lo pone la base (siempre "donante"); los metadatos solo llevan nombre y tipo de sangre.
     const { data, error } = await sb()!.auth.signUp({
       email, password: input.password,
-      options: { data: { full_name: input.name.trim(), blood_type: input.bloodType } },
+      options: { data: { full_name: input.name.trim(), blood_type: input.bloodType }, emailRedirectTo: urlConfirmacion() },
     });
     if (error) {
       return { ok: false, error: /registered|exists/i.test(error.message) ? 'Ya existe una cuenta con este correo.' : `No pudimos crear la cuenta: ${error.message}` };
+    }
+    // Con la confirmación por correo activada, Supabase no da error si el correo ya existe: devuelve un usuario sin identidades.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return { ok: false, error: 'Ya existe una cuenta con este correo. Inicia sesión o recupera tu contraseña.' };
     }
     const user: Session = { email, name: input.name.trim(), role: 'donante', bloodType: input.bloodType, userId: data.user?.id };
     if (!data.session) return { ok: true, user, confirmar: true }; // el proyecto pide confirmar el correo

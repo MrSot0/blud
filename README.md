@@ -76,6 +76,9 @@ Para conectarlo:
 1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql) y [`20261111150000_blud_carnet_publico.sql`](supabase/migrations/20261111150000_blud_carnet_publico.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
 2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
 3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
+4. En Supabase, **Authentication → Sign In / Providers → Email**, deja activado **Confirm email**: quien se registra debe abrir el enlace que le llega por correo antes de poder entrar.
+5. En **Authentication → URL Configuration**, pon la dirección del sitio en **Site URL** (por ejemplo `https://blud-khaki.vercel.app`) y añade `https://blud-khaki.vercel.app/**` en **Redirect URLs**. Sin esto, los enlaces de confirmación y de recuperación de contraseña llevan a `localhost`.
+6. El correo de Supabase por defecto solo envía unos pocos mensajes por hora. Para usuarios reales, configura un SMTP propio en **Authentication → Emails → SMTP Settings**.
 
 Pruebas por rol: [`supabase/tests/adaptador.sql`](supabase/tests/adaptador.sql), sobre una copia de la base, después de la migración y el seed. Termina con un error a propósito para que todo se revierta; el mensaje trae los resultados.
 

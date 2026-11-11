@@ -28,7 +28,10 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
       class="mb-6 hidden items-start gap-3 rounded-control bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink"
     >
       <Icon name="warning-circle" class="mt-0.5 size-5 shrink-0" />
-      <span data-error-text></span>
+      <span class="min-w-0 flex-1">
+        <span data-error-text></span>
+        <button type="button" id="reenviar" class="mt-2 hidden font-semibold underline cursor-pointer">Reenviar correo de confirmación</button>
+      </span>
     </div>
 
     <form id="login-form" novalidate class="flex flex-col gap-6">
@@ -118,7 +121,7 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
     validateEmailField,
     withSubmitting,
   } from '../lib/forms';
-  import { login, safeNext } from '../lib/auth';
+  import { completarConfirmacion, login, reenviarConfirmacion, safeNext } from '../lib/auth';
   import { homeFor } from '../lib/roles';
 
   const form = document.getElementById('login-form') as HTMLFormElement | null;
@@ -155,7 +158,38 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
       errorBanner.querySelector('[data-error-text]')!.textContent = message ?? '';
       errorBanner.classList.toggle('hidden', !message);
       errorBanner.classList.toggle('flex', Boolean(message));
+      reenviar?.classList.add('hidden');
     };
+    const showSuccess = (message: string) => {
+      const text = successBanner?.querySelector('[data-success-text]');
+      if (text) text.textContent = message;
+      successBanner?.classList.remove('hidden');
+      successBanner?.classList.add('flex');
+    };
+
+    // Cuenta sin confirmar: ofrece reenviar el correo.
+    const reenviar = document.getElementById('reenviar');
+    reenviar?.addEventListener('click', async () => {
+      if (!validateEmail()) return emailInput.focus();
+      reenviar.setAttribute('disabled', '');
+      const r = await reenviarConfirmacion(emailInput.value);
+      reenviar.removeAttribute('disabled');
+      if (!r.ok) return showFormError(r.error);
+      showFormError(null);
+      showSuccess(`Te enviamos un nuevo enlace a ${emailInput.value.trim()}. Revisa también la carpeta de spam.`);
+    });
+
+    // Vuelve del enlace del correo de confirmación (/login?confirmado=1): entra directo.
+    if (new URLSearchParams(location.search).has('confirmado') || /error_description|access_token/.test(location.hash)) {
+      completarConfirmacion().then((r) => {
+        history.replaceState(null, '', '/login');
+        if (!r) return showSuccess('Tu correo está confirmado. Ya puedes iniciar sesión.');
+        if (!r.ok) return showFormError(r.error);
+        showSuccess(`Correo confirmado. Bienvenido a BLUD, ${r.user.name.split(/\s+/)[0]}. Te llevamos a tu perfil…`);
+        form?.classList.add('opacity-60', 'pointer-events-none');
+        window.setTimeout(() => location.assign(homeFor(r.user.role)), 1400);
+      });
+    }
 
     emailInput.addEventListener('blur', () => { if (emailInput.value) validateEmail(); });
     emailInput.addEventListener('input', () => { if (isShowingError(emailError)) validateEmail(); showFormError(null); });
@@ -187,7 +221,8 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
         const result = await login(emailInput.value, passwordInput.value, rememberInput.checked);
         if (!result.ok) {
           submit.disabled = false;
-          showFormError(result.error);
+          showFormError(result.noConfirmado ? 'Aún no confirmas tu correo. Abre el enlace que te enviamos al registrarte.' : result.error);
+          if (result.noConfirmado) reenviar?.classList.remove('hidden');
           passwordInput.select();
           return;
         }
