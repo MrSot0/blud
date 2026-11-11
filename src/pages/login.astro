@@ -71,14 +71,13 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
       <SubmitButton label="Iniciar sesión" loadingLabel="Iniciando sesión" />
     </form>
 
-    <!-- Cuentas de prueba (solo en modo demo, sin backend) -->
-    {!baseReal && (
+    <!-- Cuentas de prueba: existen en modo demo y en la base real (las crea supabase/seed.sql) -->
     <div class="mt-8 rounded-panel border border-dashed border-line-strong p-4 sm:p-5">
       <p class="flex items-center gap-2 text-sm font-semibold text-ink">
         <Icon name="info" class="size-4 text-ink-3" />
         Cuentas de prueba
       </p>
-      <p class="mt-1 text-sm text-ink-3">Úsalas para probar el acceso. Las cuentas nuevas se guardan en este navegador.</p>
+      <p class="mt-1 text-sm text-ink-3">{baseReal ? 'Úsalas para probar cada rol: donante, operador, laboratorio, soporte y dirección.' : 'Úsalas para probar el acceso. Las cuentas nuevas se guardan en este navegador.'}</p>
       <ul class="mt-4 grid gap-2">
         {demoUsers.map((user) => (
           <li class="flex items-center gap-3 rounded-control bg-sunken px-3 py-2.5">
@@ -99,7 +98,6 @@ const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.
         ))}
       </ul>
     </div>
-    )}
 
     <p class="mt-10 border-t border-line pt-6 text-ink-2">
       ¿No tienes cuenta?
