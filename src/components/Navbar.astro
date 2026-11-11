@@ -33,16 +33,22 @@ const current = (href: string) => (path === href ? 'page' : undefined);
         </li>
 
         <!-- Infórmate: menú desplegable -->
-        <li class="relative" data-info-menu>
+        <li class="relative flex items-center" data-info-menu>
+          <a
+            href="/informate"
+            aria-current={inInfo ? 'page' : undefined}
+            class={`${linkClass} pr-0.5 xl:pr-1`}
+          >
+            Infórmate
+          </a>
           <button
             type="button"
             id="info-trigger"
             aria-expanded="false"
             aria-controls="info-panel"
-            aria-current={inInfo ? 'page' : undefined}
-            class={`${linkClass} inline-flex items-center gap-1`}
+            aria-label="Mostrar los temas de Infórmate"
+            class="grid size-7 place-items-center rounded-control text-ink-2 transition-colors duration-200 hover:text-ink"
           >
-            Infórmate
             <Icon name="caret-down" class="info-caret size-3.5" />
           </button>
 
@@ -228,16 +234,25 @@ const current = (href: string) => (path === href ? 'page' : undefined);
         </a>
       </li>
       <li class="menu-item border-b border-line" style="--i:2">
-        <button
-          type="button"
-          id="mobile-info-trigger"
-          aria-expanded={inInfo ? 'true' : 'false'}
-          aria-controls="mobile-info-list"
-          class="mobile-link mobile-link-plain w-full"
-        >
-          Infórmate
-          <Icon name="caret-down" class="mobile-info-caret size-6 text-ink-3" />
-        </button>
+        <div class="flex items-center">
+          <a
+            href="/informate"
+            aria-current={current('/informate')}
+            class="mobile-nav-link mobile-link mobile-link-plain flex-1"
+          >
+            Infórmate
+          </a>
+          <button
+            type="button"
+            id="mobile-info-trigger"
+            aria-expanded={inInfo ? 'true' : 'false'}
+            aria-controls="mobile-info-list"
+            aria-label="Mostrar los temas de Infórmate"
+            class="grid size-12 shrink-0 place-items-center rounded-control text-ink-3 transition-colors hover:bg-sunken"
+          >
+            <Icon name="caret-down" class="mobile-info-caret size-6" />
+          </button>
+        </div>
         <div id="mobile-info-list" class="mobile-info grid" data-open={inInfo ? 'true' : 'false'}>
           <div class="overflow-hidden">
             <ul class="grid gap-1 pb-4">
