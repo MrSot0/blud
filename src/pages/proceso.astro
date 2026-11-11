@@ -4,7 +4,7 @@
 import Layout from '../layouts/Layout.astro';
 
 // Cola de la bolsa: sale por abajo y recorre el hero hasta el borde de la pantalla.
-const COLA = 'M210 500 C 210 548, 300 542, 380 550 S 520 578, 640 554 S 800 528, 960 556 S 1200 582, 1560 552';
+const COLA = 'M210 470 C 210 545, 300 585, 380 615 S 440 660, 440 740 L 440 1300';
 const tituloA = ['El', 'viaje', 'de', 'una'];
 const tituloB = ['bolsa', 'de', 'sangre'];
 
@@ -114,22 +114,12 @@ const escenas = [
   },
 ];
 
-// Cola de la bolsa: en cada etapa entra y sale por un lado distinto. Puntos relativos al cuadro (0 a 1):
-// [inicio, control 1, control 2, medio, control 3, final] como pares x, y; se sale un poco del borde para que entre desde fuera.
-const COLAS = [
-  [0.08, 1.05, 0.08, 0.9, 0.3, 0.88, 0.5, 0.9, 0.85, 0.78, 1.04, 0.84], // desde abajo, sale a la derecha
-  [1.04, 0.12, 0.8, 0.1, 0.7, 0.22, 0.55, 0.16, 0.2, 0.08, -0.04, 0.14], // desde la derecha arriba, sale a la izquierda
-  [0.92, -0.05, 0.92, 0.15, 0.8, 0.22, 0.7, 0.36, 0.3, 0.52, -0.04, 0.9], // desde arriba, baja en diagonal
-  [-0.04, 0.72, 0.2, 0.55, 0.3, 0.86, 0.5, 0.76, 0.8, 0.6, 1.04, 0.8], // desde la izquierda
-  [0.9, 1.05, 0.9, 0.85, 0.7, 0.96, 0.55, 0.88, 0.2, 0.8, -0.04, 0.86], // desde abajo a la derecha
-  [-0.04, 0.1, 0.2, 0.22, 0.3, 0.0, 0.5, 0.1, 0.85, 0.26, 1.04, 0.12], // desde la izquierda arriba
-  [0.1, -0.05, 0.1, 0.2, 0.3, 0.3, 0.45, 0.45, 0.8, 0.7, 1.04, 0.62], // desde arriba a la izquierda
-  [1.04, 0.9, 0.8, 0.8, 0.6, 0.96, 0.45, 0.85, 0.15, 0.7, -0.04, 0.88], // desde la derecha abajo
-  [0.5, 1.05, 0.5, 0.86, 0.65, 0.8, 0.8, 0.78, 0.95, 0.6, 1.04, 0.48], // desde abajo al centro
-];
-const colaD = (c: number[], W: number, H: number) => {
-  const q = c.map((v, i) => Math.round(v * (i % 2 ? H : W)));
-  return `M${q[0]} ${q[1]} C ${q[2]} ${q[3]}, ${q[4]} ${q[5]}, ${q[6]} ${q[7]} S ${q[8]} ${q[9]}, ${q[10]} ${q[11]}`;
+// La cola es una sola línea continua que baja por un carril libre pegado al borde derecho (sin chocar con textos ni ilustraciones).
+// Entra y sale en el mismo punto de cada etapa, así que al pasar de una a otra parece la misma línea. `sw` alterna el vaivén.
+const colaD = (sw: number, W: number, H: number) => {
+  const L = W - 14, S = sw * 9;
+  const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
+  return `M${P(L, -0.04)} C ${P(L, 0.2)}, ${P(L - S, 0.34)}, ${P(L - S, 0.5)} C ${P(L - S, 0.66)}, ${P(L, 0.8)}, ${P(L, 1.04)}`;
 };
 ---
 
@@ -185,6 +175,7 @@ const colaD = (c: number[], W: number, H: number) => {
               <animateMotion dur="9s" begin={`${i * 1.8}s`} repeatCount="indefinite"><mpath href="#h-tubo-ruta"/></animateMotion>
             </circle>
           ))}
+          <g class="h-bolsa-g">
           <rect x="170" y="56" width="26" height="56" rx="10" fill="#D7DDE5"/><rect x="224" y="56" width="26" height="56" rx="10" fill="#D7DDE5"/>
           <rect x="174" y="60" width="6" height="46" rx="3" fill="#fff" opacity=".7"/><rect x="228" y="60" width="6" height="46" rx="3" fill="#fff" opacity=".7"/>
           <path d="M92 132 Q92 104 120 104 H300 Q328 104 328 132 V448 Q328 500 276 500 H144 Q92 500 92 448 Z" fill="url(#h-film)" stroke="#fff" stroke-opacity=".45" stroke-width="2.5"/>
@@ -205,6 +196,7 @@ const colaD = (c: number[], W: number, H: number) => {
             <text x="292" y="368" text-anchor="end" font-size="11" fill="#616B7C">CPDA-1</text>
             <g fill="#151A23">{[0, 4, 6, 11, 13, 17, 22, 24, 28, 33, 35, 40, 43, 46, 51, 54, 59, 62, 66, 70, 73, 78, 82, 85, 90, 94, 97, 102, 106, 110, 114, 118].map((x, i) => <rect x={170 + x} y="390" width={i % 3 ? 2 : 3.5} height="32"/>)}</g>
             <text x="231" y="440" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="#151A23">DON-26000001</text>
+          </g>
           </g>
         </svg>
         {[[8, 30, 10], [88, 18, 7], [92, 70, 8], [4, 76, 6]].map(([x, y, s], i) => (
@@ -238,26 +230,34 @@ const colaD = (c: number[], W: number, H: number) => {
         </div>
 
         <!-- La cola de la bolsa sigue por aquí: una gota viaja por ella y una lupa de sangre muestra la etapa. -->
-        <div class="cola" aria-hidden="true" data-ruta={JSON.stringify(COLAS[zi % COLAS.length])}>
+        <div class="cola" aria-hidden="true" data-sw={zi % 2 ? 1 : -1}>
           <svg class="cola-svg" viewBox="0 0 1280 700" preserveAspectRatio="none">
             <g fill="none" stroke-linecap="round">
-              <path class="cola-p" d={colaD(COLAS[zi % COLAS.length], 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
-              <path id={`cola-${e.id}`} class="cola-p cola-ruta" d={colaD(COLAS[zi % COLAS.length], 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
-              <path class="cola-p cola-flujo" d={colaD(COLAS[zi % COLAS.length], 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
-              <path class="cola-p" d={colaD(COLAS[zi % COLAS.length], 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
+              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
+              <path id={`cola-${e.id}`} class="cola-p cola-ruta" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
+              <path class="cola-p cola-flujo" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
+              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
             </g>
           </svg>
           <span class="cola-marca"></span>
           <div class="lupa">
             <span class="lupa-cristal"><i></i><i></i><i></i></span>
-            <span class="lupa-texto"><small class="font-mono">ETAPA {e.num} / 09</small><b>{e.titulo}</b></span>
+            <span class="lupa-texto"><small class="font-mono">{e.num}</small><b>{e.titulo}</b></span>
           </div>
         </div>
       </div>
     </section>
   ))}
 
-  <section class="fin bg-[#FBF7F3] py-24 text-center text-[#1E2430]">
+  <section class="fin relative bg-[#FBF7F3] py-24 text-center text-[#1E2430]">
+    <svg class="fin-cola" aria-hidden="true" viewBox="0 0 1280 96">
+      <g fill="none" stroke-linecap="round">
+        <path class="fin-p" stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
+        <path class="fin-p" stroke="#C81E26" stroke-width="10" opacity=".92"/>
+        <path class="fin-p fin-flujo" stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
+        <path class="fin-p" stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
+      </g>
+    </svg>
     <svg class="fin-in fin-gota mx-auto mb-6 size-14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="#CA2B2B"/><ellipse cx="9.6" cy="12.4" rx="1.1" ry="2" transform="rotate(28 9.6 12.4)" fill="#fff" opacity=".45"/></svg>
     <p class="fin-in font-mono text-xs tracking-[0.3em] text-[#6B7383]">FIN DEL VIAJE · DON-26000001</p>
     <p class="fin-in mx-auto mt-4 max-w-2xl text-3xl font-bold sm:text-4xl">La próxima bolsa puede ser la tuya.</p>
@@ -941,7 +941,9 @@ const colaD = (c: number[], W: number, H: number) => {
   @keyframes burbuja { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .4; } 100% { transform: translateY(-150px); opacity: 0; } }
   .h-gota { border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: radial-gradient(circle at 35% 30%, #FF9A9E, #B3121A 70%); box-shadow: 0 10px 24px rgba(202, 43, 43, .22); animation: flota 5s ease-in-out infinite alternate; }
   @keyframes flota { to { transform: translateY(-18px) rotate(8deg); } }
-  .hero-bolsa { animation: mece 6s ease-in-out infinite alternate; transform-origin: 50% 8%; translate: calc(var(--mx, 0) * -16px) calc(var(--sy, 0) * -70px); rotate: calc(var(--mx, 0) * 4deg); }
+  .hero-bolsa { translate: 0 calc(var(--sy, 0) * -70px); }
+  /* Solo la bolsa se balancea: la cola queda quieta para empalmar con la etapa 1. */
+  :global(.h-bolsa-g) { transform-origin: 210px 56px; animation: mece 6s ease-in-out infinite alternate; }
   .h-gota { translate: calc(var(--mx, 0) * var(--k, 8) * 3px) calc(var(--sy, 0) * var(--k, 8) * -9px); }
 
   /* La cola se dibuja al cargar y luego la sangre fluye por ella hasta el borde de la pantalla. */
@@ -958,7 +960,7 @@ const colaD = (c: number[], W: number, H: number) => {
   .pal { display: inline-block; }
   .hero.animar .pal { animation: pal 800ms var(--ease-out) both; animation-delay: calc(var(--w) * 90ms + 120ms); }
   @keyframes pal { from { opacity: 0; transform: translateY(0.55em) rotate(3deg); filter: blur(6px); } }
-  @keyframes mece { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+  @keyframes mece { from { transform: rotate(-0.9deg); } to { transform: rotate(0.9deg); } }
   /* La entrada solo se activa cuando ya hay cuadros dibujándose: si no, el texto se ve directo (nunca queda oculto). */
   .hero.animar .hero-in { animation: entra 900ms var(--ease-out) both; }
   .hero-in:nth-child(2) { animation-delay: 80ms; } .hero-in:nth-child(3) { animation-delay: 160ms; } .hero-in:nth-child(4) { animation-delay: 240ms; } .hero-in:nth-child(5) { animation-delay: 320ms; } .hero-in:nth-child(6) { animation-delay: 400ms; }
@@ -1005,14 +1007,15 @@ const colaD = (c: number[], W: number, H: number) => {
   @keyframes etq-in { from { opacity: 0; transform: translateY(14px) scale(0.8) rotate(-4deg); } }
 
   /* ---------- La cola recorre todas las etapas ---------- */
+  .fin-cola { position: absolute; left: 0; top: 0; width: 100%; height: 96px; overflow: visible; pointer-events: none; }
+  .fin-flujo { animation: flujo 1.4s linear infinite; }
   .cola { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
   .cola-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .cola-flujo { animation: flujo 1.4s linear infinite; }
   .cola-marca { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FF6B70; border: 2px solid #fff; box-shadow: 0 0 0 5px rgba(217, 83, 79, 0.22), 0 4px 10px rgba(122, 9, 16, 0.4); will-change: transform; }
-  .lupa { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 0.65rem; padding: 0.35rem 1.1rem 0.35rem 0.35rem; border-radius: 999px; background: rgba(255, 255, 255, 0.94); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); transform-origin: var(--px, 1.6rem) 100%; opacity: var(--lo, 1); scale: var(--ls, 1); will-change: transform; }
-  .lupa::after { content: ''; position: absolute; left: var(--px, 1.6rem); bottom: -6px; width: 12px; height: 12px; margin-left: -6px; background: rgba(255, 255, 255, 0.94); border-right: 1px solid #EADFD8; border-bottom: 1px solid #EADFD8; transform: rotate(45deg); }
-  .lupa.abajo { transform-origin: var(--px, 1.6rem) 0; }
-  .lupa.abajo::after { bottom: auto; top: -6px; transform: rotate(225deg); }
+  /* Carril libre a la derecha: las etapas reservan ese espacio para la cola y su lupa. */
+  .escena-stage :global(.container-blud) { padding-right: 5.75rem; }
+  .lupa { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 0.35rem 0.35rem 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.94); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); opacity: var(--lo, 1); scale: var(--ls, 1); transform-origin: 100% 100%; will-change: transform; }
   .lupa-cristal { position: relative; flex: none; width: 2.9rem; height: 2.9rem; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D8323A, #8E0F16 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 -6px 10px rgba(60, 0, 6, 0.35); }
   .lupa-cristal::after { content: ''; position: absolute; left: 18%; top: 12%; width: 38%; height: 20%; border-radius: 50%; background: rgba(255, 255, 255, 0.5); transform: rotate(-30deg); }
   /* Glóbulos vistos de cerca: se acercan al aparecer la lupa y siguen a la deriva. */
@@ -1021,9 +1024,9 @@ const colaD = (c: number[], W: number, H: number) => {
   .lupa-cristal i:nth-child(2) { left: 48%; top: 46%; rotate: 25deg; animation-delay: -1.7s; animation-duration: 4s; }
   .lupa-cristal i:nth-child(3) { left: 14%; top: 66%; rotate: 8deg; animation-delay: -3s; animation-duration: 6s; }
   @keyframes lupa-deriva { from { translate: -5px 0; } to { translate: 7px 2px; } }
-  .lupa-texto { display: grid; line-height: 1.15; }
-  .lupa-texto small { font-size: 0.625rem; letter-spacing: 0.22em; color: #8A6A68; }
-  .lupa-texto b { font-size: 1.125rem; font-weight: 800; letter-spacing: -0.03em; color: #1E2430; }
+  .lupa-texto { display: flex; align-items: center; gap: 0.45rem; writing-mode: vertical-rl; rotate: 180deg; white-space: nowrap; line-height: 1; }
+  .lupa-texto small { font-size: 0.65rem; letter-spacing: 0.14em; color: #B3121A; font-weight: 700; }
+  .lupa-texto b { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.02em; color: #1E2430; }
 
   :global(.q-copo) { animation: copo 4.5s ease-in-out infinite alternate; }
   @keyframes copo { to { transform: translate(6px, 14px); opacity: 0.15; } }
@@ -1311,7 +1314,7 @@ const colaD = (c: number[], W: number, H: number) => {
   const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
     const tl = crear[el.dataset.escena!]();
     const cola = el.querySelector<HTMLElement>('.cola')!;
-    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280 };
+    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280, alto: 700 };
   });
 
   // Entrada de cada etapa y del cierre al llegar a la pantalla.
@@ -1323,15 +1326,34 @@ const colaD = (c: number[], W: number, H: number) => {
 
   // La cola ocupa todo el ancho; la gota y la lupa la recorren a medida que avanza la etapa.
   const tramo = (v: number, a: number, b: number) => utils.clamp((v - a) / (b - a), 0, 1);
+  // La cola del inicio baja hasta el mismo carril (borde derecho) por donde entra la etapa 1.
+  const colaInicio = () => {
+    const r = document.getElementById('h-tubo-ruta') as unknown as SVGPathElement | null;
+    const m = r?.getScreenCTM();
+    if (!r || !m) return;
+    const xu = new DOMPoint(document.documentElement.clientWidth - 14, 0).matrixTransform(m.inverse()).x;
+    const a = 210 + (xu - 210) * 0.3, b = 210 + (xu - 210) * 0.7;
+    const d = `M210 470 C 210 545, ${a} 585, ${b} 615 S ${xu} 660, ${xu} 740 L ${xu} 1300`;
+    document.querySelectorAll('.h-cola path').forEach((p) => p.setAttribute('d', d));
+  };
   const trazar = (e: (typeof escenas)[number]) => {
     const W = Math.round(e.cola.clientWidth), H = Math.round(e.cola.clientHeight);
-    const c: number[] = JSON.parse(e.cola.dataset.ruta!);
-    const q = c.map((v, i) => Math.round(v * (i % 2 ? H : W)));
-    const d = `M${q[0]} ${q[1]} C ${q[2]} ${q[3]}, ${q[4]} ${q[5]}, ${q[6]} ${q[7]} S ${q[8]} ${q[9]}, ${q[10]} ${q[11]}`;
+    const L = W - 14, S = Number(e.cola.dataset.sw) * 9;
+    const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
+    const d = `M${P(L, -0.04)} C ${P(L, 0.2)}, ${P(L - S, 0.34)}, ${P(L - S, 0.5)} C ${P(L - S, 0.66)}, ${P(L, 0.8)}, ${P(L, 1.04)}`;
     e.cola.querySelector('svg')!.setAttribute('viewBox', `0 0 ${W} ${H}`);
     e.cola.querySelectorAll('.cola-p').forEach((p) => p.setAttribute('d', d));
     e.largo = e.ruta.getTotalLength();
     e.ancho = W;
+    e.alto = H;
+  };
+  // Cierre: la cola llega por el mismo carril y se curva hasta la gota.
+  const trazarFin = () => {
+    const f = document.querySelector<SVGSVGElement>('.fin-cola');
+    if (!f) return;
+    const W = Math.round(document.documentElement.clientWidth);
+    f.setAttribute('viewBox', `0 0 ${W} 96`);
+    f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${W - 14} -6 C ${W - 14} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
   };
   const pintar = (e: (typeof escenas)[number]) => {
     const m = e.m;
@@ -1341,15 +1363,12 @@ const colaD = (c: number[], W: number, H: number) => {
     let activo = 0;
     e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= m + 0.001) activo = i; });
     e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
-    // La gota recorre la cola de punta a punta; la lupa va arriba (o debajo si la cola va pegada al borde superior).
-    const pt = e.ruta.getPointAtLength(e.largo * m);
+    // La gota recorre la cola; la lupa (vertical) va justo a su izquierda y un poco arriba, en el carril reservado.
+    const pt = e.ruta.getPointAtLength(e.largo * (0.04 + m * 0.92));
     e.marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
-    const pw = e.lupa.offsetWidth;
-    const izq = utils.clamp(pt.x - 26, 14, e.ancho - pw - 14);
-    const abajo = pt.y < 96;
-    e.lupa.classList.toggle('abajo', abajo);
-    e.lupa.style.setProperty('--px', `${pt.x - izq}px`);
-    e.lupa.style.transform = `translate(${izq}px, ${abajo ? pt.y + 26 : pt.y - 72}px)`;
+    const pw = e.lupa.offsetWidth, ph = e.lupa.offsetHeight;
+    const arriba = utils.clamp(pt.y - ph - 12, 8, e.alto - ph - 8);
+    e.lupa.style.transform = `translate(${pt.x - 22 - pw}px, ${arriba}px)`;
     // La lupa hace un zoom suave al entrar y se despide al llegar al final de la etapa.
     const entra = tramo(m, 0, 0.07), sale = tramo(m, 0.96, 1);
     e.lupa.style.setProperty('--ls', String(0.55 + entra * 0.45 - sale * 0.1));
@@ -1379,9 +1398,11 @@ const colaD = (c: number[], W: number, H: number) => {
       requestAnimationFrame(frame);
     };
     addEventListener('scroll', medir, { passive: true });
-    addEventListener('resize', () => { medir(); escenas.forEach((e) => { trazar(e); pintar(e); }); });
+    addEventListener('resize', () => { medir(); escenas.forEach((e) => { trazar(e); pintar(e); }); colaInicio(); trazarFin(); });
     medir();
     escenas.forEach((e) => { trazar(e); e.m = e.meta; pintar(e); });
+    colaInicio();
+    trazarFin();
     requestAnimationFrame(frame);
   }
 </script>
