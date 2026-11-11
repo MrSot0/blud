@@ -166,26 +166,74 @@ async function perfilRemoto(): Promise<PerfilRemoto | null> {
   return (data as PerfilRemoto | null) ?? null;
 }
 
+/** Traduce un error de Supabase Auth a algo que la persona pueda entender y actuar. */
+function mensajeAuth(error: { message?: string; status?: number; code?: string; name?: string } | null | undefined): string {
+  const msg = error?.message ?? '';
+  if (error?.code === 'email_not_confirmed' || msg.includes('Email not confirmed')) return 'Confirma tu correo antes de entrar: revisa tu bandeja de entrada.';
+  if (error?.status === 429 || /rate.?limit/i.test(error?.code ?? '') || /rate limit|too many/i.test(msg)) return 'Demasiados intentos. Espera un par de minutos e inténtalo de nuevo.';
+  if (error?.name === 'AuthRetryableFetchError' || error?.status === 0 || (error?.status ?? 0) >= 500 || /fetch|network/i.test(msg)) return 'No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
+  return 'Correo o contraseña incorrectos.';
+}
+
 async function loginRemoto(email: string, password: string, remember: boolean): Promise<LoginResult> {
   const c = sb()!;
-  await cerrando;
-  const { data, error } = await c.auth.signInWithPassword({ email, password });
-  if (error || !data.user) {
-    return { ok: false, error: error?.message?.includes('Email not confirmed') ? 'Confirma tu correo antes de entrar: revisa tu bandeja de entrada.' : 'Correo o contraseña incorrectos.' };
+  try {
+    await cerrando;
+    const { data, error } = await c.auth.signInWithPassword({ email, password });
+    if (error || !data.user) return { ok: false, error: mensajeAuth(error) };
+    const perfil = await perfilRemoto();
+    if (!perfil) {
+      await c.auth.signOut();
+      return { ok: false, error: 'Tu cuenta no tiene perfil todavía. Escribe a soporte@blud.app.' };
+    }
+    if (!perfil.active) {
+      await c.auth.signOut();
+      return { ok: false, error: CUENTA_INACTIVA };
+    }
+    const user = sesionDePerfil(perfil);
+    startSession(user, remember);
+    await sincronizar();
+    return { ok: true, user };
+  } catch (e) {
+    return { ok: false, error: mensajeAuth({ message: String((e as Error)?.message ?? e), status: 0 }) };
   }
-  const perfil = await perfilRemoto();
-  if (!perfil) {
-    await c.auth.signOut();
-    return { ok: false, error: 'Tu cuenta no tiene perfil todavía. Escribe a soporte@blud.app.' };
+}
+
+// ---------- Recuperar contraseña ----------
+
+/** Envía el enlace de recuperación. Siempre responde igual, exista o no el correo (no revela qué cuentas hay). */
+export async function solicitarRecuperacion(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!usaSupabase()) return { ok: true };
+  try {
+    const { error } = await sb()!.auth.resetPasswordForEmail(normalize(email), { redirectTo: `${location.origin}/recuperar` });
+    if (error && (error.status === 429 || /rate limit|too many/i.test(error.message))) return { ok: false, error: 'Pediste demasiados enlaces. Espera unos minutos e inténtalo otra vez.' };
+    if (error && ((error.status ?? 0) >= 500 || error.name === 'AuthRetryableFetchError')) return { ok: false, error: 'No pudimos conectar con el servidor. Inténtalo de nuevo.' };
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'No pudimos conectar con el servidor. Inténtalo de nuevo.' };
   }
-  if (!perfil.active) {
-    await c.auth.signOut();
-    return { ok: false, error: CUENTA_INACTIVA };
+}
+
+/** Avisa cuando el visitante llega desde el enlace del correo (sesión temporal de recuperación). */
+export function alLlegarDeRecuperacion(cb: () => void): void {
+  const c = sb();
+  if (!c) return;
+  c.auth.onAuthStateChange((evento) => { if (evento === 'PASSWORD_RECOVERY') cb(); });
+}
+
+/** Guarda la contraseña nueva y cierra la sesión temporal: después se entra con ella de forma normal. */
+export async function guardarClaveNueva(password: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (password.length < 8) return { ok: false, error: 'La contraseña debe tener al menos 8 caracteres.' };
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return { ok: false, error: 'Usa letras y al menos un número.' };
+  const c = sb();
+  if (!c) return { ok: false, error: 'La recuperación solo está disponible con la base de datos conectada.' };
+  const { error } = await c.auth.updateUser({ password });
+  if (error) {
+    return { ok: false, error: /same|different/i.test(error.message) ? 'La contraseña nueva debe ser distinta de la anterior.' : 'El enlace venció o ya se usó. Pide uno nuevo.' };
   }
-  const user = sesionDePerfil(perfil);
-  startSession(user, remember);
-  await sincronizar();
-  return { ok: true, user };
+  await c.auth.signOut();
+  limpiarCache();
+  return { ok: true };
 }
 
 /**

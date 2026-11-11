@@ -6,6 +6,9 @@ import PasswordInput from '../components/auth/PasswordInput.astro';
 import SubmitButton from '../components/auth/SubmitButton.astro';
 import Icon from '../components/Icon.astro';
 import { demoUsers } from '../lib/auth';
+
+// Con base real las cuentas de prueba no se publican en la página: cualquiera podría entrar con ellas.
+const baseReal = Boolean(import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 ---
 
 <Layout title="BLUD | Iniciar sesión">
@@ -68,7 +71,8 @@ import { demoUsers } from '../lib/auth';
       <SubmitButton label="Iniciar sesión" loadingLabel="Iniciando sesión" />
     </form>
 
-    <!-- Cuentas de prueba (demo sin backend) -->
+    <!-- Cuentas de prueba (solo en modo demo, sin backend) -->
+    {!baseReal && (
     <div class="mt-8 rounded-panel border border-dashed border-line-strong p-4 sm:p-5">
       <p class="flex items-center gap-2 text-sm font-semibold text-ink">
         <Icon name="info" class="size-4 text-ink-3" />
@@ -95,6 +99,7 @@ import { demoUsers } from '../lib/auth';
         ))}
       </ul>
     </div>
+    )}
 
     <p class="mt-10 border-t border-line pt-6 text-ink-2">
       ¿No tienes cuenta?
@@ -116,6 +121,7 @@ import { demoUsers } from '../lib/auth';
     withSubmitting,
   } from '../lib/forms';
   import { login, safeNext } from '../lib/auth';
+  import { homeFor } from '../lib/roles';
 
   const form = document.getElementById('login-form') as HTMLFormElement | null;
   const successBanner = document.getElementById('form-success');
@@ -187,8 +193,9 @@ import { demoUsers } from '../lib/auth';
           passwordInput.select();
           return;
         }
-        const params = new URLSearchParams(window.location.search);
-        const targetUrl = params.get('next') || '/director/dashboard';
+        // Vuelve a donde iba (?next=) o, si no, a la página de inicio de su rol.
+        const pedido = new URLSearchParams(window.location.search).get('next');
+        const targetUrl = pedido ? safeNext(pedido) : homeFor(result.user.role);
 
         const firstName = result.user.name.split(/\s+/)[0];
         const text = successBanner?.querySelector('[data-success-text]');

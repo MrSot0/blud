@@ -3,6 +3,7 @@
 import Layout from '../layouts/Layout.astro';
 import AuthShell from '../components/auth/AuthShell.astro';
 import SubmitButton from '../components/auth/SubmitButton.astro';
+import PasswordInput from '../components/auth/PasswordInput.astro';
 import Icon from '../components/Icon.astro';
 ---
 
@@ -19,6 +20,27 @@ import Icon from '../components/Icon.astro';
       <Icon name="check-circle" class="mt-0.5 size-5 shrink-0" />
       <span>Si el correo está registrado, recibirás el enlace en unos minutos. Revisa también la carpeta de spam.</span>
     </div>
+
+    <div id="form-error" role="alert" class="mb-6 hidden items-start gap-3 rounded-control bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink">
+      <Icon name="warning-circle" class="mt-0.5 size-5 shrink-0" />
+      <span data-error-text></span>
+    </div>
+
+    <!-- Segundo paso: se muestra al llegar desde el enlace del correo -->
+    <form id="reset-form" novalidate class="hidden flex-col gap-6">
+      <p class="rounded-control bg-sunken px-4 py-3 text-sm text-ink-2">Enlace verificado. Elige tu contraseña nueva: mínimo 8 caracteres, con letras y al menos un número.</p>
+      <div>
+        <label for="reset-password" class="mb-2 block text-sm font-semibold text-ink">Contraseña nueva</label>
+        <PasswordInput id="reset-password" name="password" autocomplete="new-password" describedby="reset-password-error" />
+        <p id="reset-password-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+      <div>
+        <label for="reset-confirm" class="mb-2 block text-sm font-semibold text-ink">Repite la contraseña</label>
+        <PasswordInput id="reset-confirm" name="confirm" autocomplete="new-password" describedby="reset-confirm-error" />
+        <p id="reset-confirm-error" class="mt-2 hidden text-sm font-medium text-accent-ink"></p>
+      </div>
+      <SubmitButton label="Guardar contraseña" loadingLabel="Guardando" />
+    </form>
 
     <form id="recover-form" novalidate class="flex flex-col gap-6">
       <div>
@@ -50,10 +72,25 @@ import Icon from '../components/Icon.astro';
 </Layout>
 
 <script>
-  import { isShowingError, validateEmailField, withSubmitting } from '../lib/forms';
+  import { bindPasswordToggles, clearError, isShowingError, setError, validateEmailField, withSubmitting } from '../lib/forms';
+  import { alLlegarDeRecuperacion, guardarClaveNueva, solicitarRecuperacion } from '../lib/auth';
 
   const form = document.getElementById('recover-form') as HTMLFormElement | null;
+  const resetForm = document.getElementById('reset-form') as HTMLFormElement | null;
   const successBanner = document.getElementById('form-success');
+  const errorBanner = document.getElementById('form-error');
+
+  const showError = (message: string | null) => {
+    if (!errorBanner) return;
+    errorBanner.querySelector('[data-error-text]')!.textContent = message ?? '';
+    errorBanner.classList.toggle('hidden', !message);
+    errorBanner.classList.toggle('flex', Boolean(message));
+  };
+  const showSuccess = (message?: string) => {
+    if (message) successBanner!.querySelector('span')!.textContent = message;
+    successBanner?.classList.remove('hidden');
+    successBanner?.classList.add('flex');
+  };
 
   if (form) {
     const emailInput = document.getElementById('recover-email') as HTMLInputElement;
@@ -61,18 +98,69 @@ import Icon from '../components/Icon.astro';
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
 
     emailInput.addEventListener('input', () => {
+      showError(null);
       if (isShowingError(emailError)) validateEmailField(emailInput, emailError);
     });
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
+      showError(null);
       if (!validateEmailField(emailInput, emailError)) return emailInput.focus();
       if (!submit) return;
-      withSubmitting(submit, () => {
-        successBanner?.classList.remove('hidden');
-        successBanner?.classList.add('flex');
+      withSubmitting(submit, async () => {
+        const res = await solicitarRecuperacion(emailInput.value);
+        if (!res.ok) {
+          submit.disabled = false;
+          return showError(res.error);
+        }
+        showSuccess();
         form.classList.add('opacity-60', 'pointer-events-none');
       });
     });
+  }
+
+  // Llegada desde el enlace del correo: se pide la contraseña nueva.
+  if (resetForm) {
+    const pass = document.getElementById('reset-password') as HTMLInputElement;
+    const conf = document.getElementById('reset-confirm') as HTMLInputElement;
+    const passErr = document.getElementById('reset-password-error') as HTMLElement;
+    const confErr = document.getElementById('reset-confirm-error') as HTMLElement;
+    const submit = resetForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    alLlegarDeRecuperacion(() => {
+      form?.classList.add('hidden');
+      form?.classList.remove('flex');
+      resetForm.classList.remove('hidden');
+      resetForm.classList.add('flex');
+      pass.focus();
+    });
+
+    [pass, conf].forEach((i) => i.addEventListener('input', () => showError(null)));
+    resetForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showError(null);
+      clearError(pass, passErr);
+      clearError(conf, confErr);
+      if (pass.value.length < 8 || !/[A-Za-z]/.test(pass.value) || !/\d/.test(pass.value)) {
+        setError(pass, passErr, 'Mínimo 8 caracteres, con letras y al menos un número.');
+        return pass.focus();
+      }
+      if (conf.value !== pass.value) {
+        setError(conf, confErr, 'Las contraseñas no coinciden.');
+        return conf.focus();
+      }
+      if (!submit) return;
+      withSubmitting(submit, async () => {
+        const res = await guardarClaveNueva(pass.value);
+        if (!res.ok) {
+          submit.disabled = false;
+          return showError(res.error);
+        }
+        showSuccess('Contraseña actualizada. Te llevamos a iniciar sesión…');
+        resetForm.classList.add('opacity-60', 'pointer-events-none');
+        window.setTimeout(() => location.assign('/login'), 1400);
+      });
+    });
+    bindPasswordToggles(resetForm);
   }
 </script>

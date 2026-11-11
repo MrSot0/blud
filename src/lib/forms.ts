@@ -53,7 +53,7 @@ export function bindPasswordToggles(root: ParentNode = document) {
 
 /**
  * Estado de envío: bloquea el botón y muestra el texto de carga.
- * Mientras no exista backend, resuelve tras una breve espera.
+ * Espera un mínimo (medio segundo) para que el estado de carga se perciba, sin sumarlo al tiempo real de la petición.
  */
 export function withSubmitting(button: HTMLButtonElement, task: () => Promise<void> | void) {
   const label = button.querySelector<HTMLElement>('[data-label]');
@@ -64,8 +64,9 @@ export function withSubmitting(button: HTMLButtonElement, task: () => Promise<vo
   loading?.classList.remove('hidden');
   loading?.classList.add('inline-flex');
 
-  return new Promise<void>((resolve) => setTimeout(resolve, 900))
-    .then(task)
+  const minimo = new Promise<void>((resolve) => setTimeout(resolve, 500));
+  return Promise.all([Promise.resolve().then(task), minimo])
+    .then(() => undefined)
     .finally(() => {
       button.removeAttribute('aria-busy');
       loading?.classList.add('hidden');
