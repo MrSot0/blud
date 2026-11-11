@@ -219,6 +219,34 @@ html.is-scrolling {
   }
 }
 
+/* Cursor de marca (la gota de Bluddie) en todo el sitio. Se mantienen el cursor de texto en
+   los campos, "no permitido" en lo desactivado y "espera" mientras algo se procesa.
+   Va fuera de @layer para ganar a `cursor-pointer` de Tailwind y a los estilos del navegador. */
+html {
+  cursor: url('/cursors/gota.svg') 12 2, auto;
+}
+a:any-link,
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+select:not(:disabled),
+label:has(> input[type="radio"]:not(:disabled)),
+label:has(> input[type="checkbox"]:not(:disabled)),
+.cursor-pointer:not(:disabled):not([aria-disabled="true"]) {
+  cursor: url('/cursors/gota.svg') 12 2, pointer;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]),
+textarea {
+  cursor: text;
+}
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+[aria-busy="true"] {
+  cursor: progress;
+}
+
 /* Cambio de tema: el nuevo tema se revela en círculo desde el botón.
    Las coordenadas (--vt-x, --vt-y, --vt-r) las fija el script del Navbar. */
 html.theme-vt::view-transition-old(root),

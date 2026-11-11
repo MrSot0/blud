@@ -1,5 +1,5 @@
 ---
-// Marca BLUD: gota en cuadro rojo + logotipo. Única fuente del logo
+// Marca BLUD: Sangrito (la gota con carita de Bluddie) + logotipo. Única fuente del logo
 // para Navbar, Footer y páginas de acceso.
 interface Props {
   href?: string;
@@ -10,24 +10,37 @@ interface Props {
 
 const { href = '/', tone = 'ink', size = 'md', class: className = '' } = Astro.props;
 const large = size === 'lg';
+// Id propio del degradado: dos logos en la misma página comparten definición idéntica.
+const grad = `sangrito-${tone}-${size}`;
 ---
 
 <a
   href={href}
-  class:list={['group inline-flex items-center gap-2.5 rounded-control', className]}
+  class:list={['logo group inline-flex items-center gap-2 rounded-control', className]}
   aria-label="BLUD, ir al inicio"
 >
-  <span
-    class:list={[
-      'grid place-items-center rounded-[10px] shadow-[inset_0_1px_0_rgb(255_255_255/0.2)] transition-transform duration-300 ease-(--ease-out) group-hover:-rotate-6',
-      tone === 'light' ? 'bg-white text-accent' : 'bg-accent text-white',
-      large ? 'size-10' : 'size-9',
-    ]}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    class:list={['logo-mark shrink-0 drop-shadow-[0_2px_4px_rgb(180_33_33/0.25)]', large ? 'size-11' : 'size-10']}
+    viewBox="0 0 48 48"
+    aria-hidden="true"
   >
-    <svg xmlns="http://www.w3.org/2000/svg" class:list={['fill-current', large ? 'size-[1.375rem]' : 'size-5']} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
-    </svg>
-  </span>
+    <defs>
+      <radialGradient id={grad} cx="35%" cy="35%" r="75%">
+        <stop offset="0" stop-color="#E5484D"></stop>
+        <stop offset="1" stop-color="#B42121"></stop>
+      </radialGradient>
+    </defs>
+    <path d="M24 3.5c-1.2 1.6-14 17-14 27.2A14 14 0 0 0 24 44.7a14 14 0 0 0 14-14C38 20.5 25.2 5.1 24 3.5Z" fill={`url(#${grad})`} />
+    <ellipse cx="17.6" cy="20" rx="2.4" ry="4.2" transform="rotate(28 17.6 20)" fill="#fff" opacity="0.35" />
+    <g class="logo-eyes" fill="#1A202C">
+      <ellipse cx="19" cy="29.5" rx="2" ry="2.7" />
+      <ellipse cx="29" cy="29.5" rx="2" ry="2.7" />
+    </g>
+    <circle cx="15.6" cy="34" r="2" fill="#FF9A9A" opacity="0.55" />
+    <circle cx="32.4" cy="34" r="2" fill="#FF9A9A" opacity="0.55" />
+    <path d="M20.5 35.2c1.9 2.2 5.1 2.2 7 0" fill="none" stroke="#1A202C" stroke-width="1.9" stroke-linecap="round" />
+  </svg>
   <span
     class:list={[
       'font-extrabold tracking-[-0.04em] leading-none',
@@ -38,3 +51,29 @@ const large = size === 'lg';
     BLUD<span class={tone === 'light' ? 'text-white/70' : 'text-accent'}>.</span>
   </span>
 </a>
+
+<style>
+  .logo-mark {
+    transition: transform 300ms var(--ease-out);
+  }
+  .logo:hover .logo-mark {
+    animation: logo-wiggle 700ms var(--ease-out);
+  }
+  .logo-eyes {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: logo-blink 5s infinite;
+  }
+  @keyframes logo-wiggle {
+    0%, 100% { transform: rotate(0) scale(1); }
+    25% { transform: rotate(-9deg) scale(1.06); }
+    60% { transform: rotate(6deg) scale(1.06); }
+  }
+  @keyframes logo-blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .logo:hover .logo-mark, .logo-eyes { animation: none; }
+  }
+</style>
