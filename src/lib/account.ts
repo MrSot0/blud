@@ -122,3 +122,36 @@ export function renderAccount(): boolean {
   fill('[data-next-appointment-short]', short);
   return true;
 }
+// ------------------------------------------------------------------ Foto del usuario en avatares
+/**
+ * Pone la foto del usuario (la misma de su perfil o carnet) en los círculos de iniciales de la barra, el menú
+ * de cuenta y el menú lateral. Va como fondo para que los scripts que escriben las iniciales no la borren.
+ */
+export async function pintarFotoUsuario(): Promise<void> {
+  const user = getSession();
+  if (!user) return;
+  let url: string | null = null;
+  try {
+    if (roleOf(user) === 'donante') {
+      const { loadDonor, urlFoto } = await import('./donante');
+      url = await urlFoto(loadDonor().foto);
+    } else {
+      const { cargarPerfil, fotoRemota } = await import('./personal');
+      const { usaSupabase } = await import('./supabase');
+      url = usaSupabase() ? await fotoRemota() : cargarPerfil().foto || null;
+    }
+  } catch {
+    url = null;
+  }
+  document.querySelectorAll<HTMLElement>('[data-user-initials]').forEach((el) => {
+    if (url) {
+      el.style.backgroundImage = `url("${url.replace(/"/g, '%22')}")`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+      el.style.color = 'transparent';
+    } else {
+      el.style.backgroundImage = '';
+      el.style.color = '';
+    }
+  });
+}

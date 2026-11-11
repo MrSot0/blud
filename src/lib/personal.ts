@@ -5,6 +5,7 @@
 // TODO: reemplazar por GET/PATCH /api/personal/:id
 
 import { getSession } from './auth';
+import { sb, usaSupabase } from './supabase';
 import type { Role } from './auth';
 
 export type { Role };
@@ -67,8 +68,9 @@ export function cargarPerfil(role?: Role): PerfilPersonal {
     foto: saved.foto ?? '',
     portada: saved.portada ?? '',
     fotoY: typeof saved.fotoY === 'number' ? saved.fotoY : 30,
-    telefono: saved.telefono ?? String(s.telefono ?? ''),
-    cedula: saved.cedula ?? '',
+    // Con base real, teléfono y cédula vienen de la base (se editan en Configuración o los asigna la dirección).
+    telefono: usaSupabase() ? String(s.telefono ?? '') : saved.telefono ?? String(s.telefono ?? ''),
+    cedula: usaSupabase() ? String(s.cedula ?? '') : saved.cedula ?? '',
     sangre: saved.sangre ?? (SANGRES.includes(sangreSesion) ? sangreSesion : ''),
     desde: saved.desde ?? '',
   };
@@ -136,3 +138,30 @@ export async function procesarAvatar(file: File, lado = 480): Promise<string> {
 
 export const iniciales = (n: string) =>
   n.replace(/^(Dra?|Lic|Ing)\.?\s+/i, '').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
+// ------------------------------------------------------------------ Foto de perfil en la base
+// Con base real, la foto del personal va al mismo almacenamiento que la del donante (bucket fotos-donantes,
+// carpeta de su cuenta) y se enlaza con blud_guardar_foto. La portada es decorativa y queda en este dispositivo.
+
+/** URL de la foto guardada en la base (o null). */
+export async function fotoRemota(): Promise<string | null> {
+  const c = sb();
+  if (!c) return null;
+  const { data } = await c.rpc('blud_mi_ficha');
+  const path = (data as { foto?: string } | null)?.foto;
+  return path ? c.storage.from('fotos-donantes').getPublicUrl(path).data.publicUrl : null;
+}
+
+/** Sube la foto (data URL JPEG ya recortada) a la base. */
+export async function subirFotoRemota(dataUrl: string): Promise<{ ok: true } | { ok: false; motivo: string }> {
+  const c = sb();
+  if (!c) return { ok: true };
+  const { data: ses } = await c.auth.getSession();
+  const uid = ses.session?.user.id;
+  if (!uid) return { ok: false, motivo: 'Inicia sesión de nuevo.' };
+  const blob = await (await fetch(dataUrl)).blob();
+  const path = `${uid}/perfil-${Date.now()}.jpg`;
+  const up = await c.storage.from('fotos-donantes').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  if (up.error) return { ok: false, motivo: `No pudimos subir la foto: ${up.error.message}` };
+  const { error } = await c.rpc('blud_guardar_foto', { p_path: path });
+  return error ? { ok: false, motivo: error.message } : { ok: true };
+}

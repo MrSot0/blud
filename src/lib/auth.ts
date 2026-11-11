@@ -19,6 +19,8 @@ export interface Session {
   sede?: string;
   /** id del usuario en Supabase Auth (solo con base real). */
   userId?: string;
+  /** Cédula registrada en la base (con base real). */
+  cedula?: string;
 }
 
 interface StoredUser extends Session {
@@ -155,11 +157,12 @@ export type LoginResult = { ok: true; user: Session; confirmar?: boolean } | { o
 // ---------- Supabase ----------
 interface PerfilRemoto {
   id: string; email: string; full_name: string; role: Role; blood_type: string | null; phone: string | null;
-  cargo: string | null; sede: string | null; colegiado: string | null; active: boolean;
+  cargo: string | null; sede: string | null; colegiado: string | null; active: boolean; cedula?: string | null;
 }
 const sesionDePerfil = (p: PerfilRemoto): Session => ({
   userId: p.id, email: p.email, name: p.full_name || p.email, role: p.role, bloodType: p.blood_type ?? '',
   telefono: p.phone ?? undefined, cargo: p.cargo ?? undefined, sede: p.sede ?? undefined, colegiado: p.colegiado ?? undefined,
+  cedula: p.cedula ?? undefined,
 });
 
 /** Perfil de quien inició sesión (rol incluido), según la base. */
@@ -284,7 +287,9 @@ export async function verificarSesionRemota(): Promise<boolean> {
   }
   const actual = getSession();
   const nueva = sesionDePerfil(perfil);
-  if (!actual || actual.role !== nueva.role || actual.name !== nueva.name) startSession(nueva, read(local(), SESSION_KEY, null) !== null);
+  if (!actual || actual.role !== nueva.role || actual.name !== nueva.name || actual.telefono !== nueva.telefono || actual.cedula !== nueva.cedula) {
+    startSession(nueva, read(local(), SESSION_KEY, null) !== null);
+  }
   await sincronizar();
   return true;
 }

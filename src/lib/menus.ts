@@ -76,7 +76,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
 
     ],
     cuenta: [
-      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/operador/perfil', icon: 'user' },
+      { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/operador/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/operador/configuracion', icon: 'settings' },
     ],
   },
@@ -91,7 +91,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Registros', hint: 'Toda tu actividad', href: '/laboratorio/registros', icon: 'clock' },
     ],
     cuenta: [
-      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/laboratorio/perfil', icon: 'user' },
+      { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/laboratorio/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/laboratorio/configuracion', icon: 'settings' },
     ],
   },
@@ -108,7 +108,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
     ],
     cuenta: [
-      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/director/perfil', icon: 'user' },
+      { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/director/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
     ],
   },
@@ -121,7 +121,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
     ],
     cuenta: [
-      { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/soporte/perfil', icon: 'user' },
+      { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/soporte/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/soporte/configuracion', icon: 'settings' },
     ],
   },

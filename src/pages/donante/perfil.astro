@@ -1,7 +1,6 @@
 ---
 // src/pages/donante/perfil.astro
 import LayoutDonante from '../../layouts/LayoutDonante.astro';
-import DonorCard from '../../components/app/DonorCard.astro';
 import { categories, questions } from '../../data/eligibility';
 import { PARENTESCOS } from '../../lib/donante';
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -9,7 +8,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const grupos = categories.map((c) => ({ ...c, preguntas: questions.filter((q) => q.category === c.id) })).filter((g) => g.preguntas.length);
 ---
 
-<LayoutDonante title="BLUD | Mi perfil de donante">
+<LayoutDonante title="BLUD | Mi perfil">
   <div class="container-blud py-8 space-y-8" data-profile>
     <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>

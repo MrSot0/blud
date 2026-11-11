@@ -1,6 +1,8 @@
 ---
 // src/components/app/StaffCard.astro
-// Perfil del personal a pantalla completa (ecard). Reutilizable para operador, laboratorio y director.
+// "Mi perfil" del personal a pantalla completa (carnet del personal): operador, laboratorio, soporte y dirección.
+// Lo editable aquí es la apariencia (foto, portada y encuadre) y el tipo de sangre. Nombre, correo y teléfono se
+// editan en Configuración; cédula, cargo, MPPS y sede los asigna la dirección. Con base real, la foto va a la base.
 // Uso: colócalo FUERA de .container-blud para que la foto ocupe todo el ancho:
 //   <StaffCard role="operador" />
 import type { Role } from '../../lib/auth';
@@ -83,9 +85,14 @@ const tiles = [
         <div class="flex items-start justify-between gap-4">
           <div>
             <h2 id="staff-dlg-t" class="text-lg font-extrabold text-ink">Editar perfil</h2>
-            <p class="text-sm text-ink-3">Cargo, MPPS y sede los asigna la dirección. Nombre y contraseña, en Configuración.</p>
+            <p class="text-sm text-ink-3">
+              Nombre, correo y teléfono se editan en <a href={`/${role}/configuracion`} class="font-semibold text-accent-ink underline">Configuración</a>.
+              Cédula, cargo, MPPS y sede los asigna la dirección.
+            </p>
           </div>
-          <button type="button" class="staff-x" data-s-close aria-label="Cerrar">✕</button>
+          <button type="button" class="staff-x grid place-items-center shrink-0" data-s-close aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
         </div>
 
         <fieldset class="staff-fs">
@@ -124,28 +131,17 @@ const tiles = [
           </div>
         </fieldset>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="s-ced" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula</label>
-            <input id="s-ced" class="field" inputmode="numeric" placeholder="V-12345678" data-s-ced />
-          </div>
-          <div>
-            <label for="s-san" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de sangre</label>
-            <select id="s-san" class="field" data-s-san>
-              <option value="">Sin registrar</option>
-              {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((s) => <option value={s}>{s}</option>)}
-            </select>
-          </div>
-        </div>
         <div>
-          <label for="s-tel" class="block text-xs font-bold uppercase text-ink-2 mb-1">Teléfono</label>
-          <input id="s-tel" class="field" type="tel" placeholder="+58 414 1234567" data-s-tel />
+          <label for="s-san" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tipo de sangre</label>
+          <select id="s-san" class="field" data-s-san>
+            <option value="">Sin registrar</option>
+            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((s) => <option value={s}>{s}</option>)}
+          </select>
         </div>
-
         <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert" data-s-err></p>
-        <div class="flex justify-end gap-2">
-          <button type="button" class="btn btn-secondary" data-s-close>Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar</button>
+        <div class="flex flex-col-reverse sm:flex-row justify-center gap-3 pt-1">
+          <button type="button" class="btn btn-secondary sm:px-8" data-s-close>Cancelar</button>
+          <button type="submit" class="btn btn-primary sm:px-10" data-s-guardar>Guardar cambios</button>
         </div>
       </form>
     </dialog>
@@ -244,7 +240,8 @@ const tiles = [
 </style>
 
 <script>
-  import { cargarPerfil, guardarPerfil, iniciales, procesarAvatar, procesarFoto, toast } from '../../lib/personal';
+  import { cargarPerfil, fotoRemota, guardarPerfil, iniciales, procesarAvatar, procesarFoto, subirFotoRemota, toast } from '../../lib/personal';
+  import { usaSupabase } from '../../lib/supabase';
   import type { Role } from '../../lib/personal';
 
   const ROL: Record<string, string> = { operador: 'Operador', laboratorio: 'Laboratorio', soporte: 'Soporte', director: 'Dirección' };
@@ -267,6 +264,9 @@ const tiles = [
       const av = q<HTMLImageElement>('.staff-av img');
       const avIni = q('.staff-av-ini');
 
+      // Con base real, la foto es la guardada en la base (la misma que ve el resto del personal).
+      let fotoServidor = '';
+      if (usaSupabase()) fotoRemota().then((url) => { fotoServidor = url ?? ''; render(); });
       function render() {
         const p = cargarPerfil(role);
         set('nombre', p.nombre); set('cargo', p.cargo); set('cedula', p.cedula); set('mpps', p.mpps);
@@ -278,7 +278,8 @@ const tiles = [
         root.style.setProperty('--fy', p.fotoY + '%');
         if (p.portada) { hero.src = p.portada; hero.hidden = false; ph.hidden = true; }
         else { hero.hidden = true; hero.removeAttribute('src'); ph.hidden = false; }
-        if (p.foto) { av.src = p.foto; av.hidden = false; avIni.hidden = true; }
+        const fotoActual = usaSupabase() ? fotoServidor : p.foto;
+        if (fotoActual) { av.src = fotoActual; av.hidden = false; avIni.hidden = true; }
         else { av.hidden = true; av.removeAttribute('src'); avIni.hidden = false; }
         return p;
       }
@@ -308,10 +309,10 @@ const tiles = [
 
       root.querySelectorAll('[data-s-open]').forEach((b) => b.addEventListener('click', () => {
         const p = cargarPerfil(role);
-        foto = p.foto; portada = p.portada; y.value = String(p.fotoY);
-        q<HTMLInputElement>('[data-s-ced]').value = p.cedula;
+        foto = usaSupabase() ? fotoServidor : p.foto; portada = p.portada; y.value = String(p.fotoY);
         q<HTMLSelectElement>('[data-s-san]').value = p.sangre;
-        q<HTMLInputElement>('[data-s-tel]').value = p.telefono;
+        // Con base real la foto no se puede quitar desde aquí, solo cambiar.
+        q('[data-s-quitar-av]').hidden = usaSupabase();
         err.classList.add('hidden');
         paintPrev();
         dlg.showModal();
@@ -334,17 +335,24 @@ const tiles = [
       onFile('[data-s-file-av]', (f) => procesarAvatar(f), (v) => (foto = v));
       onFile('[data-s-file]', (f) => procesarFoto(f), (v) => (portada = v));
 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const btn = q<HTMLButtonElement>('[data-s-guardar]');
+        btn.disabled = true;
+        // Foto nueva con base real: va a la base, no al navegador.
+        if (usaSupabase() && foto && foto !== fotoServidor) {
+          const sub = await subirFotoRemota(foto);
+          if (!sub.ok) { btn.disabled = false; err.textContent = sub.motivo; err.classList.remove('hidden'); return; }
+          fotoServidor = foto;
+        }
         const r = guardarPerfil({
-          foto, portada, fotoY: Number(y.value),
-          cedula: q<HTMLInputElement>('[data-s-ced]').value,
+          foto: usaSupabase() ? '' : foto, portada, fotoY: Number(y.value),
           sangre: q<HTMLSelectElement>('[data-s-san]').value,
-          telefono: q<HTMLInputElement>('[data-s-tel]').value,
         }, role);
+        btn.disabled = false;
         if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
         dlg.close();
-        toast('¡Perfil actualizado!');
+        toast('Perfil actualizado.');
       });
     });
   }

@@ -1,6 +1,6 @@
 ---
 // src/components/app/Navbar.astro
-// Navbar de las zonas privadas (donante y operador). El contenido del menú de cuenta depende del rol.
+// Navbar de las zonas privadas (todos los roles). El contenido del menú de cuenta depende del rol.
 import Logo from '../Logo.astro';  
 import Icon from '../Icon.astro';
 import Sidebar from './Sidebar.astro';
@@ -15,7 +15,8 @@ interface Props {
 const { role } = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const current = (href: string) => (path === href ? 'page' : undefined);
-const cuenta = MENUS[role]?.cuenta ?? [];
+// Menú de cuenta: el donante tiene "Mi perfil" entre sus opciones principales; aquí también, como el personal.
+const cuenta = [...(role === 'donante' ? (MENUS.donante?.items ?? []).slice(0, 1) : []), ...(MENUS[role]?.cuenta ?? [])];
 const home = ROLE_HOME[role];
 ---
 
@@ -321,7 +322,12 @@ const home = ROLE_HOME[role];
 
 <script>
   import { logout } from '../../lib/auth';
-  import { renderAccount } from '../../lib/account';
+  import { pintarFotoUsuario, renderAccount } from '../../lib/account';
+
+  // La foto del perfil también en los avatares de la barra y los menús (se actualiza al cambiarla).
+  pintarFotoUsuario();
+  window.addEventListener('blud:donor', () => pintarFotoUsuario());
+  window.addEventListener('blud:staff', () => pintarFotoUsuario());
   import { onDb } from '../../lib/db';
 
   const root = document.documentElement;
