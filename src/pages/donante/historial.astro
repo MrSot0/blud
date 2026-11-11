@@ -50,6 +50,19 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       </div>
     </div>
 
+    <!-- RF-D6: desde cuándo puede volver a donar -->
+    <section id="proxima" class="reveal panel p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4" style="--d:150ms" aria-live="polite">
+      <span class="grid size-11 shrink-0 place-items-center rounded-full bg-sunken text-ink-2" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-bold uppercase tracking-wider text-ink-3">Próxima donación</p>
+        <p class="font-bold text-ink" id="proxima-titulo">—</p>
+        <p class="text-sm text-ink-3" id="proxima-texto"></p>
+      </div>
+      <a href="/donante/donar" class="btn btn-secondary shrink-0" id="proxima-btn">Agendar</a>
+    </section>
+
     <!-- Lista -->
     <section class="reveal panel p-6 sm:p-8" style="--d:180ms" aria-labelledby="h-lista">
       <h2 id="h-lista" class="text-lg font-bold text-ink border-b border-line pb-4">Donaciones pasadas</h2>
@@ -105,7 +118,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
 </style>
 
 <script>
-  import { centroById, getCita, cancelCita, getHistorial, seedDemo, fmtFecha, esc, toast } from '../../lib/donante';
+  import { cargarFicha, centroById, estadoDonacion, getCita, cancelCita, getHistorial, loadDonor, seedDemo, fmtFecha, esc, toast, type Donor } from '../../lib/donante';
 
   function init() {
     const lista = document.getElementById('lista');
@@ -161,8 +174,30 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       toast('Cita cancelada.');
     });
 
+    function renderProxima(d: Donor) {
+      const e = estadoDonacion(d);
+      const largo = (iso: string) => fmtFecha(iso, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const espera = d.sexo === 'F' ? '120 días (4 meses) en mujeres' : '90 días (3 meses) en hombres';
+      const btn = $<HTMLAnchorElement>('#proxima-btn');
+      if (e.permanente) {
+        $('#proxima-titulo').textContent = 'Por ahora no puedes donar';
+        $('#proxima-texto').textContent = 'El banco de sangre registró un impedimento. Escríbenos si tienes dudas.';
+        btn.textContent = 'Ir a Mensajes'; btn.href = '/donante/mensajes';
+      } else if (e.desde && !e.puede) {
+        $('#proxima-titulo').textContent = `Desde el ${largo(e.desde)}`;
+        $('#proxima-texto').textContent = e.diferido?.hasta === e.desde ? 'Así lo indicó tu última evaluación médica.' : `Entre donaciones de sangre deben pasar ${espera}.`;
+        btn.textContent = 'Agendar desde esa fecha'; btn.href = '/donante/donar';
+      } else {
+        $('#proxima-titulo').textContent = 'Ya puedes donar';
+        $('#proxima-texto').textContent = e.desde ? `Tu periodo de espera terminó el ${largo(e.desde)}.` : `Después de donar, deberás esperar ${espera}.`;
+        btn.textContent = 'Agendar'; btn.href = '/donante/donar';
+      }
+    }
+
     renderCita();
     renderLista();
+    renderProxima(loadDonor());
+    cargarFicha().then((d) => { renderProxima(d); renderLista(); });
   }
 
   init();

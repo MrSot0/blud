@@ -43,6 +43,9 @@ const { id, class: cls = '' } = Astro.props;
     </div>
   </header>
 
+  <!-- Avisos para el personal: diferimiento (RF-O5) y contacto pedido por el laboratorio (RF-D10). Nunca el motivo clínico. -->
+  <div class="ficha-avisos" data-ff-avisos data-ff-privado hidden></div>
+
   <dl class="ficha-datos">
     <div><dt>Cédula</dt><dd class="font-mono" data-ff="cedula">—</dd></div>
     <div><dt>Teléfono</dt><dd data-ff="telefono">—</dd></div>
@@ -53,7 +56,23 @@ const { id, class: cls = '' } = Astro.props;
     <div data-ff-privado><dt>Donaciones</dt><dd data-ff="donaciones">—</dd></div>
     <div data-ff-privado><dt>Última donación</dt><dd data-ff="ultima">—</dd></div>
     <div class="ficha-ancho" data-ff-privado><dt>Próxima cita</dt><dd data-ff="cita">—</dd></div>
+    <div data-ff-privado><dt>Puede donar desde</dt><dd data-ff="proxima">—</dd></div>
+    <div data-ff-privado><dt>Ocupación</dt><dd data-ff="ocupacion">—</dd></div>
+    <div class="ficha-ancho" data-ff-privado><dt>Dirección</dt><dd data-ff="direccion">—</dd></div>
+    <div class="ficha-ancho" data-ff-privado><dt>Contacto de emergencia</dt><dd data-ff="contacto">—</dd></div>
   </dl>
+
+  <!-- RF-D4: cuestionario de autoexclusión, para la evaluación médica -->
+  <details class="ficha-cuest" data-ff-privado data-ff-cuest hidden>
+    <summary>
+      <span class="min-w-0">
+        <span class="block font-bold text-ink text-sm">Cuestionario de salud</span>
+        <span class="block text-xs text-ink-3" data-ff-cuest-resumen></span>
+      </span>
+      <svg viewBox="0 0 24 24" class="size-4 shrink-0 text-ink-3 chev" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <ol class="ficha-cuest-lista" data-ff-cuest-lista></ol>
+  </details>
 
   <div class="ficha-acciones empty:hidden"><slot /></div>
 </article>
@@ -114,6 +133,25 @@ const { id, class: cls = '' } = Astro.props;
   .ficha-datos > div { background: var(--surface); padding: 0.85rem 1.25rem; min-width: 0; }
   .ficha-datos dt { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
   .ficha-datos dd { margin-top: 0.2rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .ficha-avisos { display: grid; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+  .ficha-avisos[hidden], .ficha-avisos[data-vacio='true'], .ficha-cuest[data-vacio='true'] { display: none; }
+  .ficha-aviso { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.85rem 1.25rem; font-size: 0.875rem; background: var(--surface); }
+  .ficha-aviso strong { display: block; color: var(--ink); }
+  .ficha-aviso span { color: var(--ink-2); }
+  .ficha-aviso .dot { flex-shrink: 0; width: 0.6rem; height: 0.6rem; margin-top: 0.4rem; border-radius: 9999px; background: var(--warn); }
+  .ficha-aviso[data-nivel='alto'] { background: var(--accent-soft); }
+  .ficha-aviso[data-nivel='alto'] .dot { background: var(--accent); }
+  .ficha-cuest { border-top: 1px solid var(--line); }
+  .ficha-cuest[hidden] { display: none; }
+  .ficha-cuest summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; cursor: pointer; list-style: none; }
+  .ficha-cuest summary::-webkit-details-marker { display: none; }
+  .ficha-cuest[open] .chev { transform: rotate(180deg); }
+  .ficha-cuest-lista { display: grid; gap: 0.5rem; padding: 0 1.25rem 1.25rem; }
+  .ficha-cuest-lista li { font-size: 0.8125rem; padding: 0.6rem 0.75rem; border-radius: 0.75rem; background: var(--sunken); }
+  .ficha-cuest-lista li[data-alerta='true'] { background: var(--accent-soft); }
+  .ficha-cuest-lista li b { display: block; color: var(--ink); font-weight: 600; }
+  .ficha-cuest-lista li span { color: var(--ink-2); }
+  .ficha-cuest-lista li[data-alerta='true'] span { color: var(--accent-ink); font-weight: 700; }
   .ficha-acciones { display: grid; gap: 0.75rem; padding: 1.25rem; border-top: 1px solid var(--line); }
 
   @media (min-width: 640px) {
@@ -122,5 +160,7 @@ const { id, class: cls = '' } = Astro.props;
     .ficha-datos > div { padding-inline: 2rem; }
     .ficha-ancho { grid-column: 1 / -1; }
     .ficha-acciones { padding: 1.5rem 2rem; }
+    .ficha-aviso, .ficha-cuest summary { padding-inline: 2rem; }
+    .ficha-cuest-lista { padding-inline: 2rem; }
   }
 </style>

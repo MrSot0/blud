@@ -30,6 +30,7 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
           <div class="flex items-center gap-2">
             <span id="f-sangre" class="blood-chip"></span>
             <span id="f-estado" class="rounded-full px-2.5 py-0.5 text-xs font-bold"></span>
+            <a id="f-chat" href="/soporte/mensajes" class="btn btn-primary btn-sm">Escribir al donante</a>
           </div>
         </div>
 
@@ -76,6 +77,7 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
       const r = f.registro;
       $('#f-nombre').textContent = r.nombreCompleto;
       $('#f-id').textContent = r.id;
+      $<HTMLAnchorElement>('#f-chat').href = `/soporte/mensajes?donante=${encodeURIComponent(r.id)}`;
       $('#f-sangre').textContent = r.sangre || '—';
       const ver = r.estado === 'verificado';
       const est = $('#f-estado');

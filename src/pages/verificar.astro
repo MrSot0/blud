@@ -37,6 +37,7 @@ import FichaDonante from '../components/app/FichaDonante.astro';
           </p>
           <div class="flex flex-col sm:flex-row gap-3" data-f-botones>
             <a href="/operador/donantes" class="btn btn-primary flex-1" data-f-operar hidden>Verificar o registrar donación</a>
+            <a href="#" class="btn btn-secondary flex-1" data-f-chat hidden>Escribir al donante</a>
             <a href="/" class="btn btn-secondary flex-1" data-f-volver>Volver a mi panel</a>
           </div>
         </FichaDonante>
@@ -69,6 +70,10 @@ import FichaDonante from '../components/app/FichaDonante.astro';
     const operar = $<HTMLAnchorElement>('[data-f-operar]');
     operar.hidden = rol !== 'operador';
     operar.href = `/operador/donantes?q=${encodeURIComponent(f.id)}`;
+    // Chat con el donante (operador y soporte tienen módulo de Mensajes).
+    const chat = $<HTMLAnchorElement>('[data-f-chat]');
+    chat.hidden = !(rol === 'operador' || rol === 'soporte');
+    chat.href = `/${rol}/mensajes?donante=${encodeURIComponent(f.id)}${f.contactoPendiente ? '&motivo=contacto_laboratorio' : ''}`;
     $<HTMLAnchorElement>('[data-f-volver]').href = ROLE_HOME[rol as keyof typeof ROLE_HOME] ?? '/';
     ver('ficha');
     await pintarFicha($('#ficha-verificar'), f);
@@ -85,6 +90,7 @@ import FichaDonante from '../components/app/FichaDonante.astro';
       $('[data-f-nota]').hidden = false;
       $<HTMLAnchorElement>('[data-f-login]').href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
       $('[data-f-operar]').hidden = true;
+      $('[data-f-chat]').hidden = true;
       const volver = $<HTMLAnchorElement>('[data-f-volver]');
       volver.textContent = sinSesion ? 'Conocer BLUD' : 'Volver a mi espacio';
       volver.href = sinSesion ? '/' : '/donante/perfil';

@@ -1,0 +1,464 @@
+---
+// src/components/app/ChatApp.astro
+// Mensajes en tiempo real entre el personal y el donante (lib/chat). Lo usan /donante/mensajes,
+// /operador/mensajes y /soporte/mensajes. El personal puede iniciar conversaciones; el donante responde.
+import type { Role } from '../../lib/roles';
+
+interface Props {
+  role: Role;
+}
+const { role } = Astro.props;
+const personal = role !== 'donante';
+---
+
+<div class="container-blud py-8 space-y-6" data-chat data-role={role}>
+  <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Mensajes</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">
+        {personal ? 'Escribe a los donantes y sigue sus respuestas en tiempo real.' : 'Conversaciones con el personal del banco de sangre.'}
+      </p>
+    </div>
+    <span class="conexion" data-conexion data-estado="conectando" role="status">
+      <span class="punto" aria-hidden="true"></span><span data-conexion-txt>Conectando…</span>
+    </span>
+  </div>
+
+  <div class="hidden panel p-8 text-center space-y-2" data-sin-servidor>
+    <p class="font-semibold text-ink">El chat no está disponible</p>
+    <p class="text-sm text-ink-3">Necesita conexión con el servidor del banco de sangre. Inténtalo más tarde.</p>
+  </div>
+
+  <div class="chat-grid" data-vista="lista">
+    <!-- ============ Lista ============ -->
+    <aside class="chat-lista panel overflow-hidden" aria-label="Conversaciones">
+      {personal && (
+        <form class="border-b border-line p-4 space-y-2" data-nueva novalidate>
+          <p class="text-xs font-bold uppercase tracking-wider text-ink-2">Nueva conversación</p>
+          <input class="field" name="donante" placeholder="Cédula o ID del carnet (BLD-000123)" autocomplete="off" aria-label="Cédula o ID del donante" />
+          <div class="flex gap-2">
+            <input class="field min-w-0 flex-1" name="asunto" placeholder="Asunto" maxlength="120" autocomplete="off" aria-label="Asunto" />
+            <button type="submit" class="btn btn-primary shrink-0">Abrir</button>
+          </div>
+          <p class="hidden text-xs font-medium text-accent-ink" data-nueva-err role="alert"></p>
+        </form>
+      )}
+      <div class="flex items-center gap-2 border-b border-line px-4 py-3">
+        <div class="seg" role="tablist" aria-label="Filtrar conversaciones">
+          <button type="button" role="tab" aria-selected="true" data-filtro="abierta">Abiertas</button>
+          <button type="button" role="tab" aria-selected="false" data-filtro="cerrada">Cerradas</button>
+          <button type="button" role="tab" aria-selected="false" data-filtro="todas">Todas</button>
+        </div>
+      </div>
+      <ul class="chat-items divide-y divide-line" data-lista aria-live="polite"></ul>
+      <div class="hidden p-8 text-center space-y-2" data-lista-vacia>
+        <span class="mx-auto grid size-12 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+        </span>
+        <p class="font-semibold text-ink text-sm">No hay conversaciones</p>
+        <p class="text-xs text-ink-3">
+          {personal ? 'Busca a un donante por su cédula o su ID para escribirle.' : 'Cuando el banco de sangre te escriba, verás el mensaje aquí.'}
+        </p>
+      </div>
+    </aside>
+
+    <!-- ============ Conversación ============ -->
+    <section class="chat-conv panel overflow-hidden" aria-label="Conversación">
+      <div class="chat-vacio" data-sin-conv>
+        <span class="mx-auto grid size-14 place-items-center rounded-full bg-sunken text-ink-3" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+        </span>
+        <p class="font-semibold text-ink">Elige una conversación</p>
+      </div>
+
+      <div class="hidden h-full flex-col" data-conv>
+        <header class="flex items-center gap-3 border-b border-line px-4 py-3">
+          <button type="button" class="chat-volver grid size-9 shrink-0 place-items-center rounded-control text-ink-2 hover:bg-sunken" data-volver aria-label="Volver a la lista">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span class="avatar size-10" data-c-avatar></span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-bold text-ink" data-c-titulo></p>
+            <p class="truncate text-xs text-ink-3" data-c-sub></p>
+          </div>
+          {personal && (
+            <div class="flex shrink-0 items-center gap-2">
+              <a href="#" class="btn btn-secondary btn-sm hidden sm:inline-flex" data-c-ficha>Ver ficha</a>
+              <button type="button" class="btn btn-secondary btn-sm hidden" data-c-contactado>Marcar contactado</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-c-estado>Cerrar</button>
+            </div>
+          )}
+        </header>
+
+        <p class="hidden border-b border-line bg-accent-soft px-4 py-2 text-xs font-medium text-accent-ink" data-c-aviso></p>
+
+        <ol class="chat-mensajes" data-mensajes aria-live="polite" aria-label="Mensajes"></ol>
+
+        <form class="border-t border-line p-3" data-composer novalidate>
+          <p class="hidden pb-2 text-xs text-ink-3" data-cerrada>Esta conversación está cerrada.</p>
+          <div class="flex items-end gap-2">
+            <label for="chat-texto" class="sr-only">Escribe un mensaje</label>
+            <textarea id="chat-texto" rows="1" maxlength="2000" class="field chat-texto" placeholder="Escribe un mensaje…"></textarea>
+            <button type="submit" class="btn btn-primary shrink-0 min-h-12 px-5" data-enviar>
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+              <span>Enviar</span>
+            </button>
+          </div>
+          <p class="pt-1.5 text-[0.6875rem] text-ink-3">Enter para enviar · Shift + Enter para un salto de línea</p>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+
+<style>
+  .chat-grid { display: grid; gap: 1.5rem; }
+  .conexion { display: inline-flex; align-items: center; gap: 0.45rem; align-self: flex-start; padding: 0.3rem 0.75rem; border-radius: 9999px; background: var(--sunken); font-size: 0.75rem; font-weight: 700; color: var(--ink-2); }
+  .conexion .punto { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: var(--warn); }
+  .conexion[data-estado='conectado'] .punto { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .conexion[data-estado='desconectado'] .punto { background: var(--accent); }
+  @media (min-width: 640px) { .conexion { align-self: auto; } }
+  .chat-lista, .chat-conv { min-height: 0; }
+  .chat-conv { display: flex; flex-direction: column; height: calc(100dvh - var(--header-h, 4.5rem) - 13rem); min-height: 26rem; }
+  .chat-conv > [data-conv]:not(.hidden) { display: flex; }
+  .chat-items { max-height: calc(100dvh - var(--header-h, 4.5rem) - 22rem); min-height: 8rem; overflow-y: auto; }
+  .chat-vacio { margin: auto; text-align: center; display: grid; gap: 0.75rem; padding: 2rem; }
+  .chat-volver { display: none; }
+  @media (min-width: 1024px) {
+    .chat-grid { grid-template-columns: minmax(19rem, 24rem) 1fr; align-items: start; }
+    .chat-lista { position: sticky; top: calc(var(--header-h, 4.5rem) + 1rem); }
+  }
+  @media (max-width: 1023px) {
+    .chat-grid[data-vista='lista'] .chat-conv { display: none; }
+    .chat-grid[data-vista='conv'] .chat-lista { display: none; }
+    .chat-volver { display: grid; }
+    .chat-conv { height: calc(100dvh - var(--header-h, 4.5rem) - 11rem); }
+    .chat-items { max-height: none; }
+  }
+
+  .seg { display: inline-flex; gap: 0.25rem; padding: 0.25rem; border-radius: 9999px; background: var(--sunken); }
+  .seg button { padding: 0.3rem 0.8rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-selected='true'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+
+  .avatar {
+    position: relative; display: grid; flex-shrink: 0; place-items: center; overflow: hidden; border-radius: 9999px;
+    background: var(--accent-soft); color: var(--accent-ink); font-size: 0.8125rem; font-weight: 800;
+  }
+  .avatar :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .chat-items :global(button) { width: 100%; text-align: left; }
+  .chat-items :global(.item) { display: flex; gap: 0.75rem; align-items: center; padding: 0.85rem 1rem; cursor: pointer; transition: background 150ms; }
+  .chat-items :global(.item:hover) { background: var(--sunken); }
+  .chat-items :global(.item[aria-current='true']) { background: var(--accent-soft); }
+  .chat-items :global(.badge) {
+    display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 0.35rem; border-radius: 9999px;
+    background: var(--accent); color: #fff; font-size: 0.6875rem; font-weight: 800;
+  }
+
+  .chat-mensajes { flex: 1; min-height: 0; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem; background: var(--canvas); }
+  .chat-mensajes :global(.dia) { align-self: center; margin: 0.75rem 0 0.25rem; padding: 0.15rem 0.7rem; border-radius: 9999px; background: var(--sunken); color: var(--ink-3); font-size: 0.6875rem; font-weight: 700; }
+  .chat-mensajes :global(.msg) { max-width: min(36rem, 82%); display: grid; gap: 0.15rem; }
+  .chat-mensajes :global(.msg.mio) { align-self: flex-end; justify-items: end; }
+  .chat-mensajes :global(.burbuja) {
+    padding: 0.55rem 0.85rem; border-radius: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.9375rem; line-height: 1.45;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-bottom-left-radius: 0.35rem;
+  }
+  .chat-mensajes :global(.msg.mio .burbuja) { background: var(--accent); color: #fff; border-color: transparent; border-bottom-left-radius: 1rem; border-bottom-right-radius: 0.35rem; }
+  .chat-mensajes :global(.meta) { font-size: 0.6875rem; color: var(--ink-3); padding-inline: 0.25rem; }
+  .chat-mensajes :global(.msg.nuevo) { animation: entra 220ms var(--ease-out, ease-out); }
+  @keyframes entra { from { opacity: 0; transform: translateY(6px); } }
+  @media (prefers-reduced-motion: reduce) { .chat-mensajes :global(.msg.nuevo) { animation: none; } }
+
+  .chat-texto { min-height: 3rem; max-height: 9rem; padding: 0.75rem 1rem; resize: none; line-height: 1.4; }
+</style>
+
+<script>
+  import {
+    abrirConversacion, canalBuzon, cambiarEstado, chatDisponible, enviarMensaje, escuchar, iniciarConversacion, listarConversaciones,
+    registrarContacto, MOTIVOS, ROL_LABEL, type Conversacion, type EstadoConexion, type Mensaje, type Motivo,
+  } from '../../lib/chat';
+  import { esc, toast } from '../../lib/ui';
+  import { urlFotoFicha } from '../../lib/ficha';
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-chat]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const personal = root.dataset.role !== 'donante';
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    const grid = $('.chat-grid');
+    const lista = $('[data-lista]');
+    const mensajesEl = $('[data-mensajes]');
+    const texto = $<HTMLTextAreaElement>('#chat-texto');
+
+    let filtro: 'abierta' | 'cerrada' | 'todas' = 'abierta';
+    let conversaciones: Conversacion[] = [];
+    let actual: Conversacion | null = null;
+    let vistos = new Set<string>();
+    let dejarConv: (() => void) | null = null;
+
+    // Estado del WebSocket (se muestra arriba a la derecha).
+    const conexion = $('[data-conexion]');
+    const CONEXION: Record<EstadoConexion, string> = { conectando: 'Conectando…', conectado: 'En tiempo real', desconectado: 'Sin conexión, reintentando' };
+    const alConexion = (e: EstadoConexion) => {
+      conexion.dataset.estado = e;
+      $('[data-conexion-txt]').textContent = CONEXION[e];
+    };
+
+    if (!chatDisponible()) {
+      grid.classList.add('hidden');
+      $('[data-sin-servidor]').classList.remove('hidden');
+      alConexion('desconectado');
+      return;
+    }
+
+    const iniciales = (n = '') => n.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('') || 'B';
+    const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-VE', { hour: 'numeric', minute: '2-digit' });
+    const diaDe = (iso: string) => new Date(iso).toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long' });
+    const cuando = (iso: string) => {
+      const d = new Date(iso);
+      const hoy = new Date();
+      return d.toDateString() === hoy.toDateString() ? hora(iso) : d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' });
+    };
+    const tituloDe = (c: Conversacion) => (personal ? c.donante?.nombre ?? 'Donante' : c.asunto);
+    const subDe = (c: Conversacion) => personal
+      ? `${c.donante?.id ?? ''}${c.donante?.sangre ? ' · ' + c.donante.sangre : ''} · ${c.asunto}`
+      : `${MOTIVOS[c.motivo] ?? 'Banco de sangre'}${c.creadaPor ? ' · ' + c.creadaPor : ''}`;
+
+    async function pintarAvatar(el: HTMLElement, c: Conversacion) {
+      el.textContent = personal ? iniciales(c.donante?.nombre) : 'B';
+      if (!personal) return;
+      const url = await urlFotoFicha(c.donante?.foto);
+      if (url) el.innerHTML = `<img src="${esc(url)}" alt="" />`;
+    }
+
+    // ---------- Lista ----------
+    function pintarLista() {
+      const visibles = conversaciones.filter((c) => filtro === 'todas' || c.estado === filtro);
+      $('[data-lista-vacia]').classList.toggle('hidden', visibles.length > 0);
+      lista.innerHTML = visibles.map((c) => `
+        <li>
+          <button type="button" class="item" data-id="${esc(c.id)}" aria-current="${actual?.id === c.id}">
+            <span class="avatar size-11" data-av="${esc(c.id)}">${esc(personal ? iniciales(c.donante?.nombre) : 'B')}</span>
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center justify-between gap-2">
+                <span class="truncate font-semibold text-ink text-sm">${esc(tituloDe(c))}</span>
+                <span class="shrink-0 text-[0.6875rem] text-ink-3">${esc(cuando(c.ultimo?.creado ?? c.actualizada))}</span>
+              </span>
+              <span class="flex items-center justify-between gap-2">
+                <span class="truncate text-xs text-ink-3">${c.ultimo ? (c.ultimo.autorTipo === (personal ? 'personal' : 'donante') ? 'Tú: ' : '') + esc(c.ultimo.texto) : esc(c.asunto)}</span>
+                ${c.noLeidos ? `<span class="badge" aria-label="${c.noLeidos} sin leer">${c.noLeidos}</span>` : ''}
+              </span>
+            </span>
+          </button>
+        </li>`).join('');
+      if (personal) visibles.forEach((c) => {
+        const el = lista.querySelector<HTMLElement>(`[data-av="${CSS.escape(c.id)}"]`);
+        if (el && c.donante?.foto) pintarAvatar(el, c);
+      });
+    }
+
+    async function cargarLista() {
+      try {
+        conversaciones = await listarConversaciones();
+        pintarLista();
+      } catch (e) {
+        toast((e as Error).message);
+      }
+    }
+
+    // ---------- Conversación ----------
+    function burbuja(m: Mensaje, nuevo = false) {
+      const mio = m.autorTipo === (personal ? 'personal' : 'donante');
+      const quien = mio ? 'Tú' : m.autorTipo === 'personal' ? `${m.autorNombre}${m.autorRol ? ' · ' + (ROL_LABEL[m.autorRol] ?? m.autorRol) : ''}` : m.autorNombre;
+      return `<li class="msg ${mio ? 'mio' : ''} ${nuevo ? 'nuevo' : ''}" data-mid="${esc(m.id)}">
+        <span class="burbuja">${esc(m.texto)}</span>
+        <span class="meta">${esc(quien)} · ${esc(hora(m.creado))}</span>
+      </li>`;
+    }
+    let ultimoDia = '';
+    function agregar(m: Mensaje, nuevo = false) {
+      if (vistos.has(String(m.id))) return;
+      vistos.add(String(m.id));
+      const dia = new Date(m.creado).toDateString();
+      if (dia !== ultimoDia) {
+        ultimoDia = dia;
+        mensajesEl.insertAdjacentHTML('beforeend', `<li class="dia">${esc(diaDe(m.creado))}</li>`);
+      }
+      const abajo = mensajesEl.scrollHeight - mensajesEl.scrollTop - mensajesEl.clientHeight < 80;
+      mensajesEl.insertAdjacentHTML('beforeend', burbuja(m, nuevo));
+      if (abajo || m.autorTipo === (personal ? 'personal' : 'donante')) mensajesEl.scrollTop = mensajesEl.scrollHeight;
+    }
+
+    function pintarCabecera(c: Conversacion) {
+      $('[data-c-titulo]').textContent = tituloDe(c);
+      $('[data-c-sub]').textContent = subDe(c);
+      pintarAvatar($('[data-c-avatar]'), c);
+      const cerrada = c.estado !== 'abierta';
+      $('[data-cerrada]').classList.toggle('hidden', !cerrada);
+      texto.disabled = cerrada;
+      $<HTMLButtonElement>('[data-enviar]').disabled = cerrada;
+      const aviso = $('[data-c-aviso]');
+      aviso.classList.toggle('hidden', c.motivo !== 'contacto_laboratorio');
+      aviso.textContent = personal
+        ? 'El banco de sangre pidió contactar a este donante. Pídele que se acerque al centro; no compartas resultados por este medio.'
+        : 'El banco de sangre necesita hablar contigo. Responde aquí o acércate a tu centro de donación.';
+      if (personal) {
+        const ficha = root.querySelector<HTMLAnchorElement>('[data-c-ficha]');
+        if (ficha) ficha.href = `/verificar?id=${encodeURIComponent(c.donante?.id ?? '')}`;
+        const est = root.querySelector<HTMLButtonElement>('[data-c-estado]');
+        if (est) est.textContent = cerrada ? 'Reabrir' : 'Cerrar';
+        root.querySelector('[data-c-contactado]')?.classList.toggle('hidden', c.motivo !== 'contacto_laboratorio');
+      }
+    }
+
+    async function abrir(id: string, foco = true) {
+      dejarConv?.();
+      try {
+        const { conversacion, mensajes } = await abrirConversacion(id);
+        actual = conversacion;
+        vistos = new Set();
+        ultimoDia = '';
+        mensajesEl.innerHTML = '';
+        mensajes.forEach((m) => agregar(m));
+        mensajesEl.scrollTop = mensajesEl.scrollHeight;
+        pintarCabecera(conversacion);
+        $('[data-sin-conv]').classList.add('hidden');
+        $('[data-conv]').classList.remove('hidden');
+        grid.dataset.vista = 'conv';
+        const c = conversaciones.find((x) => x.id === id);
+        if (c) c.noLeidos = 0;
+        pintarLista();
+        try { history.replaceState(null, '', `?c=${encodeURIComponent(id)}`); } catch {}
+        if (foco && !texto.disabled && matchMedia('(min-width: 1024px)').matches) texto.focus();
+        // Tiempo real de esta conversación.
+        dejarConv = escuchar(`chat:${id}`, {
+          alMensaje: (m) => {
+            if (actual?.id !== id) return;
+            agregar(m, true);
+            abrirConversacion(id).catch(() => {}); // marca como leído
+          },
+          alEstado: (estado) => { if (actual?.id === id) { actual.estado = estado as Conversacion['estado']; pintarCabecera(actual); } },
+        });
+      } catch (e) {
+        toast((e as Error).message);
+      }
+    }
+
+    lista.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+      if (b) abrir(b.dataset.id!);
+    });
+    $('[data-volver]').addEventListener('click', () => {
+      grid.dataset.vista = 'lista';
+      cargarLista();
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) => b.addEventListener('click', () => {
+      filtro = b.dataset.filtro as typeof filtro;
+      root.querySelectorAll('[data-filtro]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      pintarLista();
+    }));
+
+    // ---------- Enviar ----------
+    const ajustar = () => { texto.style.height = 'auto'; texto.style.height = Math.min(texto.scrollHeight, 144) + 'px'; };
+    texto.addEventListener('input', ajustar);
+    texto.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        $<HTMLFormElement>('[data-composer]').requestSubmit();
+      }
+    });
+    $<HTMLFormElement>('[data-composer]').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!actual || !texto.value.trim()) return;
+      const btn = $<HTMLButtonElement>('[data-enviar]');
+      btn.disabled = true;
+      try {
+        const m = await enviarMensaje(actual.id, texto.value);
+        texto.value = '';
+        ajustar();
+        agregar(m, true);
+        const c = conversaciones.find((x) => x.id === actual!.id);
+        if (c) { c.ultimo = { texto: m.texto, autorTipo: m.autorTipo, creado: m.creado }; c.actualizada = m.creado; }
+        conversaciones.sort((a, b) => b.actualizada.localeCompare(a.actualizada));
+        pintarLista();
+      } catch (err) {
+        toast((err as Error).message);
+      } finally {
+        btn.disabled = actual?.estado !== 'abierta';
+        texto.focus();
+      }
+    });
+
+    // ---------- Solo personal ----------
+    if (personal) {
+      const form = root.querySelector<HTMLFormElement>('[data-nueva]')!;
+      const errEl = root.querySelector<HTMLElement>('[data-nueva-err]')!;
+      const iniciar = async (donante: string, asunto: string, motivo: Motivo = 'general') => {
+        errEl.classList.add('hidden');
+        try {
+          const c = await iniciarConversacion(donante, asunto, motivo);
+          await cargarLista();
+          filtro = 'abierta';
+          root.querySelectorAll('[data-filtro]').forEach((x) => x.setAttribute('aria-selected', String((x as HTMLElement).dataset.filtro === 'abierta')));
+          await abrir(c.id);
+          form.reset();
+        } catch (e) {
+          errEl.textContent = (e as Error).message;
+          errEl.classList.remove('hidden');
+        }
+      };
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const donante = String(fd.get('donante') ?? '').trim();
+        if (!donante) { errEl.textContent = 'Escribe la cédula o el ID del donante.'; errEl.classList.remove('hidden'); return; }
+        iniciar(donante, String(fd.get('asunto') ?? ''));
+      });
+      root.querySelector('[data-c-estado]')?.addEventListener('click', async () => {
+        if (!actual) return;
+        const abrirDeNuevo = actual.estado !== 'abierta';
+        if (!abrirDeNuevo && !confirm('¿Cerrar esta conversación? El donante ya no podrá responder en ella.')) return;
+        try {
+          await cambiarEstado(actual.id, abrirDeNuevo);
+          actual.estado = abrirDeNuevo ? 'abierta' : 'cerrada';
+          pintarCabecera(actual);
+          await cargarLista();
+        } catch (e) { toast((e as Error).message); }
+      });
+      root.querySelector('[data-c-contactado]')?.addEventListener('click', async () => {
+        if (!actual?.donante) return;
+        try {
+          await registrarContacto(actual.donante.id, 'chat');
+          toast('Contacto registrado.');
+        } catch (e) { toast((e as Error).message); }
+      });
+      // Llega desde la ficha del donante: /operador/mensajes?donante=BLD-000123&motivo=…
+      const qs = new URLSearchParams(location.search);
+      if (qs.get('donante')) {
+        const motivo = (qs.get('motivo') as Motivo) || 'general';
+        cargarLista().then(() => iniciar(qs.get('donante')!, qs.get('asunto') || MOTIVOS[motivo], motivo));
+      }
+    }
+
+    // ---------- Arranque y buzón en tiempo real ----------
+    const qs = new URLSearchParams(location.search);
+    cargarLista().then(() => {
+      const pedida = qs.get('c') ?? (!personal && conversaciones[0]?.noLeidos ? conversaciones[0].id : null);
+      if (pedida && !qs.get('donante')) abrir(pedida, false);
+    });
+    (async () => {
+      let donanteId: string | undefined;
+      if (!personal) {
+        const { cargarFicha } = await import('../../lib/donante');
+        donanteId = (await cargarFicha()).id;
+      }
+      const canal = canalBuzon(donanteId);
+      if (canal) escuchar(canal, { alNovedad: () => cargarLista(), alConexion });
+      else conexion.hidden = true; // donante aún sin registro en el banco: todavía no tiene buzón
+    })();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

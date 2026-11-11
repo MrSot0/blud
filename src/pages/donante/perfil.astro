@@ -2,7 +2,11 @@
 // src/pages/donante/perfil.astro
 import LayoutDonante from '../../layouts/LayoutDonante.astro';
 import DonorCard from '../../components/app/DonorCard.astro';
+import { categories, questions } from '../../data/eligibility';
+import { PARENTESCOS } from '../../lib/donante';
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+// RF-D4: el cuestionario de autoexclusión usa las mismas preguntas que el test de elegibilidad.
+const grupos = categories.map((c) => ({ ...c, preguntas: questions.filter((q) => q.category === c.id) })).filter((g) => g.preguntas.length);
 ---
 
 <LayoutDonante title="BLUD | Mi perfil de donante">
@@ -48,12 +52,44 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
             <p class="text-xs text-ink-3 font-normal">Estado de tu cuenta KYC</p>
           </div>
         </button>
+
+        <button type="button" class="w-full flex items-center gap-3 px-4 py-3 rounded-control font-semibold text-sm text-left transition-colors text-ink-2 hover:bg-sunken" data-vista="salud" role="tab" aria-selected="false">
+          <svg viewBox="0 0 24 24" class="size-5 text-ink-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+          <div>
+            <p class="font-bold text-ink">Cuestionario de salud</p>
+            <p class="text-xs text-ink-3 font-normal" data-salud-hint>Respóndelo antes de cada cita</p>
+          </div>
+        </button>
       </aside>
 
       <!-- Contenido de las secciones -->
       <div class="lg:col-span-8 space-y-6">
         <!-- Sección: Carnet Digital -->
         <div data-frame="carnet" class="space-y-6">
+          <!-- RF-D10: el banco de sangre necesita hablar con el donante (nunca se muestran resultados) -->
+          <section id="aviso-contacto" class="hidden panel p-6 sm:p-8 border-l-4 border-accent" role="alert">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+              </span>
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg font-bold text-ink">El banco de sangre necesita hablar contigo</h2>
+                <p class="text-sm text-ink-2 mt-0.5">Te escribiremos por Mensajes o te llamaremos al teléfono registrado. También puedes acercarte a tu centro de donación. Es confidencial.</p>
+              </div>
+              <a href="/donante/mensajes" class="btn btn-primary shrink-0">Ver mensajes</a>
+            </div>
+          </section>
+
+          <!-- RF-D6 / RF-O5: cuándo puede volver a donar -->
+          <section id="aviso-espera" class="hidden panel p-5 sm:p-6 flex items-start gap-4" role="status">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full bg-sunken text-ink-2" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <div class="min-w-0">
+              <p class="font-bold text-ink" data-espera-titulo></p>
+              <p class="text-sm text-ink-3 mt-0.5" data-espera-texto></p>
+            </div>
+          </section>
           <section id="req-panel" class="hidden panel p-6 sm:p-8 space-y-4 border-l-4 border-accent" aria-labelledby="h-req">
             <div class="flex items-start gap-4">
               <span class="grid size-11 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-ink" aria-hidden="true">
@@ -145,7 +181,11 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
           <!-- Estadísticas -->
           <section class="panel p-6 sm:p-8 space-y-4 w-full">
             <h2 class="text-lg font-bold text-ink border-b border-line pb-3">Tus estadísticas</h2>
-            <div class="grid grid-cols-2 gap-4 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+              <div class="p-4 rounded-control bg-sunken col-span-2 sm:col-span-1 sm:order-last">
+                <span class="block text-xl font-extrabold text-ink leading-9" data-proxima>—</span>
+                <span class="text-xs font-semibold text-ink-3 uppercase">Próxima donación</span>
+              </div>
               <div class="p-4 rounded-control bg-sunken">
                 <span class="block text-3xl font-extrabold text-ink tabular" data-count="donaciones">0</span>
                 <span class="text-xs font-semibold text-ink-3 uppercase">Donaciones</span>
@@ -259,6 +299,50 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
                 </div>
               </div>
 
+              <div class="space-y-4 border-t border-line pt-5">
+                <div>
+                  <h3 class="font-bold text-ink">Dirección y ocupación</h3>
+                  <p class="text-xs text-ink-3">El banco de sangre los pide en tu registro de donante.</p>
+                </div>
+                <div class="space-y-1.5">
+                  <label for="direccion" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Dirección <span class="text-accent">*</span></label>
+                  <input type="text" id="direccion" name="direccion" class="field" autocomplete="street-address" placeholder="Av. 5 de Julio, edificio, piso y apartamento, sector" maxlength="200" />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-direccion" role="alert"></p>
+                </div>
+                <div class="space-y-1.5">
+                  <label for="ocupacion" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Ocupación <span class="text-accent">*</span></label>
+                  <input type="text" id="ocupacion" name="ocupacion" class="field" autocomplete="organization-title" placeholder="Docente, estudiante, comerciante…" maxlength="100" />
+                  <p class="hidden text-xs font-medium text-accent-ink" id="err-ocupacion" role="alert"></p>
+                </div>
+              </div>
+
+              <div class="space-y-4 border-t border-line pt-5">
+                <div>
+                  <h3 class="font-bold text-ink">Contacto de emergencia</h3>
+                  <p class="text-xs text-ink-3">A quién llamamos si te sientes mal durante o después de donar.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label for="contactoNombre" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Nombre <span class="text-accent">*</span></label>
+                    <input type="text" id="contactoNombre" name="contactoNombre" class="field" autocomplete="off" maxlength="150" />
+                    <p class="hidden text-xs font-medium text-accent-ink" id="err-contactoNombre" role="alert"></p>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label for="contactoTelefono" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Teléfono <span class="text-accent">*</span></label>
+                    <input type="tel" id="contactoTelefono" name="contactoTelefono" class="field" autocomplete="off" placeholder="+58 414 1234567" maxlength="30" />
+                    <p class="hidden text-xs font-medium text-accent-ink" id="err-contactoTelefono" role="alert"></p>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label for="contactoParentesco" class="block text-xs font-bold uppercase tracking-wider text-ink-2">Parentesco <span class="text-accent">*</span></label>
+                    <select id="contactoParentesco" name="contactoParentesco" class="field">
+                      <option value="">Selecciona…</option>
+                      {PARENTESCOS.map((p) => <option value={p}>{p}</option>)}
+                    </select>
+                    <p class="hidden text-xs font-medium text-accent-ink" id="err-contactoParentesco" role="alert"></p>
+                  </div>
+                </div>
+              </div>
+
               <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" id="form-error" role="alert"></p>
 
               <div class="flex justify-center pt-2">
@@ -266,6 +350,54 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
               </div>
             </form>
           </section>
+        </div>
+
+        <!-- Sección: Cuestionario de salud (RF-D4) -->
+        <div data-frame="salud" class="hidden space-y-6">
+          <section class="panel p-6 sm:p-8 space-y-4" data-salud-estado>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              <span class="grid size-12 shrink-0 place-items-center rounded-full" data-salud-icono data-estado="none" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>
+              </span>
+              <div class="min-w-0 flex-1">
+                <h2 class="text-lg font-bold text-ink" data-salud-titulo>Cuestionario de salud</h2>
+                <p class="text-sm text-ink-3 mt-0.5" data-salud-texto>Antes de ir al centro, responde estas preguntas. El enfermero las revisa contigo en la evaluación médica.</p>
+              </div>
+            </div>
+            <ul class="hidden space-y-2" data-salud-alertas></ul>
+          </section>
+
+          <form id="salud-form" class="panel p-6 sm:p-8 space-y-8" novalidate>
+            <div class="border-b border-line pb-4">
+              <h2 class="text-lg font-bold text-ink">Responde con sinceridad</h2>
+              <p class="text-xs sm:text-sm text-ink-3">Tus respuestas son confidenciales: solo las ve el personal de salud. Protegen tu salud y la de quien recibe tu sangre.</p>
+            </div>
+            {grupos.map((g) => (
+              <fieldset class="space-y-4">
+                <legend class="text-xs font-bold uppercase tracking-widest text-accent-ink mb-1">{g.label}</legend>
+                {g.preguntas.map((q) => (
+                  <div class="pregunta rounded-control border border-line p-4 space-y-3" data-pregunta={q.id} data-solo-mujer={q.soloMujer ? '1' : undefined}>
+                    <div>
+                      <p class="font-semibold text-ink text-sm sm:text-base" id={`q-${q.id}`}>{q.title}</p>
+                      <p class="text-xs text-ink-3 mt-0.5">{q.description}</p>
+                    </div>
+                    <div class="grid gap-2" role="radiogroup" aria-labelledby={`q-${q.id}`}>
+                      {q.options.map((o, i) => (
+                        <label class="opcion">
+                          <input type="radio" name={`q${q.id}`} value={i} class="sr-only" />
+                          <span data-plantilla={o.label}>{o.label.replace(/\{meses\}/g, '3')}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </fieldset>
+            ))}
+            <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" id="salud-error" role="alert"></p>
+            <div class="flex justify-center">
+              <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Guardar mis respuestas</button>
+            </div>
+          </form>
         </div>
 
         <!-- Sección: Verificación de Identidad (KYC) -->
@@ -362,6 +494,20 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 </LayoutDonante>
 
 <style>
+  /* ---------- Cuestionario de salud ---------- */
+  .opcion { display: block; cursor: pointer; }
+  .opcion span {
+    display: block; padding: 0.65rem 0.9rem; border-radius: 0.75rem; border: 2px solid var(--line);
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2); transition: border-color 150ms, background 150ms, color 150ms;
+  }
+  .opcion:hover span { border-color: var(--line-strong); }
+  .opcion:has(input:checked) span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .opcion:has(input:focus-visible) span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .pregunta[data-falta='true'] { border-color: var(--accent); }
+  [data-salud-icono][data-estado='none'] { background: var(--sunken); color: var(--ink-2); }
+  [data-salud-icono][data-estado='ok'] { background: var(--ok-soft); color: var(--ok); }
+  [data-salud-icono][data-estado='alerta'] { background: var(--accent-soft); color: var(--accent-ink); }
+
   /* ---------- Carnet ---------- */
   .scene { perspective: 1100px; max-width: 28rem; margin-inline: auto; }
   .tilt {
@@ -481,8 +627,11 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 <script>
   import QRCode from 'qrcode';
   import {
-    cargarFicha, edadDe, guardarPerfil, loadDonor, qrDe, requisitos, subirFoto, urlFoto, toast, type Donor, type Kyc,
+    cargarFicha, cuestionarioVigente, edadDe, esc, estadoDonacion, fmtFecha, guardarCuestionario, guardarPerfil, loadDonor, qrDe,
+    requisitos, subirFoto, urlFoto, toast, VIGENCIA_CUESTIONARIO_DIAS,
+    type AlertaCuestionario, type Donor, type Kyc, type RespuestaCuestionario,
   } from '../../lib/donante';
+  import { questions } from '../../data/eligibility';
   import { usaSupabase } from '../../lib/supabase';
   import { clearError, emailPattern, setError } from '../../lib/forms';
 
@@ -593,6 +742,32 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       .join('');
   }
 
+  /** RF-D6, RF-O5 y RF-D10: próxima donación, diferimiento y aviso de contacto. */
+  function renderEstado(d: Donor) {
+    q('#aviso-contacto')?.classList.toggle('hidden', !d.contactoPendiente);
+    const e = estadoDonacion(d);
+    const espera = q('#aviso-espera');
+    const titulo = q('[data-espera-titulo]');
+    const texto = q('[data-espera-texto]');
+    const prox = q('[data-proxima]');
+    const largo = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
+    if (prox) prox.textContent = e.permanente ? 'No disponible' : e.puede ? 'Ya puedes donar' : e.desde ? fmtFecha(e.desde, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Revisa tu cuestionario';
+    if (!espera || !titulo || !texto) return;
+    espera.classList.toggle('hidden', e.puede);
+    if (e.permanente) {
+      titulo.textContent = 'Por ahora no puedes donar';
+      texto.textContent = 'El banco de sangre registró un impedimento para donar. Si tienes dudas, escríbenos por Mensajes o acércate a tu centro.';
+    } else if (e.motivoCuestionario?.length) {
+      titulo.textContent = 'Según tu cuestionario, hoy no es buen momento para donar';
+      texto.textContent = e.motivoCuestionario.map((a) => a.plazo || a.motivo).join(' ');
+    } else if (e.desde) {
+      titulo.textContent = `Podrás volver a donar desde el ${largo(e.desde)}`;
+      texto.textContent = e.diferido?.hasta === e.desde
+        ? 'Así lo indicó la evaluación médica de tu última visita.'
+        : `Entre donaciones de sangre deben pasar ${d.sexo === 'F' ? '120 días (4 meses) en mujeres' : '90 días (3 meses) en hombres'} para que tu cuerpo reponga el hierro.`;
+    }
+  }
+
   function renderCard(d: Donor) {
     setText('firstname', d.firstname || 'donante');
     setText('fullname', fullName(d));
@@ -605,6 +780,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     renderFoto(d);
     renderKyc(d);
     renderRequisitos(d);
+    renderEstado(d);
   }
 
   function countUp(el: HTMLElement, to: number) {
@@ -628,7 +804,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     let donor = loadDonor();
 
     const form = q<HTMLFormElement>('#donor-form', root)!;
-    const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sexo', 'sangre', 'ciudad'] as const;
+    const fields = ['firstname', 'lastname', 'email', 'telefono', 'cedula', 'nacimiento', 'sexo', 'sangre', 'ciudad', 'direccion', 'ocupacion'] as const;
     // La cédula se edita en dos partes: tipo (V/E) y número.
     const cedTipo = q<HTMLSelectElement>('#cedula-tipo', root)!;
     const cedNum = q<HTMLInputElement>('#cedula', root)!;
@@ -652,6 +828,10 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         if (input) input.value = String((d as unknown as Record<string, unknown>)[f] ?? '');
       });
       setCedula(d.cedula);
+      (['nombre', 'telefono', 'parentesco'] as const).forEach((k) => {
+        const el = form.elements.namedItem(`contacto${k[0].toUpperCase()}${k.slice(1)}`) as HTMLInputElement | null;
+        if (el) el.value = d.contacto?.[k] ?? '';
+      });
     };
     const renderStats = (d: Donor) => {
       countUp(q('[data-count="donaciones"]', root)!, d.donaciones);
@@ -678,6 +858,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       fillForm(d);
       renderCard(d);
       renderStats(d);
+      pintarSalud(d);
     });
 
     form.addEventListener('input', () => {
@@ -698,7 +879,8 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     };
 
     // ---------- Validación de cada campo ----------
-    type Campo = 'firstname' | 'lastname' | 'email' | 'telefono' | 'cedula' | 'nacimiento' | 'sexo' | 'sangre' | 'ciudad';
+    type Campo = 'firstname' | 'lastname' | 'email' | 'telefono' | 'cedula' | 'nacimiento' | 'sexo' | 'sangre' | 'ciudad'
+      | 'direccion' | 'ocupacion' | 'contactoNombre' | 'contactoTelefono' | 'contactoParentesco';
     const val = (k: string) => String((form.elements.namedItem(k) as HTMLInputElement | null)?.value ?? '').trim();
     const NOMBRE = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' .-]+$/;
     const REGLAS: Record<Campo, () => string> = {
@@ -749,6 +931,29 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         const v = val('ciudad');
         return !v || NOMBRE.test(v) ? '' : 'Usa solo letras.';
       },
+      direccion: () => {
+        const v = val('direccion');
+        if (!v) return 'Escribe tu dirección.';
+        return v.length < 8 ? 'Incluye calle o avenida, número o edificio y sector.' : '';
+      },
+      ocupacion: () => {
+        const v = val('ocupacion');
+        if (!v) return 'Escribe tu ocupación.';
+        return v.length < 3 || !NOMBRE.test(v) ? 'Usa solo letras (por ejemplo: docente, estudiante).' : '';
+      },
+      contactoNombre: () => {
+        const v = val('contactoNombre');
+        if (!v) return 'Escribe el nombre de tu contacto de emergencia.';
+        return v.length < 3 || !NOMBRE.test(v) ? 'Usa solo letras.' : '';
+      },
+      contactoTelefono: () => {
+        const v = val('contactoTelefono');
+        if (!v) return 'Escribe el teléfono de tu contacto.';
+        if (/[^\d\s+()-]/.test(v) || v.replace(/\D/g, '').length < 10) return 'Revisa el número: por ejemplo +58 414 1234567.';
+        if (v.replace(/\D/g, '').slice(-10) === val('telefono').replace(/\D/g, '').slice(-10)) return 'Debe ser el número de otra persona, no el tuyo.';
+        return '';
+      },
+      contactoParentesco: () => (val('contactoParentesco') ? '' : 'Elige el parentesco.'),
     };
     const CAMPOS = Object.keys(REGLAS) as Campo[];
     const inputDe = (k: Campo) => form.elements.namedItem(k) as HTMLElement;
@@ -826,6 +1031,9 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
         sexo: (get('sexo') || undefined) as Donor['sexo'],
         sangre: get('sangre'),
         ciudad: get('ciudad'),
+        direccion: get('direccion'),
+        ocupacion: get('ocupacion'),
+        contacto: { nombre: get('contactoNombre'), telefono: get('contactoTelefono'), parentesco: get('contactoParentesco') },
       });
       submitBtn.disabled = false;
       submitBtn.textContent = label;
@@ -971,7 +1179,7 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
     // ---------- Índice lateral (pestañas) ----------
-    type Vista = 'carnet' | 'datos' | 'kyc';
+    type Vista = 'carnet' | 'datos' | 'kyc' | 'salud';
     const frames = root.querySelectorAll<HTMLElement>('[data-frame]');
     const botones = root.querySelectorAll<HTMLButtonElement>('[data-vista]');
 
@@ -988,16 +1196,102 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
       if (v === 'datos') {
         // Lleva al primer dato que falta (o a Nombres).
         const falta = requisitos(donor).find((r) => !r.ok)?.key;
-        const target = falta === 'foto' ? q('#foto-btn', root) : q<HTMLElement>(`#${falta}`, root) ?? q('#firstname', root);
+        const id = falta === 'contacto' ? 'contactoNombre' : falta;
+        const target = falta === 'foto' ? q('#foto-btn', root) : q<HTMLElement>(`#${id}`, root) ?? q('#firstname', root);
         target?.focus({ preventScroll: true });
       }
     }
 
     botones.forEach((b) => b.addEventListener('click', () => setVista(b.dataset.vista as Vista)));
-    qa('[data-ir-datos]', root).forEach((b) => b.addEventListener('click', () => setVista('datos')));
+    // "Completar mis datos": si solo falta el cuestionario, lleva a él.
+    qa('[data-ir-datos]', root).forEach((b) => b.addEventListener('click', () => {
+      const faltan = requisitos(donor).filter((r) => !r.ok).map((r) => r.key);
+      setVista(faltan.length === 1 && faltan[0] === 'cuestionario' ? 'salud' : 'datos');
+    }));
+
+    // ---------- Cuestionario de salud (RF-D4) ----------
+    const salud = q<HTMLFormElement>('#salud-form', root)!;
+    const saludErr = q('#salud-error', root)!;
+    const visibles = () => qa<HTMLElement>('[data-pregunta]', salud).filter((el) => !el.hidden);
+    // "{meses}" depende del sexo: 3 meses entre donaciones en hombres, 4 en mujeres (igual que el test público).
+    const personalizar = (t: string, d: Donor) => t.replace(/\{meses\}/g, d.sexo === 'F' ? '4' : '3');
+    const pintarSalud = (d: Donor) => {
+      // Las preguntas de embarazo solo se hacen a mujeres.
+      qa<HTMLElement>('[data-solo-mujer]', salud).forEach((el) => (el.hidden = d.sexo !== 'F'));
+      qa<HTMLElement>('[data-plantilla]', salud).forEach((el) => (el.textContent = personalizar(el.dataset.plantilla!, d)));
+      const c = d.cuestionario;
+      const vigente = cuestionarioVigente(d);
+      const icono = q('[data-salud-icono]', root)!;
+      const titulo = q('[data-salud-titulo]', root)!;
+      const texto = q('[data-salud-texto]', root)!;
+      const lista = q('[data-salud-alertas]', root)!;
+      const hint = q('[data-salud-hint]', root);
+      icono.dataset.estado = !c || !vigente ? 'none' : c.apto ? 'ok' : 'alerta';
+      if (!c) {
+        titulo.textContent = 'Cuestionario de salud';
+        texto.textContent = 'Antes de ir al centro, responde estas preguntas. El enfermero las revisa contigo en la evaluación médica.';
+      } else if (!vigente) {
+        titulo.textContent = 'Tu cuestionario venció';
+        texto.textContent = `Lo respondiste el ${fmtFecha(c.fecha.slice(0, 10))}. Vale ${VIGENCIA_CUESTIONARIO_DIAS} días: respóndelo de nuevo antes de agendar.`;
+      } else if (c.apto) {
+        titulo.textContent = 'Cuestionario al día';
+        texto.textContent = `Lo respondiste el ${fmtFecha(c.fecha.slice(0, 10))}. Si algo cambió (una vacuna, un viaje, un medicamento), actualízalo.`;
+      } else {
+        titulo.textContent = 'Por ahora es mejor que no dones';
+        texto.textContent = `Según lo que respondiste el ${fmtFecha(c.fecha.slice(0, 10))}:`;
+      }
+      if (hint) hint.textContent = !c ? 'Respóndelo antes de cada cita' : vigente ? (c.apto ? 'Al día' : 'Revisa tus respuestas') : 'Venció: respóndelo otra vez';
+      const alertas = vigente && c && !c.apto ? c.alertas : [];
+      lista.classList.toggle('hidden', !alertas.length);
+      lista.innerHTML = alertas.map((a) => `<li class="rounded-control bg-accent-soft px-4 py-3 text-sm text-accent-ink"><strong>${esc(a.motivo)}</strong>${a.plazo ? `<span class="block text-ink-2 mt-0.5">${esc(a.plazo)}</span>` : ''}</li>`).join('');
+      // Marca las respuestas guardadas.
+      c?.respuestas?.forEach((rsp) => {
+        const qq = questions.find((x) => x.id === rsp.id);
+        const i = qq?.options.findIndex((o) => personalizar(o.label, donor) === rsp.respuesta) ?? -1;
+        const input = salud.querySelector<HTMLInputElement>(`input[name="q${rsp.id}"][value="${i}"]`);
+        if (input) input.checked = true;
+      });
+    };
+    pintarSalud(donor);
+    salud.addEventListener('change', (e) => {
+      (e.target as HTMLElement).closest<HTMLElement>('[data-pregunta]')?.removeAttribute('data-falta');
+      saludErr.classList.add('hidden');
+    });
+    salud.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const respuestas: RespuestaCuestionario[] = [];
+      const alertas: AlertaCuestionario[] = [];
+      let primeraSinResponder: HTMLElement | null = null;
+      for (const el of visibles()) {
+        const id = Number(el.dataset.pregunta);
+        const qq = questions.find((x) => x.id === id)!;
+        const marcada = salud.querySelector<HTMLInputElement>(`input[name="q${id}"]:checked`);
+        if (!marcada) { el.dataset.falta = 'true'; primeraSinResponder ??= el; continue; }
+        const o = qq.options[Number(marcada.value)];
+        respuestas.push({ id, pregunta: qq.title, respuesta: personalizar(o.label, donor), alerta: !o.eligible });
+        if (!o.eligible) alertas.push({ pregunta: qq.title, motivo: o.reasonTitle ?? qq.title, plazo: o.timeframe && personalizar(o.timeframe, donor), permanente: !!o.permanent });
+      }
+      if (primeraSinResponder) {
+        const n = visibles().filter((el) => el.dataset.falta === 'true').length;
+        saludErr.textContent = n === 1 ? 'Falta 1 pregunta por responder.' : `Faltan ${n} preguntas por responder.`;
+        saludErr.classList.remove('hidden');
+        (primeraSinResponder as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      const btn = salud.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      btn.disabled = true;
+      const res = await guardarCuestionario(respuestas, alertas);
+      btn.disabled = false;
+      if (!res.ok) { saludErr.textContent = res.error; saludErr.classList.remove('hidden'); return; }
+      donor = res.donor;
+      pintarSalud(donor);
+      renderCard(donor);
+      q('[data-salud-estado]', root)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toast(alertas.length ? 'Respuestas guardadas. Revisa las indicaciones.' : 'Cuestionario guardado.');
+    });
 
     const pedida = new URLSearchParams(location.search).get('vista');
-    setVista(pedida === 'datos' || pedida === 'kyc' ? pedida : 'carnet');
+    setVista(pedida === 'datos' || pedida === 'kyc' || pedida === 'salud' ? pedida : 'carnet');
   }
 
   init();

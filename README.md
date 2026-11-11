@@ -73,7 +73,7 @@ Con base real, el sitio usa el esquema del proyecto **Bloodonor** (`usuario`, `d
 
 Para conectarlo:
 
-1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql) y [`20261111150000_blud_carnet_publico.sql`](supabase/migrations/20261111150000_blud_carnet_publico.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
+1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql), [`20261111150000_blud_carnet_publico.sql`](supabase/migrations/20261111150000_blud_carnet_publico.sql) y [`20261111170000_blud_donante_chat.sql`](supabase/migrations/20261111170000_blud_donante_chat.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
 2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
 3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
 4. En Supabase, **Authentication → Sign In / Providers → Email**, deja activado **Confirm email**: quien se registra debe abrir el enlace que le llega por correo antes de poder entrar.
@@ -91,6 +91,21 @@ La segunda migración añade el carnet con foto y la ficha del QR:
 - `blud_cancelar_cita(id)`: el donante cancela su cita.
 
 El QR del carnet es un enlace a `/verificar?id=BLD-000123&t=<código>`. Cualquier persona que lo escanee ve el carnet público: foto, nombre, cédula, ID, teléfono y tipo de sangre (`blud_carnet_publico`, que exige el código secreto del QR para que nadie pueda recorrer los IDs). El personal con sesión iniciada ve además nacimiento, sexo, correo, donaciones y próxima cita. Las fotos del bucket `fotos-donantes` se leen por enlace; solo el dueño puede subirlas o borrarlas. Un donante no puede agendar hasta tener foto, nombres, apellidos, cédula, teléfono, fecha de nacimiento, sexo y tipo de sangre guardados (en `/donante/donar` ve lo que le falta). Sus citas están en `/donante/citas`.
+
+### Chat en tiempo real (personal ↔ donante)
+
+Operador, soporte, dirección y laboratorio pueden abrir una conversación con un donante desde su ficha o desde **Mensajes**; el donante responde desde **Mensajes**. No usa `localStorage`: sin servidor, el chat no está disponible.
+
+- **Protocolo:** [Supabase Realtime](https://supabase.com/docs/guides/realtime/broadcast) sobre **WebSocket** (`wss://<proyecto>.supabase.co/realtime/v1`), con canales **Broadcast privados**. Es la opción que Supabase recomienda para chat; Postgres Changes queda para pruebas o pocos usuarios.
+- **Persistencia:** `chat_conversacion` y `chat_mensaje` en Postgres, con RLS y sin políticas: se leen y escriben solo con `blud_chat_abrir`, `blud_chat_conversaciones`, `blud_chat_mensajes`, `blud_chat_enviar` y `blud_chat_cerrar`, que validan el rol.
+- **Entrega:** al guardar un mensaje, la base lo emite con `realtime.send` a `chat:<conversación>` y avisa en `buzon:donante:<id>` y `buzon:personal`. Quién puede escuchar cada canal lo decide la política sobre `realtime.messages` (`blud_chat_canal_ok`): el donante solo los suyos; el personal, todos.
+
+### Datos del donante para donar
+
+- **Pre-registro (RF-D11):** además de lo anterior, dirección, ocupación y contacto de emergencia (nombre, teléfono y parentesco).
+- **Cuestionario de autoexclusión (RF-D4):** en *Mi perfil → Cuestionario de salud*, con las preguntas del test de elegibilidad. Vale 30 días; se guarda en `cuestionario_autoexclusion` y el personal lo ve en la ficha del donante.
+- **Próxima donación (RF-D6) y diferimientos de toda la red (RF-O5):** la ficha calcula la fecha (90 días hombres, 120 mujeres, o el fin del diferimiento). El personal ve que el donante está diferido, nunca el motivo.
+- **Contacto del laboratorio (RF-D10):** con una serología reactiva, el donante ve «El banco de sangre necesita hablar contigo» (sin resultados) y el personal, el aviso para contactarlo; `blud_registrar_contacto` deja constancia.
 
 Con la base conectada, `localStorage` queda solo como caché. El esquema exige datos que el modo demo no pide: sexo y fecha de nacimiento del donante, signos vitales antes de la extracción, e indicación clínica y consentimiento en la orden médica.
 

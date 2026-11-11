@@ -51,6 +51,7 @@ import { BLOOD_TYPES } from '../../lib/db';
                 <button type="button" id="btn-verificar" class="btn btn-primary w-full" disabled>Verificar y aprobar</button>
               </div>
               <a id="res-donar" href="/operador/donaciones" class="hidden btn btn-primary w-full">Registrar donación</a>
+              <a id="res-chat" href="/operador/mensajes" class="btn btn-secondary w-full">Escribir al donante</a>
             </FichaDonante>
           </div>
           <p id="res-vacio" class="hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn"></p>
@@ -164,11 +165,16 @@ import { BLOOD_TYPES } from '../../lib/db';
       ($('#btn-verificar') as HTMLButtonElement).disabled = true;
 
       // Primero lo que ya está en el registro; luego la ficha completa (foto, teléfono, citas) de la base.
+      ($('#res-chat') as HTMLAnchorElement).href = `/operador/mensajes?donante=${encodeURIComponent(d.id)}`;
       const card = $('#res-ficha');
       pintarFicha(card, fichaDeRegistro(d));
       if (usaSupabase()) {
         obtenerFicha(d.id)
-          .then((f) => { if (f && actual?.id === d.id) pintarFicha(card, { ...f, verificado: f.verificado || ver }); })
+          .then((f) => {
+            if (!f || actual?.id !== d.id) return;
+            pintarFicha(card, { ...f, verificado: f.verificado || ver });
+            if (f.contactoPendiente) ($('#res-chat') as HTMLAnchorElement).href += '&motivo=contacto_laboratorio';
+          })
           .catch(() => {});
       }
       $('#resultado').scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -6,7 +6,7 @@ import type { Role } from './roles';
 export type IconKey =
   | 'user' | 'drop' | 'clock' | 'pin' | 'help' | 'settings'
   | 'dashboard' | 'verify' | 'users' | 'file' | 'truck' | 'package'
-  | 'flask' | 'layers' | 'alert' | 'chart' | 'inbox' | 'search' | 'calendar' | 'lock';
+  | 'flask' | 'layers' | 'alert' | 'chart' | 'inbox' | 'search' | 'calendar' | 'lock' | 'chat';
 
 export interface MenuItem {
   label: string;
@@ -40,6 +40,7 @@ export const ICON_PATHS: Record<IconKey, string> = {
   chart: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
   inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
   calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/>',
   lock: '<rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
@@ -52,6 +53,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Mi perfil', hint: 'Tu carnet digital', href: '/donante/perfil', icon: 'user' },
       { label: 'Donar sangre', hint: 'Agenda tu donación', href: '/donante/donar', icon: 'drop' },
       { label: 'Mis citas', hint: 'Tus citas agendadas', href: '/donante/citas', icon: 'calendar' },
+      { label: 'Mensajes', hint: 'Habla con el banco de sangre', href: '/donante/mensajes', icon: 'chat' },
       { label: 'Mi historial', hint: 'Tus donaciones pasadas', href: '/donante/historial', icon: 'clock' },
       { label: 'Centros cercanos', hint: 'Dónde puedes donar', href: '/donante/centros', icon: 'pin' },
       { label: 'Soporte', hint: 'Estamos para ayudarte', href: '/donante/soporte', icon: 'help' },
@@ -65,6 +67,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     items: [
       { label: 'Panel', hint: 'Resumen y stock', href: '/operador/panel', icon: 'dashboard' },
       { label: 'Donantes', hint: 'Verificar y registrar', href: '/operador/donantes', icon: 'verify' },
+      { label: 'Mensajes', hint: 'Chat con donantes', href: '/operador/mensajes', icon: 'chat' },
       { label: 'Donaciones', hint: 'Registrar extracciones', href: '/operador/donaciones', icon: 'drop' },
       { label: 'Prescribir', hint: 'Cargar orden médica', href: '/operador/prescribir', icon: 'file' },
       { label: 'Entregas', hint: 'Despachar pedidos', href: '/operador/entregas', icon: 'truck' },
@@ -115,6 +118,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Panel', hint: 'Resumen de la atención', href: '/soporte/panel', icon: 'dashboard' },
       { label: 'Solicitudes', hint: 'Bandeja y respuestas', href: '/soporte/tickets', icon: 'inbox' },
       { label: 'Donantes', hint: 'Consultar un donante', href: '/soporte/donantes', icon: 'search' },
+      { label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu ecard del personal', href: '/soporte/perfil', icon: 'user' },

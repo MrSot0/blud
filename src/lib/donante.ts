@@ -33,7 +33,26 @@ export interface Donor {
   foto?: string;
   /** Código secreto del QR (con base real): sin él, la vista pública del carnet no muestra nada. */
   qr?: string;
+  // RF-D11: datos del pre-registro
+  direccion?: string;
+  ocupacion?: string;
+  contacto?: ContactoEmergencia;
+  // RF-D4 / RF-D6 / RF-O5 / RF-D10 (los calcula la base; en demo, este navegador)
+  cuestionario?: CuestionarioGuardado;
+  proximaDonacion?: string; // YYYY-MM-DD
+  diferimiento?: Diferimiento;
+  contactoPendiente?: boolean;
 }
+
+export interface ContactoEmergencia { nombre: string; telefono: string; parentesco: string }
+export interface Diferimiento { tipo: 'temporal' | 'permanente'; origen: 'evaluacion' | 'laboratorio'; desde?: string; hasta?: string; sede?: string }
+export interface RespuestaCuestionario { id: number; pregunta: string; respuesta: string; alerta: boolean }
+export interface AlertaCuestionario { pregunta: string; motivo: string; plazo?: string; permanente?: boolean }
+export interface CuestionarioGuardado { fecha: string; apto: boolean; alertas: AlertaCuestionario[]; respuestas?: RespuestaCuestionario[] }
+
+/** Días que vale el cuestionario de salud antes de tener que responderlo otra vez. */
+export const VIGENCIA_CUESTIONARIO_DIAS = 30;
+export const PARENTESCOS = ['Madre', 'Padre', 'Pareja', 'Hijo o hija', 'Hermano o hermana', 'Otro familiar', 'Amigo o amiga'];
 
 export interface Cita {
   id: string;
@@ -186,6 +205,8 @@ interface FichaRemota {
   id?: string; nombres?: string; apellidos?: string; cedula?: string; telefono?: string; email?: string;
   nacimiento?: string; sexo?: 'M' | 'F'; sangre?: string; registrado?: string; verificado?: boolean;
   foto?: string; donaciones?: number; qr?: string;
+  direccion?: string; ocupacion?: string; contactoEmergencia?: Partial<ContactoEmergencia>;
+  cuestionario?: CuestionarioGuardado; proximaDonacion?: string; diferimiento?: Diferimiento; contactoPendiente?: boolean;
 }
 
 /** Guarda el perfil local sin pasar por el registro (la base ya tiene la versión buena). */
@@ -222,6 +243,15 @@ export async function cargarFicha(): Promise<Donor> {
     // Con base real la foto es la de la base (una foto guardada solo en el navegador no la ve nadie más).
     foto: f.foto,
     qr: f.qr ?? local.qr,
+    direccion: f.direccion ?? local.direccion,
+    ocupacion: f.ocupacion ?? local.ocupacion,
+    contacto: f.contactoEmergencia?.nombre
+      ? { nombre: f.contactoEmergencia.nombre, telefono: f.contactoEmergencia.telefono ?? '', parentesco: f.contactoEmergencia.parentesco ?? '' }
+      : local.contacto,
+    cuestionario: f.cuestionario,
+    proximaDonacion: f.proximaDonacion,
+    diferimiento: f.diferimiento,
+    contactoPendiente: !!f.contactoPendiente,
   };
   guardarLocal(d);
   // Foto de cuando el sitio estaba en modo demo (solo en este navegador): se sube a la base una vez.
@@ -259,6 +289,12 @@ export async function guardarPerfil(patch: Partial<Donor>): Promise<{ ok: true; 
   const { data, error } = await c.rpc('blud_guardar', { p_coleccion: 'blud-db-donantes', p_item: item });
   const res = (data ?? {}) as { error?: string; aviso?: string };
   if (error || res.error) return { ok: false, error: error?.message ?? res.error! };
+  // RF-D11: dirección, ocupación y contacto de emergencia (columnas del donante).
+  const extra = await c.rpc('blud_guardar_datos_extra', { p: {
+    direccion: donor.direccion ?? '', ocupacion: donor.ocupacion ?? '',
+    contactoNombre: donor.contacto?.nombre ?? '', contactoTelefono: donor.contacto?.telefono ?? '', contactoParentesco: donor.contacto?.parentesco ?? '',
+  } });
+  if (extra.error) return { ok: false, error: extra.error.message };
   guardarLocal(donor);
   await sincronizar();
   return { ok: true, donor: await cargarFicha(), aviso: res.aviso };
@@ -362,11 +398,63 @@ export function requisitos(d: Donor): Requisito[] {
     { key: 'nacimiento', label: 'Fecha de nacimiento (18 a 65 años)', ok: edad !== null && edad >= 18 && edad <= 65 },
     { key: 'sexo', label: 'Sexo', ok: d.sexo === 'M' || d.sexo === 'F' },
     { key: 'sangre', label: 'Tipo de sangre', ok: SANGRES.includes(d.sangre) },
+    { key: 'direccion', label: 'Dirección', ok: (d.direccion ?? '').trim().length >= 8 },
+    { key: 'ocupacion', label: 'Ocupación', ok: (d.ocupacion ?? '').trim().length >= 3 },
+    { key: 'contacto', label: 'Contacto de emergencia', ok: !!d.contacto?.nombre?.trim() && (d.contacto?.telefono ?? '').replace(/\D/g, '').length >= 10 },
+    { key: 'cuestionario', label: `Cuestionario de salud (vigente ${VIGENCIA_CUESTIONARIO_DIAS} días)`, ok: cuestionarioVigente(d) },
     // Con base real, además, la ficha tiene que estar guardada en el banco de sangre (ID BLD-000123).
     ...(usaSupabase() ? [{ key: 'registro', label: 'Datos guardados en el banco de sangre', ok: /^BLD-\d+$/.test(d.id) }] : []),
   ];
 }
 export const faltantes = (d: Donor) => requisitos(d).filter((r) => !r.ok);
+
+/** El cuestionario se respondió hace menos de VIGENCIA_CUESTIONARIO_DIAS días. */
+export function cuestionarioVigente(d: Donor): boolean {
+  if (!d.cuestionario?.fecha) return false;
+  return Date.now() - new Date(d.cuestionario.fecha).getTime() < VIGENCIA_CUESTIONARIO_DIAS * 86400000;
+}
+
+/**
+ * RF-D6 / RF-O5: ¿puede donar ahora? Devuelve la fecha desde la que puede volver, o el bloqueo por diferimiento.
+ * Con base real lo calcula la base para toda la red; en demo, con el historial y el registro de este navegador.
+ */
+export function estadoDonacion(d: Donor): { puede: boolean; desde?: string; permanente?: boolean; diferido?: Diferimiento; motivoCuestionario?: AlertaCuestionario[] } {
+  const hoy = new Date().toISOString().slice(0, 10);
+  let desde = d.proximaDonacion;
+  let dif = d.diferimiento;
+  if (!usaSupabase()) {
+    const ultima = getHistorial()[0]?.fecha;
+    if (ultima) desde = sumarDiasISO(ultima, d.sexo === 'F' ? 120 : 90);
+    const reg = registro.get(d.id) ?? (d.cedula ? registro.find((r) => r.cedula === normCedula(d.cedula)) : undefined);
+    if (reg?.diferido) dif = { tipo: 'permanente', origen: 'laboratorio', desde: reg.diferido.desde };
+  }
+  if (dif?.tipo === 'permanente') return { puede: false, permanente: true, diferido: dif };
+  if (dif?.hasta && (!desde || dif.hasta > desde)) desde = dif.hasta;
+  if (d.cuestionario && !d.cuestionario.apto && cuestionarioVigente(d)) {
+    return { puede: false, motivoCuestionario: d.cuestionario.alertas, desde: desde && desde > hoy ? desde : undefined };
+  }
+  if (desde && desde > hoy) return { puede: false, desde, diferido: dif };
+  return { puede: true, desde };
+}
+const sumarDiasISO = (iso: string, n: number) => {
+  const t = new Date(iso + 'T00:00:00');
+  t.setDate(t.getDate() + n);
+  return t.toISOString().slice(0, 10);
+};
+
+/** RF-D4: guarda el cuestionario de autoexclusión (en la base para que lo vea el enfermero; en demo, aquí). */
+export async function guardarCuestionario(respuestas: RespuestaCuestionario[], alertas: AlertaCuestionario[]): Promise<{ ok: true; donor: Donor } | { ok: false; error: string }> {
+  const apto = !alertas.length;
+  const c = sb();
+  if (c) {
+    const { error } = await c.rpc('blud_guardar_cuestionario', { p_respuestas: respuestas, p_alertas: alertas, p_apto: apto });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, donor: await cargarFicha() };
+  }
+  const donor = { ...loadDonor(), cuestionario: { fecha: new Date().toISOString(), apto, alertas, respuestas } };
+  write(K_DONOR, donor);
+  return { ok: true, donor };
+}
 /** true cuando el perfil tiene todo lo necesario para agendar una donación. */
 export const puedeDonar = (d: Donor = loadDonor()) => faltantes(d).length === 0;
 
