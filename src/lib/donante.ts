@@ -31,6 +31,8 @@ export interface Donor {
   donaciones: number;
   /** Foto del carnet: ruta en Storage (con base real) o imagen comprimida en data URL (modo demo). */
   foto?: string;
+  /** Código secreto del QR (con base real): sin él, la vista pública del carnet no muestra nada. */
+  qr?: string;
 }
 
 export interface Cita {
@@ -183,7 +185,7 @@ export const cancelCita = (id?: string) => {
 interface FichaRemota {
   id?: string; nombres?: string; apellidos?: string; cedula?: string; telefono?: string; email?: string;
   nacimiento?: string; sexo?: 'M' | 'F'; sangre?: string; registrado?: string; verificado?: boolean;
-  foto?: string; donaciones?: number;
+  foto?: string; donaciones?: number; qr?: string;
 }
 
 /** Guarda el perfil local sin pasar por el registro (la base ya tiene la versión buena). */
@@ -218,6 +220,7 @@ export async function cargarFicha(): Promise<Donor> {
     kyc: f.verificado ? 'verified' : local.kyc === 'verified' ? 'none' : local.kyc,
     donaciones: Math.max(f.donaciones ?? 0, local.donaciones),
     foto: f.foto ?? local.foto,
+    qr: f.qr ?? local.qr,
   };
   guardarLocal(d);
   return d;
@@ -322,7 +325,8 @@ export async function urlFoto(foto?: string): Promise<string | null> {
  * Contenido del QR: un enlace a /verificar con el ID del carnet. Con la cámara del teléfono abre la ficha del donante
  * (solo el personal ve los datos); pegado o leído con un lector en el buscador del operador, también funciona.
  */
-export const qrDe = (d: Pick<Donor, 'id'>) => `${location.origin}/verificar?id=${encodeURIComponent(d.id)}`;
+export const qrDe = (d: Pick<Donor, 'id' | 'qr'>) =>
+  `${location.origin}/verificar?id=${encodeURIComponent(d.id)}${d.qr ? `&t=${encodeURIComponent(d.qr)}` : ''}`;
 
 // ---------- Requisitos para donar ----------
 export interface Requisito { key: string; label: string; ok: boolean }

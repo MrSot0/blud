@@ -46,13 +46,13 @@ const { id, class: cls = '' } = Astro.props;
   <dl class="ficha-datos">
     <div><dt>Cédula</dt><dd class="font-mono" data-ff="cedula">—</dd></div>
     <div><dt>Teléfono</dt><dd data-ff="telefono">—</dd></div>
-    <div><dt>Fecha de nacimiento</dt><dd data-ff="nacimiento">—</dd></div>
-    <div><dt>Sexo</dt><dd data-ff="sexo">—</dd></div>
-    <div><dt>Correo</dt><dd class="truncate" data-ff="email">—</dd></div>
-    <div><dt>Donante desde</dt><dd data-ff="registrado">—</dd></div>
-    <div><dt>Donaciones</dt><dd data-ff="donaciones">—</dd></div>
-    <div><dt>Última donación</dt><dd data-ff="ultima">—</dd></div>
-    <div class="ficha-ancho"><dt>Próxima cita</dt><dd data-ff="cita">—</dd></div>
+    <div data-ff-privado><dt>Fecha de nacimiento</dt><dd data-ff="nacimiento">—</dd></div>
+    <div data-ff-privado><dt>Sexo</dt><dd data-ff="sexo">—</dd></div>
+    <div data-ff-privado><dt>Correo</dt><dd class="truncate" data-ff="email">—</dd></div>
+    <div data-ff-privado><dt>Donante desde</dt><dd data-ff="registrado">—</dd></div>
+    <div data-ff-privado><dt>Donaciones</dt><dd data-ff="donaciones">—</dd></div>
+    <div data-ff-privado><dt>Última donación</dt><dd data-ff="ultima">—</dd></div>
+    <div class="ficha-ancho" data-ff-privado><dt>Próxima cita</dt><dd data-ff="cita">—</dd></div>
   </dl>
 
   <div class="ficha-acciones empty:hidden"><slot /></div>
@@ -110,6 +110,7 @@ const { id, class: cls = '' } = Astro.props;
   .ficha-sangre-valor { font-size: 2.25rem; font-weight: 900; line-height: 1; }
 
   .ficha-datos { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line); }
+  .ficha-datos > div[hidden] { display: none; }
   .ficha-datos > div { background: var(--surface); padding: 0.85rem 1.25rem; min-width: 0; }
   .ficha-datos dt { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
   .ficha-datos dd { margin-top: 0.2rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }

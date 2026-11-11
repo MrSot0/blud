@@ -12,8 +12,8 @@ import FichaDonante from '../components/app/FichaDonante.astro';
     <div class="mx-auto max-w-xl space-y-6" id="verificar">
       <div class="pb-6 border-b border-line text-center">
         <p class="font-mono text-xs font-semibold uppercase tracking-widest text-accent-ink">Carnet de donante</p>
-        <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Verificar donante</h1>
-        <p class="mt-1 text-sm sm:text-base text-ink-2">Compara la foto y los datos con la cédula física del donante.</p>
+        <h1 class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink" data-titulo>Verificar donante</h1>
+        <p class="mt-1 text-sm sm:text-base text-ink-2" data-subtitulo>Compara la foto y los datos con la cédula física del donante.</p>
       </div>
 
       <!-- Cargando -->
@@ -32,7 +32,10 @@ import FichaDonante from '../components/app/FichaDonante.astro';
       <!-- Ficha -->
       <div data-v="ficha" hidden>
         <FichaDonante id="ficha-verificar">
-          <div class="flex flex-col sm:flex-row gap-3">
+          <p class="text-center text-xs text-ink-3" data-f-nota hidden>
+            Vista pública del carnet. El personal de salud ve la ficha completa al <a href="/login" class="font-semibold text-accent-ink underline" data-f-login>iniciar sesión</a>.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3" data-f-botones>
             <a href="/operador/donantes" class="btn btn-primary flex-1" data-f-operar hidden>Verificar o registrar donación</a>
             <a href="/" class="btn btn-secondary flex-1" data-f-volver>Volver a mi panel</a>
           </div>
@@ -45,7 +48,7 @@ import FichaDonante from '../components/app/FichaDonante.astro';
 <script>
   import { getSession } from '../lib/auth';
   import { ROLE_HOME } from '../lib/roles';
-  import { obtenerFicha, pintarFicha, type Ficha } from '../lib/ficha';
+  import { obtenerCarnetPublico, obtenerFicha, pintarFicha, type Ficha } from '../lib/ficha';
 
   const STAFF = ['operador', 'laboratorio', 'soporte', 'director'];
   const root = document.getElementById('verificar')!;
@@ -71,15 +74,34 @@ import FichaDonante from '../components/app/FichaDonante.astro';
     await pintarFicha($('#ficha-verificar'), f);
   }
 
+  async function mostrarPublico(id: string, token: string, sinSesion: boolean) {
+    try {
+      const f = await obtenerCarnetPublico(id, token);
+      if (!f) {
+        return aviso('Carnet no válido', 'Este código no corresponde a ningún carnet vigente. Pide al donante que abra su carnet en la app y vuelve a escanearlo.');
+      }
+      $('[data-titulo]').textContent = 'Donante BLUD';
+      $('[data-subtitulo]').textContent = 'Carnet de donante de sangre registrado en BLUD.';
+      $('[data-f-nota]').hidden = false;
+      $<HTMLAnchorElement>('[data-f-login]').href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+      $('[data-f-operar]').hidden = true;
+      const volver = $<HTMLAnchorElement>('[data-f-volver]');
+      volver.textContent = sinSesion ? 'Conocer BLUD' : 'Volver a mi espacio';
+      volver.href = sinSesion ? '/' : '/donante/perfil';
+      ver('ficha');
+      await pintarFicha($('#ficha-verificar'), f, { publico: true });
+    } catch (e) {
+      aviso('No pudimos consultar el carnet', (e as Error).message);
+    }
+  }
+
   async function init() {
     const id = new URLSearchParams(location.search).get('id')?.trim() ?? '';
     if (!id) return aviso('Falta el código del carnet', 'Escanea de nuevo el código QR del carnet del donante.');
 
     const s = getSession();
-    if (!s) return aviso('Este carnet es de un donante BLUD', 'Solo el personal de salud puede ver la ficha del donante. Si trabajas en un centro, inicia sesión con tu cuenta.', true);
-    if (!STAFF.includes(s.role)) {
-      return aviso('Carnet de donante BLUD', 'Este código identifica a un donante registrado. Sus datos solo los ve el personal de salud del centro.');
-    }
+    // Cualquier persona (con o sin cuenta) ve el carnet público: foto, nombre, cédula, ID, teléfono y tipo de sangre.
+    if (!s || !STAFF.includes(s.role)) return mostrarPublico(id, new URLSearchParams(location.search).get('t') ?? '', !s);
 
     try {
       const f = await obtenerFicha(id);

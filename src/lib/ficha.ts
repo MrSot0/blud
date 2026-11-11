@@ -73,20 +73,40 @@ export async function obtenerFicha(q: string): Promise<Ficha | null> {
   return (data as Ficha | null) ?? null;
 }
 
-/** URL para mostrar la foto: data URL (demo) o URL firmada de 10 minutos (el personal puede leer el bucket). */
+/**
+ * Vista pública del carnet (cualquiera que escanee el QR): foto, nombre, cédula, ID, teléfono y tipo de sangre.
+ * Con base real exige el código secreto del QR; en modo demo sale del registro de este navegador.
+ */
+export async function obtenerCarnetPublico(id: string, token: string): Promise<Ficha | null> {
+  if (!usaSupabase()) {
+    const r = buscarRegistro(id);
+    if (!r) return null;
+    const f = fichaDeRegistro(r);
+    return { id: f.id, nombres: f.nombres, apellidos: f.apellidos, cedula: f.cedula, telefono: f.telefono, sangre: f.sangre, verificado: f.verificado, foto: f.foto };
+  }
+  if (!token) return null;
+  const { data, error } = await sb()!.rpc('blud_carnet_publico', { p_id: id, p_token: token });
+  if (error) throw new Error(error.message);
+  return (data as Ficha | null) ?? null;
+}
+
+/** URL para mostrar la foto: data URL (demo) o enlace del bucket fotos-donantes (lectura por enlace). */
 export async function urlFotoFicha(foto?: string): Promise<string | null> {
   if (!foto) return null;
   if (foto.startsWith('data:')) return foto;
   const c = sb();
   if (!c) return null;
-  const { data } = await c.storage.from('fotos-donantes').createSignedUrl(foto, 600);
-  return data?.signedUrl ?? null;
+  return c.storage.from('fotos-donantes').getPublicUrl(foto).data.publicUrl ?? null;
 }
 
 const nombreDe = (f: Ficha) => `${f.nombres ?? ''} ${f.apellidos ?? ''}`.trim() || 'Donante BLUD';
 
-/** Rellena un componente FichaDonante con la ficha. Devuelve cuando la foto (si hay) ya está puesta. */
-export async function pintarFicha(card: HTMLElement, f: Ficha): Promise<void> {
+/**
+ * Rellena un componente FichaDonante con la ficha. Devuelve cuando la foto (si hay) ya está puesta.
+ * Con `publico`, oculta lo que solo ve el personal (nacimiento, sexo, correo, donaciones, citas).
+ */
+export async function pintarFicha(card: HTMLElement, f: Ficha, opciones: { publico?: boolean } = {}): Promise<void> {
+  card.querySelectorAll<HTMLElement>('[data-ff-privado]').forEach((el) => (el.hidden = !!opciones.publico));
   const set = (k: string, v: string | number | undefined | null) => {
     const el = card.querySelector(`[data-ff="${k}"]`);
     if (el) el.textContent = v === undefined || v === null || v === '' ? '—' : String(v);

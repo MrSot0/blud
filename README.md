@@ -73,7 +73,7 @@ Con base real, el sitio usa el esquema del proyecto **Bloodonor** (`usuario`, `d
 
 Para conectarlo:
 
-1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
+1. En el SQL Editor de Bloodonor, ejecuta las migraciones en orden (`20261102120000_blud_adaptador.sql` y [`20261111120000_blud_carnet_citas.sql`](supabase/migrations/20261111120000_blud_carnet_citas.sql) y [`20261111150000_blud_carnet_publico.sql`](supabase/migrations/20261111150000_blud_carnet_publico.sql)) y luego [`supabase/seed.sql`](supabase/seed.sql) (cuentas y datos de ejemplo; todo se puede repetir).
 2. Despliega la función que crea las cuentas del personal: `supabase functions deploy crear-personal --project-ref flcuenjrgnlhbfmqpgav`.
 3. Añade `PUBLIC_SUPABASE_URL` y `PUBLIC_SUPABASE_ANON_KEY` (la clave publicable) en `.env.local` y en Vercel, y vuelve a desplegar.
 
@@ -86,7 +86,7 @@ La segunda migración añade el carnet con foto y la ficha del QR:
 - `blud_donante_ficha(q)`: el personal consulta un donante por el QR, el ID `BLD-000123` o la cédula.
 - `blud_cancelar_cita(id)`: el donante cancela su cita.
 
-El QR del carnet es un enlace a `/verificar?id=BLD-000123`: escaneado con la cámara del teléfono, el personal con sesión iniciada ve la ficha completa (foto, nombres, apellidos, cédula, teléfono, tipo de sangre, donaciones y próxima cita); cualquier otra persona solo ve que el carnet existe. Un donante no puede agendar hasta tener foto, nombres, apellidos, cédula, teléfono, fecha de nacimiento, sexo y tipo de sangre guardados (en `/donante/donar` ve lo que le falta). Sus citas están en `/donante/citas`.
+El QR del carnet es un enlace a `/verificar?id=BLD-000123&t=<código>`. Cualquier persona que lo escanee ve el carnet público: foto, nombre, cédula, ID, teléfono y tipo de sangre (`blud_carnet_publico`, que exige el código secreto del QR para que nadie pueda recorrer los IDs). El personal con sesión iniciada ve además nacimiento, sexo, correo, donaciones y próxima cita. Las fotos del bucket `fotos-donantes` se leen por enlace; solo el dueño puede subirlas o borrarlas. Un donante no puede agendar hasta tener foto, nombres, apellidos, cédula, teléfono, fecha de nacimiento, sexo y tipo de sangre guardados (en `/donante/donar` ve lo que le falta). Sus citas están en `/donante/citas`.
 
 Con la base conectada, `localStorage` queda solo como caché. El esquema exige datos que el modo demo no pide: sexo y fecha de nacimiento del donante, signos vitales antes de la extracción, e indicación clínica y consentimiento en la orden médica.
 
