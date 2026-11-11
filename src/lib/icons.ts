@@ -38,6 +38,7 @@ import playFill from '@phosphor-icons/core/assets/fill/play-fill.svg?raw';
 import clipboardText from '@phosphor-icons/core/assets/regular/clipboard-text.svg?raw';
 import checkBold from '@phosphor-icons/core/assets/bold/check-bold.svg?raw';
 import caretDown from '@phosphor-icons/core/assets/regular/caret-down.svg?raw';
+import funnel from '@phosphor-icons/core/assets/regular/funnel.svg?raw';
 import testTube from '@phosphor-icons/core/assets/regular/test-tube.svg?raw';
 import flask from '@phosphor-icons/core/assets/regular/flask.svg?raw';
 import thermometerCold from '@phosphor-icons/core/assets/regular/thermometer-cold.svg?raw';
@@ -118,6 +119,7 @@ export const icons = {
   'clipboard-text': clipboardText,
   check: checkBold,
   'caret-down': caretDown,
+  funnel: funnel,
   'test-tube': testTube,
   flask: flask,
   'thermometer-cold': thermometerCold,

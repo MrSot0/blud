@@ -43,23 +43,32 @@ const chipClass =
         />
       </div>
 
-      <!-- Filtros: fila deslizable con barra visible y arrastre con el ratón -->
-      <div class="chip-row relative -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2.5 pt-0.5 sm:-mx-6 sm:px-6" role="group" aria-label="Filtrar centros">
-        <label class="shrink-0">
-          <input type="radio" name="kind" value="all" class="sr-only" checked />
-          <span class={chipClass}>Todos</span>
-        </label>
-        {centerKinds.map((kind) => (
-          <label class="shrink-0">
-            <input type="radio" name="kind" value={kind.id} class="sr-only" />
-            <span class={chipClass}>{kind.label}</span>
-          </label>
-        ))}
-        <label class="shrink-0">
+      <!-- Filtros: un desplegable para el tipo de centro y un interruptor para "Abiertos ahora" (sin scroll horizontal) -->
+      <div class="mt-4 flex items-center gap-2" role="group" aria-label="Filtrar centros">
+        <div class="kind-menu relative min-w-0 flex-1" id="kind-menu">
+          <button type="button" id="kind-trigger" class="kind-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="kind-panel">
+            <Icon name="funnel" class="size-4 shrink-0 text-ink-3" />
+            <span class="min-w-0 flex-1 truncate text-left" id="kind-label">Todos los centros</span>
+            <Icon name="caret-down" class="kind-caret size-4 shrink-0 text-ink-3" />
+          </button>
+          <div id="kind-panel" class="kind-panel" role="presentation" hidden>
+            <label class="kind-opt">
+              <input type="radio" name="kind" value="all" class="sr-only" checked />
+              <span data-text="Todos los centros">Todos los centros</span>
+            </label>
+            {centerKinds.map((kind) => (
+              <label class="kind-opt">
+                <input type="radio" name="kind" value={kind.id} class="sr-only" />
+                <span data-text={kind.label}>{kind.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <label class="open-toggle">
           <input type="checkbox" name="open" id="open-now" class="sr-only" />
           <span class={chipClass}>
             <span class="size-2 rounded-full bg-ok" aria-hidden="true"></span>
-            Abiertos ahora
+            <span>Abiertos<span class="hidden sm:inline"> ahora</span></span>
           </span>
         </label>
       </div>
@@ -176,17 +185,48 @@ const chipClass =
     }
   }
 
-  /* La barra fina con acento viene de global.css; aquí solo el arrastre. */
-  .chip-row {
-    cursor: grab;
+  .kind-trigger {
+    display: flex;
+    width: 100%;
+    height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.85rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 150ms;
   }
-  .chip-row.is-dragging {
-    cursor: grabbing;
-    user-select: none;
+  .kind-trigger:hover { border-color: var(--ink-3); }
+  .kind-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .kind-trigger[aria-expanded="true"] { border-color: var(--ink); }
+  .kind-trigger[aria-expanded="true"] :global(.kind-caret) { transform: rotate(180deg); }
+  .kind-trigger :global(.kind-caret) { transition: transform 200ms var(--ease-out); }
+  .kind-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 6px);
+    z-index: 40;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 18px 40px -16px rgba(30, 36, 48, 0.28);
+    animation: kind-in 160ms var(--ease-out);
   }
-  .chip-row.is-dragging :global(.chip) {
-    pointer-events: none;
-  }
+  .kind-panel[hidden] { display: none; }
+  @keyframes kind-in { from { opacity: 0; transform: translateY(-6px); } }
+  .kind-opt { display: block; cursor: pointer; }
+  .kind-opt span { display: block; padding: 0.6rem 0.8rem; border-radius: 10px; font-size: 0.9rem; font-weight: 500; color: var(--ink-2); }
+  .kind-opt:hover span { background: var(--sunken); color: var(--ink); }
+  .kind-opt input:checked + span { background: var(--sunken); color: var(--ink); font-weight: 700; }
+  .kind-opt input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .open-toggle { flex: none; }
   input:checked + :global(.chip) {
     border-color: var(--ink);
     background: var(--ink);
@@ -487,7 +527,7 @@ const chipClass =
     search.value = '';
     openNow.checked = false;
     const all = document.querySelector<HTMLInputElement>('input[name="kind"][value="all"]');
-    if (all) all.checked = true;
+    if (all) { all.checked = true; all.dispatchEvent(new Event("change")); }
     applyFilters();
     search.focus();
   });
@@ -521,49 +561,28 @@ const chipClass =
 
   isDesktop.addEventListener('change', () => requestAnimationFrame(() => map?.invalidateSize()));
 
-  // ----- Fila de filtros deslizable -----
-  const chipRow = document.querySelector<HTMLElement>('.chip-row');
-  if (chipRow) {
-    // Arrastrar con el ratón; un arrastre no cuenta como clic en el filtro.
-    let startX = 0;
-    let startScroll = 0;
-    let dragging = false;
-    let moved = false;
-    chipRow.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'mouse' || e.button !== 0) return;
-      dragging = true;
-      moved = false;
-      startX = e.clientX;
-      startScroll = chipRow.scrollLeft;
-    });
-    window.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) > 5) {
-        moved = true;
-        chipRow.classList.add('is-dragging');
-      }
-      if (moved) chipRow.scrollLeft = startScroll - dx;
-    });
-    window.addEventListener('pointerup', () => {
-      dragging = false;
-      chipRow.classList.remove('is-dragging');
-    });
-    chipRow.addEventListener(
-      'click',
-      (e) => {
-        if (moved) {
-          e.preventDefault();
-          e.stopPropagation();
-          moved = false;
-        }
-      },
-      true
-    );
-
-    // Al llegar con el teclado a un filtro oculto, se desliza para mostrarlo.
-    chipRow.addEventListener('focusin', (e) => (e.target as HTMLElement).closest('label')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
-  }
+  // ----- Desplegable de tipo de centro -----
+  const kindTrigger = document.getElementById('kind-trigger') as HTMLButtonElement;
+  const kindPanel = document.getElementById('kind-panel') as HTMLElement;
+  const kindLabel = document.getElementById('kind-label') as HTMLElement;
+  const setMenu = (open: boolean) => {
+    kindPanel.hidden = !open;
+    kindTrigger.setAttribute('aria-expanded', String(open));
+  };
+  kindTrigger.addEventListener('click', () => setMenu(kindPanel.hidden));
+  document.querySelectorAll<HTMLInputElement>('input[name="kind"]').forEach((input) =>
+    input.addEventListener('change', () => {
+      kindLabel.textContent = input.nextElementSibling?.getAttribute('data-text') ?? 'Todos los centros';
+      setMenu(false);
+      kindTrigger.focus();
+    })
+  );
+  document.addEventListener('pointerdown', (e) => {
+    if (!kindPanel.hidden && !(e.target as HTMLElement).closest('#kind-menu')) setMenu(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !kindPanel.hidden) { setMenu(false); kindTrigger.focus(); }
+  });
 
   refreshOpenStatus();
   applyFilters({ fit: false });
