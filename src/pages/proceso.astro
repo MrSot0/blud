@@ -206,48 +206,53 @@ const colaD = (sw: number, W: number, H: number) => {
     </div>
   </section>
 
-  {escenas.map((e, zi) => (
-    <section id={`etapa-${e.id}`} class="escena relative bg-[#FBF7F3] text-[#1E2430]" data-escena={e.id} aria-labelledby={`h-${e.id}`}>
-      <div class="escena-stage sticky overflow-hidden">
-        <div class="escena-fondo absolute inset-0" aria-hidden="true"></div>
-        <div class="container-blud relative grid h-full items-center gap-6 py-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
-          <div class="escena-texto order-2 lg:order-1">
-            <p class="font-mono text-xs tracking-[0.3em] text-[#6B7383]">ETAPA {e.num} / 09</p>
-            <h2 id={`h-${e.id}`} class="mt-2 text-3xl font-bold sm:text-4xl">{e.titulo}</h2>
-            <ol class="pasos relative mt-6 min-h-36">
-              {e.pasos.map((p, i) => (
-                <li class="paso" data-at={p.at} data-activo={i === 0 ? '' : undefined}>
-                  <p class="text-lg font-semibold">{p.t}</p>
-                  <p class="mt-2 text-[#4A5363]">{p.d}</p>
-                </li>
-              ))}
-            </ol>
-            <div class="mt-8 h-1 w-full max-w-60 overflow-hidden rounded-full bg-[#ECE6E0]" aria-hidden="true">
-              <div class="progreso h-full origin-left rounded-full bg-[#E36F6B]"></div>
+  <!-- Un solo escenario fijo para todo el recorrido: el marco de la ilustración y la cola no se mueven; solo cambian el contenido y el texto. -->
+  <section id="recorrido" class="recorrido relative bg-[#FBF7F3] text-[#1E2430]" aria-label="Las 9 etapas del recorrido de la bolsa">
+    <div class="escena-stage sticky overflow-hidden">
+      {escenas.map((e) => <div class="escena-fondo" data-escena={e.id} aria-hidden="true"></div>)}
+      <div class="container-blud relative grid h-full items-center gap-6 py-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:gap-12">
+        <div class="textos order-2 lg:order-1">
+          {escenas.map((e) => (
+            <div class="escena-texto" id={`etapa-${e.id}`} data-escena={e.id} data-num={e.num} data-titulo={e.titulo} role="group" aria-labelledby={`h-${e.id}`}>
+              <p class="font-mono text-xs tracking-[0.3em] text-[#6B7383]">ETAPA {e.num} / 09</p>
+              <h2 id={`h-${e.id}`} class="mt-2 text-3xl font-bold sm:text-4xl">{e.titulo}</h2>
+              <ol class="pasos relative mt-6 min-h-36">
+                {e.pasos.map((p, i) => (
+                  <li class="paso" data-at={p.at} data-activo={i === 0 ? '' : undefined}>
+                    <p class="text-lg font-semibold">{p.t}</p>
+                    <p class="mt-2 text-[#4A5363]">{p.d}</p>
+                  </li>
+                ))}
+              </ol>
+              <div class="mt-8 h-1 w-full max-w-60 overflow-hidden rounded-full bg-[#ECE6E0]" aria-hidden="true">
+                <div class="progreso h-full origin-left rounded-full bg-[#E36F6B]"></div>
+              </div>
             </div>
-          </div>
-          <div class="escena-lamina order-1 lg:order-2" set:html={''} data-svg={e.id}></div>
+          ))}
         </div>
-
-        <!-- La cola de la bolsa sigue por aquí: una gota viaja por ella y una lupa de sangre muestra la etapa. -->
-        <div class="cola" aria-hidden="true" data-sw={zi % 2 ? 1 : -1}>
-          <svg class="cola-svg" viewBox="0 0 1280 700" preserveAspectRatio="none">
-            <g fill="none" stroke-linecap="round">
-              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
-              <path id={`cola-${e.id}`} class="cola-p cola-ruta" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
-              <path class="cola-p cola-flujo" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
-              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
-            </g>
-          </svg>
-          <span class="cola-marca"></span>
-          <div class="lupa">
-            <span class="lupa-cristal"><i></i><i></i><i></i></span>
-            <span class="lupa-texto"><small class="font-mono">{e.num}</small><b>{e.titulo}</b></span>
-          </div>
+        <div class="marco order-1 lg:order-2">
+          {escenas.map((e) => <div class="escena-lamina" set:html={''} data-svg={e.id} data-escena={e.id}></div>)}
         </div>
       </div>
-    </section>
-  ))}
+
+      <!-- Una sola cola recorre todo: nace en el borde, se acerca al contenido y vuelve al borde. Una gota la recorre y una lupa muestra la etapa. -->
+      <div class="cola" aria-hidden="true">
+        <svg class="cola-svg" viewBox="0 0 1280 700" preserveAspectRatio="none">
+          <g fill="none" stroke-linecap="round">
+            <path class="cola-p" d={colaD(1, 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
+            <path id="cola-ruta" class="cola-p cola-ruta" d={colaD(1, 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
+            <path class="cola-p cola-flujo" d={colaD(1, 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
+            <path class="cola-p" d={colaD(1, 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
+          </g>
+        </svg>
+        <span class="cola-marca"></span>
+        <div class="lupa">
+          <span class="lupa-cristal"><i></i><i></i><i></i></span>
+          <span class="lupa-texto"><small class="font-mono">{escenas[0].num}</small><b>{escenas[0].titulo}</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="fin relative bg-[#FBF7F3] py-24 text-center text-[#1E2430]">
     <svg class="fin-cola" aria-hidden="true" viewBox="0 0 1280 96">
@@ -966,16 +971,7 @@ const colaD = (sw: number, W: number, H: number) => {
   .hero-in:nth-child(2) { animation-delay: 80ms; } .hero-in:nth-child(3) { animation-delay: 160ms; } .hero-in:nth-child(4) { animation-delay: 240ms; } .hero-in:nth-child(5) { animation-delay: 320ms; } .hero-in:nth-child(6) { animation-delay: 400ms; }
   @keyframes entra { from { opacity: 0; transform: translateY(18px); } }
 
-  .escena { height: 300vh; }
-
-  /* Entrada de cada etapa: la lámina sube y el texto llega de costado. Solo si hay JS y movimiento. */
-  :global(html.proceso-anim) .escena-lamina { opacity: 0; transform: translateY(56px) scale(0.94) rotate(0.8deg); transition: opacity 800ms var(--ease-out), transform 1000ms var(--ease-out); }
-  :global(html.proceso-anim) .escena.dentro .escena-lamina { opacity: 1; transform: none; }
-  :global(html.proceso-anim) .escena-texto > * { opacity: 0; transform: translateX(-32px); transition: opacity 600ms var(--ease-out), transform 700ms var(--ease-out); }
-  :global(html.proceso-anim) .escena.dentro .escena-texto > * { opacity: 1; transform: none; }
-  :global(html.proceso-anim) .escena.dentro .escena-texto > :nth-child(2) { transition-delay: 90ms; }
-  :global(html.proceso-anim) .escena.dentro .escena-texto > :nth-child(3) { transition-delay: 180ms; }
-  :global(html.proceso-anim) .escena.dentro .escena-texto > :nth-child(4) { transition-delay: 270ms; }
+  .recorrido { height: calc(9 * 280vh); }
 
   /* Cierre */
   :global(html.proceso-anim) .fin-in { opacity: 0; transform: translateY(26px); transition: opacity 700ms var(--ease-out), transform 800ms var(--ease-out); }
@@ -1031,12 +1027,18 @@ const colaD = (sw: number, W: number, H: number) => {
   :global(.q-copo) { animation: copo 4.5s ease-in-out infinite alternate; }
   @keyframes copo { to { transform: translate(6px, 14px); opacity: 0.15; } }
   .escena-stage { top: var(--header-h); height: calc(100dvh - var(--header-h)); }
-  .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(240, 128, 118, 0.14), transparent 70%); }
-  .escena[data-escena='cita'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(123, 97, 255, 0.16), transparent 70%); }
-  .escena[data-escena='evaluacion'] .escena-fondo, .escena[data-escena='cuarentena'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
-  .escena[data-escena='serologia'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
-  .escena[data-escena='fraccionamiento'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
-  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 3rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
+  .escena-fondo { position: absolute; inset: 0; opacity: var(--v, 1); background: radial-gradient(55% 60% at 70% 45%, rgba(240, 128, 118, 0.14), transparent 70%); }
+  .escena-fondo[data-escena='cita'] { background: radial-gradient(55% 60% at 70% 45%, rgba(123, 97, 255, 0.16), transparent 70%); }
+  .escena-fondo[data-escena='evaluacion'], .escena-fondo[data-escena='cuarentena'] { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
+  .escena-fondo[data-escena='serologia'] { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
+  .escena-fondo[data-escena='fraccionamiento'] { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
+  /* El marco es fijo; solo cambia lo que hay dentro. */
+  .marco { position: relative; justify-self: center; width: min(100%, calc((100dvh - var(--header-h) - 3rem) * 4 / 3)); aspect-ratio: 4 / 3; border-radius: 28px; overflow: hidden; background: #FBF7F3; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
+  .escena-lamina { position: absolute; inset: 0; opacity: var(--v, 1); scale: calc(0.97 + 0.03 * var(--v, 1)); filter: blur(calc((1 - var(--v, 1)) * 5px)); }
+  .textos { position: relative; min-height: 22rem; }
+  .escena-texto { position: absolute; inset: 0 0 auto 0; opacity: var(--v, 1); translate: 0 calc(var(--dy, 0) * 1px); filter: blur(calc((1 - var(--v, 1)) * 4px)); }
+  .escena-lamina[data-off], .escena-texto[data-off], .escena-fondo[data-off] { visibility: hidden; }
+  .ilustracion { display: block; width: 100%; height: 100%; }
 
   /* El texto saliente se va rápido y el entrante llega después: nunca se ven dos encimados. */
   .paso { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(22px); filter: blur(3px); transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out), filter 140ms var(--ease-out); pointer-events: none; }
@@ -1056,10 +1058,6 @@ const colaD = (sw: number, W: number, H: number) => {
   @keyframes titila { to { opacity: 0.2; } }
 
   @media (prefers-reduced-motion: reduce) {
-    .escena { height: auto; }
-    .escena-stage { position: relative; top: 0; height: auto; }
-    .pasos { min-height: 0; }
-    .paso { position: static; opacity: 1; transform: none; filter: none; margin-bottom: 1.25rem; }
     .cola-marca { display: none; }
     .hero-bolsa, .h-gota { translate: none; rotate: none; }
     :global(.e-ola), :global(.t-sirena-r), :global(.t-sirena-a), :global(.t-star), .scroll-cue::after,
@@ -1311,22 +1309,51 @@ const colaD = (sw: number, W: number, H: number) => {
   }
 
   const crear: Record<string, () => ReturnType<typeof createTimeline>> = { cita, evaluacion, extraccion, cuarentena, serologia, fraccionamiento, inventario, solicitud, transfusion };
-  const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
-    const tl = crear[el.dataset.escena!]();
-    const cola = el.querySelector<HTMLElement>('.cola')!;
-    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280, alto: 700 };
+  const seccion = document.getElementById('recorrido')!;
+  const stage = seccion.querySelector<HTMLElement>('.escena-stage')!;
+  const escenas = [...seccion.querySelectorAll<HTMLElement>('.escena-texto')].map((texto) => {
+    const id = texto.dataset.escena!;
+    return {
+      id, texto,
+      lam: seccion.querySelector<HTMLElement>(`.escena-lamina[data-escena="${id}"]`)!,
+      fondo: seccion.querySelector<HTMLElement>(`.escena-fondo[data-escena="${id}"]`)!,
+      tl: crear[id](),
+      pasos: [...texto.querySelectorAll<HTMLElement>('.paso')],
+      barra: texto.querySelector<HTMLElement>('.progreso')!,
+      num: texto.dataset.num!, titulo: texto.dataset.titulo!, ult: -1,
+    };
   });
+  const N = escenas.length;
 
-  // Entrada de cada etapa y del cierre al llegar a la pantalla.
-  const io = new IntersectionObserver(
-    (entradas) => entradas.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('dentro'); io.unobserve(en.target); } }),
+  new IntersectionObserver(
+    (entradas) => entradas.forEach((en) => { if (en.isIntersecting) en.target.classList.add('dentro'); }),
     { rootMargin: '0px 0px -30% 0px' }
-  );
-  document.querySelectorAll('.escena, .fin').forEach((el) => io.observe(el));
+  ).observe(document.querySelector('.fin')!);
 
-  // La cola ocupa todo el ancho; la gota y la lupa la recorren a medida que avanza la etapa.
   const tramo = (v: number, a: number, b: number) => utils.clamp((v - a) / (b - a), 0, 1);
-  // La cola del inicio baja hasta el mismo carril (borde derecho) por donde entra la etapa 1.
+  const cola = stage.querySelector<HTMLElement>('.cola')!;
+  const ruta = cola.querySelector<SVGPathElement>('.cola-ruta')!;
+  const marca = cola.querySelector<HTMLElement>('.cola-marca')!;
+  const lupa = cola.querySelector<HTMLElement>('.lupa')!;
+  const lupaNum = lupa.querySelector('small')!;
+  const lupaTitulo = lupa.querySelector('b')!;
+  const dim = { W: 1280, H: 700, largo: 1 };
+
+  // La cola ocupa todo el escenario: nace en el borde, se acerca al marco de la ilustración y vuelve al borde.
+  const trazar = () => {
+    const W = Math.round(cola.clientWidth), H = Math.round(cola.clientHeight);
+    const marco = seccion.querySelector<HTMLElement>('.marco')!;
+    const cont = marco.offsetParent as HTMLElement;
+    const borde = W - 14;
+    const derechaContenido = cont.offsetLeft + marco.offsetLeft + marco.offsetWidth;
+    const Lc = utils.clamp(derechaContenido + 82, borde - 600, borde);
+    const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
+    const d = `M${P(borde, -0.04)} C ${P(borde, 0.18)}, ${P(Lc, 0.3)}, ${P(Lc, 0.5)} C ${P(Lc, 0.7)}, ${P(borde, 0.82)}, ${P(borde, 1.04)}`;
+    cola.querySelector('svg')!.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    cola.querySelectorAll('.cola-p').forEach((p) => p.setAttribute('d', d));
+    dim.W = W; dim.H = H; dim.largo = ruta.getTotalLength();
+  };
+  // La cola del inicio baja hasta el mismo borde por donde entra el escenario.
   const colaInicio = () => {
     const r = document.getElementById('h-tubo-ruta') as unknown as SVGPathElement | null;
     const m = r?.getScreenCTM();
@@ -1336,18 +1363,6 @@ const colaD = (sw: number, W: number, H: number) => {
     const d = `M210 470 C 210 545, ${a} 585, ${b} 615 S ${xu} 660, ${xu} 740 L ${xu} 1300`;
     document.querySelectorAll('.h-cola path').forEach((p) => p.setAttribute('d', d));
   };
-  const trazar = (e: (typeof escenas)[number]) => {
-    const W = Math.round(e.cola.clientWidth), H = Math.round(e.cola.clientHeight);
-    const L = W - 14, S = Number(e.cola.dataset.sw) * 9;
-    const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
-    const d = `M${P(L, -0.04)} C ${P(L, 0.2)}, ${P(L - S, 0.34)}, ${P(L - S, 0.5)} C ${P(L - S, 0.66)}, ${P(L, 0.8)}, ${P(L, 1.04)}`;
-    e.cola.querySelector('svg')!.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    e.cola.querySelectorAll('.cola-p').forEach((p) => p.setAttribute('d', d));
-    e.largo = e.ruta.getTotalLength();
-    e.ancho = W;
-    e.alto = H;
-  };
-  // Cierre: la cola llega por el mismo carril y se curva hasta la gota.
   const trazarFin = () => {
     const f = document.querySelector<SVGSVGElement>('.fin-cola');
     if (!f) return;
@@ -1355,54 +1370,86 @@ const colaD = (sw: number, W: number, H: number) => {
     f.setAttribute('viewBox', `0 0 ${W} 96`);
     f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${W - 14} -6 C ${W - 14} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
   };
-  const pintar = (e: (typeof escenas)[number]) => {
-    const m = e.m;
-    e.actual = m;
-    e.tl.seek(m * e.tl.duration);
-    e.barra.style.transform = `scaleX(${m})`;
-    let activo = 0;
-    e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= m + 0.001) activo = i; });
-    e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
-    // La gota recorre la cola; la lupa (vertical) va justo a su izquierda y un poco arriba, en el carril reservado.
-    const pt = e.ruta.getPointAtLength(e.largo * (0.04 + m * 0.92));
-    e.marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
-    const pw = e.lupa.offsetWidth, ph = e.lupa.offsetHeight;
-    const arriba = utils.clamp(pt.y - ph - 12, 8, e.alto - ph - 8);
-    e.lupa.style.transform = `translate(${pt.x - 22 - pw}px, ${arriba}px)`;
-    // La lupa hace un zoom suave al entrar y se despide al llegar al final de la etapa.
-    const entra = tramo(m, 0, 0.07), sale = tramo(m, 0.96, 1);
-    e.lupa.style.setProperty('--ls', String(0.55 + entra * 0.45 - sale * 0.1));
-    e.lupa.style.setProperty('--lo', String(entra * (1 - sale)));
-    e.lupa.style.setProperty('--lz', String(1.7 - entra * 0.7));
+
+  const F = reduce ? 0.0001 : 0.06; // ventana del cambio entre etapas (fracción de cada etapa)
+  const fijar = (el: HTMLElement, v: number, dy: number) => {
+    el.style.setProperty('--v', v.toFixed(3));
+    el.style.setProperty('--dy', dy.toFixed(1));
+    el.toggleAttribute('data-off', v < 0.004);
+  };
+  let tituloActual = '';
+  // g (0 a 1) es el avance de todo el recorrido. Las etapas pasadas quedan en su estado final y las futuras en el inicial.
+  const pintar = (g: number) => {
+    const x = utils.clamp(g, 0, 1) * N;
+    const i = Math.min(N - 1, Math.floor(x));
+    const m = x - i;
+    const entra = i > 0 ? tramo(m, 0, F) : 1;
+    const sale = i < N - 1 ? tramo(m, 1 - F, 1) : 0;
+    escenas.forEach((e, j) => {
+      const mj = j < i ? 1 : j > i ? 0 : m;
+      if (e.ult !== mj) {
+        e.ult = mj;
+        e.tl.seek(mj * e.tl.duration);
+        e.barra.style.transform = `scaleX(${mj})`;
+        let activo = 0;
+        e.pasos.forEach((p, k) => { if (Number(p.dataset.at) <= mj + 0.001) activo = k; });
+        e.pasos.forEach((p, k) => { p.toggleAttribute('data-activo', k === activo); p.toggleAttribute('data-pasado', k < activo); });
+      }
+      // Cambio entre etapas: la que sale y la que entra se funden a la vez; el marco no se mueve.
+      let v = 0, dy = 0;
+      if (j === i) { v = entra * (1 - sale); dy = (m < 0.5 ? 1 : -1) * (1 - v) * 18; }
+      else if (j === i - 1 && i > 0) { v = 1 - entra; dy = -(1 - v) * 18; }
+      else if (j === i + 1) { v = sale; dy = (1 - v) * 18; }
+      fijar(e.texto, v, dy);
+      fijar(e.lam, v, 0);
+      fijar(e.fondo, v, 0);
+    });
+    // Gota y lupa recorren la cola de punta a punta.
+    const pt = ruta.getPointAtLength(dim.largo * (0.07 + utils.clamp(g, 0, 1) * 0.86));
+    marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
+    marca.style.opacity = String(tramo(g, 0, 0.012) * (1 - tramo(g, 0.988, 1)));
+    const pw = lupa.offsetWidth, ph = lupa.offsetHeight;
+    const arriba = utils.clamp(pt.y - ph - 12, 8, dim.H - ph - 8);
+    lupa.style.transform = `translate(${pt.x - 22 - pw}px, ${arriba}px)`;
+    const actual = escenas[i];
+    if (actual.titulo !== tituloActual) { tituloActual = actual.titulo; lupaNum.textContent = actual.num; lupaTitulo.textContent = actual.titulo; }
+    lupa.style.setProperty('--lo', String(tramo(g, 0, 0.012) * (1 - tramo(g, 0.988, 1)) * (entra * (1 - sale) * 0.6 + 0.4)));
+    lupa.style.setProperty('--ls', String(0.7 + 0.3 * entra * (1 - sale)));
+    lupa.style.setProperty('--lz', String(1.4 - 0.4 * entra * (1 - sale)));
   };
 
-  if (reduce) {
-    // Sin movimiento: cada ilustración en su estado final y todos los textos visibles.
-    escenas.forEach((e) => { trazar(e); e.m = 0; pintar(e); e.tl.seek(e.tl.duration); e.barra.style.transform = 'scaleX(1)'; });
-  } else {
-    const medir = () => {
-      const vh = innerHeight;
-      escenas.forEach((e) => {
-        const r = e.el.getBoundingClientRect();
-        e.meta = utils.clamp(-r.top / (r.height - vh), 0, 1);
-      });
-    };
-    // Scroll con inercia: la animación persigue la posición del scroll en vez de saltar a ella.
-    const frame = () => {
-      escenas.forEach((e) => {
-        const d = e.meta - e.m;
-        if (Math.abs(d) < 0.0004) return;
-        e.m += d * 0.12;
-        pintar(e);
-      });
-      requestAnimationFrame(frame);
-    };
-    addEventListener('scroll', medir, { passive: true });
-    addEventListener('resize', () => { medir(); escenas.forEach((e) => { trazar(e); pintar(e); }); colaInicio(); trazarFin(); });
-    medir();
-    escenas.forEach((e) => { trazar(e); e.m = e.meta; pintar(e); });
-    colaInicio();
-    trazarFin();
+  // Avance del recorrido a partir del scroll, con inercia (la animación persigue al scroll en vez de saltar).
+  let meta = 0, g = 0;
+  const medir = () => {
+    const r = seccion.getBoundingClientRect();
+    const hh = parseFloat(getComputedStyle(stage).top) || 0;
+    meta = utils.clamp((hh - r.top) / (r.height - stage.clientHeight), 0, 1);
+  };
+  const frame = () => {
+    const d = meta - g;
+    if (Math.abs(d) > 0.00003) {
+      g = reduce ? meta : g + d * 0.12;
+      pintar(g);
+    }
     requestAnimationFrame(frame);
-  }
+  };
+  const ajustar = () => { medir(); trazar(); colaInicio(); trazarFin(); pintar(g); };
+  addEventListener('scroll', medir, { passive: true });
+  addEventListener('resize', ajustar);
+  medir(); g = meta; trazar(); colaInicio(); trazarFin(); pintar(g);
+  requestAnimationFrame(frame);
+  addEventListener('load', ajustar);
+
+  // Las etiquetas del inicio llevan a la etapa dentro del escenario fijo.
+  document.querySelectorAll<HTMLAnchorElement>('a[href^="#etapa-"]').forEach((a) => {
+    a.addEventListener('click', (ev) => {
+      const k = escenas.findIndex((e) => `#etapa-${e.id}` === a.getAttribute('href'));
+      if (k < 0) return;
+      ev.preventDefault();
+      const r = seccion.getBoundingClientRect();
+      const hh = parseFloat(getComputedStyle(stage).top) || 0;
+      const rango = r.height - stage.clientHeight;
+      scrollTo({ top: scrollY + (r.top - hh) + ((k + 0.1) / N) * rango, behavior: reduce ? 'auto' : 'smooth' });
+    });
+  });
 </script>
