@@ -1,143 +1,489 @@
 ---
 // src/components/app/AccountSettings.astro
-// Configuración de la cuenta: datos del usuario + cambio de contraseña.
-// Reutilizable para operador, laboratorio y director:  <AccountSettings />
+// Configuración de la cuenta para todos los roles, con índice lateral como "Mi perfil".
+//   Todos:     Datos de la cuenta · Seguridad · Apariencia
+//   Donante:   + Notificaciones · Privacidad y datos      (sin MPPS, cargo ni sede)
+//   Personal:  los datos de la cuenta incluyen MPPS / ID de personal, cargo y sede (solo lectura)
+import type { Role } from '../../lib/roles';
+
+interface Props {
+  role: Role;
+}
+const { role } = Astro.props;
+const esDonante = role === 'donante';
+
+const ICONOS = {
+  cuenta: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  seguridad: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  apariencia: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  avisos: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  privacidad: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+};
+
+const vistas = [
+  { id: 'cuenta', titulo: 'Datos de la cuenta', hint: esDonante ? 'Nombre, correo y teléfono' : 'Tus datos y tu cargo' },
+  { id: 'seguridad', titulo: 'Seguridad', hint: 'Contraseña y sesiones' },
+  { id: 'apariencia', titulo: 'Apariencia', hint: 'Tema claro u oscuro' },
+  ...(esDonante
+    ? [
+        { id: 'avisos', titulo: 'Notificaciones', hint: 'Recordatorios y urgencias' },
+        { id: 'privacidad', titulo: 'Privacidad y datos', hint: 'Tu carnet y tu información' },
+      ]
+    : []),
+] as const;
+
+const avisos = [
+  { k: 'recordatorios', titulo: 'Recordatorios de cita', texto: 'Un aviso el día antes de tu cita para donar.' },
+  { k: 'urgencias', titulo: 'Solicitudes urgentes', texto: 'Cuando un centro cercano necesite tu tipo de sangre.' },
+  { k: 'novedades', titulo: 'Novedades de BLUD', texto: 'Campañas, jornadas de donación y mejoras de la app.' },
+];
 ---
 
-<div class="container-blud py-8 space-y-8" data-account>
+<div class="container-blud py-8 space-y-8" data-account data-role={role}>
   <div class="pb-6 border-b border-line">
     <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Configuración</h1>
-    <p class="text-ink-2 text-sm sm:text-base mt-1">Actualiza los datos de tu cuenta y la seguridad de tu acceso.</p>
+    <p class="text-ink-2 text-sm sm:text-base mt-1">
+      {esDonante ? 'Tu cuenta, tu seguridad y cómo quieres que te avisemos.' : 'Los datos de tu cuenta y la seguridad de tu acceso.'}
+    </p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-datos">
-      <h2 id="h-datos" class="text-lg font-bold text-ink border-b border-line pb-3">Datos de la cuenta</h2>
-      <form data-datos class="space-y-4" novalidate>
-        <div>
-          <label for="c-nombre" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nombre completo</label>
-          <input id="c-nombre" class="field" autocomplete="name" required />
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="c-email" class="block text-xs font-bold uppercase text-ink-2 mb-1">Correo</label>
-            <input id="c-email" type="email" class="field" autocomplete="email" required />
-          </div>
-          <div>
-            <label for="c-tel" class="block text-xs font-bold uppercase text-ink-2 mb-1">Teléfono</label>
-            <input id="c-tel" type="tel" class="field" autocomplete="tel" placeholder="+58 414 1234567" />
-          </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="c-mpps" data-lbl-mpps class="block text-xs font-bold uppercase text-ink-2 mb-1">MPPS / colegiado</label>
-            <input id="c-mpps" class="field bg-sunken" readonly />
-          </div>
-          <div>
-            <label for="c-cargo" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cargo</label>
-            <input id="c-cargo" class="field bg-sunken" readonly />
-          </div>
-        </div>
-        <div>
-          <label for="c-sede" class="block text-xs font-bold uppercase text-ink-2 mb-1">Sede asignada</label>
-          <input id="c-sede" class="field bg-sunken" readonly aria-describedby="c-ayuda" />
-          <p id="c-ayuda" class="mt-1 text-xs text-ink-3">MPPS (o ID de personal), cargo y sede los asigna la dirección. Para cambiarlos, contacta al director.</p>
-        </div>
-        <p data-datos-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
-        <button type="submit" class="btn btn-primary w-full">Guardar cambios</button>
-      </form>
-    </section>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- Índice lateral -->
+    <aside class="lg:col-span-4 panel p-4 space-y-1" role="tablist" aria-label="Opciones de configuración">
+      {vistas.map((v, i) => (
+        <button
+          type="button"
+          role="tab"
+          id={`tab-${v.id}`}
+          aria-controls={`vista-${v.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          data-vista={v.id}
+          class="cfg-tab w-full flex items-center gap-3 px-4 py-3 rounded-control text-sm text-left transition-colors"
+        >
+          <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-ink-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICONOS[v.id]} />
+          <span>
+            <span class="block font-bold text-ink">{v.titulo}</span>
+            <span class="block text-xs text-ink-3">{v.hint}</span>
+          </span>
+        </button>
+      ))}
+    </aside>
 
-    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-clave">
-      <h2 id="h-clave" class="text-lg font-bold text-ink border-b border-line pb-3">Contraseña</h2>
-      <form data-clave class="space-y-4" novalidate>
-        <div>
-          <label for="c-actual" class="block text-xs font-bold uppercase text-ink-2 mb-1">Contraseña actual</label>
-          <input id="c-actual" type="password" class="field" autocomplete="current-password" required />
+    <div class="lg:col-span-8 space-y-6">
+      <!-- ============ Datos de la cuenta ============ -->
+      <section id="vista-cuenta" data-frame="cuenta" role="tabpanel" aria-labelledby="tab-cuenta" class="panel p-6 sm:p-8 space-y-5">
+        <div class="border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink">Datos de la cuenta</h2>
+          <p class="text-xs sm:text-sm text-ink-3">Con estos datos te identificamos y te contactamos.</p>
         </div>
-        <div>
-          <label for="c-nueva" class="block text-xs font-bold uppercase text-ink-2 mb-1">Nueva contraseña</label>
-          <input id="c-nueva" type="password" class="field" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres, con un número" required />
-          <div class="mt-2 h-1.5 rounded-full bg-sunken overflow-hidden" aria-hidden="true">
-            <div data-fuerza class="h-full w-0 rounded-full transition-all duration-300"></div>
+        <form data-datos class="space-y-4" novalidate>
+          <div>
+            <label for="c-nombre" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Nombre completo</label>
+            <input id="c-nombre" class="field" autocomplete="name" required />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="c-email" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Correo</label>
+              <input id="c-email" type="email" class="field" autocomplete="email" required />
+              <p class="hidden mt-1 text-xs text-ink-3" data-email-lock>Es el correo con el que inicias sesión.</p>
+            </div>
+            <div>
+              <label for="c-tel" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Teléfono</label>
+              <input id="c-tel" type="tel" class="field" autocomplete="tel" placeholder="+58 414 1234567" />
+            </div>
+          </div>
+
+          {!esDonante && (
+            <div class="space-y-4 rounded-control bg-sunken p-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label for="c-mpps" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">{role === 'soporte' ? 'ID de personal' : 'MPPS / colegiado'}</label>
+                  <input id="c-mpps" class="field" readonly />
+                </div>
+                <div>
+                  <label for="c-cargo" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Cargo</label>
+                  <input id="c-cargo" class="field" readonly />
+                </div>
+              </div>
+              <div>
+                <label for="c-sede" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Sede asignada</label>
+                <input id="c-sede" class="field" readonly aria-describedby="c-ayuda" />
+              </div>
+              <p id="c-ayuda" class="text-xs text-ink-3">{role === 'soporte' ? 'El ID de personal' : 'El MPPS'}, el cargo y la sede los asigna la dirección. Para cambiarlos, contacta al director.</p>
+            </div>
+          )}
+
+          {esDonante && (
+            <p class="rounded-control bg-sunken px-4 py-3 text-sm text-ink-2">
+              Tu cédula, fecha de nacimiento, foto y tipo de sangre se editan en <a href="/donante/perfil?vista=datos" class="font-semibold text-accent-ink underline">Mi perfil → Datos personales</a>.
+            </p>
+          )}
+
+          <p data-datos-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+          <div class="flex justify-center pt-1">
+            <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Guardar cambios</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ============ Seguridad ============ -->
+      <section id="vista-seguridad" data-frame="seguridad" role="tabpanel" aria-labelledby="tab-seguridad" class="hidden space-y-6">
+        <div class="panel p-6 sm:p-8 space-y-5">
+          <div class="border-b border-line pb-4">
+            <h2 class="text-lg font-bold text-ink">Contraseña</h2>
+            <p class="text-xs sm:text-sm text-ink-3">Usa al menos 8 caracteres con letras y números.</p>
+          </div>
+          <form data-clave class="space-y-4" novalidate>
+            <div>
+              <label for="c-actual" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Contraseña actual</label>
+              <input id="c-actual" type="password" class="field" autocomplete="current-password" required />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="c-nueva" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Nueva contraseña</label>
+                <input id="c-nueva" type="password" class="field" autocomplete="new-password" minlength="8" required />
+                <div class="mt-2 h-1.5 rounded-full bg-sunken overflow-hidden" aria-hidden="true">
+                  <div data-fuerza class="h-full w-0 rounded-full transition-all duration-300"></div>
+                </div>
+                <p class="mt-1 text-xs text-ink-3" data-fuerza-txt></p>
+              </div>
+              <div>
+                <label for="c-conf" class="block text-xs font-bold uppercase tracking-wider text-ink-2 mb-1">Confirmar nueva contraseña</label>
+                <input id="c-conf" type="password" class="field" autocomplete="new-password" required />
+              </div>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
+              <input type="checkbox" data-ver class="size-4 rounded accent-[var(--accent)]" /> Mostrar contraseñas
+            </label>
+            <p data-clave-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <div class="flex justify-center pt-1">
+              <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Actualizar contraseña</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel p-6 sm:p-8 space-y-4">
+          <div class="border-b border-line pb-4">
+            <h2 class="text-lg font-bold text-ink">Sesiones</h2>
+            <p class="text-xs sm:text-sm text-ink-3">Si usaste tu cuenta en un equipo ajeno o perdiste tu teléfono, cierra la sesión en todos lados.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button type="button" class="btn btn-secondary flex-1" data-salir>Cerrar sesión en este dispositivo</button>
+            <button type="button" class="btn btn-secondary flex-1" data-salir-todo hidden>Cerrar sesión en todos los dispositivos</button>
           </div>
         </div>
-        <div>
-          <label for="c-conf" class="block text-xs font-bold uppercase text-ink-2 mb-1">Confirmar nueva contraseña</label>
-          <input id="c-conf" type="password" class="field" autocomplete="new-password" required />
+      </section>
+
+      <!-- ============ Apariencia ============ -->
+      <section id="vista-apariencia" data-frame="apariencia" role="tabpanel" aria-labelledby="tab-apariencia" class="hidden panel p-6 sm:p-8 space-y-5">
+        <div class="border-b border-line pb-4">
+          <h2 class="text-lg font-bold text-ink">Apariencia</h2>
+          <p class="text-xs sm:text-sm text-ink-3">Elige cómo se ve BLUD en este dispositivo.</p>
         </div>
-        <label class="flex items-center gap-2 text-sm text-ink-2 cursor-pointer">
-          <input type="checkbox" data-ver class="accent-[var(--accent)]" /> Mostrar contraseñas
-        </label>
-        <p data-clave-err class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
-        <button type="submit" class="btn btn-secondary w-full">Actualizar contraseña</button>
-      </form>
-    </section>
+        <fieldset class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <legend class="sr-only">Tema</legend>
+          {[
+            { v: 'light', t: 'Claro', d: 'Fondo blanco' },
+            { v: 'dark', t: 'Oscuro', d: 'Descansa la vista de noche' },
+            { v: 'auto', t: 'Automático', d: 'Igual que tu dispositivo' },
+          ].map((o) => (
+            <label class="tema">
+              <input type="radio" name="tema" value={o.v} class="sr-only" />
+              <span class={`tema-muestra tema-${o.v}`} aria-hidden="true"><span></span><span></span><span></span></span>
+              <span class="block font-bold text-ink text-sm">{o.t}</span>
+              <span class="block text-xs text-ink-3">{o.d}</span>
+            </label>
+          ))}
+        </fieldset>
+      </section>
+
+      {esDonante && (
+        <>
+          <!-- ============ Notificaciones ============ -->
+          <section id="vista-avisos" data-frame="avisos" role="tabpanel" aria-labelledby="tab-avisos" class="hidden panel p-6 sm:p-8 space-y-5">
+            <div class="border-b border-line pb-4">
+              <h2 class="text-lg font-bold text-ink">Notificaciones</h2>
+              <p class="text-xs sm:text-sm text-ink-3">Elige qué avisos quieres recibir. Por ahora esta preferencia se guarda en este dispositivo.</p>
+            </div>
+            <ul class="divide-y divide-line">
+              {avisos.map((a) => (
+                <li class="flex items-center justify-between gap-4 py-4">
+                  <span class="min-w-0">
+                    <span class="block font-semibold text-ink text-sm" id={`av-${a.k}`}>{a.titulo}</span>
+                    <span class="block text-xs text-ink-3">{a.texto}</span>
+                  </span>
+                  <button type="button" role="switch" aria-checked="false" aria-labelledby={`av-${a.k}`} class="switch" data-aviso={a.k}>
+                    <span aria-hidden="true"></span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <!-- ============ Privacidad y datos ============ -->
+          <section id="vista-privacidad" data-frame="privacidad" role="tabpanel" aria-labelledby="tab-privacidad" class="hidden space-y-6">
+            <div class="panel p-6 sm:p-8 space-y-4">
+              <div class="border-b border-line pb-4">
+                <h2 class="text-lg font-bold text-ink">Qué muestra tu carnet</h2>
+                <p class="text-xs sm:text-sm text-ink-3">Así se ve tu información cuando alguien escanea el código QR.</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="rounded-control bg-sunken p-4">
+                  <p class="text-xs font-bold uppercase tracking-wider text-ink-2">Cualquier persona</p>
+                  <p class="mt-1 text-sm text-ink">Foto, nombre, cédula, ID de donante, teléfono y tipo de sangre.</p>
+                </div>
+                <div class="rounded-control bg-sunken p-4">
+                  <p class="text-xs font-bold uppercase tracking-wider text-ink-2">Personal de salud</p>
+                  <p class="mt-1 text-sm text-ink">Lo anterior, más fecha de nacimiento, sexo, correo, donaciones y próxima cita.</p>
+                </div>
+              </div>
+              <a href="/donante/perfil" class="btn btn-secondary w-full sm:w-auto">Ver mi carnet</a>
+            </div>
+
+            <div class="panel p-6 sm:p-8 space-y-4">
+              <div class="border-b border-line pb-4">
+                <h2 class="text-lg font-bold text-ink">Tus datos</h2>
+                <p class="text-xs sm:text-sm text-ink-3">Descarga una copia o limpia lo que este dispositivo guarda.</p>
+              </div>
+              <ul class="divide-y divide-line">
+                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
+                  <span>
+                    <span class="block font-semibold text-ink text-sm">Descargar mis datos</span>
+                    <span class="block text-xs text-ink-3">Perfil, citas, historial y preferencias en un archivo.</span>
+                  </span>
+                  <button type="button" class="btn btn-secondary shrink-0" data-exportar>Descargar</button>
+                </li>
+                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
+                  <span>
+                    <span class="block font-semibold text-ink text-sm">Borrar datos de este dispositivo</span>
+                    <span class="block text-xs text-ink-3" data-borrar-txt>Quita la copia guardada en este navegador.</span>
+                  </span>
+                  <button type="button" class="btn btn-secondary shrink-0" data-borrar>Borrar</button>
+                </li>
+                <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
+                  <span>
+                    <span class="block font-semibold text-accent-ink text-sm">Eliminar mi cuenta</span>
+                    <span class="block text-xs text-ink-3">Escríbenos y te explicamos qué datos se borran y cuáles conserva el banco de sangre.</span>
+                  </span>
+                  <a href="/donante/soporte" class="btn btn-secondary shrink-0">Solicitar a soporte</a>
+                </li>
+              </ul>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
   </div>
 </div>
 
+<style>
+  .cfg-tab { color: var(--ink-2); }
+  .cfg-tab:hover { background: var(--sunken); }
+  .cfg-tab[aria-selected='true'] { background: var(--sunken); color: var(--ink); }
+
+  /* Tarjetas de tema */
+  .tema {
+    display: block; cursor: pointer; padding: 0.75rem; border-radius: 1rem;
+    border: 2px solid var(--line); background: var(--surface); transition: border-color 160ms, box-shadow 160ms;
+  }
+  .tema:hover { border-color: var(--line-strong); }
+  .tema:has(input:checked) { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent); }
+  .tema:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tema-muestra {
+    display: grid; grid-template-columns: 1fr 2fr; grid-template-rows: 1fr 1fr; gap: 4px;
+    height: 4.5rem; margin-bottom: 0.6rem; padding: 6px; border-radius: 0.6rem; border: 1px solid var(--line);
+  }
+  .tema-muestra span { border-radius: 4px; }
+  .tema-muestra span:first-child { grid-row: span 2; }
+  .tema-light { background: #f5f6f8; }
+  .tema-light span { background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+  .tema-light span:last-child { background: #CA2B2B; }
+  .tema-dark { background: #121418; }
+  .tema-dark span { background: #1e2127; }
+  .tema-dark span:last-child { background: #CA2B2B; }
+  .tema-auto { background: linear-gradient(135deg, #f5f6f8 50%, #121418 50%); }
+  .tema-auto span { background: rgb(127 127 127 / 0.35); }
+  .tema-auto span:last-child { background: #CA2B2B; }
+
+  /* Interruptor */
+  .switch {
+    position: relative; flex-shrink: 0; width: 2.75rem; height: 1.6rem; border-radius: 9999px;
+    background: var(--line-strong); cursor: pointer; transition: background 200ms;
+  }
+  .switch span {
+    position: absolute; top: 0.2rem; left: 0.2rem; width: 1.2rem; height: 1.2rem; border-radius: 9999px;
+    background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); transition: transform 200ms;
+  }
+  .switch[aria-checked='true'] { background: var(--accent); }
+  .switch[aria-checked='true'] span { transform: translateX(1.15rem); }
+  .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .switch, .switch span { transition: none; } }
+</style>
+
 <script>
-  import { changePassword, getSession, updateAccount } from '../../lib/auth';
-  import { toast } from '../../lib/ui';
+  import { changePassword, getSession, logout, updateAccount } from '../../lib/auth';
+  import { sb, usaSupabase } from '../../lib/supabase';
+  import { downloadFile, toast } from '../../lib/ui';
+
+  type Vista = 'cuenta' | 'seguridad' | 'apariencia' | 'avisos' | 'privacidad';
 
   function init() {
     const root = document.querySelector<HTMLElement>('[data-account]');
     if (!root || root.dataset.ready) return;
     root.dataset.ready = '1';
-    const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
-    const val = (id: string) => q<HTMLInputElement>('#' + id).value;
+    const esDonante = root.dataset.role === 'donante';
+    const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s);
+    const val = (id: string) => q<HTMLInputElement>('#' + id)!.value;
     const show = (el: HTMLElement, m: string) => { el.textContent = m; el.classList.remove('hidden'); };
 
+    // ---------- Índice lateral ----------
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-vista]'));
+    const setVista = (v: Vista, foco = false) => {
+      if (!tabs.some((t) => t.dataset.vista === v)) v = 'cuenta';
+      root.querySelectorAll<HTMLElement>('[data-frame]').forEach((f) => f.classList.toggle('hidden', f.dataset.frame !== v));
+      tabs.forEach((t) => {
+        const on = t.dataset.vista === v;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        if (on && foco) t.focus();
+      });
+      try { history.replaceState(null, '', `?vista=${v}`); } catch {}
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => setVista(t.dataset.vista as Vista));
+      t.addEventListener('keydown', (e) => {
+        const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        setVista(tabs[(i + d + tabs.length) % tabs.length].dataset.vista as Vista, true);
+      });
+    });
+    setVista((new URLSearchParams(location.search).get('vista') as Vista) || 'cuenta');
+
+    // ---------- Datos de la cuenta ----------
+    const email = q<HTMLInputElement>('#c-email')!;
+    if (usaSupabase()) {
+      email.readOnly = true;
+      email.classList.add('opacity-70');
+      q('[data-email-lock]')?.classList.remove('hidden');
+    }
     function fill() {
       const s = getSession();
       if (!s) return;
-      q<HTMLInputElement>('#c-nombre').value = s.name;
-      q<HTMLInputElement>('#c-email').value = s.email;
-      q<HTMLInputElement>('#c-tel').value = s.telefono ?? '';
-      q<HTMLInputElement>('#c-mpps').value = s.colegiado ?? '';
-      q<HTMLInputElement>('#c-cargo').value = s.cargo ?? '';
-      q<HTMLInputElement>('#c-sede').value = s.sede ?? '';
-      q('[data-lbl-mpps]').textContent = s.role === 'soporte' ? 'ID de personal' : 'MPPS / colegiado';
+      q<HTMLInputElement>('#c-nombre')!.value = s.name;
+      email.value = s.email;
+      q<HTMLInputElement>('#c-tel')!.value = s.telefono ?? '';
+      const set = (id: string, v?: string) => { const el = q<HTMLInputElement>('#' + id); if (el) el.value = v || '—'; };
+      set('c-mpps', s.colegiado);
+      set('c-cargo', s.cargo);
+      set('c-sede', s.sede);
     }
     fill();
 
-    const datos = q<HTMLFormElement>('[data-datos]');
-    datos.addEventListener('submit', async (e) => {
+    q<HTMLFormElement>('[data-datos]')!.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const err = q('[data-datos-err]');
+      const err = q('[data-datos-err]')!;
       err.classList.add('hidden');
-      const r = await updateAccount({ name: val('c-nombre'), email: val('c-email'), telefono: val('c-tel') });
+      const nombre = val('c-nombre').trim();
+      const tel = val('c-tel').trim();
+      if (nombre.split(/\s+/).length < 2) return show(err, 'Escribe tu nombre y tu apellido.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('c-email').trim())) return show(err, 'Revisa tu correo electrónico.');
+      if (tel && (/[^\d\s+()-]/.test(tel) || tel.replace(/\D/g, '').length < 10)) return show(err, 'Revisa tu teléfono: por ejemplo +58 414 1234567.');
+      const r = await updateAccount({ name: nombre, email: val('c-email'), telefono: tel });
       if (!r.ok) return show(err, r.error);
       fill();
-      toast('¡Datos actualizados!');
+      toast('Datos guardados.');
     });
 
-    // Fuerza de la nueva contraseña
-    const bar = q('[data-fuerza]');
-    q('#c-nueva').addEventListener('input', () => {
+    // ---------- Seguridad ----------
+    const bar = q('[data-fuerza]')!;
+    const barTxt = q('[data-fuerza-txt]')!;
+    q('#c-nueva')!.addEventListener('input', () => {
       const v = val('c-nueva');
       const pts = [v.length >= 8, /[A-Z]/.test(v) && /[a-z]/.test(v), /\d/.test(v), /[^A-Za-z0-9]/.test(v) || v.length >= 12].filter(Boolean).length;
       bar.style.width = v ? pts * 25 + '%' : '0';
       bar.style.background = pts <= 1 ? 'var(--accent)' : pts <= 2 ? 'var(--warn)' : 'var(--ok)';
+      barTxt.textContent = v ? ['Muy débil', 'Débil', 'Aceptable', 'Buena', 'Fuerte'][pts] : '';
     });
-
-    q<HTMLInputElement>('[data-ver]').addEventListener('change', (e) => {
+    q<HTMLInputElement>('[data-ver]')!.addEventListener('change', (e) => {
       const t = (e.target as HTMLInputElement).checked ? 'text' : 'password';
-      ['c-actual', 'c-nueva', 'c-conf'].forEach((id) => (q<HTMLInputElement>('#' + id).type = t));
+      ['c-actual', 'c-nueva', 'c-conf'].forEach((id) => (q<HTMLInputElement>('#' + id)!.type = t));
     });
-
-    const clave = q<HTMLFormElement>('[data-clave]');
+    const clave = q<HTMLFormElement>('[data-clave]')!;
     clave.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const err = q('[data-clave-err]');
+      const err = q('[data-clave-err]')!;
       err.classList.add('hidden');
       if (!val('c-actual')) return show(err, 'Escribe tu contraseña actual.');
+      if (val('c-nueva').length < 8 || !/\d/.test(val('c-nueva'))) return show(err, 'La nueva contraseña necesita al menos 8 caracteres y un número.');
       if (val('c-nueva') !== val('c-conf')) return show(err, 'Las contraseñas no coinciden.');
       const r = await changePassword(val('c-actual'), val('c-nueva'));
       if (!r.ok) return show(err, r.error);
       clave.reset();
       bar.style.width = '0';
-      toast('¡Contraseña actualizada!');
+      barTxt.textContent = '';
+      toast('Contraseña actualizada.');
+    });
+
+    q('[data-salir]')!.addEventListener('click', () => {
+      logout();
+      location.href = '/login';
+    });
+    const todo = q<HTMLButtonElement>('[data-salir-todo]')!;
+    todo.hidden = !usaSupabase();
+    todo.addEventListener('click', async () => {
+      if (!confirm('Se cerrará tu sesión en todos los dispositivos, incluido este. ¿Continuar?')) return;
+      todo.disabled = true;
+      await sb()?.auth.signOut({ scope: 'global' }).catch(() => {});
+      logout();
+      location.href = '/login';
+    });
+
+    // ---------- Apariencia ----------
+    const docEl = document.documentElement;
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    let guardado: string | null = null;
+    try { guardado = localStorage.getItem('blud-theme'); } catch {}
+    const actual = guardado === 'light' || guardado === 'dark' ? guardado : 'auto';
+    root.querySelectorAll<HTMLInputElement>('input[name="tema"]').forEach((r) => {
+      r.checked = r.value === actual;
+      r.addEventListener('change', () => {
+        if (!r.checked) return;
+        try {
+          if (r.value === 'auto') localStorage.removeItem('blud-theme');
+          else localStorage.setItem('blud-theme', r.value);
+        } catch {}
+        docEl.dataset.theme = r.value === 'auto' ? (mq.matches ? 'dark' : 'light') : r.value;
+        toast(r.value === 'auto' ? 'El tema seguirá al de tu dispositivo.' : `Tema ${r.value === 'dark' ? 'oscuro' : 'claro'} activado.`);
+      });
+    });
+
+    if (!esDonante) return;
+    // Solo donante: notificaciones y privacidad (se importan aquí para no cargarlos en el personal).
+    import('../../lib/donante').then(({ getSettings, saveSettings, exportMisDatos, borrarDatosLocales }) => {
+      // ---------- Notificaciones ----------
+      const ajustes = getSettings();
+      root.querySelectorAll<HTMLButtonElement>('[data-aviso]').forEach((sw) => {
+        const k = sw.dataset.aviso as keyof typeof ajustes;
+        sw.setAttribute('aria-checked', String(ajustes[k]));
+        sw.addEventListener('click', () => {
+          const on = sw.getAttribute('aria-checked') !== 'true';
+          sw.setAttribute('aria-checked', String(on));
+          saveSettings({ ...getSettings(), [k]: on });
+          toast(on ? 'Aviso activado.' : 'Aviso desactivado.');
+        });
+      });
+
+      // ---------- Privacidad y datos ----------
+      q('[data-exportar]')!.addEventListener('click', () => {
+        downloadFile(`blud-mis-datos-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(exportMisDatos(), null, 2), 'application/json');
+      });
+      if (usaSupabase()) q('[data-borrar-txt]')!.textContent = 'Quita la copia guardada en este navegador. Tus datos siguen seguros en el banco de sangre.';
+      q('[data-borrar]')!.addEventListener('click', () => {
+        if (!confirm('Se borrará la copia de tus datos guardada en este navegador. ¿Continuar?')) return;
+        borrarDatosLocales();
+        toast('Datos de este dispositivo borrados.');
+      });
     });
   }
 
