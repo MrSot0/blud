@@ -114,12 +114,12 @@ const escenas = [
   },
 ];
 
-// La cola es una sola línea continua que baja por un carril libre pegado al borde derecho (sin chocar con textos ni ilustraciones).
-// Entra y sale en el mismo punto de cada etapa, así que al pasar de una a otra parece la misma línea. `sw` alterna el vaivén.
-const colaD = (sw: number, W: number, H: number) => {
-  const L = W - 14, S = sw * 9;
-  const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
-  return `M${P(L, -0.04)} C ${P(L, 0.2)}, ${P(L - S, 0.34)}, ${P(L - S, 0.5)} C ${P(L - S, 0.66)}, ${P(L, 0.8)}, ${P(L, 1.04)}`;
+// La cola es una sola línea continua en zigzag: baja por el lado derecho de la etapa, cruza por la franja inferior y sigue bajando por el
+// izquierdo en la etapa siguiente (y al revés). Sale y entra en el mismo punto entre etapas, así que parece la misma línea.
+const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
+  const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 40;
+  const r = Math.round;
+  return `M${r(xs)} -28 L${r(xs)} ${r(yb - 90)} C ${r(xs)} ${r(yb - 30)}, ${r(xs + dir * 50)} ${yb}, ${r(xs + dir * 110)} ${yb} L${r(xe - dir * 110)} ${yb} C ${r(xe - dir * 50)} ${yb}, ${r(xe)} ${r(yb + 30)}, ${r(xe)} ${r(yb + 90)} L${r(xe)} ${H + 28}`;
 };
 ---
 
@@ -230,13 +230,13 @@ const colaD = (sw: number, W: number, H: number) => {
         </div>
 
         <!-- La cola de la bolsa sigue por aquí: una gota viaja por ella y una lupa de sangre muestra la etapa. -->
-        <div class="cola" aria-hidden="true" data-sw={zi % 2 ? 1 : -1}>
+        <div class="cola" aria-hidden="true" data-i={zi}>
           <svg class="cola-svg" viewBox="0 0 1280 700" preserveAspectRatio="none">
             <g fill="none" stroke-linecap="round">
-              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
-              <path id={`cola-${e.id}`} class="cola-p cola-ruta" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
-              <path class="cola-p cola-flujo" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
-              <path class="cola-p" d={colaD(zi % 2 ? 1 : -1, 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
+              <path class="cola-p" d={colaD(zi, 1280, 700)} stroke="#7A0910" stroke-opacity=".28" stroke-width="13" transform="translate(0 6)"/>
+              <path id={`cola-${e.id}`} class="cola-p cola-ruta" d={colaD(zi, 1280, 700)} stroke="#C81E26" stroke-width="10" opacity=".92"/>
+              <path class="cola-p cola-flujo" d={colaD(zi, 1280, 700)} stroke="#FF9AA0" stroke-width="4" stroke-dasharray="16 46"/>
+              <path class="cola-p" d={colaD(zi, 1280, 700)} stroke="#fff" stroke-opacity=".3" stroke-width="3" transform="translate(-2 -3)"/>
             </g>
           </svg>
           <span class="cola-marca"></span>
@@ -1014,7 +1014,8 @@ const colaD = (sw: number, W: number, H: number) => {
   .cola-flujo { animation: flujo 1.4s linear infinite; }
   .cola-marca { position: absolute; left: 0; top: 0; width: 15px; height: 15px; margin: -7px 0 0 -7px; border-radius: 50%; background: #FF6B70; border: 2px solid #fff; box-shadow: 0 0 0 5px rgba(217, 83, 79, 0.22), 0 4px 10px rgba(122, 9, 16, 0.4); will-change: transform; }
   /* Carril libre a la derecha: las etapas reservan ese espacio para la cola y su lupa. */
-  .escena-stage :global(.container-blud) { padding-right: 5.75rem; }
+  .escena-stage :global(.container-blud) { padding-inline: 6.6rem; padding-bottom: 5rem; }
+  @media (max-width: 1023px) { .escena-stage :global(.container-blud) { padding-inline: 1.9rem; padding-bottom: 4.2rem; } .lupa { display: none; } }
   .lupa { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; padding: 0.35rem 0.35rem 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.94); border: 1px solid #EADFD8; box-shadow: 0 14px 28px -14px rgba(122, 9, 16, 0.45); opacity: var(--lo, 1); scale: var(--ls, 1); transform-origin: 100% 100%; will-change: transform; }
   .lupa-cristal { position: relative; flex: none; width: 2.9rem; height: 2.9rem; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #D8323A, #8E0F16 70%); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), inset 0 -6px 10px rgba(60, 0, 6, 0.35); }
   .lupa-cristal::after { content: ''; position: absolute; left: 18%; top: 12%; width: 38%; height: 20%; border-radius: 50%; background: rgba(255, 255, 255, 0.5); transform: rotate(-30deg); }
@@ -1036,7 +1037,7 @@ const colaD = (sw: number, W: number, H: number) => {
   .escena[data-escena='evaluacion'] .escena-fondo, .escena[data-escena='cuarentena'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(59, 140, 255, 0.14), transparent 70%); }
   .escena[data-escena='serologia'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(94, 240, 138, 0.1), transparent 70%); }
   .escena[data-escena='fraccionamiento'] .escena-fondo { background: radial-gradient(55% 60% at 70% 45%, rgba(43, 185, 160, 0.14), transparent 70%); }
-  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 3rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
+  .ilustracion { width: 100%; max-height: calc(100dvh - var(--header-h) - 8rem); border-radius: 28px; box-shadow: 0 30px 60px -30px rgba(90, 60, 50, 0.28), 0 0 0 1px rgba(30, 36, 48, 0.07); }
 
   /* El texto saliente se va rápido y el entrante llega después: nunca se ven dos encimados. */
   .paso { position: absolute; inset: 0 0 auto 0; opacity: 0; transform: translateY(22px); filter: blur(3px); transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out), filter 140ms var(--ease-out); pointer-events: none; }
@@ -1314,7 +1315,7 @@ const colaD = (sw: number, W: number, H: number) => {
   const escenas = [...document.querySelectorAll<HTMLElement>('.escena')].map((el) => {
     const tl = crear[el.dataset.escena!]();
     const cola = el.querySelector<HTMLElement>('.cola')!;
-    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280, alto: 700 };
+    return { el, tl, pasos: [...el.querySelectorAll<HTMLElement>('.paso')], barra: el.querySelector<HTMLElement>('.progreso')!, m: 0, meta: 0, actual: 0, cola, ruta: cola.querySelector<SVGPathElement>('.cola-ruta')!, marca: cola.querySelector<HTMLElement>('.cola-marca')!, lupa: cola.querySelector<HTMLElement>('.lupa')!, largo: 1, ancho: 1280, alto: 700, tramo1: 600, derecha: true };
   });
 
   // Entrada de cada etapa y del cierre al llegar a la pantalla.
@@ -1326,34 +1327,47 @@ const colaD = (sw: number, W: number, H: number) => {
 
   // La cola ocupa todo el ancho; la gota y la lupa la recorren a medida que avanza la etapa.
   const tramo = (v: number, a: number, b: number) => utils.clamp((v - a) / (b - a), 0, 1);
-  // La cola del inicio baja hasta el mismo carril (borde derecho) por donde entra la etapa 1.
+  // Misma forma que en el servidor (zigzag): baja por un carril, cruza por la franja inferior y sale por el otro lado.
+  const colaD = (i: number, W: number, H: number, xL: number, xR: number) => {
+    const xs = i % 2 === 0 ? xR : xL, xe = i % 2 === 0 ? xL : xR, dir = Math.sign(xe - xs), yb = H - 40;
+    const r = Math.round;
+    return `M${r(xs)} -28 L${r(xs)} ${r(yb - 90)} C ${r(xs)} ${r(yb - 30)}, ${r(xs + dir * 50)} ${yb}, ${r(xs + dir * 110)} ${yb} L${r(xe - dir * 110)} ${yb} C ${r(xe - dir * 50)} ${yb}, ${r(xe)} ${r(yb + 30)}, ${r(xe)} ${r(yb + 90)} L${r(xe)} ${H + 28}`;
+  };
+  // Carriles de la cola: pegados a los bordes del contenido (no de la pantalla), así que en pantallas anchas la cola sigue al contenido.
+  const carriles = () => {
+    const c = document.querySelector<HTMLElement>('.escena-stage .container-blud')!.getBoundingClientRect();
+    return { xL: Math.round(c.left + 16), xR: Math.round(c.right - 16) };
+  };
+  // La cola del inicio baja hasta el carril derecho, por donde entra la etapa 1.
   const colaInicio = () => {
     const r = document.getElementById('h-tubo-ruta') as unknown as SVGPathElement | null;
     const m = r?.getScreenCTM();
     if (!r || !m) return;
-    const xu = new DOMPoint(document.documentElement.clientWidth - 14, 0).matrixTransform(m.inverse()).x;
+    const xu = new DOMPoint(carriles().xR, 0).matrixTransform(m.inverse()).x;
     const a = 210 + (xu - 210) * 0.3, b = 210 + (xu - 210) * 0.7;
     const d = `M210 470 C 210 545, ${a} 585, ${b} 615 S ${xu} 660, ${xu} 740 L ${xu} 1300`;
     document.querySelectorAll('.h-cola path').forEach((p) => p.setAttribute('d', d));
   };
   const trazar = (e: (typeof escenas)[number]) => {
     const W = Math.round(e.cola.clientWidth), H = Math.round(e.cola.clientHeight);
-    const L = W - 14, S = Number(e.cola.dataset.sw) * 9;
-    const P = (x: number, y: number) => `${Math.round(x)} ${Math.round(y * H)}`;
-    const d = `M${P(L, -0.04)} C ${P(L, 0.2)}, ${P(L - S, 0.34)}, ${P(L - S, 0.5)} C ${P(L - S, 0.66)}, ${P(L, 0.8)}, ${P(L, 1.04)}`;
+    const { xL, xR } = carriles();
+    const d = colaD(Number(e.cola.dataset.i), W, H, xL, xR);
     e.cola.querySelector('svg')!.setAttribute('viewBox', `0 0 ${W} ${H}`);
     e.cola.querySelectorAll('.cola-p').forEach((p) => p.setAttribute('d', d));
     e.largo = e.ruta.getTotalLength();
+    e.tramo1 = H - 40 - 62; // largo del primer tramo recto (baja por el carril)
     e.ancho = W;
     e.alto = H;
+    e.derecha = Number(e.cola.dataset.i) % 2 === 0;
   };
-  // Cierre: la cola llega por el mismo carril y se curva hasta la gota.
+  // Cierre: la cola llega por el carril izquierdo y se curva hasta la gota.
   const trazarFin = () => {
     const f = document.querySelector<SVGSVGElement>('.fin-cola');
     if (!f) return;
     const W = Math.round(document.documentElement.clientWidth);
+    const x = carriles().xL;
     f.setAttribute('viewBox', `0 0 ${W} 96`);
-    f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${W - 14} -6 C ${W - 14} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
+    f.querySelectorAll('.fin-p').forEach((p) => p.setAttribute('d', `M${x} -6 C ${x} 50, ${Math.round(W / 2)} 30, ${Math.round(W / 2)} 100`));
   };
   const pintar = (e: (typeof escenas)[number]) => {
     const m = e.m;
@@ -1363,14 +1377,18 @@ const colaD = (sw: number, W: number, H: number) => {
     let activo = 0;
     e.pasos.forEach((p, i) => { if (Number(p.dataset.at) <= m + 0.001) activo = i; });
     e.pasos.forEach((p, i) => { p.toggleAttribute('data-activo', i === activo); p.toggleAttribute('data-pasado', i < activo); });
-    // La gota recorre la cola; la lupa (vertical) va justo a su izquierda y un poco arriba, en el carril reservado.
-    const pt = e.ruta.getPointAtLength(e.largo * (0.04 + m * 0.92));
+    // La gota baja por el carril durante casi toda la etapa y, al final, cruza por la franja inferior hacia el otro lado.
+    const baja = tramo(m, 0, 0.8);
+    const largoPos = m < 0.8 ? e.tramo1 * (0.03 + 0.97 * baja) : e.tramo1 + tramo(m, 0.8, 1) * (e.largo - e.tramo1 - 20);
+    const pt = e.ruta.getPointAtLength(largoPos);
     e.marca.style.transform = `translate(${pt.x}px, ${pt.y}px)`;
+    e.marca.style.opacity = String(tramo(m, 0.01, 0.05) * (1 - tramo(m, 0.97, 1)));
+    // La lupa (vertical) va junto al tramo recto: a la izquierda del tubo si baja por la derecha y a la derecha si baja por la izquierda.
     const pw = e.lupa.offsetWidth, ph = e.lupa.offsetHeight;
     const arriba = utils.clamp(pt.y - ph - 12, 8, e.alto - ph - 8);
-    e.lupa.style.transform = `translate(${pt.x - 22 - pw}px, ${arriba}px)`;
+    e.lupa.style.transform = `translate(${e.derecha ? pt.x - 22 - pw : pt.x + 22}px, ${arriba}px)`;
     // La lupa hace un zoom suave al entrar y se despide al llegar al final de la etapa.
-    const entra = tramo(m, 0, 0.07), sale = tramo(m, 0.96, 1);
+    const entra = tramo(m, 0, 0.07), sale = tramo(m, 0.7, 0.8);
     e.lupa.style.setProperty('--ls', String(0.55 + entra * 0.45 - sale * 0.1));
     e.lupa.style.setProperty('--lo', String(entra * (1 - sale)));
     e.lupa.style.setProperty('--lz', String(1.7 - entra * 0.7));
