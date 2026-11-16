@@ -28,7 +28,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       <div class="panel p-6 sm:p-8 space-y-6 w-full">
         <div class="space-y-4">
           <h2 class="text-lg font-bold text-ink">Registrar nueva donación</h2>
-          <form id="form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_9rem_9rem_1.2fr_auto] gap-4 items-end" novalidate>
+          <form id="form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_9rem_9rem_1.2fr] gap-4 items-end" novalidate>
             <div class="sm:col-span-2 lg:col-span-1">
               <label for="cedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula o ID del donante</label>
               <input type="text" id="cedula" class="field" placeholder="V-12345678" autocomplete="off" required />
@@ -50,23 +50,82 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
                 {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
               </select>
             </div>
-            <button type="submit" class="btn btn-primary w-full sm:col-span-2 lg:col-span-1 lg:w-auto lg:px-8 min-h-12">Guardar donación</button>
 
-            <fieldset class="sm:col-span-2 lg:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <legend class="mb-1 text-xs font-bold uppercase text-ink-2">Evaluación previa <span class="font-normal normal-case text-ink-3">(el banco decide si el donante es apto)</span></legend>
-              <label class="block"><span class="mb-1 block text-xs text-ink-3">Peso (kg)</span>
-                <input id="ev-peso" inputmode="decimal" class="field" placeholder="70" autocomplete="off" /></label>
-              <label class="block"><span class="mb-1 block text-xs text-ink-3">Presión arterial</span>
-                <input id="ev-presion" class="field" placeholder="120/80" autocomplete="off" /></label>
-              <label class="block"><span class="mb-1 block text-xs text-ink-3">Hemoglobina (g/dL)</span>
-                <input id="ev-hb" inputmode="decimal" class="field" placeholder="14" autocomplete="off" /></label>
-              <label class="block"><span class="mb-1 block text-xs text-ink-3">Temperatura (°C)</span>
-                <input id="ev-temp" inputmode="decimal" class="field" placeholder="36.5" autocomplete="off" /></label>
-              <label class="block col-span-2 sm:col-span-1"><span class="mb-1 block text-xs text-ink-3">Pulso (lpm, opcional)</span>
-                <input id="ev-fc" inputmode="numeric" class="field" placeholder="72" autocomplete="off" /></label>
+            <!-- RF-O7: evaluación médica previa -->
+            <fieldset class="sm:col-span-2 lg:col-span-4 rounded-control border border-line p-4 sm:p-5 space-y-4">
+              <legend class="px-2 text-xs font-bold uppercase tracking-wider text-ink-2">Evaluación médica <span class="font-normal normal-case text-ink-3">· el banco decide si es apto</span></legend>
+              <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Peso (kg) *</span>
+                  <input id="ev-peso" inputmode="decimal" class="field" placeholder="70" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Talla (cm)</span>
+                  <input id="ev-talla" inputmode="decimal" class="field" placeholder="170" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Presión *</span>
+                  <input id="ev-presion" class="field" placeholder="120/80" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Pulso (lpm)</span>
+                  <input id="ev-fc" inputmode="numeric" class="field" placeholder="72" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Temp. (°C) *</span>
+                  <input id="ev-temp" inputmode="decimal" class="field" placeholder="36.5" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Hb (g/dL) *</span>
+                  <input id="ev-hb" inputmode="decimal" class="field" placeholder="14" autocomplete="off" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Hcto (%)</span>
+                  <input id="ev-hcto" inputmode="decimal" class="field" placeholder="42" autocomplete="off" /></label>
+              </div>
+              <p class="text-xs text-ink-3">Rangos: presión 90–180 / 60–100 mmHg · pulso 50–100 · temperatura ≤ 37,5 °C · peso ≥ 50 kg · Hb mujer ≥ 12,5, hombre ≥ 13,5 g/dL · Hcto ≥ 38 %.</p>
+              <div class="grid grid-cols-1 sm:grid-cols-[14rem_1fr] gap-3 items-start">
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Dictamen *</span>
+                  <select id="ev-dictamen" class="field">
+                    <option value="apto">Apto para donar</option>
+                    <option value="temporal">Rechazo temporal</option>
+                    <option value="definitivo">Rechazo permanente</option>
+                  </select></label>
+                <label class="hidden block" id="ev-motivo-box"><span class="mb-1 block text-xs text-ink-3">Motivo del rechazo * <span class="text-ink-3">(solo lo ve el personal médico)</span></span>
+                  <input id="ev-motivo" class="field" maxlength="200" placeholder="Ej.: medicamento en uso, antecedente clínico…" autocomplete="off" /></label>
+              </div>
+              <p id="ev-alerta" class="hidden rounded-control bg-warn-soft px-3 py-2 text-xs font-medium text-warn" role="status"></p>
             </fieldset>
 
-            <div id="donante" class="hidden sm:col-span-2 lg:col-span-5 rounded-control border border-line bg-sunken p-3 text-sm space-y-1">
+            <!-- RF-O8: extracción -->
+            <fieldset class="sm:col-span-2 lg:col-span-4 rounded-control border border-line p-4 sm:p-5 space-y-4" id="extraccion">
+              <legend class="px-2 text-xs font-bold uppercase tracking-wider text-ink-2">Extracción</legend>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Tipo de donación *</span>
+                  <select id="ex-tipo" class="field">
+                    <option value="Voluntaria">Voluntaria</option>
+                    <option value="Reposicion">De reposición</option>
+                    <option value="Autologa">Autóloga</option>
+                    <option value="Aferesis">Aféresis</option>
+                  </select></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Bolsa y anticoagulante *</span>
+                  <select id="ex-bolsa" class="field">
+                    <option value="Cuádruple CPD/SAG-M">Cuádruple CPD/SAG-M</option>
+                    <option value="Triple CPD/SAG-M">Triple CPD/SAG-M</option>
+                    <option value="Doble CPDA-1">Doble CPDA-1</option>
+                    <option value="Simple CPDA-1">Simple CPDA-1</option>
+                    <option value="Kit de aféresis ACD-A">Kit de aféresis ACD-A</option>
+                  </select></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Inicio *</span>
+                  <input id="ex-inicio" type="time" class="field" /></label>
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Fin *</span>
+                  <input id="ex-fin" type="time" class="field" /></label>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-[14rem_1fr] gap-3 items-start">
+                <label class="block"><span class="mb-1 block text-xs text-ink-3">Reacciones durante la donación *</span>
+                  <select id="ex-reaccion" class="field">
+                    <option value="">Ninguna</option>
+                    <option value="Mareo o lipotimia leve">Mareo o lipotimia leve</option>
+                    <option value="Reacción vasovagal moderada">Reacción vasovagal moderada</option>
+                    <option value="Reacción vasovagal grave">Reacción vasovagal grave</option>
+                    <option value="Hematoma en el sitio de punción">Hematoma en el sitio de punción</option>
+                    <option value="Punción arterial">Punción arterial</option>
+                    <option value="otra">Otra</option>
+                  </select></label>
+                <label class="hidden block" id="ex-reaccion-box"><span class="mb-1 block text-xs text-ink-3">Describe la reacción y lo que se hizo *</span>
+                  <input id="ex-reaccion-txt" class="field" maxlength="300" autocomplete="off" /></label>
+              </div>
+              <p class="text-xs text-ink-3">Responsable de la extracción: <strong class="text-ink" id="ex-responsable">tú</strong>. La bolsa queda en cuarentena hasta el análisis del laboratorio.</p>
+            </fieldset>
+
+            <div id="donante" class="hidden sm:col-span-2 lg:col-span-4 rounded-control border border-line bg-sunken p-3 text-sm space-y-1">
               <div class="flex items-center justify-between gap-3">
                 <p class="font-bold text-ink" id="d-nombre"></p>
                 <span class="rounded-full px-2 py-0.5 text-xs font-bold" id="d-estado"></span>
@@ -74,7 +133,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
               <p class="text-xs text-ink-3" id="d-extra"></p>
               <a href="/operador/donantes" id="d-link" class="hidden link-arrow text-xs">Ir a verificar</a>
             </div>
-            <p id="error" class="hidden sm:col-span-2 lg:col-span-5 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <p id="error" class="hidden sm:col-span-2 lg:col-span-4 rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <div class="sm:col-span-2 lg:col-span-4 flex justify-center">
+              <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-12 min-h-12">Guardar donación</button>
+            </div>
           </form>
         </div>
 
@@ -110,8 +172,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 </LayoutOperador>
 
 <script>
-  import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, registrarDonacionOp, toast } from '../../lib/operador';
-  import { usaSupabase } from '../../lib/supabase';
+  import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, operadorActual, registrarDonacionOp, toast } from '../../lib/operador';
   import type { Hemocomponente } from '../../lib/operador';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -175,23 +236,88 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     };
     cedula.addEventListener('input', lookup);
 
+    // ---- Evaluación (RF-O7): dictamen y alertas de rango en vivo
+    const dictamen = $<HTMLSelectElement>('#ev-dictamen');
+    const motivoBox = $('#ev-motivo-box');
+    const extraccion = $('#extraccion');
+    const pintarDictamen = () => {
+      const rechazo = dictamen.value !== 'apto';
+      motivoBox.classList.toggle('hidden', !rechazo);
+      extraccion.classList.toggle('opacity-50', rechazo);
+      extraccion.toggleAttribute('disabled', rechazo);
+      form.querySelector<HTMLButtonElement>('button[type=submit]')!.textContent = rechazo ? 'Guardar evaluación (sin extracción)' : 'Guardar donación';
+    };
+    dictamen.addEventListener('change', pintarDictamen);
+    const num = (id: string) => Number(($<HTMLInputElement>(id).value || '').replace(',', '.'));
+    const alertas = () => {
+      const a: string[] = [];
+      const [sis, dia] = $<HTMLInputElement>('#ev-presion').value.split('/').map(Number);
+      if (sis && (sis < 90 || sis > 180)) a.push('presión sistólica fuera de 90–180');
+      if (dia && (dia < 60 || dia > 100)) a.push('presión diastólica fuera de 60–100');
+      const fc = num('#ev-fc'); if (fc && (fc < 50 || fc > 100)) a.push('pulso fuera de 50–100');
+      const t = num('#ev-temp'); if (t && t > 37.5) a.push('temperatura mayor de 37,5 °C');
+      const peso = num('#ev-peso'); if (peso && peso < 50) a.push('peso menor de 50 kg');
+      const hcto = num('#ev-hcto'); if (hcto && hcto < 38) a.push('hematocrito menor de 38 %');
+      const hb = num('#ev-hb');
+      const d = buscarDonante(cedula.value.trim());
+      if (hb && hb < (d?.sexo === 'F' ? 12.5 : 13.5)) a.push(`hemoglobina menor de ${d?.sexo === 'F' ? '12,5' : '13,5'} g/dL`);
+      const box = $('#ev-alerta');
+      box.classList.toggle('hidden', !a.length);
+      box.textContent = a.length ? `Fuera de rango: ${a.join(', ')}. Si se confirma, el dictamen debe ser de rechazo.` : '';
+    };
+    ['#ev-presion', '#ev-fc', '#ev-temp', '#ev-peso', '#ev-hb', '#ev-hcto'].forEach((id) => $(id).addEventListener('input', alertas));
+
+    // ---- Extracción (RF-O8)
+    const reaccion = $<HTMLSelectElement>('#ex-reaccion');
+    reaccion.addEventListener('change', () => $('#ex-reaccion-box').classList.toggle('hidden', reaccion.value !== 'otra'));
+    $('#ex-responsable').textContent = operadorActual().nombre || 'tú';
+    const ahoraHM = () => new Date().toTimeString().slice(0, 5);
+    $<HTMLInputElement>('#ex-inicio').value = ahoraHM();
+    $('#comp').addEventListener('change', () => {
+      if ($<HTMLSelectElement>('#comp').value === 'Plaquetas') {
+        $<HTMLSelectElement>('#ex-tipo').value = 'Aferesis';
+        $<HTMLSelectElement>('#ex-bolsa').value = 'Kit de aféresis ACD-A';
+      }
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const err = $('#error');
       const v = (id: string) => $<HTMLInputElement>(id).value.trim();
-      const evaluacion = { peso: v('#ev-peso'), presion: v('#ev-presion'), hb: v('#ev-hb'), temperatura: v('#ev-temp'), fc: v('#ev-fc') || undefined };
-      // Con base real la evaluación es obligatoria: sin ella el banco no registra la extracción.
-      if (usaSupabase() && !(evaluacion.peso && evaluacion.presion && evaluacion.hb && evaluacion.temperatura)) {
-        err.textContent = 'Registra el peso, la presión arterial, la hemoglobina y la temperatura del donante.';
-        err.classList.remove('hidden');
-        return;
+      const fallo = (m: string, foco?: string) => {
+        err.textContent = m; err.classList.remove('hidden');
+        if (foco) $(foco).focus();
+      };
+      const evaluacion = {
+        peso: v('#ev-peso'), presion: v('#ev-presion'), hb: v('#ev-hb'), temperatura: v('#ev-temp'),
+        fc: v('#ev-fc') || undefined, talla: v('#ev-talla') || undefined, hcto: v('#ev-hcto') || undefined,
+        dictamen: dictamen.value as 'apto' | 'temporal' | 'definitivo', motivo: v('#ev-motivo') || undefined,
+      };
+      // La evaluación médica es obligatoria (RF-O7).
+      if (!(evaluacion.peso && evaluacion.presion && evaluacion.hb && evaluacion.temperatura)) {
+        return fallo('Registra el peso, la presión arterial, la temperatura y la hemoglobina del donante.', '#ev-peso');
+      }
+      if (!/^\d{2,3}\/\d{2,3}$/.test(evaluacion.presion)) return fallo('La presión debe escribirse así: 120/80.', '#ev-presion');
+      if (evaluacion.dictamen !== 'apto' && !evaluacion.motivo) return fallo('Escribe el motivo del rechazo.', '#ev-motivo');
+      // Extracción (RF-O8)
+      const inicio = v('#ex-inicio');
+      const fin = v('#ex-fin');
+      const reacc = reaccion.value === 'otra' ? v('#ex-reaccion-txt') : reaccion.value;
+      if (evaluacion.dictamen === 'apto') {
+        if (!inicio || !fin) return fallo('Indica la hora de inicio y de fin de la extracción.', inicio ? '#ex-fin' : '#ex-inicio');
+        if (fin <= inicio) return fallo('La hora de fin debe ser posterior a la de inicio.', '#ex-fin');
+        if (reaccion.value === 'otra' && !reacc) return fallo('Describe la reacción.', '#ex-reaccion-txt');
       }
       const r = registrarDonacionOp({
-        evaluacion: evaluacion.peso ? evaluacion : undefined,
+        evaluacion,
         cedula: cedula.value,
         tipoSangre: tipo.value,
         tipoHemocomponente: $<HTMLSelectElement>('#comp').value as Hemocomponente,
         volumenMl: Number($<HTMLInputElement>('#vol').value),
+        extraccion: {
+          tipoDonacion: $<HTMLSelectElement>('#ex-tipo').value, bolsa: $<HTMLSelectElement>('#ex-bolsa').value,
+          inicio, fin, reacciones: reacc || undefined,
+        },
       });
       if (!r.ok) {
         err.textContent = r.motivo;
@@ -199,10 +325,13 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         return;
       }
       err.classList.add('hidden');
-      toast(`Donación de ${r.data.donanteNombre} registrada. ${r.aviso ?? ''}`.trim());
+      toast(evaluacion.dictamen === 'apto' ? `Donación de ${r.data.donanteNombre} registrada. ${r.aviso ?? ''}`.trim() : `Evaluación guardada: ${r.data.donanteNombre} quedó diferido.`);
       form.reset();
       $('#vol').setAttribute('value', '450');
       $('#donante').classList.add('hidden');
+      $('#ev-alerta').classList.add('hidden');
+      $<HTMLInputElement>('#ex-inicio').value = ahoraHM();
+      pintarDictamen();
     });
 
     const render = () => {
@@ -228,7 +357,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       $('#ultimas').innerHTML = ult.length
         ? ult.map((d) => `<li class="flex items-center justify-between gap-3 py-3">
             <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(d.donanteNombre)}</p>
-            <p class="text-xs text-ink-3">${esc(d.donanteCedula)} · ${esc(d.tipoHemocomponente)} · ${d.volumenMl} ml · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))}</p></div>
+            <p class="text-xs text-ink-3">${esc(d.donanteCedula)} · ${esc(d.tipoHemocomponente)} · ${d.volumenMl} ml · ${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short' }))}</p>
+            ${d.dinIsbt ? `<p class="font-mono text-[0.6875rem] text-ink-3">DIN ${esc(d.dinIsbt)}</p>` : ''}</div>
             <span class="blood-chip">${esc(d.tipoSangre)}</span></li>`).join('')
         : '<li class="py-6 text-center text-sm text-ink-3">Todavía no has registrado extracciones.</li>';
     };

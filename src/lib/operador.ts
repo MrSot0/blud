@@ -104,12 +104,20 @@ export const getDonacionesOp = () => donaciones.all().sort(porFechaDesc);
 export function registrarDonacionOp(input: {
   cedula: string; tipoSangre: string; tipoHemocomponente: Hemocomponente; volumenMl: number;
   evaluacion?: DonacionOp['evaluacion'];
+  extraccion?: { tipoDonacion: string; bolsa: string; inicio: string; fin: string; reacciones?: string };
 }): Resultado<DonacionOp> {
   const donante = buscarRegistro(input.cedula);
   if (!donante) return fail('No encontramos a ese donante. Regístralo primero en Donantes.');
   if (donante.estado !== 'verificado') return fail('El donante está pre-registrado: verifica su identidad antes de la extracción.');
   if (!BLOOD_TYPES.includes(input.tipoSangre as any)) return fail('Confirma el tipo de sangre.');
   if (!(input.volumenMl >= 50 && input.volumenMl <= 600)) return fail('El volumen debe estar entre 50 y 600 ml.');
+  // Modo demo: un rechazo en la evaluación no genera donación (con base real, la base guarda la evaluación y lo difiere).
+  if (!usaSupabase() && input.evaluacion?.dictamen && input.evaluacion.dictamen !== 'apto') {
+    if (input.evaluacion.dictamen === 'definitivo' || input.evaluacion.dictamen === 'temporal') {
+      registro.upsert({ ...donante, diferido: { desde: hoyISO() } });
+    }
+    return { ok: true, data: { id: '', donanteId: donante.id, donanteNombre: donante.nombreCompleto, donanteCedula: donante.cedula, tipoSangre: input.tipoSangre, tipoHemocomponente: input.tipoHemocomponente, volumenMl: 0, fecha: hoyISO(), operadorId: operadorActual().id } };
+  }
 
   if (input.tipoHemocomponente === 'Sangre Total') {
     const ultima = donaciones.all()
@@ -139,6 +147,7 @@ export function registrarDonacionOp(input: {
     // Cuarentena: no entra al stock hasta que el laboratorio la libere.
     estadoLab: 'pendiente',
     evaluacion: input.evaluacion,
+    ...(input.extraccion ?? {}),
   });
   return { ok: true, data, aviso: 'Quedó en cuarentena hasta que el laboratorio la analice.' };
 }

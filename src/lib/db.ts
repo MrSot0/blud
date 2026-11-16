@@ -99,7 +99,19 @@ export interface DonacionOp {
   /** Estado en laboratorio. Sin valor = liberada (datos anteriores al módulo de laboratorio). */
   estadoLab?: EstadoLab;
   /** Evaluación previa a la extracción. Con base real es obligatoria: la base decide si el donante es apto. */
-  evaluacion?: { peso: string; presion: string; hb: string; temperatura: string; fc?: string };
+  evaluacion?: {
+    peso: string; presion: string; hb: string; temperatura: string; fc?: string;
+    /** RF-O7: talla, hematocrito y dictamen del profesional (apto, rechazo temporal o permanente). */
+    talla?: string; hcto?: string; dictamen?: 'apto' | 'temporal' | 'definitivo'; motivo?: string;
+  };
+  /** RF-O8: datos de la extracción. */
+  tipoDonacion?: string;
+  bolsa?: string;
+  inicio?: string; // HH:MM
+  fin?: string; // HH:MM
+  reacciones?: string;
+  /** RF-O6: DIN con formato ISBT 128 (lo asigna la base). */
+  dinIsbt?: string;
 }
 
 /**
