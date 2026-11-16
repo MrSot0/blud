@@ -705,7 +705,7 @@ export async function cancelarCita(email: string, id: string): Promise<{ ok: tru
 
 /** Cita activa: futura y sin atender ni cancelar. */
 export const citaActiva = (a: Appointment, hoy = toDateKey(new Date())) =>
-  a.date >= hoy && (!a.estado || a.estado === 'Programada');
+  a.date >= hoy && (!a.estado || a.estado === 'Programada' || a.estado === 'En espera');
 
 /** Próxima cita futura del usuario, si la hay. */
 export function nextAppointment(email: string): Appointment | null {

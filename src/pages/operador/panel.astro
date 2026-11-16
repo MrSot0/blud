@@ -13,13 +13,18 @@ import { BLOOD_TYPES } from '../../lib/db';
         <p class="text-ink-2 text-sm sm:text-base mt-1" id="centro-txt">Resumen de tu centro.</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="/operador/donaciones" class="btn btn-primary">Registrar donación</a>
-        <a href="/operador/donantes" class="btn btn-secondary">Verificar donantes</a>
+        <a href="/operador/citas" class="btn btn-primary">Citas de hoy</a>
+        <a href="/operador/donaciones" class="btn btn-secondary">Registrar donación</a>
       </div>
     </div>
 
     <!-- KPIs -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <a href="/operador/citas" class="panel p-5 col-span-2 lg:col-span-1 transition-transform hover:-translate-y-0.5">
+        <p class="text-xs font-bold uppercase text-ink-3">Citas de hoy</p>
+        <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi-citas="abiertas">—</p>
+        <p class="text-xs text-ink-3"><span data-kpi-citas="espera">0</span> en espera · <span data-kpi-citas="atendidas">0</span> atendidas</p>
+      </a>
       <a href="/operador/donantes" class="panel p-5 transition-transform hover:-translate-y-0.5">
         <p class="text-xs font-bold uppercase text-ink-3">Por verificar</p>
         <p class="mt-1 text-3xl font-extrabold text-ink tabular" data-kpi="porVerificar">0</p>
@@ -140,6 +145,22 @@ import { BLOOD_TYPES } from '../../lib/db';
     onDb(render);
   }
 
+  // Citas de hoy en el centro (bandeja del operador).
+  async function citasHoy() {
+    const el = document.querySelector<HTMLElement>('[data-kpi-citas="abiertas"]');
+    if (!el) return;
+    try {
+      const { abiertasHoy, bandejaCitas } = await import('../../lib/citas');
+      const b = await bandejaCitas(0);
+      const hoy = b.citas.filter((c) => c.fecha === b.hoy);
+      el.textContent = String(abiertasHoy(b));
+      $('[data-kpi-citas="espera"]').textContent = String(hoy.filter((c) => c.estado === 'En espera').length);
+      $('[data-kpi-citas="atendidas"]').textContent = String(hoy.filter((c) => c.estado === 'Atendida' || c.estado === 'No apto').length);
+    } catch { el.textContent = '—'; }
+  }
+
   init();
-  document.addEventListener('astro:page-load', init);
+  citasHoy();
+  onDb(citasHoy);
+  document.addEventListener('astro:page-load', () => { init(); citasHoy(); });
 </script>

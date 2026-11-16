@@ -1,0 +1,300 @@
+---
+// src/pages/operador/citas.astro
+// Bandeja de citas del centro: lo que el donante agendó en la app, listo para recibirlo y atenderlo.
+// Flujo: Por llegar → Llegó (en espera) → Atender (evaluación y extracción en Donaciones) → Atendida / No apto.
+import FichaDonante from '../../components/app/FichaDonante.astro';
+import LayoutOperador from '../../layouts/LayoutOperador.astro';
+---
+
+<LayoutOperador title="BLUD | Citas del centro">
+  <div class="container-blud py-8 space-y-6" data-bandeja>
+    <div class="flex flex-col gap-4 pb-6 border-b border-line sm:flex-row sm:items-end sm:justify-between">
+      <div class="min-w-0">
+        <p class="text-xs font-bold uppercase tracking-widest text-accent-ink" data-centro>Tu centro</p>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Citas del centro</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Donantes que agendaron en la app. Marca su llegada y atiéndelos sin tener que buscarlos.</p>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5 self-start sm:self-auto" data-recargar>
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        Actualizar
+      </button>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Resumen de hoy">
+      <div class="panel p-3 sm:p-4"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Por llegar hoy</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold tabular text-ink" data-n="programada">0</p></div>
+      <div class="panel p-3 sm:p-4"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">En espera</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold tabular text-accent-ink" data-n="espera">0</p></div>
+      <div class="panel p-3 sm:p-4"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Atendidas hoy</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold tabular text-ok" data-n="atendida">0</p></div>
+      <div class="panel p-3 sm:p-4"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">No asistieron</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold tabular text-ink-2" data-n="ausente">0</p></div>
+    </div>
+
+    <div class="panel p-4 sm:p-6 space-y-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Mostrar citas">
+          <button type="button" class="btn btn-sm" data-filtro="hoy" aria-pressed="true">Hoy <span class="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold tabular" data-cuenta="hoy">0</span></button>
+          <button type="button" class="btn btn-sm" data-filtro="proximas" aria-pressed="false">Próximos días <span class="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold tabular" data-cuenta="proximas">0</span></button>
+          <button type="button" class="btn btn-sm" data-filtro="sinCerrar" aria-pressed="false">Sin cerrar <span class="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold tabular" data-cuenta="sinCerrar">0</span></button>
+          <button type="button" class="btn btn-sm" data-filtro="cerradas" aria-pressed="false">Cerradas <span class="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-xs font-bold tabular" data-cuenta="cerradas">0</span></button>
+        </div>
+        <input type="search" class="field sm:w-64" placeholder="Filtrar por nombre o cédula…" aria-label="Filtrar citas" data-buscar />
+      </div>
+      <p class="text-xs text-ink-3" data-ayuda></p>
+      <ul class="divide-y divide-line" data-lista aria-live="polite"></ul>
+      <p class="py-10 text-center text-sm text-ink-3" data-vacio hidden></p>
+    </div>
+  </div>
+
+  <!-- Ficha del donante: la misma que se ve al escanear su QR -->
+  <dialog class="cita-dlg" data-dlg aria-label="Ficha del donante">
+    <div class="w-full max-w-xl">
+      <FichaDonante id="cita-ficha">
+        <div class="grid gap-2 sm:grid-cols-2" data-dlg-acciones></div>
+        <button type="button" class="btn btn-secondary w-full" data-cerrar>Cerrar</button>
+      </FichaDonante>
+    </div>
+  </dialog>
+</LayoutOperador>
+
+<style>
+  .cita-dlg { background: transparent; padding: 1rem; margin: auto; max-height: 100dvh; overflow-y: auto; width: 100%; max-width: 36rem; }
+  .cita-dlg::backdrop { background: rgb(0 0 0 / 0.55); backdrop-filter: blur(3px); }
+</style>
+
+<script>
+  import { abiertasHoy, bandejaCitas, marcarCita } from '../../lib/citas';
+  import type { Bandeja, CitaCentro } from '../../lib/citas';
+  import { obtenerFicha, pintarFicha, urlFotoFicha } from '../../lib/ficha';
+  import type { Ficha } from '../../lib/ficha';
+  import { esc, onDb, toast } from '../../lib/operador';
+
+  type Filtro = 'hoy' | 'proximas' | 'sinCerrar' | 'cerradas';
+  const ABIERTA = new Set(['Programada', 'En espera']);
+
+  const ESTADO: Record<string, { txt: string; cls: string }> = {
+    'Programada': { txt: 'Por llegar', cls: 'bg-sunken text-ink-2' },
+    'En espera': { txt: 'En espera', cls: 'bg-accent text-white' },
+    'Atendida': { txt: 'Atendida', cls: 'bg-ok-soft text-ok' },
+    'No apto': { txt: 'Evaluado: no apto', cls: 'bg-warn-soft text-warn' },
+    'No asistió': { txt: 'No asistió', cls: 'bg-sunken text-ink-3' },
+    'Cancelada': { txt: 'Cancelada', cls: 'bg-sunken text-ink-3 line-through' },
+  };
+
+  const fmtDia = (iso: string, hoy: string) => {
+    const n = Math.round((new Date(iso + 'T00:00:00').getTime() - new Date(hoy + 'T00:00:00').getTime()) / 86400000);
+    if (n === 0) return 'Hoy';
+    if (n === 1) return 'Mañana';
+    if (n === -1) return 'Ayer';
+    const s = new Date(iso + 'T00:00:00').toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'short' });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  const ini = (n: string) => n.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
+
+  /** Adónde lleva «Atender»: a Donaciones con la cédula cargada, o a verificar primero si aún no está verificado. */
+  const hrefAtender = (c: CitaCentro) => c.donante.verificado
+    ? `/operador/donaciones?q=${encodeURIComponent(c.donante.cedula || c.donante.id)}&cita=${encodeURIComponent(c.id)}&hora=${encodeURIComponent(c.hora)}`
+    : `/operador/donantes?q=${encodeURIComponent(c.donante.id)}&cita=${encodeURIComponent(c.id)}`;
+
+  function acciones(c: CitaCentro, hoy: string, enFicha = false): string {
+    const b = (attr: string, txt: string, cls = 'btn-secondary') => `<button type="button" class="btn ${cls} btn-sm" ${attr}>${txt}</button>`;
+    const atender = `<a href="${esc(hrefAtender(c))}" class="btn btn-primary btn-sm">${c.donante.verificado ? 'Atender' : 'Verificar y atender'}</a>`;
+    const ficha = enFicha ? '' : b(`data-ficha="${esc(c.id)}"`, 'Ver ficha');
+    const futura = c.fecha > hoy;
+    if (c.estado === 'En espera') return atender + b(`data-marcar="Programada" data-id="${esc(c.id)}"`, 'Deshacer llegada') + ficha;
+    if (c.estado === 'Programada' && !futura) {
+      return b(`data-marcar="En espera" data-id="${esc(c.id)}"`, 'Llegó', 'btn-primary')
+        + b(`data-marcar="No asistió" data-id="${esc(c.id)}"`, 'No asistió') + ficha;
+    }
+    if (c.estado === 'No asistió') return b(`data-marcar="Programada" data-id="${esc(c.id)}"`, 'Deshacer') + ficha;
+    return ficha;
+  }
+
+  function avisos(c: CitaCentro): string {
+    const a: string[] = [];
+    const chip = (t: string, cls: string) => `<span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${cls}">${t}</span>`;
+    if (!c.donante.verificado) a.push(chip('Sin verificar', 'bg-warn-soft text-warn'));
+    if (c.donante.diferimiento) a.push(chip(c.donante.diferimiento.tipo === 'permanente' ? 'Excluido' : `Diferido${c.donante.diferimiento.hasta ? ' hasta ' + esc(c.donante.diferimiento.hasta) : ''}`, 'bg-accent-soft text-accent-ink'));
+    if (c.donante.cuestionario === 'alertas') a.push(chip('Cuestionario con alertas', 'bg-warn-soft text-warn'));
+    else if (!c.donante.cuestionario) a.push(chip('Sin cuestionario', 'bg-sunken text-ink-3'));
+    if (c.donante.contactoPendiente) a.push(chip('Contacto del laboratorio', 'bg-accent-soft text-accent-ink'));
+    return a.join('');
+  }
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-bandeja]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+
+    let datos: Bandeja | null = null;
+    let filtro: Filtro = 'hoy';
+    let cargando = false;
+
+    const grupos = (b: Bandeja): Record<Filtro, CitaCentro[]> => ({
+      hoy: b.citas.filter((c) => c.fecha === b.hoy && c.estado !== 'Cancelada'),
+      proximas: b.citas.filter((c) => c.fecha > b.hoy && ABIERTA.has(c.estado)),
+      sinCerrar: b.citas.filter((c) => c.fecha < b.hoy && ABIERTA.has(c.estado)),
+      cerradas: b.citas.filter((c) => !ABIERTA.has(c.estado)).reverse(),
+    });
+
+    const AYUDA: Record<Filtro, string> = {
+      hoy: 'Cuando el donante llegue, pulsa «Llegó». Al guardar la evaluación o la donación, la cita se cierra sola.',
+      proximas: 'Citas agendadas para los próximos 14 días.',
+      sinCerrar: 'Citas de días anteriores que nadie cerró: marca si el donante no asistió.',
+      cerradas: 'Atendidas, evaluadas como no aptas, ausencias y cancelaciones de los últimos 7 días.',
+    };
+
+    function render() {
+      const b = datos;
+      if (!b) return;
+      $('[data-centro]').textContent = b.centro;
+      const g = grupos(b);
+      (Object.keys(g) as Filtro[]).forEach((k) => ($(`[data-cuenta="${k}"]`).textContent = String(g[k].length)));
+      const deHoy = g.hoy;
+      $('[data-n="programada"]').textContent = String(deHoy.filter((c) => c.estado === 'Programada').length);
+      $('[data-n="espera"]').textContent = String(deHoy.filter((c) => c.estado === 'En espera').length);
+      $('[data-n="atendida"]').textContent = String(deHoy.filter((c) => c.estado === 'Atendida' || c.estado === 'No apto').length);
+      $('[data-n="ausente"]').textContent = String(deHoy.filter((c) => c.estado === 'No asistió').length);
+
+      document.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((btn) => {
+        const on = btn.dataset.filtro === filtro;
+        btn.setAttribute('aria-pressed', String(on));
+        btn.classList.toggle('btn-primary', on);
+        btn.classList.toggle('btn-secondary', !on);
+      });
+      $('[data-ayuda]').textContent = AYUDA[filtro];
+
+      const q = $<HTMLInputElement>('[data-buscar]').value.trim().toLowerCase();
+      // En «Hoy», primero los que están esperando, luego por hora.
+      let lista = g[filtro].filter((c) => !q || c.donante.nombre.toLowerCase().includes(q) || (c.donante.cedula ?? '').toLowerCase().includes(q));
+      if (filtro === 'hoy') {
+        const orden = (c: CitaCentro) => (c.estado === 'En espera' ? 0 : c.estado === 'Programada' ? 1 : 2);
+        lista = [...lista].sort((a, z) => orden(a) - orden(z) || a.hora.localeCompare(z.hora));
+      }
+
+      const vacio = $('[data-vacio]');
+      vacio.hidden = lista.length > 0;
+      vacio.textContent = q ? 'Ninguna cita coincide con el filtro.'
+        : filtro === 'hoy' ? 'No hay citas agendadas para hoy en este centro.'
+        : filtro === 'sinCerrar' ? 'Todas las citas anteriores están cerradas.'
+        : 'No hay citas en esta lista.';
+
+      let diaPrevio = '';
+      $('[data-lista]').innerHTML = lista.map((c) => {
+        const e = ESTADO[c.estado] ?? { txt: c.estado, cls: 'bg-sunken text-ink-2' };
+        const cabecera = filtro !== 'hoy' && c.fecha !== diaPrevio
+          ? `<li class="pt-4 pb-1 text-xs font-bold uppercase tracking-wider text-ink-3">${esc(fmtDia(c.fecha, b.hoy))}</li>` : '';
+        diaPrevio = c.fecha;
+        return `${cabecera}<li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center ${c.estado === 'En espera' ? 'bg-accent-soft/40 -mx-4 px-4 sm:-mx-6 sm:px-6' : ''}">
+          <div class="flex min-w-0 flex-1 items-center gap-3">
+            <span class="w-14 shrink-0 text-center"><span class="block text-lg font-extrabold tabular text-ink">${esc(c.hora)}</span>
+              <span class="block text-[0.6875rem] font-semibold text-ink-3">${filtro === 'hoy' ? 'hoy' : esc(c.fecha.slice(8, 10) + '/' + c.fecha.slice(5, 7))}</span></span>
+            <button type="button" class="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-accent text-sm font-bold text-white cursor-pointer" data-ficha="${esc(c.id)}" aria-label="Ver ficha de ${esc(c.donante.nombre)}">
+              <span>${esc(ini(c.donante.nombre))}</span><img alt="" class="absolute inset-0 size-full object-cover" hidden data-foto="${esc(c.donante.foto ?? '')}" />
+            </button>
+            <div class="min-w-0 flex-1">
+              <p class="flex flex-wrap items-center gap-2"><span class="truncate font-semibold text-ink">${esc(c.donante.nombre)}</span>
+                <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${e.cls}">${esc(e.txt)}</span></p>
+              <p class="text-xs text-ink-3">${esc(c.donante.cedula ?? '')} · ${esc(c.donante.id)}${c.donante.telefono ? ' · ' + esc(c.donante.telefono) : ''}</p>
+              <div class="mt-1 flex flex-wrap gap-1">${avisos(c)}</div>
+            </div>
+            <span class="blood-chip shrink-0">${esc(c.donante.sangre || '—')}</span>
+          </div>
+          <div class="flex flex-wrap gap-2 sm:justify-end sm:w-auto">${acciones(c, b.hoy)}</div>
+        </li>`;
+      }).join('');
+
+      // Fotos del carnet (las mismas del QR).
+      document.querySelectorAll<HTMLImageElement>('[data-lista] img[data-foto]').forEach(async (img) => {
+        const url = await urlFotoFicha(img.dataset.foto || undefined).catch(() => null);
+        if (!url) return;
+        img.onload = () => (img.hidden = false);
+        img.src = url;
+      });
+    }
+
+    async function cargar(silencioso = false) {
+      if (cargando) return;
+      cargando = true;
+      try {
+        datos = await bandejaCitas(14);
+        render();
+        window.dispatchEvent(new CustomEvent('blud:citas', { detail: { abiertas: abiertasHoy(datos) } }));
+      } catch (e) {
+        if (!silencioso) {
+          $('[data-lista]').innerHTML = '';
+          const v = $('[data-vacio]');
+          v.hidden = false;
+          v.textContent = (e as Error).message;
+        }
+      } finally {
+        cargando = false;
+      }
+    }
+
+    // Ficha en ventana: la misma que el QR, con las acciones de la cita.
+    const dlg = $<HTMLDialogElement>('[data-dlg]');
+    let citaAbierta: CitaCentro | undefined;
+    async function abrirFicha(id: string) {
+      const c = datos?.citas.find((x) => x.id === id);
+      if (!c || !datos) return;
+      citaAbierta = c;
+      const card = $('#cita-ficha');
+      const base: Ficha = {
+        id: c.donante.id, nombres: c.donante.nombre, cedula: c.donante.cedula, telefono: c.donante.telefono,
+        sangre: c.donante.sangre, foto: c.donante.foto, verificado: c.donante.verificado,
+        proximaCita: { centro: datos.centro, date: c.fecha, time: c.hora },
+      };
+      pintarFicha(card, base);
+      $('[data-dlg-acciones]').innerHTML = acciones(c, datos.hoy, true).replaceAll('btn-sm', '') +
+        `<a href="/operador/mensajes?donante=${encodeURIComponent(c.donante.id)}" class="btn btn-secondary sm:col-span-2">Escribir al donante</a>`;
+      dlg.showModal();
+      dlg.scrollTop = 0;
+      $<HTMLButtonElement>('[data-cerrar]').focus({ preventScroll: true });
+      try {
+        const f = await obtenerFicha(c.donante.id);
+        if (f && citaAbierta?.id === id) pintarFicha(card, f);
+      } catch {}
+    }
+    $('[data-cerrar]').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+
+    const ctl = new AbortController();
+    document.addEventListener('click', onClick, { signal: ctl.signal });
+    async function onClick(e: Event) {
+      const t = e.target as HTMLElement;
+      const f = t.closest<HTMLElement>('[data-ficha]');
+      if (f && !dlg.contains(f)) return void abrirFicha(f.dataset.ficha!);
+      const m = t.closest<HTMLButtonElement>('[data-marcar]');
+      if (!m) return;
+      m.disabled = true;
+      const estado = m.dataset.marcar as 'Programada' | 'En espera' | 'No asistió';
+      try {
+        await marcarCita(m.dataset.id!, estado);
+        toast(estado === 'En espera' ? 'Llegada registrada: el donante está en espera.' : estado === 'No asistió' ? 'Cita marcada como ausencia.' : 'Cambio deshecho.');
+        if (dlg.open) dlg.close();
+        await cargar();
+      } catch (err) {
+        toast((err as Error).message);
+        m.disabled = false;
+      }
+    }
+
+    document.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) =>
+      b.addEventListener('click', () => { filtro = b.dataset.filtro as Filtro; render(); }));
+    $('[data-buscar]').addEventListener('input', render);
+    $('[data-recargar]').addEventListener('click', () => cargar());
+
+    const p = new URLSearchParams(location.search).get('ver');
+    if (p && (['hoy', 'proximas', 'sinCerrar', 'cerradas'] as string[]).includes(p)) filtro = p as Filtro;
+
+    cargar();
+    onDb(() => cargar(true));
+    // Se mantiene al día sola: cada minuto y al volver a la pestaña.
+    const t = window.setInterval(() => { if (!document.hidden) cargar(true); }, 60_000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) cargar(true); }, { signal: ctl.signal });
+    document.addEventListener('astro:before-swap', () => { clearInterval(t); ctl.abort(); }, { once: true });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -137,15 +137,18 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
   type Filtro = 'proximas' | 'pasadas' | 'todas';
   type CitaVista = ReturnType<typeof getCitas>[number];
 
-  const activa = (c: CitaVista, hoy: string) => c.fecha >= hoy && (!c.estado || c.estado === 'Programada');
+  const activa = (c: CitaVista, hoy: string) => c.fecha >= hoy && (!c.estado || c.estado === 'Programada' || c.estado === 'En espera');
   const dias = (iso: string) => Math.round((new Date(iso + 'T00:00:00').getTime() - new Date(hoyISO() + 'T00:00:00').getTime()) / 86400000);
   const faltan = (n: number) => (n === 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`);
   const fmt = (iso: string, o: Intl.DateTimeFormatOptions) => new Date(iso + 'T00:00:00').toLocaleDateString('es-VE', o);
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
   function estadoDe(c: CitaVista, hoy: string): { txt: string; cls: string } {
+    if (c.estado === 'En espera') return { txt: 'En el centro', cls: 'chip-activa' };
     if (activa(c, hoy)) return { txt: 'Agendada', cls: 'chip-activa' };
-    if (c.estado && /atendida|complet|realizad/i.test(c.estado)) return { txt: '✓ Atendida', cls: 'chip-ok' };
+    if (c.estado && /atendida|complet|realizad/i.test(c.estado)) return { txt: 'Atendida', cls: 'chip-ok' };
+    if (c.estado === 'No apto') return { txt: 'Evaluada: no apta', cls: 'chip-pasada' };
+    if (c.estado === 'Cancelada') return { txt: 'Cancelada', cls: 'chip-pasada' };
     if (c.estado && /no ?asist/i.test(c.estado)) return { txt: 'No asististe', cls: 'chip-pasada' };
     return { txt: 'Pasada', cls: 'chip-pasada' };
   }

@@ -17,10 +17,14 @@ const normalize = (p: string) => p.replace(/\/$/, '') || '/';
 const currentPath = normalize(Astro.url.pathname);
 const isActive = (href: string) => normalize(href) === currentPath;
 
-const grupos: { titulo?: string; items: MenuItem[] }[] = [
-  { items: menu.items },
-  ...(menu.cuenta.length ? [{ titulo: 'Cuenta', items: menu.cuenta }] : []),
-];
+// Opciones seguidas con la misma `grupo` van juntas bajo su título; las demás, sin título.
+const grupos: { titulo?: string; items: MenuItem[] }[] = [];
+for (const item of menu.items) {
+  const ultimo = grupos[grupos.length - 1];
+  if (ultimo && ultimo.titulo === item.grupo) ultimo.items.push(item);
+  else grupos.push({ titulo: item.grupo, items: [item] });
+}
+if (menu.cuenta.length) grupos.push({ titulo: 'Cuenta', items: menu.cuenta });
 let n = 0;
 ---
 
@@ -46,20 +50,20 @@ let n = 0;
     </button>
   </div>
 
-  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
-    {grupos.map((g) => (
+  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
+    {grupos.map((g, gi) => (
       <div>
-        {g.titulo && <p class="px-3 pb-2 pt-1 text-[0.6875rem] font-bold uppercase tracking-widest text-ink-3 border-t border-line mt-1 pt-4">{g.titulo}</p>}
-        <ul class="space-y-1.5">
+        {g.titulo && <p class:list={['px-3 pb-1.5 text-[0.6875rem] font-bold uppercase tracking-widest text-ink-3', gi > 0 && 'border-t border-line pt-3']}>{g.titulo}</p>}
+        <ul class="space-y-1">
           {g.items.map((item) => (
             <li class="nav-item" style={`--i:${n++}`}>
               <a
                 href={item.href}
-                class="nav-link group flex items-center gap-3 rounded-control px-3 py-3 text-ink transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
+                class="nav-link group flex items-center gap-3 rounded-control px-3 py-2.5 text-ink transition-colors hover:bg-sunken aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-ink"
                 aria-current={isActive(item.href) ? 'page' : undefined}
                 data-menu={item.href}
               >
-                <span class="nav-ico grid size-10 shrink-0 place-items-center rounded-full bg-sunken text-accent-ink transition-colors group-aria-[current=page]:bg-accent group-aria-[current=page]:text-white">
+                <span class="nav-ico grid size-9 shrink-0 place-items-center rounded-full bg-sunken text-accent-ink transition-colors group-aria-[current=page]:bg-accent group-aria-[current=page]:text-white">
                   <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON_PATHS[item.icon]} />
                 </span>
                 <span class="min-w-0 flex-1">
@@ -336,8 +340,30 @@ let n = 0;
     link.title = n ? 'Completa tu perfil para poder donar' : '';
   }
 
+  /** Operador: contador de citas de hoy que siguen abiertas (por llegar o en espera). */
+  let citasPendiente = false;
+  async function renderCitasHoy() {
+    const link = document.querySelector<HTMLElement>('#sidebar-drawer[data-role="operador"] [data-menu="/operador/citas"]');
+    if (!link || citasPendiente) return;
+    citasPendiente = true;
+    try {
+      const { abiertasHoy, bandejaCitas } = await import('../../lib/citas');
+      pintarCitas(abiertasHoy(await bandejaCitas(0)));
+    } catch {} finally { citasPendiente = false; }
+  }
+  function pintarCitas(n: number) {
+    document.querySelectorAll<HTMLElement>('[data-menu="/operador/citas"] [data-menu-badge]').forEach((b) => {
+      b.textContent = n > 99 ? '99+' : String(n);
+      b.classList.toggle('hidden', !n);
+      b.classList.toggle('grid', !!n);
+      b.setAttribute('aria-label', `${n} citas abiertas hoy`);
+    });
+  }
+  window.addEventListener('blud:citas', (e) => pintarCitas((e as CustomEvent<{ abiertas: number }>).detail.abiertas));
+
   renderSidebarAuth();
   renderBloqueoDonar();
+  renderCitasHoy();
   window.addEventListener('blud:donor', renderBloqueoDonar);
   window.addEventListener('blud:auth', renderSidebarAuth);
   window.addEventListener('storage', (e) => {
@@ -349,5 +375,6 @@ let n = 0;
     initSidebar();
     renderSidebarAuth();
     renderBloqueoDonar();
+    renderCitasHoy();
   });
 </script>

@@ -10,7 +10,7 @@ import { BLOOD_TYPES } from '../../lib/db';
     <div class="flex flex-col gap-4 pb-6 border-b border-line">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Gestión de donantes</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Verifica a los usuarios pre-registrados en la app o registra nuevos donantes del centro.</p>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Escanea el QR del carnet o busca por cédula, ID o nombre. Todos los donantes se abren en la misma ficha del carnet.</p>
       </div>
       <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
         <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5" data-vista="verificar" aria-pressed="false">
@@ -32,14 +32,34 @@ import { BLOOD_TYPES } from '../../lib/db';
     <div data-frame="verificar">
       <div class="panel p-6 sm:p-8 space-y-6 w-full">
         <div class="space-y-4">
-          <h2 class="text-lg font-bold text-ink">Verificar donante</h2>
+          <h2 class="text-lg font-bold text-ink">Buscar o verificar donante</h2>
           <form id="form-buscar" class="flex flex-col sm:flex-row sm:items-end gap-3" novalidate>
             <div class="flex-1 min-w-0">
-              <label for="buscar" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula, ID del carnet o contenido del QR</label>
-              <input type="text" id="buscar" class="field" placeholder="V-12345678 · BLD-A1B2C3" autocomplete="off" />
+              <label for="buscar" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula, ID del carnet o nombre</label>
+              <input type="search" id="buscar" class="field" placeholder="V-12345678 · BLD-000123 · Ana Pérez" autocomplete="off" />
             </div>
-            <button type="submit" class="btn btn-primary w-full sm:w-auto sm:px-10 min-h-12">Buscar</button>
+            <div class="grid grid-cols-2 gap-3 sm:flex">
+              <button type="button" id="btn-escanear" class="btn btn-secondary min-h-12 inline-flex items-center justify-center gap-2 sm:px-6">
+                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect width="7" height="7" x="7" y="7" rx="1"/><path d="M17 12v5h-5"/></svg>
+                Escanear QR
+              </button>
+              <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Buscar</button>
+            </div>
           </form>
+
+          <div id="escaner" hidden class="mx-auto w-full max-w-md space-y-3">
+            <div class="relative overflow-hidden rounded-card bg-black aspect-square">
+              <video id="escaner-video" class="size-full object-cover" playsinline muted></video>
+              <span class="pointer-events-none absolute inset-[18%] rounded-card border-4 border-white/80" aria-hidden="true"></span>
+            </div>
+            <p id="escaner-msg" class="text-center text-sm text-ink-2">Apunta la cámara al QR del carnet del donante.</p>
+            <button type="button" id="escaner-cerrar" class="btn btn-secondary w-full">Cancelar</button>
+          </div>
+
+          <div id="coincidencias" hidden class="space-y-2">
+            <p class="text-xs font-bold uppercase text-ink-3" id="coinc-titulo"></p>
+            <ul id="coinc-lista" class="divide-y divide-line rounded-control border border-line"></ul>
+          </div>
 
           <div id="resultado" class="hidden mx-auto w-full max-w-xl">
             <FichaDonante id="res-ficha">
@@ -125,7 +145,7 @@ import { BLOOD_TYPES } from '../../lib/db';
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm">
                 <thead class="border-b border-line text-ink-3 uppercase text-[0.7rem]">
-                  <tr><th class="py-2">Donante</th><th class="py-2">Sangre</th><th class="py-2">Origen</th><th class="py-2">Fecha</th></tr>
+                  <tr><th class="py-2">Donante</th><th class="py-2">Sangre</th><th class="py-2">Origen</th><th class="py-2">Fecha</th><th class="py-2"><span class="sr-only">Acciones</span></th></tr>
                 </thead>
                 <tbody id="tabla" class="divide-y divide-line"></tbody>
               </table>
@@ -142,6 +162,17 @@ import { BLOOD_TYPES } from '../../lib/db';
   import type { RegistroDonante } from '../../lib/operador';
   import { fichaDeRegistro, obtenerFicha, pintarFicha } from '../../lib/ficha';
   import { usaSupabase } from '../../lib/supabase';
+  import { registro } from '../../lib/db';
+  import type { Escaner } from '../../lib/escaner';
+
+  const iniciales = (n: string) => n.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
+  /** Fila de donante con el mismo orden que el carnet: avatar, nombre, cédula e ID, tipo de sangre y «Ver ficha». */
+  const fila = (d: RegistroDonante, detalle: string) => `<li class="flex items-center gap-3 py-3 px-1">
+      <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white" aria-hidden="true">${esc(iniciales(d.nombreCompleto))}</span>
+      <div class="min-w-0 flex-1"><p class="truncate font-semibold text-ink">${esc(d.nombreCompleto)}</p>
+        <p class="truncate text-xs text-ink-3">${esc(d.cedula)} · ${esc(d.id)}${detalle ? ' · ' + detalle : ''}</p></div>
+      <span class="blood-chip shrink-0">${esc(d.sangre || '—')}</span>
+      <button type="button" class="btn btn-secondary btn-sm shrink-0" data-revisar="${esc(d.id)}">${d.estado === 'verificado' ? 'Ver ficha' : 'Revisar'}</button></li>`;
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -151,6 +182,7 @@ import { BLOOD_TYPES } from '../../lib/db';
     root.dataset.ready = '1';
 
     let actual: RegistroDonante | undefined;
+    const citaUrl = new URLSearchParams(location.search).get('cita');
     let vistaGeneral = () => {};
 
     const mostrar = (d: RegistroDonante) => {
@@ -166,6 +198,8 @@ import { BLOOD_TYPES } from '../../lib/db';
 
       // Primero lo que ya está en el registro; luego la ficha completa (foto, teléfono, citas) de la base.
       ($('#res-chat') as HTMLAnchorElement).href = `/operador/mensajes?donante=${encodeURIComponent(d.id)}`;
+      ($('#res-donar') as HTMLAnchorElement).href = `/operador/donaciones?q=${encodeURIComponent(d.cedula || d.id)}${citaUrl ? `&cita=${encodeURIComponent(citaUrl)}` : ''}`;
+      $('#coincidencias').hidden = true;
       const card = $('#res-ficha');
       pintarFicha(card, fichaDeRegistro(d));
       if (usaSupabase()) {
@@ -185,6 +219,21 @@ import { BLOOD_TYPES } from '../../lib/db';
       if (d) return mostrar(d);
       actual = undefined;
       $('#resultado').classList.add('hidden');
+      // Sin coincidencia exacta: por nombre o por parte de la cédula.
+      const t = q.trim().toLowerCase();
+      const dig = t.replace(/\D/g, '');
+      const hallados = t.length >= 3
+        ? registro.all().filter((r) => r.nombreCompleto.toLowerCase().includes(t) || (dig.length >= 4 && r.cedula.replace(/\D/g, '').includes(dig))).slice(0, 20)
+        : [];
+      if (hallados.length === 1) return mostrar(hallados[0]);
+      const coinc = $('#coincidencias');
+      coinc.hidden = !hallados.length;
+      if (hallados.length) {
+        $('#res-vacio').classList.add('hidden');
+        $('#coinc-titulo').textContent = `${hallados.length} donantes coinciden con «${q.trim()}»`;
+        $('#coinc-lista').innerHTML = hallados.map((r) => fila(r, r.estado === 'verificado' ? 'verificado' : 'sin verificar')).join('');
+        return;
+      }
       const msg = $('#res-vacio');
       msg.textContent = 'No encontramos ese donante. Pídele que complete su perfil en la app o regístralo manualmente.';
       msg.classList.remove('hidden');
@@ -204,6 +253,34 @@ import { BLOOD_TYPES } from '../../lib/db';
       ($('#buscar') as HTMLInputElement).value = pre;
       buscar(pre);
     }
+
+    // Escáner del QR del carnet: el mismo enlace que abre /verificar.
+    let escaner: Escaner | null = null;
+    const cerrarEscaner = () => { escaner?.detener(); escaner = null; $('#escaner').hidden = true; };
+    $('#btn-escanear').addEventListener('click', async () => {
+      if (escaner) return cerrarEscaner();
+      $('#escaner').hidden = false;
+      $('#escaner-msg').textContent = 'Apunta la cámara al QR del carnet del donante.';
+      const { escanearQR } = await import('../../lib/escaner');
+      escaner = await escanearQR($<HTMLVideoElement>('#escaner-video'), (texto) => {
+        cerrarEscaner();
+        ($('#buscar') as HTMLInputElement).value = texto.match(/[?&]id=(BLD-[A-Z0-9]+)/i)?.[1]?.toUpperCase() ?? texto;
+        buscar(texto);
+      }, (motivo) => { $('#escaner-msg').textContent = motivo; });
+    });
+    $('#escaner-cerrar').addEventListener('click', cerrarEscaner);
+    document.addEventListener('astro:before-swap', cerrarEscaner, { once: true });
+
+    // «Ver ficha» / «Revisar» desde cualquier lista abre la misma ficha del carnet.
+    const abrirDesdeLista = (e: Event) => {
+      const id = (e.target as HTMLElement).closest<HTMLElement>('[data-revisar]')?.dataset.revisar;
+      const d = id ? buscarDonante(id) : undefined;
+      if (d) {
+        mostrar(d);
+        $('#resultado').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    ['#coinc-lista', '#ultimos', '#tabla'].forEach((sel) => $(sel).addEventListener('click', abrirDesdeLista));
 
     $('#res-check').addEventListener('change', (e) => {
       ($('#btn-verificar') as HTMLButtonElement).disabled = !(e.target as HTMLInputElement).checked;
@@ -244,11 +321,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       $('#n-cola').textContent = String(cola.length);
       $('[data-cuenta="cola"]').textContent = String(cola.length);
       $('#cola').innerHTML = cola.length
-        ? cola.map((d) => `<li class="flex items-center justify-between gap-3 py-3">
-            <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(d.nombreCompleto)}</p>
-            <p class="text-xs text-ink-3">${esc(d.cedula)} · pre-registrado ${esc(fmtFecha(d.fechaRegistro, { day: 'numeric', month: 'short' }))}</p></div>
-            <span class="blood-chip">${esc(d.sangre || '—')}</span>
-            <button type="button" class="btn btn-secondary btn-sm" data-revisar="${esc(d.id)}">Revisar</button></li>`).join('')
+        ? cola.map((d) => fila(d, `pre-registrado ${esc(fmtFecha(d.fechaRegistro, { day: 'numeric', month: 'short' }))}`)).join('')
         : '<li class="py-6 text-center text-sm text-ink-3">No hay donantes esperando verificación.</li>';
     };
 
@@ -260,10 +333,12 @@ import { BLOOD_TYPES } from '../../lib/db';
       $('[data-cuenta="mios"]').textContent = String(lista.length);
       $('#tabla-vacia').classList.toggle('hidden', lista.length > 0);
       $('#tabla').innerHTML = vis.map((d) => `<tr>
-        <td class="py-3 font-semibold text-ink">${esc(d.nombreCompleto)}<br><span class="text-xs font-normal text-ink-3">${esc(d.cedula)}</span></td>
+        <td class="py-3"><span class="flex items-center gap-3"><span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white" aria-hidden="true">${esc(iniciales(d.nombreCompleto))}</span>
+          <span class="min-w-0"><span class="block font-semibold text-ink">${esc(d.nombreCompleto)}</span><span class="block text-xs font-normal text-ink-3">${esc(d.cedula)} · ${esc(d.id)}</span></span></span></td>
         <td class="py-3"><span class="blood-chip">${esc(d.sangre || '—')}</span></td>
         <td class="py-3 text-xs text-ink-2">${d.origen === 'app' ? 'Verificado desde la app' : 'Registro manual'}</td>
-        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short', year: 'numeric' }))}</td>
+        <td class="py-3 text-right"><button type="button" class="btn btn-secondary btn-sm" data-revisar="${esc(d.id)}">Ver ficha</button></td></tr>`).join('');
     };
 
     $('#cola').addEventListener('click', (e) => {
@@ -310,10 +385,7 @@ import { BLOOD_TYPES } from '../../lib/db';
         .slice(0, 5)
         .map((x) => x.d);
       $('#ultimos').innerHTML = u.length
-        ? u.map((d) => `<li class="flex items-center justify-between gap-3 py-3">
-            <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(d.nombreCompleto)}</p>
-            <p class="text-xs text-ink-3">${esc(d.cedula)} · ${d.origen === 'app' ? 'verificado desde la app' : 'registro manual'} · ${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short' }))}</p></div>
-            <span class="blood-chip">${esc(d.sangre || '—')}</span></li>`).join('')
+        ? u.map((d) => fila(d, `${d.origen === 'app' ? 'verificado desde la app' : 'registro manual'} · ${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short' }))}`)).join('')
         : '<li class="py-6 text-center text-sm text-ink-3">Aún no has registrado donantes.</li>';
     };
 

@@ -28,6 +28,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       <div class="panel p-6 sm:p-8 space-y-6 w-full">
         <div class="space-y-4">
           <h2 class="text-lg font-bold text-ink">Registrar nueva donación</h2>
+          <div id="cita-banner" hidden class="flex flex-col gap-2 rounded-control bg-accent-soft px-4 py-3 text-sm text-accent-ink sm:flex-row sm:items-center sm:justify-between">
+            <p><strong class="font-bold">Atendiendo una cita<span data-cita-hora></span>.</strong> Al guardar la evaluación o la donación, la cita se cierra sola.</p>
+            <a href="/operador/citas" class="link-arrow shrink-0 font-semibold">Volver a la bandeja</a>
+          </div>
           <form id="form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_9rem_9rem_1.2fr] gap-4 items-end" novalidate>
             <div class="sm:col-span-2 lg:col-span-1">
               <label for="cedula" class="block text-xs font-bold uppercase text-ink-2 mb-1">Cédula o ID del donante</label>
@@ -174,6 +178,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 <script>
   import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, operadorActual, registrarDonacionOp, toast } from '../../lib/operador';
   import type { Hemocomponente } from '../../lib/operador';
+  import { cerrarCitaDemo } from '../../lib/citas';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -235,6 +240,22 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       if (d.sangre) tipo.value = d.sangre;
     };
     cedula.addEventListener('input', lookup);
+
+    // Llega desde la bandeja de citas (o la ficha del donante): cédula ya cargada.
+    const params = new URLSearchParams(location.search);
+    const citaId = params.get('cita');
+    const pre = params.get('q');
+    if (pre) {
+      cedula.value = pre;
+      lookup();
+      onDb(() => { if (cedula.value === pre) lookup(); });
+      requestAnimationFrame(() => $('#ev-peso').focus({ preventScroll: true }));
+    }
+    if (citaId) {
+      $('#cita-banner').hidden = false;
+      const hora = params.get('hora');
+      if (hora) $('[data-cita-hora]').textContent = ` de las ${hora}`;
+    }
 
     // ---- Evaluación (RF-O7): dictamen y alertas de rango en vivo
     const dictamen = $<HTMLSelectElement>('#ev-dictamen');
@@ -326,6 +347,12 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       }
       err.classList.add('hidden');
       toast(evaluacion.dictamen === 'apto' ? `Donación de ${r.data.donanteNombre} registrada. ${r.aviso ?? ''}`.trim() : `Evaluación guardada: ${r.data.donanteNombre} quedó diferido.`);
+      if (citaId) {
+        cerrarCitaDemo(citaId, evaluacion.dictamen === 'apto' ? 'Atendida' : 'No apto');
+        const banner = $('#cita-banner');
+        banner.querySelector('p')!.innerHTML = `<strong class="font-bold">Cita cerrada.</strong> ${evaluacion.dictamen === 'apto' ? 'La donación quedó registrada.' : 'La evaluación quedó registrada y el donante, diferido.'}`;
+        banner.querySelector('a')!.className = 'btn btn-primary btn-sm shrink-0';
+      }
       form.reset();
       $('#vol').setAttribute('value', '450');
       $('#donante').classList.add('hidden');

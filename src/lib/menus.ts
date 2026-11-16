@@ -13,6 +13,8 @@ export interface MenuItem {
   hint: string;
   href: string;
   icon: IconKey;
+  /** Sección del menú. Las opciones seguidas con la misma sección se agrupan bajo su título. */
+  grupo?: string;
 }
 
 export interface RoleMenu {
@@ -65,15 +67,15 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
   operador: {
     titulo: 'Operación',
     items: [
-      { label: 'Panel', hint: 'Resumen y stock', href: '/operador/panel', icon: 'dashboard' },
-      { label: 'Donantes', hint: 'Verificar y registrar', href: '/operador/donantes', icon: 'verify' },
-      { label: 'Mensajes', hint: 'Chat con donantes', href: '/operador/mensajes', icon: 'chat' },
-      { label: 'Donaciones', hint: 'Registrar extracciones', href: '/operador/donaciones', icon: 'drop' },
-      { label: 'Prescribir', hint: 'Cargar orden médica', href: '/operador/prescribir', icon: 'file' },
-      { label: 'Entregas', hint: 'Despachar pedidos', href: '/operador/entregas', icon: 'truck' },
-      { label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
-      { label: 'Hemovigilancia', hint: 'Registro de eventos transfusionales', href: '/operador/hemovigilancia', icon: 'alert' },
-
+      { label: 'Panel', hint: 'Resumen del día y stock', href: '/operador/panel', icon: 'dashboard' },
+      { grupo: 'Donación', label: 'Citas del centro', hint: 'Donantes agendados hoy', href: '/operador/citas', icon: 'calendar' },
+      { grupo: 'Donación', label: 'Donantes', hint: 'Verificar, buscar y registrar', href: '/operador/donantes', icon: 'verify' },
+      { grupo: 'Donación', label: 'Donaciones', hint: 'Evaluación y extracción', href: '/operador/donaciones', icon: 'drop' },
+      { grupo: 'Transfusión', label: 'Solicitar transfusión', hint: 'Cargar la orden médica', href: '/operador/prescribir', icon: 'file' },
+      { grupo: 'Transfusión', label: 'Despachos', hint: 'Entregar lo aprobado', href: '/operador/entregas', icon: 'truck' },
+      { grupo: 'Transfusión', label: 'Hemovigilancia', hint: 'Registro de la transfusión', href: '/operador/hemovigilancia', icon: 'alert' },
+      { grupo: 'Seguimiento', label: 'Mensajes', hint: 'Chat con donantes', href: '/operador/mensajes', icon: 'chat' },
+      { grupo: 'Seguimiento', label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/operador/perfil', icon: 'user' },
