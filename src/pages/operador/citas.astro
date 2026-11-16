@@ -14,11 +14,21 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Citas del centro</h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">Donantes que agendaron en la app. Marca su llegada y atiéndelos sin tener que buscarlos.</p>
       </div>
-      <button type="button" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5 self-start sm:self-auto" data-recargar>
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-        Actualizar
-      </button>
+      <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end">
+        <label class="block sm:w-72" data-sede-box hidden>
+          <span class="mb-1 block text-xs font-bold uppercase text-ink-2">Centro</span>
+          <select class="field" data-sede aria-label="Centro que quieres ver"></select>
+        </label>
+        <button type="button" class="btn btn-secondary inline-flex min-h-12 items-center justify-center gap-1.5" data-recargar>
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          Actualizar
+        </button>
+      </div>
     </div>
+
+    <p class="rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" data-solo-lectura hidden>
+      Estás viendo citas de otro centro: solo consulta. La llegada y la atención las registra el personal de ese centro.
+    </p>
 
     <!-- Resumen del día -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" aria-label="Resumen de hoy">
@@ -61,7 +71,7 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
 </style>
 
 <script>
-  import { abiertasHoy, bandejaCitas, marcarCita } from '../../lib/citas';
+  import { abiertasHoy, bandejaCitas, esPropia, marcarCita } from '../../lib/citas';
   import type { Bandeja, CitaCentro } from '../../lib/citas';
   import { obtenerFicha, pintarFicha, urlFotoFicha } from '../../lib/ficha';
   import type { Ficha } from '../../lib/ficha';
@@ -94,8 +104,9 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
     ? `/operador/donaciones?q=${encodeURIComponent(c.donante.cedula || c.donante.id)}&cita=${encodeURIComponent(c.id)}&hora=${encodeURIComponent(c.hora)}`
     : `/operador/donantes?q=${encodeURIComponent(c.donante.id)}&cita=${encodeURIComponent(c.id)}`;
 
-  function acciones(c: CitaCentro, hoy: string, enFicha = false): string {
+  function acciones(c: CitaCentro, hoy: string, enFicha = false, propia = true): string {
     const b = (attr: string, txt: string, cls = 'btn-secondary') => `<button type="button" class="btn ${cls} btn-sm" ${attr}>${txt}</button>`;
+    if (!propia) return enFicha ? '' : b(`data-ficha="${esc(c.id)}"`, 'Ver ficha');
     const atender = `<a href="${esc(hrefAtender(c))}" class="btn btn-primary btn-sm">${c.donante.verificado ? 'Atender' : 'Verificar y atender'}</a>`;
     const ficha = enFicha ? '' : b(`data-ficha="${esc(c.id)}"`, 'Ver ficha');
     const futura = c.fecha > hoy;
@@ -126,6 +137,9 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
     const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
     let datos: Bandeja | null = null;
+    /** Centro que se está viendo: undefined = el mío · 0 = toda la red · n = otra sede. */
+    let sedeVer: number | undefined;
+    try { const g = sessionStorage.getItem('blud-citas-sede'); if (g !== null && g !== '') sedeVer = Number(g); } catch {}
     let filtro: Filtro = 'hoy';
     let cargando = false;
 
@@ -146,7 +160,17 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
     function render() {
       const b = datos;
       if (!b) return;
-      $('[data-centro]').textContent = b.centro;
+      $('[data-centro]').textContent = b.sedeId === 0 ? 'Toda la red' : b.sedeId === b.miSede ? `Tu centro · ${b.centro}` : b.centro;
+      const sel = $<HTMLSelectElement>('[data-sede]');
+      if (b.sedes?.length) {
+        $('[data-sede-box]').hidden = false;
+        const op = (v: string, t: string) => `<option value="${v}">${esc(t)}</option>`;
+        const conteo = (n: number) => (n ? ` · ${n} hoy` : '');
+        sel.innerHTML = b.sedes.map((x) => op(x.id === b.miSede ? '' : String(x.id), `${x.id === b.miSede ? 'Mi centro: ' : ''}${x.nombre}${conteo(x.hoy)}`)).join('')
+          + op('0', `Toda la red${conteo(b.sedes.reduce((a, x) => a + x.hoy, 0))}`);
+        sel.value = sedeVer === undefined || sedeVer === b.miSede ? '' : String(sedeVer);
+      }
+      $('[data-solo-lectura]').hidden = b.sedeId === undefined || b.sedeId === b.miSede || b.sedeId === 0;
       const g = grupos(b);
       (Object.keys(g) as Filtro[]).forEach((k) => ($(`[data-cuenta="${k}"]`).textContent = String(g[k].length)));
       const deHoy = g.hoy;
@@ -195,11 +219,12 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
               <p class="flex flex-wrap items-center gap-2"><span class="truncate font-semibold text-ink">${esc(c.donante.nombre)}</span>
                 <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${e.cls}">${esc(e.txt)}</span></p>
               <p class="text-xs text-ink-3">${esc(c.donante.cedula ?? '')} · ${esc(c.donante.id)}${c.donante.telefono ? ' · ' + esc(c.donante.telefono) : ''}</p>
+              ${b.sedeId === 0 && c.sede ? `<p class="text-xs font-semibold ${esPropia(b, c) ? 'text-accent-ink' : 'text-ink-2'}">${esc(c.sede)}${esPropia(b, c) ? ' · tu centro' : ''}</p>` : ''}
               <div class="mt-1 flex flex-wrap gap-1">${avisos(c)}</div>
             </div>
             <span class="blood-chip shrink-0">${esc(c.donante.sangre || '—')}</span>
           </div>
-          <div class="flex flex-wrap gap-2 sm:justify-end sm:w-auto">${acciones(c, b.hoy)}</div>
+          <div class="flex flex-wrap gap-2 sm:justify-end sm:w-auto">${acciones(c, b.hoy, false, esPropia(b, c))}</div>
         </li>`;
       }).join('');
 
@@ -212,13 +237,16 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
       });
     }
 
+    let otraVez = false;
     async function cargar(silencioso = false) {
-      if (cargando) return;
+      if (cargando) { otraVez = true; return; }
       cargando = true;
       try {
-        datos = await bandejaCitas(14);
+        datos = await bandejaCitas(14, sedeVer);
         render();
-        window.dispatchEvent(new CustomEvent('blud:citas', { detail: { abiertas: abiertasHoy(datos) } }));
+        if (datos.sedeId === undefined || datos.sedeId === datos.miSede) {
+          window.dispatchEvent(new CustomEvent('blud:citas', { detail: { abiertas: abiertasHoy(datos) } }));
+        }
       } catch (e) {
         if (!silencioso) {
           $('[data-lista]').innerHTML = '';
@@ -228,6 +256,7 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
         }
       } finally {
         cargando = false;
+        if (otraVez) { otraVez = false; cargar(silencioso); }
       }
     }
 
@@ -242,10 +271,10 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
       const base: Ficha = {
         id: c.donante.id, nombres: c.donante.nombre, cedula: c.donante.cedula, telefono: c.donante.telefono,
         sangre: c.donante.sangre, foto: c.donante.foto, verificado: c.donante.verificado,
-        proximaCita: { centro: datos.centro, date: c.fecha, time: c.hora },
+        proximaCita: { centro: c.sede ?? datos.centro, date: c.fecha, time: c.hora },
       };
       pintarFicha(card, base);
-      $('[data-dlg-acciones]').innerHTML = acciones(c, datos.hoy, true).replaceAll('btn-sm', '') +
+      $('[data-dlg-acciones]').innerHTML = acciones(c, datos.hoy, true, esPropia(datos, c)).replaceAll('btn-sm', '') +
         `<a href="/operador/mensajes?donante=${encodeURIComponent(c.donante.id)}" class="btn btn-secondary sm:col-span-2">Escribir al donante</a>`;
       dlg.showModal();
       dlg.scrollTop = 0;
@@ -283,6 +312,13 @@ import LayoutOperador from '../../layouts/LayoutOperador.astro';
       b.addEventListener('click', () => { filtro = b.dataset.filtro as Filtro; render(); }));
     $('[data-buscar]').addEventListener('input', render);
     $('[data-recargar]').addEventListener('click', () => cargar());
+    $<HTMLSelectElement>('[data-sede]').addEventListener('change', (e) => {
+      const v = (e.target as HTMLSelectElement).value;
+      sedeVer = v === '' ? undefined : Number(v);
+      try { sessionStorage.setItem('blud-citas-sede', v); } catch {}
+      $('[data-lista]').innerHTML = '';
+      cargar();
+    });
 
     const p = new URLSearchParams(location.search).get('ver');
     if (p && (['hoy', 'proximas', 'sinCerrar', 'cerradas'] as string[]).includes(p)) filtro = p as Filtro;

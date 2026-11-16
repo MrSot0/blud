@@ -20,7 +20,7 @@ begin
     raise notice 'Las cuentas de prueba de BLUD ya existen: no se cargó nada.';
     return;
   end if;
-  select sedeid into v_sede from public.sede where nombre = 'Hospital Central Maracaibo';
+  select sedeid into v_sede from public.sede where nombre = 'Banco de Sangre del Zulia';
   v_sede := coalesce(v_sede, (select min(sedeid) from public.sede where tipo = 'BancoSangre'));
 
   -- ------------------------------------------------------------ Cuentas de acceso (Supabase Auth)

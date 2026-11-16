@@ -10,6 +10,9 @@ export type EstadoCita = 'Programada' | 'En espera' | 'Atendida' | 'No apto' | '
 
 export interface CitaCentro {
   id: string;
+  /** Sede de la cita (base real). En modo demo no viene. */
+  sedeId?: number;
+  sede?: string;
   fecha: string; // YYYY-MM-DD (hora de Caracas)
   hora: string; // HH:MM
   estado: EstadoCita;
@@ -22,7 +25,12 @@ export interface CitaCentro {
   };
 }
 
-export interface Bandeja { centro: string; hoy: string; citas: CitaCentro[] }
+export interface Bandeja {
+  centro: string; hoy: string; citas: CitaCentro[];
+  /** Centro del operador y centro que se está viendo (0 = toda la red). Solo con base real. */
+  miSede?: number; sedeId?: number;
+  sedes?: { id: number; nombre: string; hoy: number }[];
+}
 
 const LIBRO = 'blud-appointments';
 const hoyLocal = () => {
@@ -52,9 +60,10 @@ function bandejaDemo(): Bandeja {
   return { centro: 'Tu centro', hoy: hoyLocal(), citas };
 }
 
-export async function bandejaCitas(dias = 14): Promise<Bandeja> {
+/** sede: undefined = mi centro · 0 = toda la red · n = esa sede. */
+export async function bandejaCitas(dias = 14, sede?: number): Promise<Bandeja> {
   if (!usaSupabase()) return bandejaDemo();
-  const { data, error } = await sb()!.rpc('blud_bandeja_citas', { p_dias: dias });
+  const { data, error } = await sb()!.rpc('blud_bandeja_citas', { p_dias: dias, p_sede: sede ?? null });
   if (error) throw new Error(error.message || 'No pudimos cargar las citas del centro.');
   return data as Bandeja;
 }
@@ -73,7 +82,10 @@ export async function marcarCita(id: string, estado: 'Programada' | 'En espera' 
 
 /** Citas de hoy que siguen abiertas (por llegar o en espera): el contador del menú. */
 export const abiertasHoy = (b: Bandeja) =>
-  b.citas.filter((c) => c.fecha === b.hoy && (c.estado === 'Programada' || c.estado === 'En espera')).length;
+  b.citas.filter((c) => c.fecha === b.hoy && esPropia(b, c) && (c.estado === 'Programada' || c.estado === 'En espera')).length;
+
+/** ¿La cita es del centro del operador? Solo esas se pueden marcar y atender. */
+export const esPropia = (b: Bandeja, c: CitaCentro) => b.miSede === undefined || c.sedeId === undefined || c.sedeId === b.miSede;
 
 /** Modo demo: al guardar la donación o la evaluación desde una cita, se cierra en el libro local (con base real lo hace un trigger). */
 export function cerrarCitaDemo(id: string, estado: 'Atendida' | 'No apto'): void {

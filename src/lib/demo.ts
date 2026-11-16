@@ -14,7 +14,7 @@ import { usaSupabase } from './supabase';
 const OPERADOR = 'operador@blud.app';
 const LABORATORIO = 'laboratorio@blud.app';
 const DIRECCION = 'maria@blud.app';
-const SEDE = 'Hospital Central Maracaibo';
+const SEDE = 'Banco de Sangre del Zulia';
 
 const FLAG = 'blud-demo-seeded';
 

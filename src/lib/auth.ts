@@ -49,11 +49,11 @@ const APPOINTMENTS_KEY = 'blud-appointments';
 
 /** Cuentas de prueba: siempre disponibles para demostrar el acceso. */
 export const demoUsers: (Session & { password: string })[] = [
-  { name: 'María Fernández', email: 'maria@blud.app', password: 'Donante2026', role: 'director', bloodType: 'O+', telefono: '+58 414 1234567', colegiado: 'MPPS-84920', cargo: 'Director General de Banco de Sangre', sede: 'Hospital Central Maracaibo' },
+  { name: 'María Fernández', email: 'maria@blud.app', password: 'Donante2026', role: 'director', bloodType: 'O+', telefono: '+58 414 1234567', colegiado: 'MPPS-84920', cargo: 'Director General de Banco de Sangre', sede: 'Banco de Sangre del Zulia' },
   { name: 'Carlos Pérez', email: 'carlos@blud.app', password: 'Sangre2026', role: 'donante', bloodType: 'A-', telefono: '+58 414 7654321' },
-  { name: 'Dra. María Colina', email: 'operador@blud.app', password: 'Operador2026', role: 'operador', bloodType: 'B+', telefono: '+58 414 5550123', colegiado: 'MPPS-51230', cargo: 'Operador de Banco de Sangre', sede: 'Hospital Central Maracaibo' },
-  { name: 'Lic. Andrea Vargas', email: 'laboratorio@blud.app', password: 'Laboratorio2026', role: 'laboratorio', bloodType: 'O-', telefono: '+58 414 5550456', colegiado: 'MPPS-60721', cargo: 'Bioanalista', sede: 'Hospital Central Maracaibo' },
-  { name: 'Lic. Daniela Ríos', email: 'soporte@blud.app', password: 'Soporte2026', role: 'soporte', bloodType: 'A+', telefono: '+58 414 5550789', colegiado: 'BLUD-SOP-014', cargo: 'Especialista de Soporte al Donante', sede: 'Hospital Central Maracaibo' },
+  { name: 'Dra. María Colina', email: 'operador@blud.app', password: 'Operador2026', role: 'operador', bloodType: 'B+', telefono: '+58 414 5550123', colegiado: 'MPPS-51230', cargo: 'Operador de Banco de Sangre', sede: 'Banco de Sangre del Zulia' },
+  { name: 'Lic. Andrea Vargas', email: 'laboratorio@blud.app', password: 'Laboratorio2026', role: 'laboratorio', bloodType: 'O-', telefono: '+58 414 5550456', colegiado: 'MPPS-60721', cargo: 'Bioanalista', sede: 'Banco de Sangre del Zulia' },
+  { name: 'Lic. Daniela Ríos', email: 'soporte@blud.app', password: 'Soporte2026', role: 'soporte', bloodType: 'A+', telefono: '+58 414 5550789', colegiado: 'BLUD-SOP-014', cargo: 'Especialista de Soporte al Donante', sede: 'Banco de Sangre del Zulia' },
 ];
 
 // ---------- Almacenamiento seguro (puede fallar en modo privado) ----------
