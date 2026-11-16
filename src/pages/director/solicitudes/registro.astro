@@ -1,6 +1,6 @@
 ---
 // src/pages/director/solicitudes/registro.astro
-// Solicitud de transfusión cargada por la dirección (nace aprobada). Con ?id= edita una existente.
+// Corrección de una solicitud pendiente (?id=) antes de aprobarla. Las solicitudes nuevas las registra el operador.
 import Layout from '../../../layouts/LayoutD.astro';
 import { BLOOD_TYPES, COMPONENTES } from '../../../lib/db';
 import { centers } from '../../../data/centers';
@@ -126,6 +126,14 @@ const laboratorio = [
     if (!tipo) return void (hint.textContent = 'Elige tipo y hemocomponente para ver el stock.');
     const n = unidadesInventario().filter((u) => u.estado !== 'vencida' && u.tipoSangre === tipo && u.componente === comp).length;
     hint.textContent = n ? `Hay ${n} u. vigentes de ${tipo} · ${comp}.` : `No hay ${tipo} · ${comp} en stock: se despachará cuando haya.`;
+  }
+
+  // Las solicitudes las registra el operador y la dirección las aprueba: aquí solo se corrige una existente.
+  if (!editId) {
+    form.hidden = true;
+    document.getElementById('titulo')!.textContent = 'Solicitudes de transfusión';
+    document.getElementById('subtitulo')!.innerHTML =
+      'Las registra el operador con la orden médica y la dirección las aprueba o rechaza desde <a class="font-semibold text-accent-ink underline" href="/director/solicitudes/historial">Historial</a>.';
   }
 
   if (editId) {

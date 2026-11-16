@@ -1,0 +1,205 @@
+---
+// src/pages/laboratorio/compatibilidad.astro
+// RF-TR2 / RF-TR3 / RF-TR4: tipaje de la muestra del paciente y prueba cruzada de cada unidad reservada.
+// Las solicitudes llegan aquí cuando la dirección las aprueba (las unidades quedan reservadas para el paciente).
+import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+---
+
+<LayoutLaboratorio title="BLUD | Compatibilidad">
+  <div class="container-blud py-8 space-y-8" data-compat>
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-line">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Compatibilidad</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Tipaje de la muestra del paciente y prueba cruzada de cada unidad reservada. Sin esto, el operador no puede despachar.</p>
+      </div>
+      <div class="seg" role="tablist" aria-label="Filtrar solicitudes">
+        <button type="button" role="tab" aria-selected="true" data-filtro="pendientes">Por resolver <span class="tabular" data-n="pendientes">0</span></button>
+        <button type="button" role="tab" aria-selected="false" data-filtro="listas">Listas <span class="tabular" data-n="listas">0</span></button>
+        <button type="button" role="tab" aria-selected="false" data-filtro="despachadas">Despachadas</button>
+      </div>
+    </div>
+
+    <div class="hidden panel p-8 text-center space-y-2" data-sin-servidor>
+      <p class="font-semibold text-ink">Necesita conexión con el servidor</p>
+      <p class="text-sm text-ink-3">El tipaje y las pruebas cruzadas se registran en la base del banco de sangre.</p>
+    </div>
+
+    <div class="space-y-6" data-lista aria-live="polite"></div>
+    <div class="hidden panel p-10 text-center space-y-2" data-vacio>
+      <p class="font-semibold text-ink">No hay solicitudes en esta lista</p>
+      <p class="text-sm text-ink-3">Cuando la dirección apruebe una solicitud de transfusión, aparecerá aquí.</p>
+    </div>
+  </div>
+</LayoutLaboratorio>
+
+<style>
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.25rem; border-radius: 9999px; background: var(--sunken); }
+  .seg button { padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+  .seg button[aria-selected='true'] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+  [data-lista] :global(.chip) { display: inline-flex; align-items: center; border-radius: 9999px; padding: 0.15rem 0.65rem; font-size: 0.75rem; font-weight: 700; }
+  [data-lista] :global(.chip-ok) { background: var(--ok-soft); color: var(--ok); }
+  [data-lista] :global(.chip-warn) { background: var(--warn-soft); color: var(--warn); }
+  [data-lista] :global(.chip-mal) { background: var(--accent-soft); color: var(--accent-ink); }
+  [data-lista] :global(.chip-neutro) { background: var(--sunken); color: var(--ink-2); }
+  [data-lista] :global(.lbl) { display: block; margin-bottom: 0.25rem; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+</style>
+
+<script>
+  import { cambiarUnidad, listarTransfusiones, registrarCruzada, registrarTipaje, type Transfusion } from '../../lib/transfusion';
+  import { usaSupabase } from '../../lib/supabase';
+  import { esc, fmtFecha, toast } from '../../lib/ui';
+
+  type Filtro = 'pendientes' | 'listas' | 'despachadas';
+  const PRIORIDAD = { critica: ['Crítica', 'chip-mal'], urgente: ['Urgente', 'chip-warn'], normal: ['Programada', 'chip-neutro'] } as const;
+  const opts = (vals: string[], sel = '') => vals.map((v) => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
+
+  function tarjeta(t: Transfusion): string {
+    const [pLabel, pCls] = PRIORIDAD[t.prioridad];
+    const estado = t.estado === 'despachado'
+      ? '<span class="chip chip-neutro">Despachada</span>'
+      : t.faltaParaDespachar ? `<span class="chip chip-warn">${esc(t.faltaParaDespachar)}</span>` : '<span class="chip chip-ok">Lista para despachar</span>';
+    const editable = t.estado === 'aprobado';
+    const tj = t.tipaje;
+
+    const tipaje = tj && (tj.conforme || !editable)
+      ? `<div class="grid grid-cols-2 sm:grid-cols-5 gap-3 rounded-control bg-sunken p-4 text-sm">
+          <div><span class="lbl">Grupo</span><b class="text-lg text-ink">${esc((tj.abo ?? '') + (tj.rh ?? ''))}</b></div>
+          <div><span class="lbl">Anticuerpos</span>${esc(tj.anticuerpos ?? '—')}</div>
+          <div><span class="lbl">Du</span>${esc(tj.du ?? '—')}</div>
+          <div><span class="lbl">Tubo</span><span class="font-mono">${esc(tj.tubo)}</span></div>
+          <div><span class="lbl">Fecha</span>${esc(new Date(tj.fecha).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }))}</div>
+        </div>
+        ${tj.abo && t.tipoSolicitado && (tj.abo + tj.rh) !== t.tipoSolicitado ? `<p class="text-xs font-semibold text-accent-ink">El grupo determinado (${esc(tj.abo + tj.rh)}) no coincide con el de la solicitud (${esc(t.tipoSolicitado)}): avisa a la dirección.</p>` : ''}`
+      : editable ? `
+        ${tj && !tj.conforme ? `<p class="rounded-control bg-accent-soft px-3 py-2 text-sm text-accent-ink">Muestra anterior rechazada: ${esc(tj.motivoRechazo ?? '')}. Registra la nueva.</p>` : ''}
+        <form class="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tipaje="${esc(t.id)}" novalidate>
+          <label class="col-span-2 sm:col-span-1"><span class="lbl">Código del tubo *</span><input name="tubo" class="field" autocomplete="off" /></label>
+          <label><span class="lbl">Muestra *</span><select name="conforme" class="field"><option value="true">Conforme</option><option value="false">Rechazada</option></select></label>
+          <label><span class="lbl">Grupo ABO *</span><select name="abo" class="field"><option value="">—</option>${opts(['A', 'B', 'AB', 'O'])}</select></label>
+          <label><span class="lbl">Rh *</span><select name="rh" class="field"><option value="">—</option><option value="+">Positivo (+)</option><option value="-">Negativo (−)</option></select></label>
+          <label><span class="lbl">Prueba directa</span><select name="directa" class="field"><option value="">—</option>${opts(['A', 'B', 'AB', 'O'])}</select></label>
+          <label><span class="lbl">Prueba inversa</span><select name="inversa" class="field"><option value="">—</option>${opts(['A', 'B', 'AB', 'O'])}</select></label>
+          <label><span class="lbl">Du (D débil)</span><select name="du" class="field"><option value="">No aplica</option>${opts(['Negativo', 'Positivo'])}</select></label>
+          <label><span class="lbl">Anticuerpos irregulares</span><select name="anticuerpos" class="field">${opts(['Negativo', 'Positivo'], 'Negativo')}</select></label>
+          <label class="col-span-2 sm:col-span-4 hidden" data-motivo><span class="lbl">Motivo del rechazo de la muestra *</span><input name="motivoRechazo" class="field" placeholder="Hemolizada, mal rotulada, volumen insuficiente…" /></label>
+          <label class="col-span-2 sm:col-span-4"><span class="lbl">Observaciones</span><input name="observaciones" class="field" /></label>
+          <div class="col-span-2 sm:col-span-4 flex justify-center"><button class="btn btn-primary sm:px-10">Guardar tipaje</button></div>
+        </form>` : '<p class="text-sm text-ink-3">Sin tipaje registrado.</p>';
+
+    const filas = t.unidades.map((u) => {
+      const c = u.cruzada;
+      const res = !t.requiereCruzada ? '<span class="chip chip-neutro">No requiere</span>'
+        : c ? `<span class="chip ${c.resultado === 'Compatible' ? 'chip-ok' : 'chip-mal'}">${esc(c.resultado)}</span>
+              <span class="block text-xs text-ink-3 mt-1">Mayor ${c.mayor} · menor ${c.menor} · CI ${esc(c.coombsIndirecto)} · CD ${esc(c.coombsDirecto)}</span>`
+        : '<span class="chip chip-warn">Pendiente</span>';
+      const form = editable && t.requiereCruzada && tj?.conforme && (!c || c.resultado === 'Incompatible')
+        ? (c ? `<button class="btn btn-secondary btn-sm" data-cambiar="${esc(t.id)}" data-unidad="${u.unidadId}">Cambiar por otra unidad</button>` :
+          `<form class="flex flex-wrap items-end gap-2" data-cruzada="${esc(t.id)}" data-unidad="${u.unidadId}" novalidate>
+            <label><span class="lbl">Mayor</span><select name="mayor" class="field !min-h-10 w-20">${opts(['0', '1', '2', '3', '4'], '0')}</select></label>
+            <label><span class="lbl">Menor</span><select name="menor" class="field !min-h-10 w-20">${opts(['0', '1', '2', '3', '4'], '0')}</select></label>
+            <label><span class="lbl">Coombs ind.</span><select name="coombsIndirecto" class="field !min-h-10">${opts(['Negativo', 'Positivo'], 'Negativo')}</select></label>
+            <label><span class="lbl">Coombs dir.</span><select name="coombsDirecto" class="field !min-h-10">${opts(['Negativo', 'Positivo'], 'Negativo')}</select></label>
+            <button class="btn btn-primary btn-sm">Registrar</button>
+          </form>`) : '';
+      return `<li class="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div class="min-w-0">
+          <p class="font-mono text-sm font-bold text-ink">${esc(u.codigo)}</p>
+          <p class="text-xs text-ink-3">${esc(u.componente)} · ${esc(u.tipo)} · vence ${esc(fmtFecha(u.vence, { day: 'numeric', month: 'short' }))} · ${esc(u.estado)}</p>
+          <div class="mt-1.5">${res}</div>
+        </div>
+        <div>${form}</div>
+      </li>`;
+    }).join('');
+
+    return `<article class="panel p-6 sm:p-8 space-y-6">
+      <header class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-line pb-4">
+        <div class="min-w-0">
+          <p class="font-mono text-xs font-bold text-ink-3">${esc(t.id)} · ${esc(fmtFecha(t.fecha, { day: 'numeric', month: 'short' }))}</p>
+          <h2 class="text-lg font-bold text-ink">${esc(t.paciente.nombre)} <span class="text-sm font-normal text-ink-3">${esc(t.paciente.cedula)}${t.paciente.servicio ? ' · ' + esc(t.paciente.servicio) : ''}</span></h2>
+          <p class="text-sm text-ink-2">${esc(t.componente)} · ${t.unidadesSolicitadas} u. · grupo solicitado <b>${esc(t.tipoSolicitado)}</b>${t.consentimiento ? '' : ' · <span class="text-accent-ink font-semibold">sin consentimiento</span>'}</p>
+        </div>
+        <div class="flex flex-wrap gap-2 sm:justify-end"><span class="chip ${pCls}">${pLabel}</span>${estado}</div>
+      </header>
+      <section class="space-y-3"><h3 class="text-sm font-bold uppercase tracking-wider text-ink-2">1. Tipaje de la muestra del paciente</h3>${tipaje}</section>
+      <section class="space-y-1"><h3 class="text-sm font-bold uppercase tracking-wider text-ink-2">2. Unidades reservadas${t.requiereCruzada ? ' y prueba cruzada' : ''}</h3>
+        ${t.requiereCruzada && !tj?.conforme && editable ? '<p class="text-xs text-ink-3">Registra primero el tipaje para hacer las pruebas cruzadas.</p>' : ''}
+        <ul class="divide-y divide-line">${filas || '<li class="py-3 text-sm text-ink-3">Sin unidades reservadas.</li>'}</ul>
+      </section>
+    </article>`;
+  }
+
+  function init() {
+    const root = document.querySelector<HTMLElement>('[data-compat]');
+    if (!root || root.dataset.ready) return;
+    root.dataset.ready = '1';
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    if (!usaSupabase()) { $('[data-sin-servidor]').classList.remove('hidden'); return; }
+
+    let filtro: Filtro = 'pendientes';
+    let todas: Transfusion[] = [];
+    const grupo = (t: Transfusion): Filtro => (t.estado === 'despachado' ? 'despachadas' : t.faltaParaDespachar ? 'pendientes' : 'listas');
+
+    function pintar() {
+      const vis = todas.filter((t) => grupo(t) === filtro);
+      $('[data-n="pendientes"]').textContent = String(todas.filter((t) => grupo(t) === 'pendientes').length);
+      $('[data-n="listas"]').textContent = String(todas.filter((t) => grupo(t) === 'listas').length);
+      $('[data-lista]').innerHTML = vis.map(tarjeta).join('');
+      $('[data-vacio]').classList.toggle('hidden', vis.length > 0);
+    }
+    async function cargar() {
+      try { todas = await listarTransfusiones(); pintar(); } catch (e) { toast((e as Error).message); }
+    }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-filtro]').forEach((b) => b.addEventListener('click', () => {
+      filtro = b.dataset.filtro as Filtro;
+      root.querySelectorAll('[data-filtro]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      pintar();
+    }));
+
+    const lista = $('[data-lista]');
+    lista.addEventListener('change', (e) => {
+      const sel = e.target as HTMLSelectElement;
+      if (sel.name === 'conforme') {
+        const f = sel.form!;
+        f.querySelector('[data-motivo]')?.classList.toggle('hidden', sel.value === 'true');
+      }
+    });
+    lista.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target as HTMLFormElement;
+      const btn = f.querySelector('button')!;
+      const fd = Object.fromEntries(new FormData(f)) as Record<string, string>;
+      btn.disabled = true;
+      try {
+        if (f.dataset.tipaje) {
+          await registrarTipaje(f.dataset.tipaje, { ...fd, conforme: fd.conforme === 'true' });
+          toast('Tipaje registrado.');
+        } else if (f.dataset.cruzada) {
+          const r = await registrarCruzada(f.dataset.cruzada, Number(f.dataset.unidad), {
+            mayor: Number(fd.mayor), menor: Number(fd.menor), coombsDirecto: fd.coombsDirecto, coombsIndirecto: fd.coombsIndirecto,
+          });
+          toast(r === 'Compatible' ? 'Unidad compatible.' : 'Unidad INCOMPATIBLE: cámbiala por otra antes del despacho.');
+        }
+        await cargar();
+      } catch (ex) {
+        toast((ex as Error).message);
+        btn.disabled = false;
+      }
+    });
+    lista.addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cambiar]');
+      if (!b) return;
+      b.disabled = true;
+      try {
+        await cambiarUnidad(b.dataset.cambiar!, Number(b.dataset.unidad));
+        toast('Se reservó otra unidad compatible. Hazle la prueba cruzada.');
+        await cargar();
+      } catch (ex) { toast((ex as Error).message); b.disabled = false; }
+    });
+
+    cargar();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

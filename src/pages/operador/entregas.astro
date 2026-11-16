@@ -113,14 +113,29 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 <script>
   import { ESTADO_PEDIDO, PRIORIDAD_LABEL, codigoPedido, esc, fmtFecha, getEntregasOp, getPedidos, getPedidosPendientes, onDb, operadorActual, registrarEntrega, stockDe, toast, sumarDiasOp } from '../../lib/operador';
   import type { Hemocomponente } from '../../lib/operador';
+  import { usaSupabase } from '../../lib/supabase';
+  import { listarTransfusiones } from '../../lib/transfusion';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const val = (id: string) => ($(`#${id}`) as HTMLInputElement).value;
+  /** Solicitud aprobada → qué le falta para despachar ('' si está lista). Solo con base real. */
+  const compat = new Map<string, string>();
 
   function init() {
     const form = $<HTMLFormElement>('#form');
     if (form.dataset.ready) return;
     form.dataset.ready = '1';
+
+    // Compatibilidad (tipaje y pruebas cruzadas del laboratorio) de cada solicitud aprobada.
+    const cargarCompat = async () => {
+      if (!usaSupabase()) return;
+      try {
+        const lista = await listarTransfusiones();
+        compat.clear();
+        lista.filter((t) => t.estado === 'aprobado').forEach((t) => compat.set(t.id, t.faltaParaDespachar ?? ''));
+        render();
+      } catch {}
+    };
 
     // Aviso de stock en vivo para la salida directa
     const hint = $('#stock-hint');
@@ -167,6 +182,9 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       const id = (e.target as HTMLElement).closest<HTMLElement>('[data-despachar]')?.dataset.despachar;
       const p = id ? getPedidosPendientes().find((x) => x.id === id) : undefined;
       if (!p) return;
+      // Sin tipaje y pruebas cruzadas compatibles no se despacha (la base también lo exige).
+      const falta = compat.get(p.id);
+      if (falta) return toast(falta);
       const disp = stockDe(p.tipoSangre, p.tipoHemocomponente);
       if (disp < p.unidades && !confirmar(`El stock registrado de ${p.tipoSangre} ${p.tipoHemocomponente} es de ${disp} u. y el pedido pide ${p.unidades}.`)) return;
       const r = registrarEntrega({ ...p, pedidoId: p.id });
@@ -182,6 +200,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       $('#pedidos').innerHTML = pend.map((p) => {
         const disp = stockDe(p.tipoSangre, p.tipoHemocomponente);
         const ok = disp >= p.unidades;
+        const falta = compat.get(p.id);
+        const compatChip = !usaSupabase() ? '' : compat.has(p.id)
+          ? `<p class="rounded-control px-3 py-2 text-xs font-semibold ${falta ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok'}">${falta ? esc(falta) : 'Compatibilidad lista: tipaje y pruebas cruzadas conformes.'}</p>`
+          : '<p class="rounded-control bg-sunken px-3 py-2 text-xs text-ink-3">Consultando la compatibilidad…</p>';
         return `<li class="rounded-control border border-line p-4 space-y-3">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0"><p class="font-mono text-[0.6875rem] font-bold text-ink-3">${esc(codigoPedido(p.id))} · ${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</p>
@@ -190,9 +212,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
             <span class="blood-chip">${esc(p.tipoSangre)}</span>
           </div>
           <p class="text-sm text-ink-2">${p.unidades} u. de ${esc(p.tipoHemocomponente)} → ${esc(p.hospitalDestino)}</p>
+          ${compatChip}
           <div class="flex items-center justify-between gap-3">
             <span class="rounded-full px-2 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${ok ? `Hay stock (${disp} u.)` : `Stock ${disp} u.`}</span>
-            <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}">Despachar</button>
+            <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}" ${usaSupabase() && (falta || !compat.has(p.id)) ? 'disabled' : ''}>Despachar</button>
           </div></li>`;
       }).join('');
 
@@ -250,7 +273,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     setVista('pedidos');
 
     render();
-    onDb(render);
+    onDb(() => { render(); cargarCompat(); });
+    cargarCompat();
   }
 
   init();
