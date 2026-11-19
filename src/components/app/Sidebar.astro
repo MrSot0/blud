@@ -359,11 +359,26 @@ let n = 0;
       b.setAttribute('aria-label', `${n} citas abiertas hoy`);
     });
   }
+  /** Dirección: contador de solicitudes por aprobar. */
+  async function renderPorAprobar() {
+    const link = document.querySelector<HTMLElement>('#sidebar-drawer[data-role="director"] [data-menu="/director/solicitudes/historial"]');
+    const badge = link?.querySelector<HTMLElement>('[data-menu-badge]');
+    if (!badge) return;
+    const { todasLasSolicitudes } = await import('../../lib/director');
+    const n = todasLasSolicitudes().filter((p) => p.estado === 'pendiente').length;
+    badge.textContent = n > 99 ? '99+' : String(n);
+    badge.classList.toggle('hidden', !n);
+    badge.classList.toggle('grid', !!n);
+    badge.setAttribute('aria-label', `${n} solicitudes por aprobar`);
+  }
+  window.addEventListener('blud:db', () => renderPorAprobar());
+
   window.addEventListener('blud:citas', (e) => pintarCitas((e as CustomEvent<{ abiertas: number }>).detail.abiertas));
 
   renderSidebarAuth();
   renderBloqueoDonar();
   renderCitasHoy();
+  renderPorAprobar();
   window.addEventListener('blud:donor', renderBloqueoDonar);
   window.addEventListener('blud:auth', renderSidebarAuth);
   window.addEventListener('storage', (e) => {
@@ -376,5 +391,6 @@ let n = 0;
     renderSidebarAuth();
     renderBloqueoDonar();
     renderCitasHoy();
+    renderPorAprobar();
   });
 </script>

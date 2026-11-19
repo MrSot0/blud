@@ -12,46 +12,68 @@ const roles = [
 ---
 
 <Layout title="BLUD | Personal">
-  <div class="container-blud py-8 space-y-8">
-    <div class="pb-6 border-b border-line">
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Personal</h1>
-      <p class="text-ink-2 text-sm sm:text-base mt-1">Cada cuenta entra solo a la zona de su rol. Los donantes se registran solos desde la web.</p>
+  <div class="container-blud py-6 sm:py-8 space-y-6">
+    <div class="page-head">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Personal</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Cada cuenta entra solo a la zona de su rol. Los donantes se registran solos desde la web.</p>
+      </div>
+      <div class="page-head-acciones lg:hidden">
+        <button type="button" class="btn btn-primary" id="abrir-nuevo" aria-controls="nuevo" aria-expanded="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Nueva cuenta
+        </button>
+      </div>
     </div>
 
-    <div class="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] items-start">
-      <section class="panel p-6 space-y-5" aria-labelledby="h-nuevo">
-        <h2 id="h-nuevo" class="text-lg font-bold text-ink">Crear una cuenta</h2>
-        <form id="form" class="space-y-4" novalidate>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Nombre completo</span>
-            <input name="name" class="field" required autocomplete="off" placeholder="Ej. Lic. Juan Reyes" /></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Correo</span>
-            <input name="email" type="email" class="field" required autocomplete="off" placeholder="persona@bancodesangre.org" /></label>
-          <div class="grid grid-cols-2 gap-3">
-            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cédula</span>
-              <input name="cedula" class="field" autocomplete="off" placeholder="V-12345678" /></label>
-            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Teléfono</span>
-              <input name="telefono" type="tel" class="field" autocomplete="off" placeholder="+58 414…" /></label>
-            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Nacimiento</span>
-              <input name="nacimiento" type="date" class="field" /></label>
-            <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Sexo</span>
-              <select name="sexo" class="field">
-                <option value="">—</option>
-                <option value="F">Femenino</option>
-                <option value="M">Masculino</option>
-              </select></label>
-          </div>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Rol</span>
-            <select name="role" class="field" required>
-              {roles.map((r) => <option value={r.id}>{r.label}</option>)}
-            </select></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cargo</span>
-            <input name="cargo" class="field" autocomplete="off" placeholder="Ej. Bioanalista" /></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Sede</span>
-            <input name="sede" class="field" autocomplete="off" value="Banco de Sangre del Zulia" /></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">MPPS o ID de personal</span>
-            <input name="colegiado" class="field" autocomplete="off" placeholder="Ej. MPPS-123456" /></label>
+    <div class="grid gap-6 lg:gap-8 lg:grid-cols-[minmax(0,24rem)_1fr] items-start">
+      <section id="nuevo" class="nuevo panel p-5 sm:p-6 space-y-5" aria-labelledby="h-nuevo">
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="h-nuevo" class="text-lg font-bold text-ink">Crear una cuenta</h2>
+          <button type="button" class="grid size-9 place-items-center rounded-control text-ink-3 hover:bg-sunken lg:hidden" id="cerrar-nuevo" aria-label="Cerrar formulario">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <form id="form" class="space-y-5" novalidate>
+          <fieldset class="space-y-3">
+            <legend class="mb-2 text-xs font-bold uppercase tracking-wider text-ink-3">Datos de la persona</legend>
+            <div class="form-grid">
+              <label class="block col-full"><span class="mb-1.5 block text-sm font-semibold text-ink">Nombre completo</span>
+                <input name="name" class="field" required autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="Ej. Lic. Juan Reyes" /></label>
+              <label class="block col-full"><span class="mb-1.5 block text-sm font-semibold text-ink">Correo</span>
+                <input name="email" type="email" inputmode="email" class="field" required autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="next" placeholder="persona@bancodesangre.org" /></label>
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cédula</span>
+                <input name="cedula" class="field" autocomplete="off" autocapitalize="characters" enterkeyhint="next" placeholder="V-12345678" /></label>
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Teléfono</span>
+                <input name="telefono" type="tel" inputmode="tel" class="field" autocomplete="off" enterkeyhint="next" placeholder="+58 414…" /></label>
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Nacimiento</span>
+                <input name="nacimiento" type="date" class="field" /></label>
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Sexo</span>
+                <select name="sexo" class="field">
+                  <option value="">Sin indicar</option>
+                  <option value="F">Femenino</option>
+                  <option value="M">Masculino</option>
+                </select></label>
+            </div>
+          </fieldset>
+          <fieldset class="space-y-3 border-t border-line pt-5">
+            <legend class="sr-only">Acceso y cargo</legend>
+            <p class="text-xs font-bold uppercase tracking-wider text-ink-3" aria-hidden="true">Acceso y cargo</p>
+            <div class="form-grid">
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Rol</span>
+                <select name="role" class="field" required>
+                  {roles.map((r) => <option value={r.id}>{r.label}</option>)}
+                </select></label>
+              <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cargo</span>
+                <input name="cargo" class="field" autocomplete="off" enterkeyhint="next" placeholder="Ej. Bioanalista" /></label>
+              <label class="block col-full"><span class="mb-1.5 block text-sm font-semibold text-ink">Sede</span>
+                <input name="sede" class="field" autocomplete="off" enterkeyhint="next" value="Banco de Sangre del Zulia" /></label>
+              <label class="block col-full"><span class="mb-1.5 block text-sm font-semibold text-ink">MPPS o ID de personal</span>
+                <input name="colegiado" class="field" autocomplete="off" autocapitalize="characters" enterkeyhint="done" placeholder="Ej. MPPS-123456" /></label>
+            </div>
+          </fieldset>
           <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
-          <button type="submit" class="btn btn-primary w-full">Crear cuenta</button>
+          <button type="submit" class="btn btn-primary btn-lg w-full">Crear cuenta</button>
         </form>
         <div id="creada" class="hidden rounded-control border border-ok/30 bg-ok-soft p-4 text-sm text-ink" role="status">
           <p class="font-semibold text-ok">Cuenta creada</p>
@@ -61,16 +83,34 @@ const roles = [
       </section>
 
       <section class="panel overflow-hidden" aria-labelledby="h-lista">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-6">
-          <h2 id="h-lista" class="text-lg font-bold text-ink">Cuentas del personal</h2>
-          <label class="sr-only" for="buscar">Buscar</label>
-          <input id="buscar" type="search" class="field sm:w-64" placeholder="Nombre, correo o rol" autocomplete="off" />
+        <div class="space-y-3 border-b border-line p-4 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="h-lista" class="text-lg font-bold text-ink">Cuentas del personal <span class="text-sm font-semibold text-ink-3" id="n-cuentas"></span></h2>
+            <label class="sr-only" for="buscar">Buscar</label>
+            <input id="buscar" type="search" class="field sm:w-64" placeholder="Nombre, correo o cargo" autocomplete="off" enterkeyhint="search" />
+          </div>
+          <div class="chips-scroll" role="group" aria-label="Filtrar por rol">
+            <button type="button" class="rol-chip" data-rol="" aria-pressed="true">Todos</button>
+            {roles.map((r) => <button type="button" class="rol-chip" data-rol={r.id} aria-pressed="false">{r.label}</button>)}
+          </div>
         </div>
         <ul id="lista" class="divide-y divide-line"></ul>
       </section>
     </div>
   </div>
 </Layout>
+
+<style>
+  @media (max-width: 1023.98px) {
+    .nuevo:not([data-abierto]) { display: none; }
+  }
+  .rol-chip {
+    display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1rem; white-space: nowrap;
+    border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2);
+  }
+  .rol-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+</style>
 
 <script>
   import { getSession, initials } from '../../lib/auth';
@@ -82,24 +122,46 @@ const roles = [
   const error = document.getElementById('error')!;
   const buscar = document.getElementById('buscar') as HTMLInputElement;
   const yo = getSession()?.email ?? '';
+  let rol = '';
+
+  // Formulario plegable en móvil: «Nueva cuenta» lo abre; en escritorio siempre está a la izquierda.
+  const nuevo = document.getElementById('nuevo')!;
+  const abrir = document.getElementById('abrir-nuevo')!;
+  const setNuevo = (on: boolean) => {
+    nuevo.toggleAttribute('data-abierto', on);
+    abrir.setAttribute('aria-expanded', String(on));
+    if (on) {
+      nuevo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      form.querySelector<HTMLInputElement>('[name=name]')?.focus({ preventScroll: true });
+    }
+  };
+  abrir.addEventListener('click', () => setNuevo(!nuevo.hasAttribute('data-abierto')));
+  document.getElementById('cerrar-nuevo')!.addEventListener('click', () => { setNuevo(false); abrir.focus(); });
+  document.querySelectorAll<HTMLButtonElement>('[data-rol]').forEach((b) => b.addEventListener('click', () => {
+    rol = b.dataset.rol ?? '';
+    document.querySelectorAll('[data-rol]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
 
   function render() {
     const q = buscar.value.trim().toLowerCase();
-    const lista = getPersonal().filter((p) => !q || `${p.name} ${p.email} ${ROL[p.role]}`.toLowerCase().includes(q));
+    const todos = getPersonal();
+    const lista = todos
+      .filter((p) => !rol || p.role === rol)
+      .filter((p) => !q || `${p.name} ${p.email} ${p.cargo ?? ''} ${ROL[p.role]}`.toLowerCase().includes(q));
+    document.getElementById('n-cuentas')!.textContent = `(${lista.length})`;
     document.getElementById('lista')!.innerHTML = lista.length
-      ? lista.map((p) => `<li class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between ${p.activo ? '' : 'opacity-60'}">
-          <div class="flex min-w-0 items-center gap-3">
+      ? lista.map((p) => `<li class="flex items-start gap-3 p-4 sm:items-center sm:px-6 ${p.activo ? '' : 'opacity-60'}">
             <span class="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-white">${esc(initials(p.name))}</span>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <p class="flex flex-wrap items-center gap-2"><span class="truncate font-semibold text-ink">${esc(p.name)}</span>
                 <span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">${esc(ROL[p.role] ?? p.role)}</span>
                 ${p.demo ? '<span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-medium text-ink-3">Prueba</span>' : ''}
                 ${p.activo ? '' : '<span class="rounded-full bg-accent-soft px-2 py-0.5 text-[0.6875rem] font-bold text-accent-ink">Desactivada</span>'}</p>
               <p class="truncate text-sm text-ink-3">${esc(p.email)}${p.cargo ? ' · ' + esc(p.cargo) : ''}</p>
-              <p class="text-xs text-ink-3">${esc(p.sede ?? '')}${p.sede ? ' · ' : ''}${p.acciones} registros a su nombre</p>
+              <p class="text-xs text-ink-3">${esc(p.sede ?? '')}${p.sede ? ' · ' : ''}${p.acciones} registros</p>
             </div>
-          </div>
-          ${p.email === yo ? '<span class="text-xs font-semibold text-ink-3">Tu cuenta</span>'
+          ${p.email === yo ? '<span class="shrink-0 rounded-full bg-sunken px-2.5 py-1 text-xs font-semibold text-ink-2">Tú</span>'
             : `<button type="button" class="btn btn-secondary btn-sm shrink-0" data-estado="${esc(p.email)}" data-activo="${p.activo}">${p.activo ? 'Desactivar' : 'Reactivar'}</button>`}
         </li>`).join('')
       : '<li class="p-10 text-center text-sm text-ink-3">No hay cuentas con esa búsqueda.</li>';

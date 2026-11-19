@@ -5,34 +5,56 @@ import Layout from '../../layouts/LayoutD.astro';
 ---
 
 <Layout title="BLUD | Reportes">
-  <div class="container-blud py-8 space-y-8">
-    <div class="no-print pb-6 border-b border-line flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+  <div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8">
+    <div class="page-head no-print">
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Reportes consolidados</h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">Lo que registraron operadores y laboratorio en el periodo que elijas.</p>
       </div>
-      <form id="form" class="flex flex-wrap items-end gap-2">
-        <label class="block"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Desde</span><input type="date" name="desde" class="field" required /></label>
-        <label class="block"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Hasta</span><input type="date" name="hasta" class="field" required /></label>
-        <button type="submit" class="btn btn-primary">Actualizar</button>
-        <button type="button" id="btn-csv" class="btn btn-secondary">CSV</button>
-        <button type="button" id="btn-print" class="btn btn-secondary">Imprimir</button>
-      </form>
     </div>
+
+    <form id="form" class="no-print panel p-4 sm:p-6 space-y-4" aria-labelledby="h-periodo">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 id="h-periodo" class="text-base font-bold text-ink">Periodo</h2>
+        <div class="chips-scroll" role="group" aria-label="Rangos rápidos">
+          <button type="button" class="rango-chip" data-rango="7">7 días</button>
+          <button type="button" class="rango-chip" data-rango="30" aria-pressed="true">30 días</button>
+          <button type="button" class="rango-chip" data-rango="mes">Este mes</button>
+          <button type="button" class="rango-chip" data-rango="anio">Este año</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_auto_auto_auto] lg:items-end">
+        <label class="block min-w-0"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Desde</span><input type="date" name="desde" class="field" required /></label>
+        <label class="block min-w-0"><span class="mb-1.5 block text-xs font-bold uppercase text-ink-3">Hasta</span><input type="date" name="hasta" class="field" required /></label>
+        <button type="submit" class="btn btn-primary col-span-2 min-h-12 lg:col-span-1">Ver reporte</button>
+        <button type="button" id="btn-csv" class="btn btn-secondary min-h-12">Exportar CSV</button>
+        <button type="button" id="btn-print" class="btn btn-secondary min-h-12">Imprimir</button>
+      </div>
+      <p id="periodo-error" class="hidden text-sm font-medium text-accent-ink" role="alert">La fecha «desde» debe ser anterior a «hasta».</p>
+    </form>
 
     <p class="text-sm font-semibold text-ink" id="periodo"></p>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="kpis"></div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" id="kpis"></div>
 
-    <div class="grid gap-8 lg:grid-cols-2 items-start">
-      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por tipo</h2><ul id="por-tipo" class="space-y-2"></ul></section>
-      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por hemocomponente</h2><ul id="por-comp" class="space-y-2"></ul></section>
-      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Unidades entregadas por destino</h2><ul id="por-destino" class="space-y-2"></ul></section>
-      <section class="panel p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Solicitudes por estado</h2><ul id="por-estado" class="space-y-2"></ul></section>
+    <div class="grid gap-4 sm:gap-8 lg:grid-cols-2 items-start">
+      <section class="panel p-4 sm:p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por tipo</h2><ul id="por-tipo" class="space-y-2"></ul></section>
+      <section class="panel p-4 sm:p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Donaciones por hemocomponente</h2><ul id="por-comp" class="space-y-2"></ul></section>
+      <section class="panel p-4 sm:p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Unidades entregadas por destino</h2><ul id="por-destino" class="space-y-2"></ul></section>
+      <section class="panel p-4 sm:p-6 space-y-4"><h2 class="text-lg font-bold text-ink">Solicitudes por estado</h2><ul id="por-estado" class="space-y-2"></ul></section>
     </div>
     <p class="text-xs text-ink-3">El detalle de los casos reactivos (qué prueba y de quién) solo lo ve el laboratorio.</p>
   </div>
 </Layout>
+
+<style>
+  .rango-chip {
+    display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1rem; white-space: nowrap;
+    border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2);
+  }
+  .rango-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+</style>
 
 <style is:global>
   @media print {
@@ -61,7 +83,10 @@ import Layout from '../../layouts/LayoutD.astro';
 
   function render() {
     const desde = input('desde').value, hasta = input('hasta').value;
-    if (!desde || !hasta || desde > hasta) return;
+    const malo = !!desde && !!hasta && desde > hasta;
+    document.getElementById('periodo-error')!.classList.toggle('hidden', !malo);
+    input('desde').setAttribute('aria-invalid', String(malo));
+    if (!desde || !hasta || malo) return;
     const r = reporteDirector(desde, hasta);
     ultimo = r;
     const f = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
@@ -72,8 +97,8 @@ import Layout from '../../layouts/LayoutD.astro';
       ['Pruebas de laboratorio', r.pruebas, `${r.descartadas} bolsas descartadas`],
       ['Donantes nuevos', r.donantesNuevos, 'registrados en el periodo'],
     ];
-    document.getElementById('kpis')!.innerHTML = kpis.map(([t, v, s]) => `<div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">${esc(t)}</p>
-      <p class="mt-1 text-3xl font-extrabold text-ink tabular">${esc(v)}</p><p class="text-xs text-ink-3">${esc(s)}</p></div>`).join('');
+    document.getElementById('kpis')!.innerHTML = kpis.map(([t, v, s]) => `<div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">${esc(t)}</p>
+      <p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular">${esc(v)}</p><p class="text-xs text-ink-3">${esc(s)}</p></div>`).join('');
     document.getElementById('por-tipo')!.innerHTML = barras(r.donacionesPorTipo, 'Sin donaciones en el periodo.');
     document.getElementById('por-comp')!.innerHTML = barras(r.donacionesPorComponente, 'Sin donaciones en el periodo.');
     document.getElementById('por-destino')!.innerHTML = barras(r.entregasPorDestino.map((d) => ({ k: d.destino, v: d.unidades })), 'Sin entregas en el periodo.');
@@ -81,6 +106,19 @@ import Layout from '../../layouts/LayoutD.astro';
   }
 
   form.addEventListener('submit', (e) => { e.preventDefault(); render(); });
+
+  // Rangos rápidos: evitan abrir dos selectores de fecha en el teléfono.
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-rango]')];
+  const marcar = (b?: HTMLButtonElement) => chips.forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+  chips.forEach((b) => b.addEventListener('click', () => {
+    const hoy = hoyISO();
+    const r = b.dataset.rango!;
+    input('hasta').value = hoy;
+    input('desde').value = r === 'mes' ? `${hoy.slice(0, 7)}-01` : r === 'anio' ? `${hoy.slice(0, 4)}-01-01` : sumarDias(hoy, -(Number(r) - 1));
+    marcar(b);
+    render();
+  }));
+  ['desde', 'hasta'].forEach((n) => input(n).addEventListener('change', () => marcar()));
   document.getElementById('btn-print')!.addEventListener('click', () => print());
   document.getElementById('btn-csv')!.addEventListener('click', () => {
     if (!ultimo) return;

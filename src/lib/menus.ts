@@ -102,12 +102,11 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     titulo: 'Dirección',
     items: [
       { label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
-      { label: 'Mis solicitudes', hint: 'Bandeja y respuestas', href: '/director/solicitudes/solicitudes', icon: 'inbox' },
-      { label: 'Historial', hint: 'Aprobar y dar seguimiento', href: '/director/solicitudes/historial', icon: 'clock' },
-      { label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
-      { label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
-      { label: 'Reportes', hint: 'Consolidado y exportación', href: '/director/reportes', icon: 'chart' },
-      { label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
+      { label: 'Solicitudes', hint: 'Aprobar lo que carga el operador', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { grupo: 'Banco de sangre', label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
+      { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
+      { grupo: 'Banco de sangre', label: 'Reportes', hint: 'Consolidado y exportación', href: '/director/reportes', icon: 'chart' },
+      { grupo: 'Gestión', label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/director/perfil', icon: 'user' },

@@ -2,29 +2,37 @@
 // src/pages/director/inventario.astro
 // Inventario real: unidades liberadas por el laboratorio (y sus fracciones) menos lo entregado, con vencimientos (FIFO).
 import Layout from '../../layouts/LayoutD.astro';
+import Filtros from '../../components/app/Filtros.astro';
 import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
 <Layout title="BLUD | Inventario">
-  <div class="container-blud py-8 space-y-8">
-    <div class="pb-6 border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+  <div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8">
+    <div class="page-head">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Inventario de hemocomponentes</h1>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Inventario</h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">Solo cuenta lo que el laboratorio liberó. Sale primero lo que vence antes.</p>
       </div>
-      <button type="button" id="btn-csv" class="btn btn-secondary">Exportar CSV</button>
+      <div class="page-head-acciones">
+        <button type="button" id="btn-csv" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 21H3"/></svg>
+          Exportar CSV
+        </button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Vigentes</p><p class="mt-1 text-3xl font-extrabold text-ink tabular" data-k="vigentes">0</p><p class="text-xs text-ink-3">unidades disponibles</p></div>
-      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Por vencer</p><p class="mt-1 text-3xl font-extrabold text-warn tabular" data-k="porVencer">0</p><p class="text-xs text-ink-3">en 7 días o menos</p></div>
-      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">Vencidas</p><p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-k="vencidas">0</p><p class="text-xs text-ink-3">por retirar del stock</p></div>
-      <div class="panel p-5"><p class="text-xs font-bold uppercase text-ink-3">En cuarentena</p><p class="mt-1 text-3xl font-extrabold text-ink tabular" data-k="cuarentena">0</p><p class="text-xs text-ink-3">esperan al laboratorio</p></div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Vigentes</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-k="vigentes">0</p><p class="text-xs text-ink-3">unidades disponibles</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Por vencer</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-warn tabular" data-k="porVencer">0</p><p class="text-xs text-ink-3">en 7 días o menos</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Vencidas</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-accent-ink tabular" data-k="vencidas">0</p><p class="text-xs text-ink-3">por retirar del stock</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">En cuarentena</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-k="cuarentena">0</p><p class="text-xs text-ink-3">esperan al laboratorio</p></div>
     </div>
 
-    <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-matriz">
-      <h2 id="h-matriz" class="text-lg font-bold text-ink">Unidades vigentes por tipo y hemocomponente</h2>
-      <div class="overflow-x-auto">
+    <section class="panel p-4 sm:p-8 space-y-4" aria-labelledby="h-matriz">
+      <h2 id="h-matriz" class="text-lg font-bold text-ink">Vigentes por tipo y hemocomponente</h2>
+      <!-- Móvil: una fila por componente con los grupos que tienen unidades -->
+      <ul id="matriz-movil" class="divide-y divide-line sm:hidden"></ul>
+      <div class="hidden overflow-x-auto sm:block">
         <table class="w-full min-w-[40rem] text-sm">
           <thead class="text-xs uppercase text-ink-3">
             <tr>
@@ -47,30 +55,30 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       <p class="text-xs text-ink-3">En ámbar, combinaciones con menos de 3 unidades.</p>
     </section>
 
-    <section id="vencimientos" class="panel p-6 sm:p-8 space-y-4 scroll-mt-24" aria-labelledby="h-unidades">
+    <section id="vencimientos" class="panel p-4 sm:p-8 space-y-4 scroll-mt-24" aria-labelledby="h-unidades">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <h2 id="h-unidades" class="text-lg font-bold text-ink">Unidades y vencimientos</h2>
-        <div class="flex flex-col gap-2 sm:flex-row">
+        <h2 id="h-unidades" class="text-lg font-bold text-ink">Unidades y vencimientos <span class="text-sm font-semibold text-ink-3" id="n-unidades"></span></h2>
+        <Filtros class="lg:w-[38rem]">
           <label class="sr-only" for="f-estado">Estado</label>
-          <select id="f-estado" class="field sm:w-44">
-            <option value="">Todas</option>
+          <select id="f-estado" class="field">
+            <option value="">Todo estado</option>
             <option value="por_vencer">Por vencer</option>
             <option value="vencida">Vencidas</option>
             <option value="disponible">Disponibles</option>
           </select>
           <label class="sr-only" for="f-comp">Componente</label>
-          <select id="f-comp" class="field sm:w-56">
+          <select id="f-comp" class="field filtro-ancho">
             <option value="">Todo componente</option>
             {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
           </select>
           <label class="sr-only" for="f-tipo">Tipo</label>
-          <select id="f-tipo" class="field sm:w-32">
+          <select id="f-tipo" class="field">
             <option value="">Todo tipo</option>
             {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
           </select>
-        </div>
+        </Filtros>
       </div>
-      <div class="overflow-x-auto">
+      <div class="tabla-apilable" role="region" aria-labelledby="h-unidades" tabindex="0">
         <table class="w-full min-w-[40rem] text-left text-sm">
           <thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
             <tr>
@@ -92,8 +100,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 <script>
   import { downloadFile, esc, fmtFecha, hoyISO, onDb, resumenInventario, toCSV } from '../../lib/director';
   import type { Unidad } from '../../lib/director';
+  import { BLOOD_TYPES } from '../../lib/db';
 
   const sel = (id: string) => document.getElementById(id) as HTMLSelectElement;
+  const TIPOS = BLOOD_TYPES;
   const fecha = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'short', year: 'numeric' });
   const etiqueta = (u: Unidad) =>
     u.estado === 'vencida' ? ['Vencida', 'bg-accent-soft text-accent-ink']
@@ -117,17 +127,32 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       tr.querySelector('[data-total]')!.textContent = String(total);
     });
 
+    // Móvil: la misma matriz como lista (solo grupos con unidades; en ámbar, menos de 3).
+    const comps = [...document.querySelectorAll<HTMLElement>('#matriz tr')].map((tr) => tr.dataset.comp!);
+    document.getElementById('matriz-movil')!.innerHTML = comps.map((c) => {
+      const tipos = TIPOS.map((t) => [t, inv.matriz[`${t}|${c}`] ?? 0] as const).filter(([, n]) => n > 0);
+      const total = tipos.reduce((a, [, n]) => a + n, 0);
+      return `<li class="py-3 first:pt-0 last:pb-0">
+        <p class="flex items-baseline justify-between gap-3"><span class="font-semibold text-ink">${esc(c)}</span>
+          <span class="text-sm font-bold tabular ${total ? 'text-ink' : 'text-ink-3'}">${total} u.</span></p>
+        <p class="mt-1.5 flex flex-wrap gap-1.5">${tipos.length
+          ? tipos.map(([t, n]) => `<span class="rounded-full px-2 py-0.5 text-xs font-bold tabular ${n < 3 ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink'}">${esc(t)} · ${n}</span>`).join('')
+          : '<span class="text-xs text-ink-3">Sin unidades vigentes</span>'}</p>
+      </li>`;
+    }).join('');
+
     const fe = sel('f-estado').value, fc = sel('f-comp').value, ft = sel('f-tipo').value;
     const lista = inv.unidades.filter((u) => (!fe || u.estado === fe) && (!fc || u.componente === fc) && (!ft || u.tipoSangre === ft));
     document.getElementById('unidades')!.innerHTML = lista.length
       ? lista.map((u) => {
           const [txt, cls] = etiqueta(u);
-          return `<tr><td class="p-3 font-mono text-xs font-bold text-ink">${esc(u.codigo)}</td>
-            <td class="p-3 text-ink">${esc(u.componente)}</td><td class="p-3"><span class="blood-chip">${esc(u.tipoSangre)}</span></td>
-            <td class="p-3 text-ink-2">${esc(fecha(u.extraccion))}</td><td class="p-3 text-ink-2">${esc(fecha(u.vence))}</td>
-            <td class="p-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${esc(txt)}</span></td></tr>`;
+          return `<tr><td class="celda-titulo celda-corta p-3 font-mono text-xs font-bold text-ink">${esc(u.codigo)}</td>
+            <td class="p-3 text-ink" data-label="Componente">${esc(u.componente)}</td><td class="p-3" data-label="Tipo"><span class="blood-chip">${esc(u.tipoSangre)}</span></td>
+            <td class="celda-movil-oculta p-3 text-ink-2" data-label="Extracción">${esc(fecha(u.extraccion))}</td><td class="p-3 text-ink-2" data-label="Vence">${esc(fecha(u.vence))}</td>
+            <td class="celda-estado p-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${esc(txt)}</span></td></tr>`;
         }).join('')
-      : '<tr><td colspan="6" class="p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>';
+      : '<tr><td colspan="6" class="celda-vacia p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>';
+    document.getElementById('n-unidades')!.textContent = `(${lista.length})`;
   }
 
   ['f-estado', 'f-comp', 'f-tipo'].forEach((id) => sel(id).addEventListener('change', render));

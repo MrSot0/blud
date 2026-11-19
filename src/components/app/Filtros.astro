@@ -1,0 +1,22 @@
+---
+// src/components/app/Filtros.astro
+// Filtros de una lista. En móvil quedan plegados detrás de «Filtros (n)», con n = filtros en uso;
+// en escritorio se ven siempre en una fila. El comportamiento está en LayoutPortal.
+// Dentro del slot, la clase .filtro-ancho hace que un campo (p. ej. la búsqueda) ocupe toda la fila.
+interface Props { class?: string; etiqueta?: string }
+const { class: cls = '', etiqueta = 'Filtros' } = Astro.props;
+---
+
+<div data-filtros class={cls}>
+  <button type="button" class="filtros-toggle btn btn-secondary" data-filtros-toggle aria-expanded="false">
+    <span class="inline-flex items-center gap-2">
+      <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>
+      {etiqueta}
+      <span class="grid min-w-5 h-5 place-items-center rounded-full bg-accent px-1.5 text-[0.6875rem] font-bold text-white empty:hidden" data-filtros-n></span>
+    </span>
+    <svg viewBox="0 0 24 24" class="size-4 transition-transform [[data-abierto]_&]:rotate-180" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+  <div class="filtros-cuerpo">
+    <slot />
+  </div>
+</div>

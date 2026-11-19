@@ -399,6 +399,129 @@ html.theme-vt::view-transition-new(root) {
     line-height: 1.65;
     color: var(--ink-2);
   }
+
+  /* ---------- Portal en móvil (director y demás roles) ---------- */
+
+  /* Encabezado de página: título arriba y acciones a ancho completo en móvil, a la derecha en escritorio. */
+  .page-head {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .page-head-acciones {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .page-head { flex-direction: row; align-items: flex-end; justify-content: space-between; padding-bottom: 1.5rem; }
+    .page-head-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; }
+  }
+
+  /* Pestañas o filtros rápidos: una sola fila que se desplaza de lado en vez de partirse en tres líneas. */
+  .chips-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+    padding-block: 0.125rem;
+  }
+  .chips-scroll::-webkit-scrollbar { display: none; }
+  .chips-scroll > * { flex: none; scroll-snap-align: start; }
+  @media (min-width: 640px) {
+    .chips-scroll { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  }
+
+  /* Filtros plegables: en móvil quedan detrás de un botón «Filtros (n)»; en escritorio siempre visibles. */
+  .filtros-toggle {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .filtros-cuerpo {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .filtros-cuerpo > .filtro-ancho { grid-column: 1 / -1; }
+  @media (max-width: 639.98px) {
+    [data-filtros]:not([data-abierto]) .filtros-cuerpo { display: none; }
+    [data-filtros][data-abierto] .filtros-cuerpo { margin-top: 0.5rem; }
+  }
+  @media (min-width: 640px) {
+    .filtros-toggle { display: none; }
+    .filtros-cuerpo { display: flex; flex-wrap: wrap; }
+    .filtros-cuerpo > * { flex: 1 1 9rem; }
+    .filtros-cuerpo > .filtro-ancho { flex: 2 1 13rem; }
+  }
+
+  /* Formularios: dos columnas desde 400px, campos que piden más ancho ocupan la fila entera. */
+  .form-grid {
+    display: grid;
+    gap: 0.875rem 0.75rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 340px) { .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .form-grid > .col-full { grid-column: 1 / -1; }
+
+  /* Tabla apilable: tabla normal en pantallas anchas y tarjetas cuando su contenedor es angosto.
+     Cada <td> lleva data-label con el nombre de la columna; la celda .celda-titulo encabeza la tarjeta. */
+  .tabla-apilable {
+    container-type: inline-size;
+    overflow-x: auto;
+    max-inline-size: 100%;
+  }
+  @container (width < 40rem) {
+    .tabla-apilable table,
+    .tabla-apilable tbody,
+    .tabla-apilable tr,
+    .tabla-apilable td,
+    .tabla-apilable tbody th { display: block; min-width: 0 !important; width: auto; }
+    .tabla-apilable table { min-width: 0 !important; }
+    .tabla-apilable thead { display: none; }
+    .tabla-apilable tbody { display: grid; gap: 0.75rem; }
+    .tabla-apilable tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.625rem 1rem;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-control);
+      background: var(--surface);
+    }
+    .tabla-apilable tbody tr:hover { background: var(--surface); }
+    .tabla-apilable td,
+    .tabla-apilable tbody th { padding: 0 !important; border: 0 !important; text-align: left !important; }
+    .tabla-apilable td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      margin-bottom: 0.125rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+    }
+    .tabla-apilable .celda-titulo,
+    .tabla-apilable .celda-ancha,
+    .tabla-apilable .celda-acciones { grid-column: 1 / -1; }
+    .tabla-apilable .celda-titulo { font-size: 1rem; }
+    .tabla-apilable .celda-acciones { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0.5rem; }
+    .tabla-apilable .celda-vacia { grid-column: 1 / -1; text-align: center !important; }
+    .tabla-apilable td:empty { display: none; }
+    /* Variante compacta: título y estado en la misma línea; columnas secundarias ocultas en móvil. */
+    .tabla-apilable .celda-titulo.celda-corta { grid-column: 1; grid-row: 1; align-self: center; }
+    .tabla-apilable .celda-estado { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; }
+    .tabla-apilable .celda-movil-oculta { display: none; }
+  }
 }
 
 /* ===== Sesión ===== */

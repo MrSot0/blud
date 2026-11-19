@@ -26,4 +26,9 @@ export default defineConfig({
   },
 
   integrations: [sitemap()],
+
+  // La dirección ya no registra solicitudes (las carga el operador): su antigua bandeja lleva a la de aprobación.
+  redirects: {
+    '/director/solicitudes/solicitudes': '/director/solicitudes/historial',
+  },
 });

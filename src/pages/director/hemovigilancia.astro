@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/LayoutD.astro';
 import Icon from '../../components/Icon.astro';
+import Filtros from '../../components/app/Filtros.astro';
 
 const reportesHemovigilancia = [
   {
@@ -209,76 +210,56 @@ const reportesHemovigilancia = [
 ---
 
 <Layout title="BLUD | Hemovigilancia Directiva" description="Panel de supervisión y monitoreo de hemovigilancia para el Director de Banco de Sangre">
-  <section class="min-h-[calc(100vh-var(--header-h))] w-full bg-canvas px-4 py-8 text-ink sm:px-8">
+  <section class="w-full py-6 text-ink sm:py-8">
     <div class="container-blud space-y-6">
-      <header class="flex flex-col gap-2 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <header class="page-head">
         <div>
-          <h1 class="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Hemovigilancia y Monitoreo en Tiempo Real</h1>
-        </div>
-        <div class="flex items-center gap-2">
-
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">Hemovigilancia</h1>
+          <p class="mt-1 text-sm text-ink-2 sm:text-base">Eventos transfusionales de la red: reacciones, hallazgos serológicos e incidentes de traslado.</p>
         </div>
       </header>
 
-      <section class="panel space-y-4 p-4 sm:p-6" aria-label="Monitoreo de reportes de hemovigilancia">
-        <div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(12rem,1fr)_auto_auto_auto_auto]">
-            <div>
-              <label class="sr-only" for="request-search">Buscar reportes o bolsas</label>
-              <input 
-                id="request-search" 
-                type="search" 
-                class="field text-sm w-full" 
-                placeholder="Buscar por folio, DIN, paciente, donante o centro..." 
-              />
-            </div>
-
-            <div>
-              <label class="sr-only" for="status-filter">Filtrar por estado</label>
-              <select id="status-filter" class="field text-sm sm:w-40">
-                <option value="">Todos los estados</option>
-                <option value="en-curso">En curso</option>
-                <option value="finalizado">Cerrados / Archivados</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="sr-only" for="center-filter">Filtrar por sede</label>
-              <select id="center-filter" class="field text-sm sm:w-44">
-                <option value="">Todas las sedes</option>
-                <option value="Hospital Central del Sur">Hospital Central del Sur</option>
-                <option value="Clínica San Rafael">Clínica San Rafael</option>
-                <option value="Banco de Sangre Principal">Banco de Sangre Principal</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="sr-only" for="priority-filter">Filtrar por severidad</label>
-              <select id="priority-filter" class="field text-sm sm:w-36">
-                <option value="">Todas las severidades</option>
-                <option value="Crítica">Crítica</option>
-                <option value="Urgente">Urgente</option>
-                <option value="Normal">Normal</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="sr-only" for="event-type-filter">Filtrar por evento</label>
-              <select id="event-type-filter" class="field text-sm sm:w-40">
-                <option value="">Todos los eventos</option>
-                <option value="RAT">Reacción Transfusional</option>
-                <option value="Hallazgo Serológico">Hallazgo Serológico</option>
-                <option value="Incidente Cadena Frío">Incidente de Traslado</option>
-                <option value="Transfusión Exitosa">Transfusión Exitosa</option>
-              </select>
-            </div>
-          </div>
+      <section class="panel space-y-4 p-4 sm:p-6" aria-labelledby="h-hv">
+        <h2 id="h-hv" class="sr-only">Reportes de hemovigilancia</h2>
+        <div class="space-y-2 border-b border-line pb-4">
+          <label class="sr-only" for="request-search">Buscar reportes o bolsas</label>
+          <input id="request-search" type="search" class="field w-full" placeholder="Folio, DIN, paciente, donante o centro" enterkeyhint="search" />
+          <Filtros>
+            <label class="sr-only" for="status-filter">Filtrar por estado</label>
+            <select id="status-filter" class="field">
+              <option value="">Todo estado</option>
+              <option value="en-curso">En curso</option>
+              <option value="finalizado">Cerrados / Archivados</option>
+            </select>
+            <label class="sr-only" for="priority-filter">Filtrar por severidad</label>
+            <select id="priority-filter" class="field">
+              <option value="">Toda severidad</option>
+              <option value="Crítica">Crítica</option>
+              <option value="Urgente">Urgente</option>
+              <option value="Normal">Normal</option>
+            </select>
+            <label class="sr-only" for="center-filter">Filtrar por sede</label>
+            <select id="center-filter" class="field filtro-ancho">
+              <option value="">Todas las sedes</option>
+              <option value="Hospital Central del Sur">Hospital Central del Sur</option>
+              <option value="Clínica San Rafael">Clínica San Rafael</option>
+              <option value="Banco de Sangre Principal">Banco de Sangre Principal</option>
+            </select>
+            <label class="sr-only" for="event-type-filter">Filtrar por evento</label>
+            <select id="event-type-filter" class="field filtro-ancho">
+              <option value="">Todo tipo de evento</option>
+              <option value="RAT">Reacción Transfusional</option>
+              <option value="Hallazgo Serológico">Hallazgo Serológico</option>
+              <option value="Incidente Cadena Frío">Incidente de Traslado</option>
+              <option value="Transfusión Exitosa">Transfusión Exitosa</option>
+            </select>
+          </Filtros>
         </div>
 
         <p id="request-feedback" class="sr-only" role="status" aria-live="polite"></p>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse" id="hv-table">
+        <div class="tabla-apilable" role="region" aria-labelledby="h-hv" tabindex="0">
+          <table class="w-full min-w-[56rem] text-left text-sm border-collapse" id="hv-table">
             <thead>
               <tr class="border-b border-line text-xs uppercase tracking-wider text-muted bg-surface/50">
                 <th class="p-3">Estatus</th>
@@ -300,7 +281,7 @@ const reportesHemovigilancia = [
                   data-status={reporte.enCurso ? 'en-curso' : 'finalizado'}
                   data-search={`${reporte.id} ${reporte.din} ${reporte.centroOrigen} ${reporte.donante.nombre} ${reporte.paciente.nombre}`.toLowerCase()}
                 >
-                  <td class="p-3">
+                  <td class="p-3" data-label="Estatus">
                     {reporte.enCurso ? (
                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/30 animate-pulse">
                         <span class="size-1.5 rounded-full bg-red-500"></span>
@@ -312,21 +293,21 @@ const reportesHemovigilancia = [
                       </span>
                     )}
                   </td>
-                  <td class="p-3">
+                  <td class="p-3 celda-titulo">
                     <span class="font-bold block text-ink">{reporte.id}</span>
                     <span class="text-xs text-muted">{reporte.fecha}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="p-3" data-label="Sede">
                     <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-surface border border-line text-ink">
                       {reporte.centroOrigen}
                     </span>
                   </td>
-                  <td class="p-3 font-mono text-xs font-semibold">{reporte.din}</td>
-                  <td class="p-3">
+                  <td class="p-3 font-mono text-xs font-semibold" data-label="DIN">{reporte.din}</td>
+                  <td class="p-3 celda-ancha" data-label="Evento">
                     <span class="font-medium block">{reporte.tipoEvento}</span>
                     <span class="text-xs text-muted">{reporte.categoria}</span>
                   </td>
-                  <td class="p-3">
+                  <td class="p-3" data-label="Severidad">
                     <span class={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       reporte.severidad === 'Crítica' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
                       reporte.severidad === 'Urgente' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
@@ -335,10 +316,10 @@ const reportesHemovigilancia = [
                       {reporte.severidad}
                     </span>
                   </td>
-                  <td class="p-3 text-right">
+                  <td class="p-3 text-right celda-acciones">
                     <button 
                       type="button" 
-                      class="btn btn-secondary text-xs px-3 py-1 btn-view-trace"
+                      class="btn btn-secondary btn-sm btn-view-trace"
                       data-report={JSON.stringify(reporte)}
                     >
                       Auditar / Rastrear
@@ -353,8 +334,8 @@ const reportesHemovigilancia = [
     </div>
   </section>
 
-<dialog id="trace-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-full max-w-3xl m-auto rounded-xl shadow-2xl">
-  <div class="panel bg-canvas border border-line text-ink p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+<dialog id="trace-modal" class="backdrop:bg-black/60 bg-transparent p-0 w-[calc(100%-1rem)] max-w-3xl m-auto rounded-xl shadow-2xl">
+  <div class="panel bg-canvas border border-line text-ink p-4 sm:p-6 space-y-6 max-h-[90dvh] overflow-y-auto">
     <div class="flex items-start justify-between border-b border-line pb-4">
       <div>
         <div class="flex items-center gap-2 mb-1">

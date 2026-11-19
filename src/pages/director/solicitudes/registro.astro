@@ -19,35 +19,35 @@ const laboratorio = [
 ];
 ---
 
-<Layout title="BLUD | Nueva solicitud">
-  <div class="container-blud max-w-4xl py-8 space-y-6">
-    <div class="pb-6 border-b border-line">
+<Layout title="BLUD | Corregir solicitud">
+  <div class="container-blud max-w-4xl py-6 sm:py-8 space-y-6">
+    <div class="pb-5 sm:pb-6 border-b border-line">
       <a href="/director/solicitudes/historial" class="link-arrow text-sm">← Volver a solicitudes</a>
       <h1 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink" id="titulo">Nueva solicitud de transfusión</h1>
       <p class="text-ink-2 text-sm sm:text-base mt-1" id="subtitulo">Lo que registra la dirección queda aprobado y pasa directo a despacho.</p>
     </div>
 
     <form id="form" class="space-y-6" novalidate>
-      <section class="panel p-6 sm:p-8 space-y-5" aria-labelledby="h-paciente">
+      <section class="panel p-4 sm:p-8 space-y-5" aria-labelledby="h-paciente">
         <h2 id="h-paciente" class="text-lg font-bold text-ink">Paciente</h2>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="block sm:col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Nombre completo</span>
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+          <label class="block col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Nombre completo</span>
             <input name="pacienteNombre" class="field" required autocomplete="off" placeholder="Ej. Roberto Gómez" /></label>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Cédula</span>
-            <input name="pacienteCedula" class="field" autocomplete="off" placeholder="V-12345678" /></label>
+            <input name="pacienteCedula" autocapitalize="characters" class="field" autocomplete="off" placeholder="V-12345678" /></label>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Servicio</span>
             <input name="servicio" class="field" autocomplete="off" placeholder="Ej. UCI, Emergencia" /></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Médico solicitante</span>
+          <label class="block col-span-2 sm:col-span-1"><span class="mb-1.5 block text-sm font-semibold text-ink">Médico solicitante</span>
             <input name="medico" class="field" autocomplete="off" placeholder="Ej. Dra. Elena Ríos" /></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Diagnóstico</span>
+          <label class="block col-span-2 sm:col-span-1"><span class="mb-1.5 block text-sm font-semibold text-ink">Diagnóstico</span>
             <input name="diagnostico" class="field" autocomplete="off" placeholder="Motivo de la transfusión" /></label>
         </div>
       </section>
 
-      <section class="panel p-6 sm:p-8 space-y-5" aria-labelledby="h-pedido">
+      <section class="panel p-4 sm:p-8 space-y-5" aria-labelledby="h-pedido">
         <h2 id="h-pedido" class="text-lg font-bold text-ink">Qué se necesita</h2>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="block sm:col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Centro de destino</span>
+        <div class="grid grid-cols-2 gap-3 sm:gap-4">
+          <label class="block col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Centro de destino</span>
             <input name="hospitalDestino" class="field" required list="centros" autocomplete="off" placeholder="Escribe o elige un centro" />
             <datalist id="centros">{centers.map((c) => <option value={c.name} />)}</datalist></label>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Tipo de sangre</span>
@@ -55,23 +55,23 @@ const laboratorio = [
               <option value="">Elige el tipo</option>
               {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
             </select></label>
-          <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Hemocomponente</span>
+          <label class="block col-span-2 sm:col-span-1"><span class="mb-1.5 block text-sm font-semibold text-ink">Hemocomponente</span>
             <select name="tipoHemocomponente" class="field" required>
               {COMPONENTES.map((c) => <option value={c}>{c}</option>)}
             </select></label>
           <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Unidades</span>
-            <input name="unidades" type="number" min="1" max="20" value="1" class="field" required /></label>
-          <p class="self-end rounded-control bg-sunken px-4 py-3 text-sm text-ink-2" id="stock-hint" aria-live="polite">Elige tipo y hemocomponente para ver el stock.</p>
+            <input name="unidades" type="number" inputmode="numeric" min="1" max="20" value="1" class="field" required /></label>
+          <p class="col-span-2 sm:col-span-1 self-end rounded-control bg-sunken px-4 py-3 text-sm text-ink-2" id="stock-hint" aria-live="polite">Elige tipo y hemocomponente para ver el stock.</p>
         </div>
         <fieldset>
           <legend class="mb-2 text-sm font-semibold text-ink">Prioridad</legend>
-          <div class="grid gap-2 sm:grid-cols-3">
+          <div class="grid grid-cols-3 gap-2">
             {prioridades.map((p, i) => (
               <label class="prio cursor-pointer">
                 <input type="radio" name="prioridad" value={p.id} class="sr-only" checked={i === 0} />
-                <span class="block rounded-control border border-line-strong p-3">
-                  <span class="block font-semibold text-ink">{p.label}</span>
-                  <span class="block text-xs text-ink-3">{p.hint}</span>
+                <span class="block h-full rounded-control border border-line-strong p-2.5 sm:p-3">
+                  <span class="block text-sm font-semibold text-ink sm:text-base">{p.label}</span>
+                  <span class="block text-[0.6875rem] leading-tight text-ink-3 sm:text-xs">{p.hint}</span>
                 </span>
               </label>
             ))}
@@ -83,12 +83,12 @@ const laboratorio = [
           </label>
       </section>
 
-      <section class="panel p-6 sm:p-8 space-y-5" aria-labelledby="h-lab">
+      <section class="panel p-4 sm:p-8 space-y-5" aria-labelledby="h-lab">
         <div>
           <h2 id="h-lab" class="text-lg font-bold text-ink">Laboratorio del paciente <span class="text-sm font-normal text-ink-3">(opcional)</span></h2>
           <p class="mt-1 text-sm text-ink-3">Ayuda a justificar la indicación.</p>
         </div>
-        <div class="grid gap-4 grid-cols-2 sm:grid-cols-5">
+        <div class="grid gap-3 grid-cols-2 sm:grid-cols-5 sm:gap-4">
           {laboratorio.map((l) => (
             <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">{l.label} <span class="font-normal text-ink-3">{l.unidad}</span></span>
               <input name={`lab-${l.id}`} data-lab={l.id} inputmode="decimal" class="field" autocomplete="off" /></label>
@@ -97,9 +97,9 @@ const laboratorio = [
       </section>
 
       <p id="error" class="hidden rounded-control bg-accent-soft px-4 py-3 text-sm font-medium text-accent-ink" role="alert"></p>
-      <div class="flex flex-wrap justify-end gap-2">
+      <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
         <a href="/director/solicitudes/historial" class="btn btn-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary" id="btn-guardar">Registrar solicitud</button>
+        <button type="submit" class="btn btn-primary" id="btn-guardar">Guardar cambios</button>
       </div>
     </form>
   </div>
@@ -187,6 +187,6 @@ const laboratorio = [
       return;
     }
     toast(editId ? 'Cambios guardados.' : `Solicitud ${codigoPedido(r.data.id)} registrada y aprobada.`);
-    setTimeout(() => (location.href = '/director/solicitudes/solicitudes'), 700);
+    setTimeout(() => (location.href = '/director/solicitudes/historial'), 700);
   });
 </script>

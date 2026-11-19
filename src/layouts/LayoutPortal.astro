@@ -91,6 +91,28 @@ const { role, title, description } = Astro.props;
           seedDemoSiHaceFalta();
         }
       }
+
+      // Filtros plegables en móvil (clase .filtros-cuerpo dentro de [data-filtros]): botón «Filtros (n)».
+      const activos = (box: Element) =>
+        [...box.querySelectorAll<HTMLInputElement | HTMLSelectElement>('.filtros-cuerpo select, .filtros-cuerpo input')]
+          .filter((el) => el.value.trim() !== '' && !el.matches('[data-no-cuenta]')).length;
+      const pintarFiltros = (box: Element) => {
+        const n = activos(box);
+        box.querySelectorAll('[data-filtros-n]').forEach((el) => (el.textContent = n ? String(n) : ''));
+      };
+      document.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-filtros-toggle]');
+        const box = btn?.closest<HTMLElement>('[data-filtros]');
+        if (!btn || !box) return;
+        const abrir = !box.hasAttribute('data-abierto');
+        box.toggleAttribute('data-abierto', abrir);
+        btn.setAttribute('aria-expanded', String(abrir));
+      });
+      ['input', 'change'].forEach((t) => document.addEventListener(t, (e) => {
+        const box = (e.target as HTMLElement).closest?.('[data-filtros]');
+        if (box) pintarFiltros(box);
+      }));
+      document.querySelectorAll('[data-filtros]').forEach(pintarFiltros);
     </script>
   </body>
 </html>
