@@ -18,8 +18,9 @@ const roles = [
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Personal</h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">Cada cuenta entra solo a la zona de su rol. Los donantes se registran solos desde la web.</p>
       </div>
-      <div class="page-head-acciones lg:hidden">
-        <button type="button" class="btn btn-primary" id="abrir-nuevo" aria-controls="nuevo" aria-expanded="false">
+      <div class="page-head-acciones">
+        <button type="button" class="btn btn-secondary" id="btn-pdf">Descargar PDF</button>
+        <button type="button" class="btn btn-primary lg:hidden" id="abrir-nuevo" aria-controls="nuevo" aria-expanded="false">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           Nueva cuenta
         </button>
@@ -79,6 +80,7 @@ const roles = [
           <p class="font-semibold text-ok">Cuenta creada</p>
           <p class="mt-1">Entrégale a la persona su clave temporal; podrá cambiarla en Configuración.</p>
           <p class="mt-3 flex items-center justify-between gap-2 rounded-control bg-surface px-3 py-2 font-mono text-base font-bold" id="clave"></p>
+          <button type="button" class="btn btn-secondary btn-sm mt-3 w-full" id="btn-constancia">Descargar constancia de acceso (PDF)</button>
         </div>
       </section>
 
@@ -193,12 +195,23 @@ const roles = [
       return;
     }
     document.getElementById('clave')!.textContent = r.password;
+    ultimaCuenta = {
+      name: String(f.get('name') ?? ''), email: String(f.get('email') ?? ''), role: String(f.get('role')), cargo: String(f.get('cargo') ?? '') || undefined,
+      sede: String(f.get('sede') ?? '') || undefined, activo: true, clave: r.password,
+    };
     document.getElementById('creada')!.classList.remove('hidden');
     form.reset();
     render();
   });
 
   buscar.addEventListener('input', render);
+  let ultimaCuenta: (import('../../lib/reportes-pdf').CuentaPdf & { clave: string }) | null = null;
+  document.getElementById('btn-constancia')!.addEventListener('click', async () => {
+    if (ultimaCuenta) (await import('../../lib/reportes-pdf')).pdfConstanciaAcceso(ultimaCuenta);
+  });
+  document.getElementById('btn-pdf')!.addEventListener('click', async () => {
+    (await import('../../lib/reportes-pdf')).pdfPersonal(getPersonal().filter((p) => !rol || p.role === rol));
+  });
   window.addEventListener('blud:auth', render);
   render();
 </script>

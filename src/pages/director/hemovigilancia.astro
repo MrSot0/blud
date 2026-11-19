@@ -415,8 +415,9 @@ const reportesHemovigilancia = [
       </div>
     </div>
 
-    <div class="flex justify-end border-t border-line pt-4">
-      <button id="btn-close-dialog" type="button" class="btn btn-secondary text-xs">Cerrar Auditoría</button>
+    <div class="grid grid-cols-2 gap-2 border-t border-line pt-4 sm:flex sm:justify-end">
+      <button id="btn-pdf-hv" type="button" class="btn btn-primary">Descargar PDF</button>
+      <button id="btn-close-dialog" type="button" class="btn btn-secondary">Cerrar auditoría</button>
     </div>
   </div>
 </dialog>
@@ -476,6 +477,10 @@ const reportesHemovigilancia = [
     const modal = document.getElementById('trace-modal') as HTMLDialogElement;
     const btnClose = document.getElementById('close-modal');
     const btnCloseDialog = document.getElementById('btn-close-dialog');
+    let reporteActual: import('../../lib/reportes-pdf').ReporteHV | null = null;
+    document.getElementById('btn-pdf-hv')?.addEventListener('click', async () => {
+      if (reporteActual) (await import('../../lib/reportes-pdf')).pdfHemovigilancia(reporteActual);
+    });
 
     document.querySelectorAll('.btn-view-trace').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -484,6 +489,7 @@ const reportesHemovigilancia = [
         if (!rawData) return;
 
         const data = JSON.parse(rawData);
+        reporteActual = data;
 
         const statusBadge = document.getElementById('m-status-badge')!;
         if (data.enCurso) {

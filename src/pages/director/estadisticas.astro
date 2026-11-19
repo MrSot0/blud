@@ -1,0 +1,318 @@
+---
+// src/pages/director/estadisticas.astro
+// Mapa de calor de donaciones: qué centros donan más y cuándo. Matriz centro × periodo, mapa de la red,
+// ranking y un resumen en texto que se puede copiar o descargar como PDF con la marca de BLUD.
+import Layout from '../../layouts/LayoutD.astro';
+---
+
+<Layout title="BLUD | Mapa de calor de donaciones">
+  <div class="container-blud py-6 sm:py-8 space-y-6" data-estadisticas>
+    <div class="page-head">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Mapa de calor de donaciones</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Qué centros captan más donaciones y en qué momentos. Toca una celda para ver el detalle.</p>
+      </div>
+      <div class="page-head-acciones">
+        <button type="button" class="btn btn-secondary" data-copiar>Copiar resumen</button>
+        <button type="button" class="btn btn-primary" data-pdf>
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 21H3"/></svg>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtros: una fila sobre todo lo que filtran -->
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between" aria-label="Filtros">
+      <div class="chips-scroll" role="group" aria-label="Periodo">
+        <button type="button" class="seg-chip" data-rango="3m">3 meses</button>
+        <button type="button" class="seg-chip" data-rango="6m" aria-pressed="true">6 meses</button>
+        <button type="button" class="seg-chip" data-rango="12m">12 meses</button>
+        <button type="button" class="seg-chip" data-rango="todo">Todo</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2 sm:flex">
+        <div class="segmentado" role="group" aria-label="Agrupar por">
+          <button type="button" data-agr="mes" aria-pressed="true">Mes</button>
+          <button type="button" data-agr="semana" aria-pressed="false">Semana</button>
+        </div>
+        <div class="segmentado" role="group" aria-label="Medir">
+          <button type="button" data-met="donaciones" aria-pressed="true">Donaciones</button>
+          <button type="button" data-met="litros" aria-pressed="false">Litros</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-kpis aria-live="polite"></div>
+
+    <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-calor">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="h-calor" class="text-lg font-bold text-ink">Donaciones por centro y periodo</h2>
+          <p class="text-xs text-ink-3" data-calor-nota></p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-ink-3" aria-hidden="true">
+          <span>Menos</span>
+          <span class="flex gap-0.5">{[1, 2, 3, 4, 5, 6].map((n) => <span class={`h-3 w-4 rounded-[3px] calor-${n}`}></span>)}</span>
+          <span>Más</span>
+        </div>
+      </div>
+      <div class="calor-scroll" role="region" aria-labelledby="h-calor" tabindex="0">
+        <table class="calor" data-calor></table>
+      </div>
+      <p class="hidden py-8 text-center text-sm text-ink-3" data-calor-vacio>No hay donaciones registradas en este periodo.</p>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-[1.2fr_1fr] items-start">
+      <section class="panel overflow-hidden" aria-labelledby="h-mapa">
+        <div class="p-4 sm:p-6 pb-3 sm:pb-4">
+          <h2 id="h-mapa" class="text-lg font-bold text-ink">Intensidad en la red</h2>
+          <p class="text-xs text-ink-3">El tamaño y el tono de cada círculo crecen con las donaciones del periodo.</p>
+        </div>
+        <div class="h-80 sm:h-96 bg-sunken" data-mapa></div>
+      </section>
+
+      <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-ranking">
+        <h2 id="h-ranking" class="text-lg font-bold text-ink">Ranking de centros</h2>
+        <ol class="space-y-3" data-ranking></ol>
+      </section>
+    </div>
+
+    <section class="panel p-4 sm:p-6 space-y-3" aria-labelledby="h-resumen">
+      <h2 id="h-resumen" class="text-lg font-bold text-ink">Resumen</h2>
+      <ul class="space-y-2 text-sm leading-relaxed text-ink-2" data-resumen></ul>
+    </section>
+  </div>
+
+  <div class="calor-tip" role="tooltip" data-tip hidden></div>
+</Layout>
+
+<style is:global>
+  /* Escala secuencial de una sola tonalidad (rojo BLUD), de la superficie al acento. En modo oscuro
+     parte de la superficie oscura, así que el ancla se invierte sola: poco = cerca del fondo. */
+  [data-estadisticas] .calor-0 { background: var(--sunken); }
+  [data-estadisticas] .calor-1 { background: color-mix(in oklab, var(--accent) 12%, var(--surface)); }
+  [data-estadisticas] .calor-2 { background: color-mix(in oklab, var(--accent) 26%, var(--surface)); }
+  [data-estadisticas] .calor-3 { background: color-mix(in oklab, var(--accent) 42%, var(--surface)); }
+  [data-estadisticas] .calor-4 { background: color-mix(in oklab, var(--accent) 60%, var(--surface)); }
+  [data-estadisticas] .calor-5 { background: color-mix(in oklab, var(--accent) 80%, var(--surface)); }
+  [data-estadisticas] .calor-6 { background: var(--accent); }
+
+  [data-estadisticas] .calor-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+  [data-estadisticas] .calor { border-collapse: separate; border-spacing: 2px; min-width: 100%; font-size: 0.8125rem; }
+  [data-estadisticas] .calor th { font-weight: 600; color: var(--ink-3); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0 0.25rem 0.25rem; white-space: nowrap; }
+  [data-estadisticas] .calor tbody th, [data-estadisticas] .calor tfoot th {
+    position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; text-transform: none; letter-spacing: 0;
+    font-size: 0.8125rem; color: var(--ink); max-width: 11rem; overflow: hidden; text-overflow: ellipsis; padding-right: 0.75rem;
+  }
+  [data-estadisticas] .calor td { padding: 0; }
+  [data-estadisticas] .calor thead th:first-child { text-align: left; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  [data-estadisticas] .calor .celda {
+    display: grid; place-items: center; width: 100%; min-width: 2.75rem; height: 2.25rem; border-radius: 6px;
+    font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); cursor: default; outline-offset: 2px;
+  }
+  [data-estadisticas] .calor .celda.calor-0 { color: var(--ink-3); font-weight: 500; }
+  [data-estadisticas] .calor .celda.calor-4, [data-estadisticas] .calor .celda.calor-5, [data-estadisticas] .calor .celda.calor-6 { color: #fff; }
+  [data-estadisticas] .calor .celda:hover, [data-estadisticas] .calor .celda:focus-visible { box-shadow: 0 0 0 2px var(--ink); }
+  [data-estadisticas] .calor .total { font-weight: 800; color: var(--ink); text-align: right; padding-left: 0.5rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  [data-estadisticas] .calor tfoot td { font-weight: 700; color: var(--ink-2); text-align: center; font-variant-numeric: tabular-nums; padding-top: 0.375rem; font-size: 0.75rem; }
+
+  .calor-tip {
+    position: fixed; z-index: 60; pointer-events: none; max-width: 15rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem;
+    background: var(--ink); color: var(--canvas); font-size: 0.75rem; line-height: 1.35; box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4);
+  }
+  .calor-tip strong { display: block; font-size: 1rem; font-variant-numeric: tabular-nums; }
+
+  [data-estadisticas] .seg-chip {
+    display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 1rem; white-space: nowrap;
+    border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2);
+  }
+  [data-estadisticas] .seg-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+  [data-estadisticas] .segmentado { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 2px; border-radius: 999px; background: var(--sunken); }
+  [data-estadisticas] .segmentado button { min-height: 2.25rem; padding: 0 0.875rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  [data-estadisticas] .segmentado button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+</style>
+
+<script>
+  import { fmtFechaLarga, fmtNum, matriz, rangoDe, resumen, sedesMapa, variacion } from '../../lib/estadisticas';
+  import type { Agrupacion, Matriz, Metrica, SedeMapa } from '../../lib/estadisticas';
+  import { onDb, toast } from '../../lib/director';
+  import { MARACAIBO, createMap, loadLeaflet, whenNearViewport } from '../../lib/map';
+
+  type Rango = '3m' | '6m' | '12m' | 'todo';
+  const root = document.querySelector<HTMLElement>('[data-estadisticas]')!;
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  let rango: Rango = '6m';
+  let agr: Agrupacion = 'mes';
+  let met: Metrica = 'donaciones';
+  let sedes: SedeMapa[] = [];
+  let m: Matriz | null = null;
+  let lineasResumen: string[] = [];
+
+  const paso = (v: number, max: number) => (!v || !max ? 0 : Math.min(6, Math.ceil((v / max) * 6)));
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', txt?: string) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (txt !== undefined) n.textContent = txt;
+    return n;
+  };
+
+  function kpis(mx: Matriz) {
+    const v = variacion(mx);
+    const lider = mx.filas[0];
+    const iPico = mx.totalesPeriodo.indexOf(Math.max(0, ...mx.totalesPeriodo));
+    const tarjetas: [string, string, string, string?][] = [
+      [met === 'litros' ? 'Litros extraídos' : 'Donaciones', fmtNum(mx.total, met),
+        v === null ? 'sin periodo anterior para comparar' : `${v >= 0 ? '+' : '−'}${Math.abs(Math.round(v))} % vs. periodo anterior`, v === null ? undefined : v >= 0 ? 'text-ok' : 'text-accent-ink'],
+      ['Centros activos', `${mx.filas.length} de ${sedes.length || mx.filas.length}`, 'registraron al menos una donación'],
+      ['Centro líder', lider ? lider.sede : '—', lider && mx.total ? `${Math.round((lider.total / mx.total) * 100)} % del total` : 'sin actividad'],
+      ['Periodo pico', mx.total ? mx.periodos[iPico].label : '—', mx.total ? `${fmtNum(mx.totalesPeriodo[iPico], met)}${met === 'donaciones' ? ' donaciones' : ''}` : 'sin actividad'],
+    ];
+    const box = $('[data-kpis]');
+    box.replaceChildren(...tarjetas.map(([t, val, nota, cls]) => {
+      const c = el('div', 'panel p-4 sm:p-5 min-w-0');
+      c.append(el('p', 'text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3', t),
+        el('p', `mt-0.5 truncate font-extrabold text-ink tabular ${val.length > 12 ? 'text-base sm:text-lg leading-snug' : 'text-2xl sm:text-3xl'}`, val),
+        el('p', `text-xs ${cls ?? 'text-ink-3'}`, nota));
+      return c;
+    }));
+  }
+
+  function tabla(mx: Matriz) {
+    const t = $<HTMLTableElement>('[data-calor]');
+    $('[data-calor-vacio]').classList.toggle('hidden', mx.filas.length > 0);
+    $('.calor-scroll').classList.toggle('hidden', !mx.filas.length);
+    $('[data-calor-nota]').textContent = `${fmtFechaLarga(mx.desde)} — ${fmtFechaLarga(mx.hasta)} · por ${agr === 'mes' ? 'mes' : 'semana'} · ${met === 'litros' ? 'litros extraídos' : 'número de donaciones'}`;
+    const thead = el('thead'), trh = el('tr');
+    trh.append(el('th', '', 'Centro'), ...mx.periodos.map((p) => { const th = el('th', '', p.corto); th.scope = 'col'; th.title = p.label; return th; }), el('th', 'total', 'Total'));
+    thead.append(trh);
+    const tbody = el('tbody');
+    mx.filas.forEach((f) => {
+      const tr = el('tr');
+      const th = el('th', '', f.sede); th.scope = 'row'; th.title = f.sede;
+      tr.append(th);
+      f.celdas.forEach((v, j) => {
+        const td = el('td');
+        const c = el('span', `celda calor-${paso(v, mx.max)}`, v ? fmtNum(v, met).replace(' L', '') : '·');
+        c.tabIndex = 0;
+        c.dataset.sede = f.sede; c.dataset.periodo = mx.periodos[j].label; c.dataset.valor = fmtNum(v, met);
+        c.dataset.cuota = f.total ? `${Math.round((v / f.total) * 100)} % del centro` : '';
+        c.setAttribute('aria-label', `${f.sede}, ${mx.periodos[j].label}: ${fmtNum(v, met)}`);
+        td.append(c);
+        tr.append(td);
+      });
+      tr.append(el('td', 'total', fmtNum(f.total, met)));
+      tbody.append(tr);
+    });
+    const tfoot = el('tfoot'), trf = el('tr');
+    trf.append(el('th', '', 'Red'), ...mx.totalesPeriodo.map((v) => el('td', '', v ? fmtNum(v, met).replace(' L', '') : '')), el('td', 'total', fmtNum(mx.total, met)));
+    tfoot.append(trf);
+    t.replaceChildren(thead, tbody, tfoot);
+  }
+
+  function ranking(mx: Matriz) {
+    const box = $('[data-ranking]');
+    if (!mx.filas.length) return box.replaceChildren(el('li', 'text-sm text-ink-3', 'Sin donaciones en el periodo.'));
+    const max = mx.filas[0].total;
+    box.replaceChildren(...mx.filas.slice(0, 8).map((f, i) => {
+      const li = el('li');
+      const fila = el('div', 'flex items-baseline justify-between gap-3 text-sm');
+      const nom = el('span', 'flex min-w-0 items-baseline gap-2');
+      nom.append(el('span', 'w-5 shrink-0 text-xs font-bold text-ink-3 tabular', String(i + 1)), el('span', 'truncate font-semibold text-ink', f.sede));
+      fila.append(nom, el('span', 'shrink-0 font-bold tabular text-ink', fmtNum(f.total, met)));
+      const pista = el('div', 'mt-1.5 ml-7 h-2 overflow-hidden rounded-full bg-sunken');
+      const barra = el('span', 'block h-full rounded-full bg-accent');
+      barra.style.width = `${Math.max(3, (f.total / max) * 100)}%`;
+      pista.append(barra);
+      li.append(fila, pista);
+      return li;
+    }));
+  }
+
+  // Mapa de la red: círculos con radio y tono según las donaciones.
+  let mapa: any = null, capa: any = null;
+  async function pintarMapa(mx: Matriz) {
+    const box = $('[data-mapa]');
+    try {
+      const L = await loadLeaflet();
+      if (!mapa) mapa = createMap(L, box, { zoom: 11, attribution: 'bottomleft' });
+      capa?.remove();
+      capa = L.layerGroup().addTo(mapa);
+      const porSede = new Map(mx.filas.map((f) => [f.sede, f.total]));
+      const pts: [number, number][] = [];
+      for (const s of sedes) {
+        if (s.lat == null || s.lng == null) continue;
+        const v = porSede.get(s.nombre) ?? 0;
+        const p = paso(v, mx.max);
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#CA2B2B';
+        const surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
+        const c = L.circleMarker([s.lat, s.lng], {
+          radius: v ? 7 + 17 * Math.sqrt(v / (mx.max || 1)) : 5,
+          color: surface, weight: 2,
+          fillColor: v ? accent : '#8b95a5', fillOpacity: v ? 0.25 + p * 0.12 : 0.5,
+        }).addTo(capa);
+        const pop = el('div');
+        pop.append(el('p', 'font-bold', s.nombre), el('p', '', v ? `${fmtNum(v, met)} en el periodo` : 'Sin donaciones en el periodo'));
+        c.bindPopup(pop);
+        c.bindTooltip(`${s.nombre}: ${fmtNum(v, met)}`);
+        pts.push([s.lat, s.lng]);
+      }
+      if (pts.length > 1) mapa.fitBounds(L.latLngBounds(pts), { padding: [28, 28], maxZoom: 13 });
+      else mapa.setView(pts[0] ?? MARACAIBO, 12);
+    } catch {
+      box.replaceChildren(el('p', 'grid h-full place-items-center p-6 text-center text-sm text-ink-3', 'No se pudo cargar el mapa. Revisa tu conexión.'));
+    }
+  }
+
+  function render() {
+    const { desde, hasta } = rangoDe(rango);
+    m = matriz(desde, hasta, agr, met);
+    kpis(m);
+    tabla(m);
+    ranking(m);
+    lineasResumen = resumen(m, sedes.length || m.filas.length);
+    $('[data-resumen]').replaceChildren(...lineasResumen.map((l) => el('li', 'flex gap-2', l)));
+    if (mapa || $('[data-mapa]').dataset.listo) pintarMapa(m);
+  }
+
+  // Tooltip de cada celda (puntero y teclado). Texto con textContent: los nombres vienen de la base.
+  const tip = document.querySelector<HTMLElement>('[data-tip]')!;
+  const mostrarTip = (c: HTMLElement, x: number, y: number) => {
+    tip.replaceChildren(el('strong', '', c.dataset.valor ?? ''), el('span', 'block', c.dataset.sede ?? ''), el('span', 'block opacity-75', `${c.dataset.periodo}${c.dataset.cuota ? ' · ' + c.dataset.cuota : ''}`));
+    tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    tip.style.left = `${Math.min(window.innerWidth - r.width - 8, Math.max(8, x - r.width / 2))}px`;
+    tip.style.top = `${Math.max(8, y - r.height - 12)}px`;
+  };
+  root.addEventListener('pointerover', (e) => { const c = (e.target as HTMLElement).closest<HTMLElement>('.celda'); if (c) { const r = c.getBoundingClientRect(); mostrarTip(c, r.left + r.width / 2, r.top); } });
+  root.addEventListener('pointerout', (e) => { if ((e.target as HTMLElement).closest('.celda')) tip.hidden = true; });
+  root.addEventListener('focusin', (e) => { const c = (e.target as HTMLElement).closest<HTMLElement>('.celda'); if (c) { const r = c.getBoundingClientRect(); mostrarTip(c, r.left + r.width / 2, r.top); } });
+  root.addEventListener('focusout', () => (tip.hidden = true));
+  window.addEventListener('scroll', () => (tip.hidden = true), { passive: true });
+
+  const marcar = (sel: string, b: HTMLElement) => root.querySelectorAll(sel).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  root.querySelectorAll<HTMLButtonElement>('[data-rango]').forEach((b) => b.addEventListener('click', () => { rango = b.dataset.rango as Rango; marcar('[data-rango]', b); render(); }));
+  root.querySelectorAll<HTMLButtonElement>('[data-agr]').forEach((b) => b.addEventListener('click', () => { agr = b.dataset.agr as Agrupacion; marcar('[data-agr]', b); render(); }));
+  root.querySelectorAll<HTMLButtonElement>('[data-met]').forEach((b) => b.addEventListener('click', () => { met = b.dataset.met as Metrica; marcar('[data-met]', b); render(); }));
+
+  $('[data-copiar]').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(lineasResumen.join('\n')); toast('Resumen copiado.'); }
+    catch { toast('No se pudo copiar. Selecciona el texto del resumen.'); }
+  });
+  $('[data-pdf]').addEventListener('click', async (e) => {
+    if (!m) return;
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    try {
+      const { pdfEstadisticas } = await import('../../lib/reportes-pdf');
+      await pdfEstadisticas(m, lineasResumen, sedes.length || m.filas.length);
+    } catch (err) {
+      toast('No se pudo generar el PDF.');
+      console.error(err);
+    } finally { b.disabled = false; }
+  });
+
+  whenNearViewport($('[data-mapa]'), () => { $('[data-mapa]').dataset.listo = '1'; if (m) pintarMapa(m); });
+  sedesMapa().then((s) => { sedes = s; render(); });
+  render();
+  onDb(render);
+</script>

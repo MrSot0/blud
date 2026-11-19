@@ -16,7 +16,11 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       <div class="page-head-acciones">
         <button type="button" id="btn-csv" class="btn btn-secondary">
           <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 21H3"/></svg>
-          Exportar CSV
+          CSV
+        </button>
+        <button type="button" id="btn-pdf" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 21H3"/></svg>
+          Descargar PDF
         </button>
       </div>
     </div>
@@ -156,6 +160,20 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   }
 
   ['f-estado', 'f-comp', 'f-tipo'].forEach((id) => sel(id).addEventListener('change', render));
+  document.getElementById('btn-pdf')!.addEventListener('click', async (e) => {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.disabled = true;
+    try {
+      const inv = resumenInventario();
+      const fe = sel('f-estado'), fc = sel('f-comp'), ft = sel('f-tipo');
+      const lista = inv.unidades.filter((u) => (!fe.value || u.estado === fe.value) && (!fc.value || u.componente === fc.value) && (!ft.value || u.tipoSangre === ft.value));
+      const filtros = [fe, fc, ft].filter((s) => s.value).map((s) => s.selectedOptions[0].text).join(' · ');
+      const { pdfInventario } = await import('../../lib/reportes-pdf');
+      await pdfInventario(lista, filtros, {
+        vigentes: inv.unidades.filter((u) => u.estado !== 'vencida').length, porVencer: inv.porVencer.length, vencidas: inv.vencidas.length, cuarentena: inv.cuarentena,
+      });
+    } finally { b.disabled = false; }
+  });
   document.getElementById('btn-csv')!.addEventListener('click', () => {
     const rows = resumenInventario().unidades.map((u) => ({
       bolsa: u.codigo, componente: u.componente, tipo: u.tipoSangre, extraccion: u.extraccion, vence: u.vence, estado: u.estado,

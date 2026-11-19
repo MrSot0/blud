@@ -105,7 +105,8 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { label: 'Solicitudes', hint: 'Aprobar lo que carga el operador', href: '/director/solicitudes/historial', icon: 'inbox' },
       { grupo: 'Banco de sangre', label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
       { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
-      { grupo: 'Banco de sangre', label: 'Reportes', hint: 'Consolidado y exportación', href: '/director/reportes', icon: 'chart' },
+      { grupo: 'Banco de sangre', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },
+      { grupo: 'Banco de sangre', label: 'Reportes', hint: 'Consolidado en PDF', href: '/director/reportes', icon: 'chart' },
       { grupo: 'Gestión', label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
     ],
     cuenta: [
