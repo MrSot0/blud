@@ -45,6 +45,22 @@ export function loadLeaflet(): Promise<any> {
   return loading;
 }
 
+/** Leaflet con el plugin de mapa de calor (leaflet.heat, canvas). */
+let loadingHeat: Promise<any> | null = null;
+export function loadLeafletHeat(): Promise<any> {
+  if (window.L?.heatLayer) return Promise.resolve(window.L);
+  loadingHeat ??= loadLeaflet().then((L) => new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js';
+    script.integrity = 'sha256-65UqrlgGoRAnKfKRuriH3eeDrOhZgZo1SCenduc+SGo=';
+    script.crossOrigin = '';
+    script.onload = () => resolve(L);
+    script.onerror = () => { loadingHeat = null; reject(new Error('leaflet.heat no cargó')); };
+    document.head.appendChild(script);
+  }));
+  return loadingHeat;
+}
+
 /** Ejecuta `start` cuando el elemento está por entrar en pantalla. */
 export function whenNearViewport(el: Element, start: () => void) {
   if (!('IntersectionObserver' in window)) return start();

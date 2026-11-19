@@ -10,7 +10,7 @@ import Layout from '../../layouts/LayoutD.astro';
     <div class="page-head">
       <div>
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Mapa de calor de donaciones</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Qué centros captan más donaciones y en qué momentos. Toca una celda para ver el detalle.</p>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Dónde se concentran las donaciones de la red y qué centros captan más.</p>
       </div>
       <div class="page-head-acciones">
         <button type="button" class="btn btn-secondary" data-copiar>Copiar resumen</button>
@@ -41,12 +41,63 @@ import Layout from '../../layouts/LayoutD.astro';
       </div>
     </div>
 
+    <!-- Mapa de calor geográfico: densidad de donaciones sobre el mapa de la red -->
+    <section class="panel overflow-hidden" aria-labelledby="h-mapa">
+      <div class="flex flex-wrap items-end justify-between gap-3 p-4 sm:px-6 sm:pt-5 sm:pb-4">
+        <div>
+          <h2 id="h-mapa" class="text-lg font-bold text-ink">Mapa de calor de la red</h2>
+          <p class="text-xs text-ink-3" data-mapa-nota>Cada donación suma calor alrededor del centro donde se hizo.</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-ink-3">
+          <span>Menos</span><span class="h-2.5 w-28 rounded-full" data-leyenda></span><span>Más</span>
+        </div>
+      </div>
+      <div class="relative">
+        <div class="mapa-calor h-[26rem] sm:h-[34rem] bg-sunken" data-mapa></div>
+        <!-- Controles: flotan sobre el mapa en escritorio; en móvil van debajo, plegables -->
+        <details class="controles-calor" data-controles>
+          <summary class="flex cursor-pointer items-center justify-between gap-3 text-sm font-bold text-ink">
+            Controles del mapa
+            <svg viewBox="0 0 24 24" class="chev size-4 transition-transform" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </summary>
+          <div class="mt-3 space-y-3 text-sm">
+            <label class="block"><span class="flex justify-between text-xs font-semibold text-ink-2">Radio <span class="tabular text-ink-3" data-v="radio"></span></span>
+              <input type="range" min="15" max="90" step="1" value="40" class="w-full accent-[var(--accent)]" data-ctl="radio" /></label>
+            <label class="block"><span class="flex justify-between text-xs font-semibold text-ink-2">Desenfoque <span class="tabular text-ink-3" data-v="blur"></span></span>
+              <input type="range" min="5" max="45" step="1" value="25" class="w-full accent-[var(--accent)]" data-ctl="blur" /></label>
+            <label class="block"><span class="flex justify-between text-xs font-semibold text-ink-2">Opacidad <span class="tabular text-ink-3" data-v="opacidad"></span></span>
+              <input type="range" min="20" max="100" step="5" value="85" class="w-full accent-[var(--accent)]" data-ctl="opacidad" /></label>
+            <fieldset>
+              <legend class="mb-1.5 text-xs font-semibold text-ink-2">Escala de color</legend>
+              <div class="grid grid-cols-2 gap-1.5">
+                <label class="escala"><input type="radio" name="escala" value="clasica" class="sr-only" checked /><span class="block h-3 rounded-full escala-clasica"></span><span class="text-xs">Clásica</span></label>
+                <label class="escala"><input type="radio" name="escala" value="blud" class="sr-only" /><span class="block h-3 rounded-full escala-blud"></span><span class="text-xs">BLUD</span></label>
+              </div>
+            </fieldset>
+            <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" checked class="size-4 accent-[var(--accent)]" data-ctl="puntos" /> Mostrar centros y totales</label>
+            <button type="button" class="text-xs font-semibold text-accent-ink hover:underline" data-ctl="reset">Restablecer</button>
+          </div>
+        </details>
+      </div>
+    </section>
+
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-kpis aria-live="polite"></div>
+
+    <div class="grid gap-6 lg:grid-cols-2 items-start">
+      <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-ranking">
+        <h2 id="h-ranking" class="text-lg font-bold text-ink">Ranking de centros</h2>
+        <ol class="space-y-3" data-ranking></ol>
+      </section>
+      <section class="panel p-4 sm:p-6 space-y-3" aria-labelledby="h-resumen">
+        <h2 id="h-resumen" class="text-lg font-bold text-ink">Resumen</h2>
+        <ul class="space-y-2 text-sm leading-relaxed text-ink-2" data-resumen></ul>
+      </section>
+    </div>
 
     <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-calor">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="h-calor" class="text-lg font-bold text-ink">Donaciones por centro y periodo</h2>
+          <h2 id="h-calor" class="text-lg font-bold text-ink">Detalle por centro y periodo</h2>
           <p class="text-xs text-ink-3" data-calor-nota></p>
         </div>
         <div class="flex items-center gap-2 text-xs text-ink-3" aria-hidden="true">
@@ -61,25 +112,6 @@ import Layout from '../../layouts/LayoutD.astro';
       <p class="hidden py-8 text-center text-sm text-ink-3" data-calor-vacio>No hay donaciones registradas en este periodo.</p>
     </section>
 
-    <div class="grid gap-6 lg:grid-cols-[1.2fr_1fr] items-start">
-      <section class="panel overflow-hidden" aria-labelledby="h-mapa">
-        <div class="p-4 sm:p-6 pb-3 sm:pb-4">
-          <h2 id="h-mapa" class="text-lg font-bold text-ink">Intensidad en la red</h2>
-          <p class="text-xs text-ink-3">El tamaño y el tono de cada círculo crecen con las donaciones del periodo.</p>
-        </div>
-        <div class="h-80 sm:h-96 bg-sunken" data-mapa></div>
-      </section>
-
-      <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-ranking">
-        <h2 id="h-ranking" class="text-lg font-bold text-ink">Ranking de centros</h2>
-        <ol class="space-y-3" data-ranking></ol>
-      </section>
-    </div>
-
-    <section class="panel p-4 sm:p-6 space-y-3" aria-labelledby="h-resumen">
-      <h2 id="h-resumen" class="text-lg font-bold text-ink">Resumen</h2>
-      <ul class="space-y-2 text-sm leading-relaxed text-ink-2" data-resumen></ul>
-    </section>
   </div>
 
   <div class="calor-tip" role="tooltip" data-tip hidden></div>
@@ -96,6 +128,26 @@ import Layout from '../../layouts/LayoutD.astro';
   [data-estadisticas] .calor-5 { background: color-mix(in oklab, var(--accent) 80%, var(--surface)); }
   [data-estadisticas] .calor-6 { background: var(--accent); }
 
+  [data-estadisticas] .controles-calor {
+    border-top: 1px solid var(--line); background: var(--surface); padding: 0.875rem 1rem;
+  }
+  [data-estadisticas] .controles-calor[open] .chev { transform: rotate(180deg); }
+  @media (min-width: 768px) {
+    [data-estadisticas] .controles-calor {
+      position: absolute; top: 0.75rem; left: 3.5rem; z-index: 500; width: 15rem; border: 1px solid var(--line);
+      border-radius: 0.75rem; box-shadow: 0 12px 32px -14px rgb(0 0 0 / 0.35);
+    }
+  }
+  [data-estadisticas] .escala { display: grid; gap: 0.25rem; padding: 0.375rem; border-radius: 0.5rem; border: 1px solid var(--line); cursor: pointer; }
+  [data-estadisticas] .escala:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  [data-estadisticas] .escala:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  [data-estadisticas] .escala-clasica { background: linear-gradient(90deg, #2b2bd9, #00c8ff, #22d36b, #ffe600, #ff7a00, #e00000); }
+  [data-estadisticas] .escala-blud { background: linear-gradient(90deg, #fbe0e0, #f29c9c, #e2574f, #ca2b2b, #8a0006); }
+  [data-estadisticas] .punto-centro {
+    display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 999px; background: #fff;
+    border: 2px solid #ca2b2b; color: #151a23; font: 800 0.6875rem/1 system-ui, sans-serif; box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  }
+  [data-estadisticas] .punto-centro.vacio { border-color: #8b95a5; color: #616b7c; width: 1.25rem; height: 1.25rem; }
   [data-estadisticas] .calor-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
   [data-estadisticas] .calor { border-collapse: separate; border-spacing: 2px; min-width: 100%; font-size: 0.8125rem; }
   [data-estadisticas] .calor th { font-weight: 600; color: var(--ink-3); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.03em; padding: 0 0.25rem 0.25rem; white-space: nowrap; }
@@ -136,7 +188,7 @@ import Layout from '../../layouts/LayoutD.astro';
   import { fmtFechaLarga, fmtNum, matriz, rangoDe, resumen, sedesMapa, variacion } from '../../lib/estadisticas';
   import type { Agrupacion, Matriz, Metrica, SedeMapa } from '../../lib/estadisticas';
   import { onDb, toast } from '../../lib/director';
-  import { MARACAIBO, createMap, loadLeaflet, whenNearViewport } from '../../lib/map';
+  import { createMap, loadLeafletHeat, whenNearViewport } from '../../lib/map';
 
   type Rango = '3m' | '6m' | '12m' | 'todo';
   const root = document.querySelector<HTMLElement>('[data-estadisticas]')!;
@@ -228,40 +280,110 @@ import Layout from '../../layouts/LayoutD.astro';
     }));
   }
 
-  // Mapa de la red: círculos con radio y tono según las donaciones.
-  let mapa: any = null, capa: any = null;
+  // ------------------------------------------------------------------ Mapa de calor geográfico
+  // Cada donación es un punto de calor alrededor de su centro (repartido en espiral para que más
+  // donaciones den una mancha más amplia, como en un mapa de densidad). Encima, el total de cada centro.
+  const ESCALAS: Record<string, Record<number, string>> = {
+    clasica: { 0.15: '#2b2bd9', 0.35: '#00c8ff', 0.55: '#22d36b', 0.72: '#ffe600', 0.86: '#ff7a00', 1: '#e00000' },
+    blud: { 0.2: '#fbe0e0', 0.45: '#f29c9c', 0.65: '#e2574f', 0.85: '#ca2b2b', 1: '#8a0006' },
+  };
+  const DEF = { radio: 40, blur: 25, opacidad: 85, escala: 'clasica', puntos: true };
+  const ctl = { ...DEF };
+  try { Object.assign(ctl, JSON.parse(localStorage.getItem('blud-calor-ctl') || '{}')); } catch {}
+  const guardarCtl = () => { try { localStorage.setItem('blud-calor-ctl', JSON.stringify(ctl)); } catch {} };
+
+  let mapa: any = null, calor: any = null, capaPuntos: any = null, encuadrado = false;
+  const leyenda = () => {
+    const e = ESCALAS[ctl.escala] ?? ESCALAS.clasica;
+    // Las claves numéricas no garantizan orden («1» va primero): se ordenan por posición.
+    const paradas = Object.entries(e).sort(([a], [b]) => Number(a) - Number(b)).map(([, c]) => c);
+    $('[data-leyenda]').style.background = `linear-gradient(90deg, ${paradas.join(', ')})`;
+  };
+  const pintarValores = () => {
+    (['radio', 'blur', 'opacidad'] as const).forEach((k) => {
+      root.querySelector<HTMLInputElement>(`[data-ctl="${k}"]`)!.value = String(ctl[k]);
+      $(`[data-v="${k}"]`).textContent = k === 'opacidad' ? `${ctl[k]} %` : `${ctl[k]} px`;
+    });
+    root.querySelector<HTMLInputElement>('[data-ctl="puntos"]')!.checked = ctl.puntos;
+    root.querySelectorAll<HTMLInputElement>('input[name="escala"]').forEach((r) => (r.checked = r.value === ctl.escala));
+    leyenda();
+  };
+
   async function pintarMapa(mx: Matriz) {
     const box = $('[data-mapa]');
     try {
-      const L = await loadLeaflet();
+      const L = await loadLeafletHeat();
       if (!mapa) mapa = createMap(L, box, { zoom: 11, attribution: 'bottomleft' });
-      capa?.remove();
-      capa = L.layerGroup().addTo(mapa);
-      const porSede = new Map(mx.filas.map((f) => [f.sede, f.total]));
-      const pts: [number, number][] = [];
+      const porSede = new Map(mx.filas.map((f) => [f.sede, f]));
+      const puntos: [number, number, number][] = [];
+      const coords: [number, number][] = [];
+      capaPuntos?.remove();
+      capaPuntos = L.layerGroup();
+      const maxSede = Math.max(1, ...mx.filas.map((f) => f.total));
       for (const s of sedes) {
         if (s.lat == null || s.lng == null) continue;
-        const v = porSede.get(s.nombre) ?? 0;
-        const p = paso(v, mx.max);
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#CA2B2B';
-        const surface = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
-        const c = L.circleMarker([s.lat, s.lng], {
-          radius: v ? 7 + 17 * Math.sqrt(v / (mx.max || 1)) : 5,
-          color: surface, weight: 2,
-          fillColor: v ? accent : '#8b95a5', fillOpacity: v ? 0.25 + p * 0.12 : 0.5,
-        }).addTo(capa);
+        coords.push([s.lat, s.lng]);
+        const f = porSede.get(s.nombre);
+        const n = f?.donaciones ?? 0;
+        const peso = f ? f.total / Math.max(1, n) / (mx.metrica === 'litros' ? 0.45 : 1) : 0;
+        for (let i = 0; i < n; i++) {
+          // Espiral de Vogel: ~350 m entre puntos, más donaciones = mancha más ancha e intensa.
+          const r = 0.0032 * Math.sqrt(i), a = i * 2.39996;
+          puntos.push([s.lat + r * Math.sin(a), s.lng + r * Math.cos(a), Math.min(1, peso)]);
+        }
+        const icono = L.divIcon({
+          className: '', iconSize: n ? [28, 28] : [20, 20],
+          html: `<span class="punto-centro ${n ? '' : 'vacio'}">${n ? (f!.total >= 100 ? Math.round(f!.total) : fmtNum(f!.total, mx.metrica).replace(' L', '')) : ''}</span>`,
+        });
+        const mk = L.marker([s.lat, s.lng], { icon: icono, keyboard: true, title: s.nombre, zIndexOffset: Math.round((f?.total ?? 0) / maxSede * 1000) });
         const pop = el('div');
-        pop.append(el('p', 'font-bold', s.nombre), el('p', '', v ? `${fmtNum(v, met)} en el periodo` : 'Sin donaciones en el periodo'));
-        c.bindPopup(pop);
-        c.bindTooltip(`${s.nombre}: ${fmtNum(v, met)}`);
-        pts.push([s.lat, s.lng]);
+        pop.append(el('p', 'font-bold', s.nombre), el('p', '', n ? `${fmtNum(f!.total, mx.metrica)} en el periodo` : 'Sin donaciones en el periodo'));
+        if (s.direccion) pop.append(el('p', 'text-xs opacity-70', s.direccion));
+        mk.bindPopup(pop);
+        capaPuntos.addLayer(mk);
       }
-      if (pts.length > 1) mapa.fitBounds(L.latLngBounds(pts), { padding: [28, 28], maxZoom: 13 });
-      else mapa.setView(pts[0] ?? MARACAIBO, 12);
+      calor?.remove();
+      calor = L.heatLayer(puntos, {
+        radius: ctl.radio, blur: ctl.blur, maxZoom: 13, minOpacity: 0.25,
+        max: Math.max(1.2, Math.sqrt(puntos.length) / 2), gradient: ESCALAS[ctl.escala] ?? ESCALAS.clasica,
+      }).addTo(mapa);
+      const lienzo = calor._canvas as HTMLCanvasElement | undefined;
+      if (lienzo) lienzo.style.opacity = String(ctl.opacidad / 100);
+      if (ctl.puntos) capaPuntos.addTo(mapa);
+      $('[data-mapa-nota]').textContent = puntos.length
+        ? `${mx.totalDonaciones} donaciones en ${mx.filas.length} centros · cada donación suma calor alrededor de su centro.`
+        : 'No hay donaciones en el periodo elegido.';
+      if (!encuadrado && coords.length) {
+        encuadrado = true;
+        if (coords.length > 1) mapa.fitBounds(L.latLngBounds(coords), { padding: [36, 36], maxZoom: 13 });
+        else mapa.setView(coords[0], 12);
+      }
     } catch {
       box.replaceChildren(el('p', 'grid h-full place-items-center p-6 text-center text-sm text-ink-3', 'No se pudo cargar el mapa. Revisa tu conexión.'));
     }
   }
+
+  // Controles del mapa
+  root.querySelectorAll<HTMLInputElement>('input[data-ctl="radio"], input[data-ctl="blur"], input[data-ctl="opacidad"]').forEach((inp) =>
+    inp.addEventListener('input', () => {
+      const k = inp.dataset.ctl as 'radio' | 'blur' | 'opacidad';
+      ctl[k] = Number(inp.value);
+      pintarValores(); guardarCtl();
+      if (k === 'opacidad') { const c = calor?._canvas as HTMLCanvasElement | undefined; if (c) c.style.opacity = String(ctl.opacidad / 100); }
+      else calor?.setOptions({ radius: ctl.radio, blur: ctl.blur });
+    }));
+  root.querySelectorAll<HTMLInputElement>('input[name="escala"]').forEach((r) => r.addEventListener('change', () => {
+    ctl.escala = r.value; pintarValores(); guardarCtl(); calor?.setOptions({ gradient: ESCALAS[ctl.escala] });
+  }));
+  root.querySelector<HTMLInputElement>('[data-ctl="puntos"]')!.addEventListener('change', (e) => {
+    ctl.puntos = (e.target as HTMLInputElement).checked; guardarCtl();
+    if (!mapa || !capaPuntos) return;
+    ctl.puntos ? capaPuntos.addTo(mapa) : capaPuntos.remove();
+  });
+  $('[data-ctl="reset"]').addEventListener('click', () => { Object.assign(ctl, DEF); guardarCtl(); pintarValores(); if (m) pintarMapa(m); });
+  // Escritorio: controles abiertos sobre el mapa; móvil: plegados debajo.
+  if (matchMedia('(min-width: 768px)').matches) $<HTMLDetailsElement>('[data-controles]').open = true;
+  pintarValores();
 
   function render() {
     const { desde, hasta } = rangoDe(rango);
