@@ -43,7 +43,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       <a href="/operador/entregas" class="panel p-5 transition-transform hover:-translate-y-0.5">
         <p class="text-xs font-bold uppercase text-ink-3">Por despachar</p>
         <p class="mt-1 text-3xl font-extrabold text-accent-ink tabular" data-kpi="pedidosPendientes">0</p>
-        <p class="text-xs text-ink-3"><span data-kpi="porAprobar">0</span> en revisión de la dirección</p>
+        <p class="text-xs text-ink-3"><span data-kpi="porAprobar">0</span> en espera de stock</p>
       </a>
     </div>
 
@@ -70,7 +70,7 @@ import { BLOOD_TYPES } from '../../lib/db';
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <section class="panel p-6 sm:p-8 space-y-4" aria-labelledby="h-ped">
         <div class="flex items-center justify-between border-b border-line pb-3">
-          <h2 id="h-ped" class="text-lg font-bold text-ink">Aprobadas por despachar</h2>
+          <h2 id="h-ped" class="text-lg font-bold text-ink">Listas para despachar</h2>
           <a href="/operador/entregas" class="link-arrow text-sm">Ver todos</a>
         </div>
         <ul id="lista-pedidos" class="divide-y divide-line"></ul>
@@ -118,7 +118,7 @@ import { BLOOD_TYPES } from '../../lib/db';
             <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${disp >= p.unidades ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${disp >= p.unidades ? 'Hay stock' : `Stock ${disp}`}</span>
           </li>`;
         }).join('')
-      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes aprobadas por despachar.</li>';
+      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes listas para despachar.</li>';
 
     const act = actividad().slice(0, 5);
     $('#lista-actividad').innerHTML = act.length

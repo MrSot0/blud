@@ -37,7 +37,10 @@ export const solicitudesPorAprobar = getPedidosPorAprobar;
 export const misSolicitudes = () => getPedidos().filter((p) => p.creadoPor === directorActual().id);
 export const getSolicitud = (id: string) => pedidos.get(id);
 
-/** Lo que registra la dirección ya está autorizado: nace aprobado y pasa directo a despacho. */
+/**
+ * Solo modo demo / compatibilidad: las solicitudes locales las registra el operador y no pasan por la dirección.
+ * La dirección aprueba pedidos ENTRE CENTROS (ver lib/centros.ts), no las solicitudes de su propio hospital.
+ */
 export function crearSolicitud(input: DatosPedido): Resultado<PedidoOp> {
   const error = validarPedido(input);
   if (error) return fail(error);
@@ -57,7 +60,7 @@ export function crearSolicitud(input: DatosPedido): Resultado<PedidoOp> {
     revisadoPorNombre: yo.nombre,
     fechaRevision: hoy,
   });
-  return { ok: true, data, aviso: 'Quedó aprobada: el operador ya puede despacharla.' };
+  return { ok: true, data, aviso: 'Solicitud registrada con unidades reservadas.' };
 }
 
 export function actualizarSolicitud(id: string, input: DatosPedido): Resultado<PedidoOp> {

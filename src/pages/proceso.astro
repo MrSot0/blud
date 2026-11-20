@@ -97,7 +97,7 @@ const escenas = [
     pasos: [
       { at: 0, t: 'Un médico la pide', d: 'Llega una orden de transfusión: Roberto Gómez, O+, 1 unidad de glóbulos rojos, urgente.' },
       { at: 0.3, t: '¿Qué sangre le sirve?', d: 'Un paciente O+ puede recibir glóbulos rojos O+ u O−. El sistema solo propone unidades compatibles.' },
-      { at: 0.58, t: 'La dirección aprueba', d: 'Revisa la orden y el stock, y la aprueba.' },
+      { at: 0.58, t: 'El laboratorio confirma', d: 'Tipaje del paciente y prueba cruzada con la bolsa: compatibles. No pasa por la dirección.' },
       { at: 0.76, t: 'Unidad reservada', d: 'La bolsa de Carlos queda apartada para Roberto: ya nadie más puede tomarla.' },
     ],
   },
@@ -106,7 +106,7 @@ const escenas = [
     num: '09',
     titulo: 'Transfusión',
     pasos: [
-      { at: 0, t: 'Un hospital la necesita', d: 'La dirección aprobó la solicitud y la unidad compatible sale del banco de sangre.' },
+      { at: 0, t: 'Un hospital la necesita', d: 'La unidad compatible sale del banco de sangre. Si falta stock, la dirección la pide a otro centro y su director la aprueba.' },
       { at: 0.4, t: 'Llega a tiempo', d: 'La cadena de frío se mantiene durante todo el traslado.' },
       { at: 0.62, t: 'Tres personas distintas', d: 'Una paciente en cirugía, un niño con leucemia y alguien con quemaduras graves.' },
       { at: 0.86, t: '450 ml, hasta 3 vidas', d: 'Eso es lo que deja una sola donación de 10 minutos.' },
@@ -593,7 +593,7 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
   </template>
 
   <template id="svg-solicitud">
-    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Llega una orden médica, se eligen las sangres compatibles, la dirección aprueba y se reserva la unidad">
+    <svg viewBox="0 0 800 600" class="ilustracion" role="img" aria-label="Llega una orden médica, se eligen las sangres compatibles, el laboratorio confirma la compatibilidad y se reserva la unidad">
       <defs>
         <radialGradient id="r-bg" cx="40%" cy="40%" r="85%"><stop offset="0" stop-color="#F3EDF0"/><stop offset="1" stop-color="#FBF8F5"/></radialGradient>
         <linearGradient id="r-paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#E6E9EE"/></linearGradient>
@@ -642,14 +642,14 @@ const colaD = (i: number, W: number, H: number, xL = 16, xR = W - 16) => {
         </g>
       ))}
 
-      <!-- Aprobación de la dirección -->
+      <!-- Confirmación del laboratorio (tipaje y prueba cruzada) -->
       <g filter="url(#r-soft)">
         <rect x="360" y="290" width="400" height="120" rx="22" fill="url(#r-glass)" stroke="#1E2430" stroke-opacity="0.07"/>
-        <circle cx="408" cy="350" r="26" fill="#CA2B2B" fill-opacity=".25"/><text x="408" y="356" font-size="15" font-weight="800" fill="#C2565A" text-anchor="middle">MF</text>
-        <text x="446" y="342" font-size="14" font-weight="700" fill="#1E2430">María Fernández</text>
-        <text x="446" y="362" font-size="11" fill="#1E2430" fill-opacity=".55">Dirección del banco de sangre</text>
+        <circle cx="408" cy="350" r="26" fill="#CA2B2B" fill-opacity=".25"/><text x="408" y="356" font-size="15" font-weight="800" fill="#C2565A" text-anchor="middle">AV</text>
+        <text x="446" y="342" font-size="14" font-weight="700" fill="#1E2430">Andrea Vargas</text>
+        <text x="446" y="362" font-size="11" fill="#1E2430" fill-opacity=".55">Laboratorio · prueba cruzada</text>
       </g>
-      <g id="r-sello" opacity="0"><g transform="rotate(-10 676 350)"><rect x="616" y="326" width="120" height="44" rx="10" fill="none" stroke="#22B35E" stroke-width="3"/><text x="676" y="355" font-size="16" font-weight="800" fill="#22B35E" text-anchor="middle" letter-spacing="1.5">APROBADA</text></g></g>
+      <g id="r-sello" opacity="0"><g transform="rotate(-10 676 350)"><rect x="616" y="326" width="120" height="44" rx="10" fill="none" stroke="#22B35E" stroke-width="3"/><text x="676" y="355" font-size="16" font-weight="800" fill="#22B35E" text-anchor="middle" letter-spacing="1.5">COMPATIBLE</text></g></g>
 
       <!-- Unidad reservada -->
       <g id="r-unidad" opacity="0" filter="url(#r-shadow)">

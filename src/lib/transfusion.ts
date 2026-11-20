@@ -1,7 +1,8 @@
 // src/lib/transfusion.ts
 // Compatibilidad antes de transfundir (RF-TR2, RF-TR3, RF-TR4, RF-TR7). Solo con la base conectada:
-// el operador registra la solicitud, la dirección la aprueba (se reservan unidades), el laboratorio hace el tipaje
-// de la muestra del paciente y la prueba cruzada de cada unidad, y el operador despacha cuando todo es compatible.
+// el operador registra la solicitud de su hospital (se reservan unidades de su sede, sin pasar por la dirección),
+// el laboratorio hace el tipaje de la muestra del paciente y la prueba cruzada de cada unidad, y el operador
+// despacha cuando todo es compatible. Las que esperan stock ya aparecen para adelantar el tipaje.
 
 import { sb } from './supabase';
 
@@ -17,7 +18,7 @@ export interface UnidadReservada {
   unidadId: number; codigo: string; componente: string; tipo: string; vence: string; estado: string; cruzada?: Cruzada;
 }
 export interface Transfusion {
-  id: string; estado: 'aprobado' | 'despachado'; prioridad: 'normal' | 'urgente' | 'critica'; fecha: string;
+  id: string; estado: 'pendiente' | 'aprobado' | 'despachado'; prioridad: 'normal' | 'urgente' | 'critica'; fecha: string;
   paciente: { nombre: string; cedula: string; servicio?: string; historia?: string };
   componente: string; requiereCruzada: boolean; tipoSolicitado: string; unidadesSolicitadas: number;
   consentimiento: boolean; tipaje?: Tipaje; unidades: UnidadReservada[]; faltaParaDespachar?: string;

@@ -22,9 +22,9 @@ import { BLOOD_TYPES } from '../../lib/db';
     <!-- KPIs -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       <a href="/director/solicitudes/historial" class="panel p-4 sm:p-5 transition-transform hover:-translate-y-0.5">
-        <p class="text-xs font-bold uppercase text-ink-3">Por aprobar</p>
-        <p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-accent-ink tabular" data-kpi="porAprobar">0</p>
-        <p class="text-xs text-ink-3">Por despachar: <span data-kpi="porDespachar">0</span></p>
+        <p class="text-xs font-bold uppercase text-ink-3">Pedidos por aprobar</p>
+        <p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-accent-ink tabular" data-centros-kpi>—</p>
+        <p class="text-xs text-ink-3">de otros centros · <span data-kpi="porAprobar">0</span> pacientes esperando stock</p>
       </a>
       <a href="/director/inventario" class="panel p-4 sm:p-5 transition-transform hover:-translate-y-0.5">
         <p class="text-xs font-bold uppercase text-ink-3">Stock vigente</p>
@@ -66,7 +66,7 @@ import { BLOOD_TYPES } from '../../lib/db';
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 items-start">
       <section class="panel p-4 sm:p-8 space-y-4" aria-labelledby="h-aprobar">
         <div class="flex items-center justify-between border-b border-line pb-3">
-          <h2 id="h-aprobar" class="text-lg font-bold text-ink">Solicitudes por aprobar</h2>
+          <h2 id="h-aprobar" class="text-lg font-bold text-ink">Pedidos de otros centros</h2>
           <a href="/director/solicitudes/historial" class="link-arrow text-sm">Ver todas</a>
         </div>
         <ul id="lista-aprobar" class="divide-y divide-line"></ul>
@@ -96,9 +96,12 @@ import { BLOOD_TYPES } from '../../lib/db';
 
 <script>
   import {
-    PRIORIDAD_LABEL, STOCK_BAJO, actividadRed, aprobarSolicitud, codigoPedido, directorActual, esc, fmtFecha,
-    kpisDirector, onDb, resumenInventario, solicitudesPorAprobar, toast,
+    PRIORIDAD_LABEL, STOCK_BAJO, actividadRed, directorActual, esc, fmtFecha,
+    kpisDirector, onDb, resumenInventario, toast,
   } from '../../lib/director';
+  import { bandejaCentros, resolverPedidoCentro } from '../../lib/centros';
+  import type { PedidoCentro } from '../../lib/centros';
+  import { usaSupabase } from '../../lib/supabase';
 
   const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
   const corto = (iso: string) => fmtFecha(iso, { day: 'numeric', month: 'short' });
@@ -121,18 +124,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       card.querySelector('[data-bajo]')!.classList.toggle('hidden', n >= STOCK_BAJO);
     });
 
-    const pend = solicitudesPorAprobar().slice(0, 5);
-    $('#lista-aprobar').innerHTML = pend.length
-      ? pend.map((p) => `<li class="flex items-center justify-between gap-3 py-3">
-          <div class="min-w-0">
-            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(codigoPedido(p.id))}</span>
-              <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${prioridadChip(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</span></p>
-            <p class="mt-0.5 truncate font-semibold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.tipoHemocomponente)}</p>
-            <p class="truncate text-xs text-ink-3">${esc(p.pacienteNombre)} → ${esc(p.hospitalDestino)} · ${esc(p.creadoPorNombre ?? '')}</p>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm shrink-0" data-aprobar="${esc(p.id)}">Aprobar</button>
-        </li>`).join('')
-      : '<li class="py-6 text-center text-sm text-ink-3">No hay solicitudes esperando tu aprobación.</li>';
+    pintarPedidos();
 
     const vence = [...inv.vencidas, ...inv.porVencer].slice(0, 6);
     $('#lista-vence').innerHTML = vence.length
@@ -150,13 +142,41 @@ import { BLOOD_TYPES } from '../../lib/db';
       : '<li class="py-6 text-center text-sm text-ink-3">Todavía no hay actividad.</li>';
   }
 
-  $('#lista-aprobar').addEventListener('click', (e) => {
-    const id = (e.target as HTMLElement).closest<HTMLElement>('[data-aprobar]')?.dataset.aprobar;
-    if (!id) return;
-    const r = aprobarSolicitud(id);
-    toast(r.ok ? `Solicitud ${codigoPedido(id)} aprobada.` : r.motivo);
+  // Pedidos que otros centros le hacen al nuestro (la dirección solo aprueba esto).
+  let pedidos: PedidoCentro[] | null = null;
+  function pintarPedidos() {
+    const box = $('#lista-aprobar');
+    if (!usaSupabase()) { box.innerHTML = '<li class="py-6 text-center text-sm text-ink-3">Los pedidos entre centros necesitan conexión con el servidor.</li>'; return; }
+    if (!pedidos) { box.innerHTML = '<li class="py-6 text-center text-sm text-ink-3">Cargando…</li>'; return; }
+    const pend = pedidos.filter((p) => p.estado === 'pendiente');
+    $('[data-centros-kpi]').textContent = String(pend.length);
+    box.innerHTML = pend.length
+      ? pend.slice(0, 5).map((p) => `<li class="flex items-center justify-between gap-3 py-3">
+          <div class="min-w-0">
+            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(p.id)}</span>
+              <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${prioridadChip(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad])}</span></p>
+            <p class="mt-0.5 truncate font-semibold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.componente)}</p>
+            <p class="truncate text-xs text-ink-3">Pide ${esc(p.solicitante.nombre)} · tu stock: ${p.stockProveedor} u.</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm shrink-0" data-aprobar="${esc(p.id)}" ${p.stockProveedor >= p.unidades ? '' : 'disabled title="Tu stock no alcanza"'}>Aprobar</button>
+        </li>`).join('')
+      : '<li class="py-6 text-center text-sm text-ink-3">Ningún centro espera tu aprobación.</li>';
+  }
+  async function cargarPedidos() {
+    if (!usaSupabase()) return pintarPedidos();
+    try { pedidos = (await bandejaCentros()).recibidos; } catch { pedidos = []; }
+    pintarPedidos();
+  }
+
+  $('#lista-aprobar').addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-aprobar]');
+    if (!b) return;
+    b.disabled = true;
+    try { await resolverPedidoCentro(b.dataset.aprobar!, true); toast(`Pedido ${b.dataset.aprobar} aprobado: se reservaron unidades de tu stock.`); await cargarPedidos(); }
+    catch (x) { toast((x as Error).message); b.disabled = false; }
   });
 
   render();
+  cargarPedidos();
   onDb(render);
 </script>

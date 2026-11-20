@@ -24,7 +24,7 @@ const laboratorio = [
     <div class="pb-5 sm:pb-6 border-b border-line">
       <a href="/director/solicitudes/historial" class="link-arrow text-sm">← Volver a solicitudes</a>
       <h1 class="mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-ink" id="titulo">Nueva solicitud de transfusión</h1>
-      <p class="text-ink-2 text-sm sm:text-base mt-1" id="subtitulo">Lo que registra la dirección queda aprobado y pasa directo a despacho.</p>
+      <p class="text-ink-2 text-sm sm:text-base mt-1" id="subtitulo">Corrección de una solicitud de transfusión en espera de stock.</p>
     </div>
 
     <form id="form" class="space-y-6" novalidate>
@@ -128,12 +128,12 @@ const laboratorio = [
     hint.textContent = n ? `Hay ${n} u. vigentes de ${tipo} · ${comp}.` : `No hay ${tipo} · ${comp} en stock: se despachará cuando haya.`;
   }
 
-  // Las solicitudes las registra el operador y la dirección las aprueba: aquí solo se corrige una existente.
+  // Las solicitudes locales las registra el operador y no pasan por la dirección: aquí solo se corrige una existente.
   if (!editId) {
     form.hidden = true;
     document.getElementById('titulo')!.textContent = 'Solicitudes de transfusión';
     document.getElementById('subtitulo')!.innerHTML =
-      'Las registra el operador con la orden médica y la dirección las aprueba o rechaza desde <a class="font-semibold text-accent-ink underline" href="/director/solicitudes/historial">Historial</a>.';
+      'Las de pacientes de tu hospital las registra el operador y van directo al laboratorio. Si falta stock, pide unidades a otro centro desde <a class="font-semibold text-accent-ink underline" href="/director/solicitudes/historial">Solicitudes entre centros</a>.';
   }
 
   if (editId) {
@@ -142,7 +142,7 @@ const laboratorio = [
       toast('No encontramos esa solicitud.');
     } else {
       document.getElementById('titulo')!.textContent = `Editar solicitud ${codigoPedido(p.id)}`;
-      document.getElementById('subtitulo')!.textContent = 'Los cambios no alteran su estado de aprobación.';
+      document.getElementById('subtitulo')!.textContent = 'Los cambios no alteran su estado.';
       document.getElementById('btn-guardar')!.textContent = 'Guardar cambios';
       (['pacienteNombre', 'pacienteCedula', 'servicio', 'medico', 'diagnostico', 'hospitalDestino', 'tipoSangre', 'tipoHemocomponente'] as const)
         .forEach((k) => (campo(k).value = String(p[k] ?? '')));
@@ -186,7 +186,7 @@ const laboratorio = [
       error.classList.remove('hidden');
       return;
     }
-    toast(editId ? 'Cambios guardados.' : `Solicitud ${codigoPedido(r.data.id)} registrada y aprobada.`);
+    toast(editId ? 'Cambios guardados.' : `Solicitud ${codigoPedido(r.data.id)} registrada.`);
     setTimeout(() => (location.href = '/director/solicitudes/historial'), 700);
   });
 </script>

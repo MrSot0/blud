@@ -359,19 +359,25 @@ let n = 0;
       b.setAttribute('aria-label', `${n} citas abiertas hoy`);
     });
   }
-  /** Dirección: contador de solicitudes por aprobar. */
+  /** Dirección: contador de pedidos de otros centros por aprobar. */
+  let porAprobarCargando = false;
   async function renderPorAprobar() {
     const link = document.querySelector<HTMLElement>('#sidebar-drawer[data-role="director"] [data-menu="/director/solicitudes/historial"]');
     const badge = link?.querySelector<HTMLElement>('[data-menu-badge]');
-    if (!badge) return;
-    const { todasLasSolicitudes } = await import('../../lib/director');
-    const n = todasLasSolicitudes().filter((p) => p.estado === 'pendiente').length;
+    if (!badge || porAprobarCargando) return;
+    porAprobarCargando = true;
+    let n = 0;
+    try {
+      const { bandejaCentros } = await import('../../lib/centros');
+      n = (await bandejaCentros()).recibidos.filter((p) => p.estado === 'pendiente').length;
+    } catch { porAprobarCargando = false; return; }
+    porAprobarCargando = false;
     badge.textContent = n > 99 ? '99+' : String(n);
     badge.classList.toggle('hidden', !n);
     badge.classList.toggle('grid', !!n);
-    badge.setAttribute('aria-label', `${n} solicitudes por aprobar`);
+    badge.setAttribute('aria-label', `${n} pedidos de otros centros por aprobar`);
   }
-  window.addEventListener('blud:db', () => renderPorAprobar());
+
 
   window.addEventListener('blud:citas', (e) => pintarCitas((e as CustomEvent<{ abiertas: number }>).detail.abiertas));
 

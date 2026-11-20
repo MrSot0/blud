@@ -9,7 +9,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     <div class="flex flex-col gap-4 pb-6 border-b border-line">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Solicitar transfusión</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Carga la solicitud de sangre de un hospital. Queda como pedido pendiente para despacharlo desde Entregas.</p>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Carga la orden médica de un paciente de tu hospital. No pasa por la dirección: se reservan unidades de tu sede y va al laboratorio para el tipaje y la prueba cruzada.</p>
       </div>
     </div>
 
@@ -110,7 +110,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
         <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-between">
           <button type="button" id="btn-atras" class="btn btn-secondary min-h-12 sm:px-8">← Atrás</button>
-          <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Enviar a la dirección</button>
+          <button type="submit" class="btn btn-primary min-h-12 sm:px-10">Registrar solicitud</button>
         </div>
       </form>
     </section>
@@ -219,7 +219,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         err.classList.remove('hidden');
         return;
       }
-      toast('Orden enviada: la dirección la revisará antes del despacho.');
+      toast(r.aviso ?? 'Solicitud registrada: se reservan unidades de tu sede y pasa al laboratorio.');
       setTimeout(() => (window.location.href = '/operador/entregas'), 600);
     });
   }

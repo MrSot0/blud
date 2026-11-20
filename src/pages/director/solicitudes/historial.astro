@@ -1,52 +1,92 @@
 ---
 // src/pages/director/solicitudes/historial.astro
-// Todas las solicitudes de hemocomponentes. La dirección aprueba o rechaza las que cargan los operadores.
+// Solicitudes ENTRE CENTROS. La dirección no aprueba las transfusiones de su propio hospital (esas las registra
+// el operador y van directo al laboratorio): pide bolsas a otro centro cuando falta stock y aprueba o rechaza
+// lo que otros centros le piden al suyo. También consulta, sin acciones, las solicitudes de su hospital.
 import Layout from '../../../layouts/LayoutD.astro';
+import { BLOOD_TYPES, COMPONENTES } from '../../../lib/db';
 
-const filtros = [
-  { id: 'pendiente', label: 'Por aprobar' },
-  { id: 'aprobado', label: 'Aprobadas' },
-  { id: 'rechazado', label: 'Rechazadas' },
-  { id: 'despachado', label: 'Despachadas' },
-  { id: 'todas', label: 'Todas' },
+const componentes = COMPONENTES.filter((c) => c !== 'Sangre Total');
+const vistas = [
+  { id: 'recibidas', label: 'Recibidas' },
+  { id: 'enviadas', label: 'Enviadas' },
+  { id: 'hospital', label: 'Mi hospital' },
 ];
 ---
 
-<Layout title="BLUD | Solicitudes">
-  <div class="container-blud py-8 space-y-6">
+<Layout title="BLUD | Solicitudes entre centros">
+  <div class="container-blud py-6 sm:py-8 space-y-6" data-centros>
     <div class="page-head">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Solicitudes</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">El operador las registra con la orden médica; tú las apruebas o rechazas antes del despacho.</p>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Solicitudes entre centros</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Pide bolsas a otro centro cuando falte stock y aprueba lo que otros centros le piden al tuyo. Las transfusiones de tu hospital van directo al laboratorio.</p>
       </div>
       <div class="page-head-acciones">
-        <button type="button" id="btn-pdf" class="btn btn-secondary">
-          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M21 21H3"/></svg>
-          Descargar PDF del listado
+        <button type="button" id="btn-pdf" class="btn btn-secondary">Descargar PDF</button>
+        <button type="button" id="btn-nuevo" class="btn btn-primary" aria-controls="nuevo" aria-expanded="false">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Pedir a otro centro
         </button>
       </div>
     </div>
 
+    <p id="aviso-conexion" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn">Los pedidos entre centros necesitan conexión con el servidor del banco de sangre.</p>
+
+    <!-- Solicitudes de mi hospital sin stock: candidatas a pedir a otro centro -->
+    <section id="sin-stock" class="hidden panel border-warn/40 p-4 sm:p-5 space-y-3" aria-labelledby="h-sin-stock">
+      <h2 id="h-sin-stock" class="text-base font-bold text-ink">Pacientes de tu hospital esperando stock</h2>
+      <ul id="lista-sin-stock" class="divide-y divide-line"></ul>
+    </section>
+
+    <!-- Nuevo pedido a otro centro -->
+    <form id="nuevo" class="hidden panel p-4 sm:p-6 space-y-4" novalidate aria-labelledby="h-nuevo">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="h-nuevo" class="text-lg font-bold text-ink">Pedir unidades a otro centro</h2>
+        <button type="button" id="cerrar-nuevo" class="grid size-9 place-items-center rounded-control text-ink-3 hover:bg-sunken" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <label class="block col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Centro proveedor</span>
+          <select name="sedeProveedora" class="field" required><option value="">Elige el centro</option></select></label>
+        <label class="block col-span-2"><span class="mb-1.5 block text-sm font-semibold text-ink">Hemocomponente</span>
+          <select name="componente" class="field" required>{componentes.map((c) => <option value={c}>{c}</option>)}</select></label>
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Tipo</span>
+          <select name="tipoSangre" class="field" required><option value="">Tipo</option>{BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}</select></label>
+        <label class="block"><span class="mb-1.5 block text-sm font-semibold text-ink">Unidades</span>
+          <input name="unidades" type="number" inputmode="numeric" min="1" max="50" value="1" class="field" required /></label>
+        <fieldset class="col-span-2">
+          <legend class="mb-1.5 text-sm font-semibold text-ink">Prioridad</legend>
+          <div class="grid grid-cols-3 gap-2">
+            {[['normal', 'Normal'], ['urgente', 'Urgente'], ['critica', 'Crítica']].map(([v, l], i) => (
+              <label class="prio cursor-pointer"><input type="radio" name="prioridad" value={v} class="sr-only" checked={i === 0} /><span class="grid min-h-12 place-items-center rounded-control border border-line-strong text-sm font-semibold">{l}</span></label>
+            ))}
+          </div>
+        </fieldset>
+        <label class="block col-span-2 sm:col-span-4"><span class="mb-1.5 block text-sm font-semibold text-ink">Motivo</span>
+          <textarea name="motivo" rows="2" class="field min-h-20 py-3" required placeholder="Ej. Paciente en quirófano sin stock compatible"></textarea></label>
+        <input type="hidden" name="solicitudLocal" />
+      </div>
+      <p id="nuevo-vinculo" class="hidden rounded-control bg-sunken px-3 py-2 text-xs text-ink-2"></p>
+      <p id="nuevo-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+        <button type="button" id="cancelar-nuevo" class="btn btn-secondary">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Enviar pedido</button>
+      </div>
+    </form>
+
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div class="chips-scroll" role="group" aria-label="Filtrar por estado">
-        {filtros.map((f, i) => (
-          <button type="button" class="estado-chip" data-estado={f.id} aria-pressed={i === 0 ? 'true' : 'false'}>
-            {f.label} <span class="tabular opacity-70" data-count={f.id}></span>
+      <div class="chips-scroll" role="group" aria-label="Mostrar">
+        {vistas.map((v, i) => (
+          <button type="button" class="estado-chip" data-vista={v.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {v.label} <span class="tabular opacity-70" data-count={v.id}></span>
           </button>
         ))}
       </div>
-      <div class="flex gap-2">
-        <label class="sr-only" for="buscar">Buscar solicitud</label>
-        <input id="buscar" type="search" class="field min-w-0 flex-1 lg:w-72" placeholder="Folio, paciente o médico" autocomplete="off" enterkeyhint="search" />
-        <label class="sr-only" for="prioridad">Prioridad</label>
-        <select id="prioridad" class="field w-32 shrink-0 sm:w-44">
-          <option value="">Prioridad</option>
-          <option value="critica">Crítica</option>
-          <option value="urgente">Urgente</option>
-          <option value="normal">Normal</option>
-        </select>
-      </div>
+      <label class="sr-only" for="buscar">Buscar</label>
+      <input id="buscar" type="search" class="field lg:w-72" placeholder="Folio, centro, paciente o componente" autocomplete="off" enterkeyhint="search" />
     </div>
+    <p class="text-xs text-ink-3" id="ayuda"></p>
 
     <ul id="lista" class="space-y-3" aria-live="polite"></ul>
   </div>
@@ -56,176 +96,253 @@ const filtros = [
   .estado-chip {
     display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.5rem; padding: 0 1rem; white-space: nowrap;
     border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface);
-    font-size: 0.875rem; font-weight: 600; color: var(--ink-2); transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+    font-size: 0.875rem; font-weight: 600; color: var(--ink-2);
   }
-  .estado-chip:hover { border-color: var(--ink-3); color: var(--ink); }
   .estado-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--canvas); }
+  .prio input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+  .prio input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 
 <script>
+  import { ESTADO_PEDIDO, PRIORIDAD_LABEL, codigoPedido, esc, fmtFecha, onDb, todasLasSolicitudes, toast } from '../../../lib/director';
   import {
-    ESTADO_PEDIDO, PRIORIDAD_LABEL, aprobarSolicitud, codigoPedido, esc, fmtFecha, onDb, rechazarSolicitud,
-    todasLasSolicitudes, toast, unidadesInventario,
-  } from '../../../lib/director';
-  import type { PedidoOp } from '../../../lib/director';
+    ESTADO_PEDIDO_CENTRO, TONO_PEDIDO_CENTRO, bandejaCentros, cancelarPedidoCentro, crearPedidoCentro, resolverPedidoCentro,
+  } from '../../../lib/centros';
+  import type { BandejaCentros, PedidoCentro } from '../../../lib/centros';
+  import { sedesMapa } from '../../../lib/estadisticas';
+  import { usaSupabase } from '../../../lib/supabase';
 
-  const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
-  const buscar = $('#buscar') as HTMLInputElement;
-  const prioridad = $('#prioridad') as HTMLSelectElement;
-  let estado = 'pendiente';
+  type Vista = 'recibidas' | 'enviadas' | 'hospital';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const buscar = $<HTMLInputElement>('#buscar');
+  const form = $<HTMLFormElement>('#nuevo');
+  let vista: Vista = 'recibidas';
+  let bandeja: BandejaCentros | null = null;
   let rechazando: string | null = null;
-  const abiertas = new Set<string>();
 
-  const chipEstado: Record<PedidoOp['estado'], string> = {
-    pendiente: 'bg-warn-soft text-warn',
-    aprobado: 'bg-ok-soft text-ok',
-    rechazado: 'bg-accent-soft text-accent-ink',
-    despachado: 'bg-sunken text-ink-2',
-  };
+  const fecha = (iso?: string) => (iso ? fmtFecha(iso.slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
   const chipPrioridad = (p?: string) =>
     p === 'critica' ? 'bg-accent text-white' : p === 'urgente' ? 'bg-accent-soft text-accent-ink' : 'bg-sunken text-ink-2';
-  const fecha = (iso?: string) => (iso ? fmtFecha(iso, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
-  /** Unidades vigentes del tipo y componente pedidos: ayuda a decidir si aprobar. */
-  function stockPara(p: PedidoOp) {
-    return unidadesInventario().filter((u) => u.estado !== 'vencida' && u.tipoSangre === p.tipoSangre && u.componente === p.tipoHemocomponente).length;
-  }
+  const AYUDA: Record<Vista, string> = {
+    recibidas: 'Lo que otros centros le piden al tuyo. Al aprobar se reservan unidades de tu stock y tu operador las despacha.',
+    enviadas: 'Lo que tu centro pidió a otros. Cuando llegue, el operador confirma la recepción y las bolsas entran a tu stock.',
+    hospital: 'Solicitudes de transfusión de pacientes de tu hospital. Las registra el operador y no necesitan tu aprobación: solo consulta.',
+  };
 
-  function detalle(p: PedidoOp) {
-    const clinica = Object.entries(p.clinica ?? {}).filter(([, v]) => v);
-    const filas: [string, string | undefined][] = [
-      ['Paciente', `${p.pacienteNombre}${p.pacienteCedula ? ' · ' + p.pacienteCedula : ''}`],
-      ['Servicio', p.servicio], ['Médico', p.medico], ['Diagnóstico', p.diagnostico],
-      ['Cargada por', `${p.creadoPorNombre ?? '—'} · ${fecha(p.fecha)}`],
-      ['Revisión', p.fechaRevision ? `${p.revisadoPorNombre ?? 'Dirección'} · ${fecha(p.fechaRevision)}` : undefined],
-      ['Motivo del rechazo', p.motivoRechazo],
-    ];
-    return `<dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3 text-sm">
-      ${filas.filter(([, v]) => v).map(([k, v]) => `<div class="${k === 'Paciente' || k === 'Diagnóstico' || k === 'Motivo del rechazo' ? 'col-span-2 sm:col-span-1' : ''}"><dt class="text-xs font-bold uppercase text-ink-3">${esc(k)}</dt><dd class="text-ink">${esc(v)}</dd></div>`).join('')}
-      ${clinica.length ? `<div class="col-span-2"><dt class="text-xs font-bold uppercase text-ink-3">Laboratorio del paciente</dt><dd class="text-ink">${clinica.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(' · ')}</dd></div>` : ''}
-    </dl>`;
-  }
-
-  function fila(p: PedidoOp) {
-    const stock = stockPara(p);
-    const acciones = p.estado === 'pendiente'
-      ? `<button type="button" class="btn btn-secondary" data-accion="rechazar" data-id="${esc(p.id)}">Rechazar</button>
-         <button type="button" class="btn btn-primary" data-accion="aprobar" data-id="${esc(p.id)}">Aprobar</button>`
-      : p.estado === 'aprobado'
-        ? `<button type="button" class="btn btn-secondary col-span-2" data-accion="rechazar" data-id="${esc(p.id)}">Anular aprobación</button>`
-        : '';
+  function tarjetaPedido(p: PedidoCentro, recibida: boolean) {
+    const otro = recibida ? `Pide: ${esc(p.solicitante.nombre)}` : `A: ${esc(p.proveedora.nombre)}`;
+    const stockOk = p.stockProveedor >= p.unidades;
+    let acciones = '';
+    if (recibida && p.estado === 'pendiente') {
+      acciones = `<div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 [&>.btn]:w-full sm:[&>.btn]:w-auto">
+        <button type="button" class="btn btn-secondary" data-accion="rechazar" data-id="${esc(p.id)}">Rechazar</button>
+        <button type="button" class="btn btn-primary" data-accion="aprobar" data-id="${esc(p.id)}" ${stockOk ? '' : 'disabled'}>Aprobar</button></div>`;
+    } else if (!recibida && p.estado === 'pendiente') {
+      acciones = `<button type="button" class="btn btn-secondary w-full sm:w-auto" data-accion="cancelar" data-id="${esc(p.id)}">Cancelar pedido</button>`;
+    }
+    const nota = recibida
+      ? p.estado === 'aprobada' ? 'Aprobado: tu operador lo despacha desde Despachos.' : p.estado === 'despachada' ? 'En camino al centro solicitante.' : ''
+      : p.estado === 'despachada' ? 'En camino: el operador de tu centro confirma la recepción.' : p.estado === 'recibida' ? 'Recibido: las bolsas entraron a tu stock.' : '';
     const formRechazo = rechazando === p.id
       ? `<form class="mt-4 space-y-2 border-t border-line pt-4" data-form-rechazo="${esc(p.id)}">
           <label class="block text-xs font-bold uppercase text-ink-2" for="motivo-${esc(p.id)}">Motivo del rechazo</label>
-          <textarea id="motivo-${esc(p.id)}" name="motivo" rows="2" class="field min-h-20 py-3" placeholder="Lo verá el operador que la registró" required minlength="5"></textarea>
-          <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end"><button type="button" class="btn btn-secondary" data-accion="cancelar">Cancelar</button>
+          <textarea id="motivo-${esc(p.id)}" name="motivo" rows="2" class="field min-h-20 py-3" placeholder="Lo verá el director que lo pidió" required minlength="5"></textarea>
+          <div class="grid grid-cols-2 gap-2 sm:flex sm:justify-end"><button type="button" class="btn btn-secondary" data-accion="no-rechazar">Volver</button>
           <button type="submit" class="btn btn-primary">Confirmar rechazo</button></div>
-        </form>`
-      : '';
-    const conStock = p.estado === 'pendiente' || p.estado === 'aprobado';
-    const abierta = abiertas.has(p.id);
+        </form>` : '';
     return `<li class="panel p-4 sm:p-5">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div class="min-w-0">
           <p class="flex flex-wrap items-center gap-1.5">
-            <span class="font-mono text-xs font-bold text-ink-3">${esc(codigoPedido(p.id))}</span>
-            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipEstado[p.estado]}">${esc(ESTADO_PEDIDO[p.estado])}</span>
-            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipPrioridad(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</span>
+            <span class="font-mono text-xs font-bold text-ink-3">${esc(p.id)}</span>
+            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${TONO_PEDIDO_CENTRO[p.estado]}">${esc(ESTADO_PEDIDO_CENTRO[p.estado])}</span>
+            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipPrioridad(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad])}</span>
           </p>
-          <p class="mt-1.5 text-base font-bold leading-snug text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.tipoHemocomponente)}</p>
-          <p class="mt-0.5 text-sm text-ink-2">${esc(p.pacienteNombre)}</p>
-          <p class="text-xs text-ink-3">${esc(p.hospitalDestino)} · ${esc(fecha(p.fecha))}</p>
-          ${conStock ? `<p class="mt-2"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${stock >= p.unidades ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${stock >= p.unidades ? `Hay stock: ${stock} u. compatibles` : `Stock insuficiente: ${stock} de ${p.unidades} u.`}</span></p>` : ''}
+          <p class="mt-1.5 text-base font-bold leading-snug text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.componente)}</p>
+          <p class="mt-0.5 text-sm text-ink-2">${otro}</p>
+          <p class="text-xs text-ink-3">${esc(p.motivo)} · ${esc(p.creadoPor ?? '')} · ${esc(fecha(p.fecha))}${p.solicitudLocal ? ' · para ' + esc(p.solicitudLocal) : ''}</p>
+          ${recibida && p.estado === 'pendiente' ? `<p class="mt-2"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${stockOk ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${stockOk ? `Tu stock: ${p.stockProveedor} u.` : `Tu stock no alcanza: ${p.stockProveedor} de ${p.unidades} u.`}</span></p>` : ''}
+          ${p.motivoRechazo ? `<p class="mt-2 text-xs font-medium text-accent-ink">Motivo del rechazo: ${esc(p.motivoRechazo)}</p>` : ''}
+          ${nota ? `<p class="mt-2 text-xs text-ink-2">${nota}</p>` : ''}
+          ${p.bolsas?.length ? `<p class="mt-1 text-xs text-ink-3">Bolsas: ${p.bolsas.map((b) => `<span class="font-mono">${esc(b.codigo)}</span>`).join(', ')}</p>` : ''}
         </div>
-        ${acciones ? `<div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 [&>.btn]:w-full sm:[&>.btn]:w-auto">${acciones}</div>` : ''}
+        ${acciones}
       </div>
-      <button type="button" class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-accent-ink" data-accion="detalle" data-id="${esc(p.id)}" aria-expanded="${abierta}">
-        ${abierta ? 'Ocultar detalle' : 'Ver paciente, médico y laboratorio'}
-        <svg viewBox="0 0 24 24" class="size-4 transition-transform ${abierta ? 'rotate-180' : ''}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-      ${abierta ? detalle(p) + `<button type="button" class="btn btn-secondary btn-sm mt-3" data-accion="comprobante" data-id="${esc(p.id)}">Comprobante en PDF</button>` : ''}
+      <button type="button" class="btn btn-secondary btn-sm mt-3" data-accion="pdf" data-id="${esc(p.id)}">Comprobante en PDF</button>
       ${formRechazo}
     </li>`;
   }
 
-  function render() {
-    const todas = todasLasSolicitudes();
+  const locales = () => {
+    const centro = bandeja?.centro;
+    return todasLasSolicitudes().filter((p) => !centro || p.hospitalDestino === centro);
+  };
+
+  function filtrar<T>(lista: T[], texto: (x: T) => string) {
     const q = buscar.value.trim().toLowerCase();
-    document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
-      const id = el.dataset.count!;
-      const n = id === 'todas' ? todas.length : todas.filter((p) => p.estado === id).length;
-      el.textContent = String(n);
-    });
-    const lista = todas
-      .filter((p) => estado === 'todas' || p.estado === estado)
-      .filter((p) => !prioridad.value || (p.prioridad ?? 'normal') === prioridad.value)
-      .filter((p) => !q || `${codigoPedido(p.id)} ${p.pacienteNombre} ${p.hospitalDestino} ${p.medico ?? ''} ${p.creadoPorNombre ?? ''}`.toLowerCase().includes(q));
-    $('#lista').innerHTML = lista.length
-      ? lista.map(fila).join('')
-      : `<li class="panel p-10 text-center text-sm text-ink-3">${estado === 'pendiente' ? 'No hay solicitudes esperando tu aprobación.' : 'No hay solicitudes con esos filtros.'}</li>`;
+    return q ? lista.filter((x) => texto(x).toLowerCase().includes(q)) : lista;
   }
 
-  document.querySelectorAll<HTMLButtonElement>('[data-estado]').forEach((b) =>
-    b.addEventListener('click', () => {
-      estado = b.dataset.estado!;
-      document.querySelectorAll('[data-estado]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      render();
-    })
-  );
-  buscar.addEventListener('input', render);
-  $('#btn-pdf').addEventListener('click', async () => {
-    const q = buscar.value.trim().toLowerCase();
-    const lista = todasLasSolicitudes()
-      .filter((p) => estado === 'todas' || p.estado === estado)
-      .filter((p) => !prioridad.value || (p.prioridad ?? 'normal') === prioridad.value)
-      .filter((p) => !q || `${codigoPedido(p.id)} ${p.pacienteNombre} ${p.hospitalDestino} ${p.medico ?? ''} ${p.creadoPorNombre ?? ''}`.toLowerCase().includes(q));
-    const etiqueta = document.querySelector<HTMLElement>(`[data-estado="${estado}"]`)?.firstChild?.textContent?.trim() ?? 'Todas';
-    (await import('../../../lib/reportes-pdf')).pdfSolicitudes(lista, `${etiqueta}${prioridad.value ? ' · prioridad ' + prioridad.selectedOptions[0].text.toLowerCase() : ''}${q ? ` · «${q}»` : ''}`);
-  });
-  prioridad.addEventListener('change', render);
+  function render() {
+    const rec = bandeja?.recibidos ?? [], env = bandeja?.enviados ?? [], loc = locales();
+    $('[data-count="recibidas"]').textContent = String(rec.filter((p) => p.estado === 'pendiente').length || rec.length);
+    $('[data-count="enviadas"]').textContent = String(env.length);
+    $('[data-count="hospital"]').textContent = String(loc.length);
+    $('#ayuda').textContent = AYUDA[vista];
 
-  $('#lista').addEventListener('click', (e) => {
-    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-accion]');
+    // Pacientes sin stock (candidatos a pedir).
+    const sin = bandeja?.sinStock ?? [];
+    $('#sin-stock').classList.toggle('hidden', !sin.length);
+    $('#lista-sin-stock').innerHTML = sin.map((s) => `<li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0"><p class="font-semibold text-ink">${s.unidades} u. ${esc(s.tipoSangre)} · ${esc(s.componente)}</p>
+          <p class="text-xs text-ink-3">${esc(s.id)} · ${esc(s.paciente)} · ${esc(PRIORIDAD_LABEL[s.prioridad])}</p></div>
+        <button type="button" class="btn btn-primary btn-sm shrink-0" data-pedir="${esc(s.id)}">Pedir a otro centro</button></li>`).join('');
+
+    let html = '';
+    if (vista === 'hospital') {
+      const l = filtrar(loc, (p) => `${codigoPedido(p.id)} ${p.pacienteNombre} ${p.tipoHemocomponente} ${p.tipoSangre}`);
+      html = l.length ? l.map((p) => `<li class="panel p-4 sm:p-5">
+          <p class="flex flex-wrap items-center gap-1.5"><span class="font-mono text-xs font-bold text-ink-3">${esc(codigoPedido(p.id))}</span>
+            <span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2">${esc(ESTADO_PEDIDO[p.estado])}</span>
+            <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${chipPrioridad(p.prioridad)}">${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])}</span></p>
+          <p class="mt-1.5 font-bold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.tipoHemocomponente)}</p>
+          <p class="text-sm text-ink-2">${esc(p.pacienteNombre)}</p>
+          <p class="text-xs text-ink-3">${esc(p.creadoPorNombre ?? '')} · ${esc(fecha(p.fecha))}${p.motivoRechazo ? ' · ' + esc(p.motivoRechazo) : ''}</p>
+        </li>`).join('') : '<li class="panel p-10 text-center text-sm text-ink-3">No hay solicitudes de tu hospital.</li>';
+    } else if (!bandeja) {
+      html = '<li class="panel p-10 text-center text-sm text-ink-3">Cargando pedidos…</li>';
+    } else {
+      const base = vista === 'recibidas' ? rec : env;
+      const l = filtrar(base, (p) => `${p.id} ${p.solicitante.nombre} ${p.proveedora.nombre} ${p.componente} ${p.tipoSangre} ${p.motivo}`);
+      html = l.length ? l.map((p) => tarjetaPedido(p, vista === 'recibidas')).join('')
+        : `<li class="panel p-10 text-center text-sm text-ink-3">${vista === 'recibidas' ? 'Ningún centro le ha pedido unidades al tuyo.' : 'Tu centro no ha pedido unidades a otros centros.'}</li>`;
+    }
+    $('#lista').innerHTML = html;
+  }
+
+  async function cargar() {
+    if (!usaSupabase()) { $('#aviso-conexion').classList.remove('hidden'); vista = 'hospital'; marcarVista(); render(); return; }
+    try { bandeja = await bandejaCentros(); }
+    catch (e) { toast((e as Error).message); }
+    render();
+  }
+
+  const marcarVista = () => document.querySelectorAll('[data-vista]').forEach((x) => x.setAttribute('aria-pressed', String((x as HTMLElement).dataset.vista === vista)));
+  document.querySelectorAll<HTMLButtonElement>('[data-vista]').forEach((b) => b.addEventListener('click', () => {
+    vista = b.dataset.vista as Vista; rechazando = null; marcarVista(); render();
+  }));
+  buscar.addEventListener('input', render);
+
+  // Formulario de pedido.
+  const abrir = (on: boolean) => {
+    form.classList.toggle('hidden', !on);
+    $('#btn-nuevo').setAttribute('aria-expanded', String(on));
+    if (on) { form.scrollIntoView({ behavior: 'smooth', block: 'start' }); (form.elements.namedItem('sedeProveedora') as HTMLSelectElement).focus({ preventScroll: true }); }
+  };
+  $('#btn-nuevo').addEventListener('click', () => {
+    if (!usaSupabase()) return toast('Los pedidos entre centros necesitan conexión con el servidor.');
+    (form.elements.namedItem('solicitudLocal') as HTMLInputElement).value = '';
+    $('#nuevo-vinculo').classList.add('hidden');
+    abrir(form.classList.contains('hidden'));
+  });
+  ['#cerrar-nuevo', '#cancelar-nuevo'].forEach((s) => $(s).addEventListener('click', () => abrir(false)));
+  $('#lista-sin-stock').addEventListener('click', (e) => {
+    const id = (e.target as HTMLElement).closest<HTMLElement>('[data-pedir]')?.dataset.pedir;
+    const s = bandeja?.sinStock.find((x) => x.id === id);
+    if (!s) return;
+    const f = form.elements;
+    (f.namedItem('componente') as HTMLSelectElement).value = s.componente;
+    (f.namedItem('tipoSangre') as HTMLSelectElement).value = s.tipoSangre;
+    (f.namedItem('unidades') as HTMLInputElement).value = String(s.unidades);
+    form.querySelectorAll<HTMLInputElement>('[name="prioridad"]').forEach((r) => (r.checked = r.value === s.prioridad));
+    (f.namedItem('motivo') as HTMLTextAreaElement).value = `Paciente ${s.paciente} (${s.id}) sin stock compatible en nuestra sede.`;
+    (f.namedItem('solicitudLocal') as HTMLInputElement).value = s.id;
+    $('#nuevo-vinculo').textContent = `Vinculado a ${s.id}: al recibir las bolsas se reservan para ese paciente.`;
+    $('#nuevo-vinculo').classList.remove('hidden');
+    abrir(true);
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const err = $('#nuevo-error');
+    err.classList.add('hidden');
+    const btn = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    btn.disabled = true;
+    try {
+      const id = await crearPedidoCentro({
+        sedeProveedora: Number(f.get('sedeProveedora')), componente: String(f.get('componente')), tipoSangre: String(f.get('tipoSangre')),
+        unidades: Number(f.get('unidades')), prioridad: String(f.get('prioridad')) as 'normal' | 'urgente' | 'critica',
+        motivo: String(f.get('motivo') ?? ''), solicitudLocal: String(f.get('solicitudLocal') ?? '') || undefined,
+      });
+      toast(`Pedido ${id} enviado: espera la aprobación del director del centro proveedor.`);
+      form.reset();
+      abrir(false);
+      vista = 'enviadas'; marcarVista();
+      await cargar();
+    } catch (x) {
+      err.textContent = (x as Error).message;
+      err.classList.remove('hidden');
+    } finally { btn.disabled = false; }
+  });
+
+  // Acciones de las tarjetas.
+  $('#lista').addEventListener('click', async (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-accion]');
     if (!el) return;
     const id = el.dataset.id!;
+    const p = [...(bandeja?.recibidos ?? []), ...(bandeja?.enviados ?? [])].find((x) => x.id === id);
     switch (el.dataset.accion) {
-      case 'detalle':
-        abiertas.has(id) ? abiertas.delete(id) : abiertas.add(id);
-        render();
+      case 'aprobar':
+        el.disabled = true;
+        try { await resolverPedidoCentro(id, true); toast(`Pedido ${id} aprobado: se reservaron unidades de tu stock.`); await cargar(); }
+        catch (x) { toast((x as Error).message); el.disabled = false; }
         break;
-      case 'aprobar': {
-        const r = aprobarSolicitud(id);
-        toast(r.ok ? `Solicitud ${codigoPedido(id)} aprobada: ya puede despacharse.` : r.motivo);
-        break;
-      }
       case 'rechazar':
-        rechazando = id;
-        render();
-        document.querySelector<HTMLInputElement>(`#motivo-${CSS.escape(id)}`)?.focus();
+        rechazando = id; render();
+        document.querySelector<HTMLTextAreaElement>(`#motivo-${CSS.escape(id)}`)?.focus();
         break;
-      case 'comprobante': {
-        const p = todasLasSolicitudes().find((x) => x.id === id);
-        if (p) import('../../../lib/reportes-pdf').then((m) => m.pdfSolicitud(p, codigoPedido(p.id)));
+      case 'no-rechazar':
+        rechazando = null; render();
         break;
-      }
       case 'cancelar':
-        rechazando = null;
-        render();
+        if (!confirm(`¿Cancelar el pedido ${id}?`)) return;
+        try { await cancelarPedidoCentro(id); toast('Pedido cancelado.'); await cargar(); }
+        catch (x) { toast((x as Error).message); }
+        break;
+      case 'pdf':
+        if (p) (await import('../../../lib/reportes-pdf')).pdfPedidoCentro(p);
         break;
     }
   });
-
-  $('#lista').addEventListener('submit', (e) => {
-    const form = (e.target as HTMLElement).closest<HTMLFormElement>('[data-form-rechazo]');
-    if (!form) return;
+  $('#lista').addEventListener('submit', async (e) => {
+    const f = (e.target as HTMLElement).closest<HTMLFormElement>('[data-form-rechazo]');
+    if (!f) return;
     e.preventDefault();
-    const id = form.dataset.formRechazo!;
-    const r = rechazarSolicitud(id, String(new FormData(form).get('motivo') ?? ''));
-    if (!r.ok) return toast(r.motivo);
-    rechazando = null;
-    toast(`Solicitud ${codigoPedido(id)} rechazada.`);
+    const motivo = String(new FormData(f).get('motivo') ?? '').trim();
+    if (motivo.length < 5) return toast('Explica el motivo (mínimo 5 caracteres).');
+    try { await resolverPedidoCentro(f.dataset.formRechazo!, false, motivo); rechazando = null; toast('Pedido rechazado.'); await cargar(); }
+    catch (x) { toast((x as Error).message); }
   });
 
-  render();
+  $('#btn-pdf').addEventListener('click', async () => {
+    const m = await import('../../../lib/reportes-pdf');
+    if (vista === 'hospital') return m.pdfSolicitudes(locales(), `Solicitudes de ${bandeja?.centro ?? 'mi hospital'}`);
+    const lista = vista === 'recibidas' ? bandeja?.recibidos ?? [] : bandeja?.enviados ?? [];
+    m.pdfPedidosCentros(lista, vista === 'recibidas' ? 'Pedidos recibidos de otros centros' : 'Pedidos enviados a otros centros', bandeja?.centro ?? '');
+  });
+
+  // Centros para el selector (todos menos el propio).
+  sedesMapa().then((sedes) => {
+    const sel = form.elements.namedItem('sedeProveedora') as HTMLSelectElement;
+    const mio = bandeja?.miSede;
+    sedes.filter((s) => /^\d+$/.test(s.id) && Number(s.id) !== mio).forEach((s) => sel.add(new Option(s.nombre, s.id)));
+  });
+
+  cargar().then(() => {
+    // Quita el propio centro si las sedes cargaron antes que la bandeja.
+    const sel = form.elements.namedItem('sedeProveedora') as HTMLSelectElement;
+    [...sel.options].forEach((o) => { if (bandeja && o.value === String(bandeja.miSede)) o.remove(); });
+  });
   onDb(render);
 </script>

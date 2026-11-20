@@ -9,7 +9,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     <div class="flex flex-col gap-4 pb-6 border-b border-line">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Despachos</h1>
-        <p class="text-ink-2 text-sm sm:text-base mt-1">Despacha lo que aprobó la dirección o registra una salida directa. El stock se descuenta solo.</p>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Despacha las solicitudes de tu hospital con la compatibilidad lista y los pedidos que otro centro le hizo al tuyo. El stock se descuenta solo.</p>
       </div>
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div id="vistas" class="flex flex-wrap gap-2" role="group" aria-label="Mostrar sección">
@@ -33,15 +33,25 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     <!-- Vista: Solicitudes aprobadas por despachar -->
     <div data-frame="pedidos" class="space-y-8">
       <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-ped">
-        <h2 id="h-ped" class="text-lg font-bold text-ink border-b border-line pb-3">Aprobadas por la dirección <span class="text-ink-3 text-sm font-semibold">(<span id="n-ped">0</span>)</span></h2>
+        <h2 id="h-ped" class="text-lg font-bold text-ink border-b border-line pb-3">Solicitudes de tu hospital <span class="text-ink-3 text-sm font-semibold">(<span id="n-ped">0</span>)</span></h2>
+        <p class="text-xs text-ink-3">Tienen unidades reservadas. Se despachan cuando el laboratorio deja lista la compatibilidad.</p>
         <ul id="pedidos" class="grid gap-3 md:grid-cols-2"></ul>
-        <p id="sin-pedidos" class="hidden py-4 text-center text-sm text-ink-3">No hay solicitudes aprobadas por despachar.</p>
+        <p id="sin-pedidos" class="hidden py-4 text-center text-sm text-ink-3">No hay solicitudes con unidades reservadas.</p>
+      </section>
+
+      <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-centros" id="sec-centros" hidden>
+        <div class="border-b border-line pb-3">
+          <h2 id="h-centros" class="text-lg font-bold text-ink">Pedidos entre centros <span class="text-ink-3 text-sm font-semibold">(<span id="n-centros">0</span>)</span></h2>
+          <p class="mt-1 text-sm text-ink-3">Aprobados por tu dirección para enviar a otro centro, y los que vienen en camino hacia el tuyo.</p>
+        </div>
+        <ul id="centros" class="grid gap-3 md:grid-cols-2"></ul>
+        <p id="sin-centros" class="hidden py-4 text-center text-sm text-ink-3">No hay pedidos entre centros por despachar ni por recibir.</p>
       </section>
 
       <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-espera">
         <div class="border-b border-line pb-3">
-          <h2 id="h-espera" class="text-lg font-bold text-ink">Tus órdenes en revisión</h2>
-          <p class="mt-1 text-sm text-ink-3">Las órdenes que cargaste esperan la decisión de la dirección. Si se rechaza una, aquí ves el motivo.</p>
+          <h2 id="h-espera" class="text-lg font-bold text-ink">En espera de stock</h2>
+          <p class="mt-1 text-sm text-ink-3">Tu sede no tenía unidades compatibles al registrarlas. Reintenta la reserva cuando entre stock; la dirección puede pedirlas a otro centro.</p>
         </div>
         <ul id="espera" class="divide-y divide-line"></ul>
       </section>
@@ -111,7 +121,9 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 </LayoutOperador>
 
 <script>
-  import { ESTADO_PEDIDO, PRIORIDAD_LABEL, codigoPedido, esc, fmtFecha, getEntregasOp, getPedidos, getPedidosPendientes, onDb, operadorActual, registrarEntrega, stockDe, toast, sumarDiasOp } from '../../lib/operador';
+  import { ESTADO_PEDIDO, PRIORIDAD_LABEL, anularPedido, codigoPedido, esc, fmtFecha, getEntregasOp, getPedidos, getPedidosPendientes, onDb, registrarEntrega, reintentarReserva, stockDe, toast, sumarDiasOp } from '../../lib/operador';
+  import { bandejaCentros, despacharPedidoCentro, recibirPedidoCentro, ESTADO_PEDIDO_CENTRO, TONO_PEDIDO_CENTRO } from '../../lib/centros';
+  import type { BandejaCentros } from '../../lib/centros';
   import type { Hemocomponente } from '../../lib/operador';
   import { usaSupabase } from '../../lib/supabase';
   import { listarTransfusiones } from '../../lib/transfusion';
@@ -192,6 +204,65 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       toast(`Pedido de ${p.pacienteNombre} despachado.`);
     });
 
+    $('#espera').addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const re = t.closest<HTMLElement>('[data-reintentar]')?.dataset.reintentar;
+      const an = t.closest<HTMLElement>('[data-anular]')?.dataset.anular;
+      if (re) {
+        const r = reintentarReserva(re);
+        toast(r.ok ? 'Reintentando la reserva con el stock de tu sede…' : r.motivo);
+      } else if (an) {
+        const motivo = prompt('Motivo de la anulación:') ?? '';
+        if (!motivo.trim()) return;
+        const r = anularPedido(an, motivo);
+        toast(r.ok ? 'Solicitud anulada.' : r.motivo);
+      }
+    });
+
+    // Pedidos entre centros: despachar (somos el proveedor) o recibir (somos el solicitante).
+    let centros: BandejaCentros | null = null;
+    const renderCentros = () => {
+      if (!centros) return;
+      const salir = centros.recibidos.filter((p) => p.estado === 'aprobada');
+      const llegar = centros.enviados.filter((p) => p.estado === 'despachada');
+      const lista = [...salir.map((p) => ({ p, salida: true })), ...llegar.map((p) => ({ p, salida: false }))];
+      $('#sec-centros').hidden = false;
+      $('#n-centros').textContent = String(lista.length);
+      $('#sin-centros').classList.toggle('hidden', lista.length > 0);
+      $('#centros').innerHTML = lista.map(({ p, salida }) => `<li class="rounded-control border border-line p-4 space-y-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0"><p class="font-mono text-[0.6875rem] font-bold text-ink-3">${esc(p.id)} · ${esc(PRIORIDAD_LABEL[p.prioridad])}</p>
+              <p class="font-bold text-ink">${p.unidades} u. ${esc(p.tipoSangre)} · ${esc(p.componente)}</p>
+              <p class="text-xs text-ink-3">${salida ? `Para ${esc(p.solicitante.nombre)}` : `Desde ${esc(p.proveedora.nombre)}`}</p></div>
+            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${TONO_PEDIDO_CENTRO[p.estado]}">${esc(ESTADO_PEDIDO_CENTRO[p.estado])}</span>
+          </div>
+          ${p.bolsas?.length ? `<p class="text-xs text-ink-2">Bolsas: ${p.bolsas.map((b) => `<span class="font-mono">${esc(b.codigo)}</span>`).join(', ')}</p>` : ''}
+          <button type="button" class="btn btn-primary w-full" data-centro="${esc(p.id)}" data-accion="${salida ? 'despachar' : 'recibir'}">${salida ? 'Despachar al centro' : 'Confirmar recepción'}</button>
+        </li>`).join('');
+    };
+    const cargarCentros = async () => {
+      if (!usaSupabase()) return;
+      try { centros = await bandejaCentros(); renderCentros(); } catch {}
+    };
+    $('#centros').addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-centro]');
+      if (!b) return;
+      b.disabled = true;
+      try {
+        if (b.dataset.accion === 'despachar') {
+          await despacharPedidoCentro(b.dataset.centro!);
+          toast('Pedido despachado: va en camino al centro solicitante.');
+        } else {
+          const r = await recibirPedidoCentro(b.dataset.centro!);
+          toast(r.reservaLocal ? 'Recibido: las unidades entraron a tu stock y quedaron reservadas para la solicitud.' : 'Recibido: las unidades entraron al stock de tu sede.');
+        }
+        await cargarCentros();
+      } catch (err) {
+        toast((err as Error).message);
+        b.disabled = false;
+      }
+    });
+
     const render = () => {
       const pend = getPedidosPendientes();
       $('#n-ped').textContent = String(pend.length);
@@ -219,16 +290,18 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
           </div></li>`;
       }).join('');
 
-      // Órdenes propias en revisión y rechazos recientes (7 días)
-      const yo = operadorActual().id;
+      // En espera de stock (sin unidades reservadas) y anuladas recientes (7 días).
       const limite = sumarDiasOp(-7);
-      const espera = getPedidos().filter((p) => p.creadoPor === yo && (p.estado === 'pendiente' || (p.estado === 'rechazado' && (p.fechaRevision ?? p.fecha) >= limite)));
+      const espera = getPedidos().filter((p) => p.estado === 'pendiente' || (p.estado === 'rechazado' && (p.fechaRevision ?? p.fecha) >= limite));
       $('#espera').innerHTML = espera.length
-        ? espera.map((p) => `<li class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+        ? espera.map((p) => `<li class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="min-w-0"><p class="truncate font-semibold text-ink">${esc(codigoPedido(p.id))} · ${p.unidades} u. ${esc(p.tipoSangre)} ${esc(p.tipoHemocomponente)}</p>
-            <p class="truncate text-xs text-ink-3">${esc(p.pacienteNombre)} → ${esc(p.hospitalDestino)}${p.motivoRechazo ? ' · Motivo: ' + esc(p.motivoRechazo) : ''}</p></div>
-            <span class="shrink-0 self-start rounded-full px-2 py-0.5 text-xs font-bold ${p.estado === 'rechazado' ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn'}">${esc(ESTADO_PEDIDO[p.estado])}</span></li>`).join('')
-        : '<li class="py-4 text-center text-sm text-ink-3">No tienes órdenes esperando revisión.</li>';
+            <p class="truncate text-xs text-ink-3">${esc(p.pacienteNombre)} · ${esc(PRIORIDAD_LABEL[p.prioridad ?? 'normal'])} · stock en tu sede: ${stockDe(p.tipoSangre, p.tipoHemocomponente)} u.${p.motivoRechazo ? ' · Motivo: ' + esc(p.motivoRechazo) : ''}</p></div>
+            ${p.estado === 'pendiente'
+              ? `<div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"><button type="button" class="btn btn-secondary btn-sm" data-anular="${esc(p.id)}">Anular</button>
+                 <button type="button" class="btn btn-primary btn-sm" data-reintentar="${esc(p.id)}">Reintentar reserva</button></div>`
+              : `<span class="shrink-0 self-start rounded-full bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent-ink">${esc(ESTADO_PEDIDO[p.estado])}</span>`}</li>`).join('')
+        : '<li class="py-4 text-center text-sm text-ink-3">No hay solicitudes en espera de stock.</li>';
 
       const lista = getEntregasOp();
       $('#n-historial').textContent = String(lista.length);
@@ -273,8 +346,9 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     setVista('pedidos');
 
     render();
-    onDb(() => { render(); cargarCompat(); });
+    onDb(() => { render(); cargarCompat(); cargarCentros(); });
     cargarCompat();
+    cargarCentros();
   }
 
   init();

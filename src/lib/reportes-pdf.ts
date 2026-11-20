@@ -11,6 +11,8 @@ import type { ReporteDirector } from './director';
 import type { PedidoOp } from './db';
 import type { Unidad } from './operador';
 import { ESTADO_PEDIDO, PRIORIDAD_LABEL } from './operador';
+import { ESTADO_PEDIDO_CENTRO } from './centros';
+import type { PedidoCentro } from './centros';
 
 const quien = () => {
   const s = (getSession() ?? {}) as Record<string, string>;
@@ -131,14 +133,14 @@ export async function pdfSolicitudes(lista: PedidoOp[], filtro: string) {
   });
   const n = (e: string) => lista.filter((p) => p.estado === e).length;
   pdf.kpis([
-    { label: 'Por aprobar', valor: String(n('pendiente')), tono: n('pendiente') ? 'aviso' : undefined },
-    { label: 'Aprobadas', valor: String(n('aprobado')), tono: 'ok' },
+    { label: 'En espera de stock', valor: String(n('pendiente')), tono: n('pendiente') ? 'aviso' : undefined },
+    { label: 'Reservadas', valor: String(n('aprobado')), tono: 'ok' },
     { label: 'Despachadas', valor: String(n('despachado')) },
-    { label: 'Rechazadas', valor: String(n('rechazado')), tono: n('rechazado') ? 'rojo' : undefined },
+    { label: 'Anuladas', valor: String(n('rechazado')), tono: n('rechazado') ? 'rojo' : undefined },
   ]);
   pdf.tabla(
     [{ titulo: 'Folio', ancho: 1.3, mono: true }, { titulo: 'Fecha', ancho: 1.2 }, { titulo: 'Pedido', ancho: 3 }, { titulo: 'Paciente', ancho: 2.4 },
-      { titulo: 'Destino', ancho: 2.6 }, { titulo: 'Prioridad', ancho: 1.1 }, { titulo: 'Estado', ancho: 1.3 }],
+      { titulo: 'Hospital', ancho: 2.6 }, { titulo: 'Prioridad', ancho: 1.1 }, { titulo: 'Estado', ancho: 1.5 }],
     lista.map((p) => [p.id.replace(/^REQ-0*/, 'REQ-'), corta(p.fecha), `${p.unidades} u. ${p.tipoSangre} · ${p.tipoHemocomponente}`, p.pacienteNombre, p.hospitalDestino,
       { texto: PRIORIDAD_LABEL[p.prioridad ?? 'normal'], tono: p.prioridad === 'critica' ? 'rojo' : p.prioridad === 'urgente' ? 'aviso' : 'neutro' },
       { texto: ESTADO_PEDIDO[p.estado], tono: tonoEstado[p.estado] }]),
@@ -147,24 +149,76 @@ export async function pdfSolicitudes(lista: PedidoOp[], filtro: string) {
   await pdf.descargar(nombrePdf('solicitudes'));
 }
 
-/** Comprobante de una solicitud: lo que se aprobó o rechazó, con firmas para el despacho. */
+/** Comprobante de una solicitud de transfusión local: reserva, compatibilidad y despacho, con firmas. */
 export async function pdfSolicitud(p: PedidoOp, folio: string) {
   const pdf = await nuevoPdf({
     tipo: 'Comprobante de solicitud',
     titulo: `Solicitud ${folio}`,
     subtitulo: `${p.unidades} u. ${p.tipoSangre} · ${p.tipoHemocomponente} para ${p.hospitalDestino}`,
     meta: [['Estado', ESTADO_PEDIDO[p.estado]], ['Prioridad', PRIORIDAD_LABEL[p.prioridad ?? 'normal']], ['Fecha', corta(p.fecha)],
-      ['Registrada por', p.creadoPorNombre ?? '—'], ['Revisada por', p.revisadoPorNombre ?? '—'], ['Revisión', corta(p.fechaRevision)]],
+      ['Registrada por', p.creadoPorNombre ?? '—'], ['Hospital', p.hospitalDestino], ['Anulada por', p.estado === 'rechazado' ? (p.revisadoPorNombre ?? '—') : '—']],
   });
-  if (p.estado === 'rechazado' && p.motivoRechazo) pdf.aviso(`Motivo del rechazo: ${p.motivoRechazo}`, 'rojo');
+  if (p.estado === 'rechazado' && p.motivoRechazo) pdf.aviso(`Motivo de la anulación: ${p.motivoRechazo}`, 'rojo');
+  if (p.estado === 'pendiente') pdf.aviso('En espera de stock: aún no hay unidades reservadas en la sede.', 'aviso');
   pdf.seccion('Paciente');
   pdf.fichas([['Nombre', p.pacienteNombre], ['Cédula', p.pacienteCedula || '—'], ['Servicio', p.servicio ?? '—'], ['Médico solicitante', p.medico ?? '—'], ['Diagnóstico', p.diagnostico ?? '—']]);
   pdf.seccion('Pedido');
-  pdf.fichas([['Hemocomponente', p.tipoHemocomponente], ['Tipo de sangre', p.tipoSangre], ['Unidades', String(p.unidades)], ['Centro de destino', p.hospitalDestino]]);
+  pdf.fichas([['Hemocomponente', p.tipoHemocomponente], ['Tipo de sangre', p.tipoSangre], ['Unidades', String(p.unidades)], ['Hospital', p.hospitalDestino]]);
   const clin = Object.entries(p.clinica ?? {}).filter(([k, v]) => v && k !== 'consentimiento');
   if (clin.length) { pdf.seccion('Laboratorio del paciente'); pdf.fichas(clin.map(([k, v]) => [k, String(v)]), 3); }
-  pdf.firmas(['Director(a) que aprueba', 'Operador que despacha', 'Recibe en destino']);
+  pdf.firmas(['Laboratorio (compatibilidad)', 'Operador que despacha', 'Recibe en el servicio']);
   await pdf.descargar(nombrePdf(`solicitud-${folio}`));
+}
+
+// ------------------------------------------------------------------ 4b. Pedidos entre centros
+const tonoCentro: Record<string, Tono> = { pendiente: 'aviso', aprobada: 'ok', rechazada: 'rojo', despachada: 'neutro', recibida: 'ok', cancelada: 'neutro' };
+
+export async function pdfPedidosCentros(lista: PedidoCentro[], titulo: string, centro: string) {
+  const q = quien();
+  const pdf = await nuevoPdf({
+    tipo: 'Pedidos entre centros',
+    titulo,
+    subtitulo: centro ? `Centro: ${centro}` : undefined,
+    meta: [['Fecha', hoyLargo()], ['Pedidos', String(lista.length)], ['Elaborado por', q.nombre]],
+    horizontal: true,
+  });
+  const n = (e: string) => lista.filter((p) => p.estado === e).length;
+  pdf.kpis([
+    { label: 'Por aprobar', valor: String(n('pendiente')), tono: n('pendiente') ? 'aviso' : undefined },
+    { label: 'Aprobados', valor: String(n('aprobada')), tono: 'ok' },
+    { label: 'En camino', valor: String(n('despachada')) },
+    { label: 'Recibidos', valor: String(n('recibida')) },
+  ]);
+  pdf.tabla(
+    [{ titulo: 'Folio', ancho: 1.2, mono: true }, { titulo: 'Fecha', ancho: 1.2 }, { titulo: 'Pedido', ancho: 2.8 }, { titulo: 'Solicitante', ancho: 2.4 },
+      { titulo: 'Proveedor', ancho: 2.4 }, { titulo: 'Prioridad', ancho: 1.1 }, { titulo: 'Estado', ancho: 1.3 }],
+    lista.map((p) => [p.id, corta(p.fecha), `${p.unidades} u. ${p.tipoSangre} · ${p.componente}`, p.solicitante.nombre, p.proveedora.nombre,
+      { texto: PRIORIDAD_LABEL[p.prioridad], tono: p.prioridad === 'critica' ? 'rojo' : p.prioridad === 'urgente' ? 'aviso' : 'neutro' },
+      { texto: ESTADO_PEDIDO_CENTRO[p.estado], tono: tonoCentro[p.estado] }]),
+    { vacio: 'No hay pedidos.' },
+  );
+  await pdf.descargar(nombrePdf('pedidos-entre-centros'));
+}
+
+/** Comprobante de un pedido entre centros: acompaña a las bolsas en el traslado. */
+export async function pdfPedidoCentro(p: PedidoCentro) {
+  const pdf = await nuevoPdf({
+    tipo: 'Pedido entre centros',
+    titulo: `Pedido ${p.id}`,
+    subtitulo: `${p.unidades} u. ${p.tipoSangre} · ${p.componente} de ${p.proveedora.nombre} para ${p.solicitante.nombre}`,
+    meta: [['Estado', ESTADO_PEDIDO_CENTRO[p.estado]], ['Prioridad', PRIORIDAD_LABEL[p.prioridad]], ['Fecha', corta(p.fecha)],
+      ['Pedido por', p.creadoPor ?? '—'], ['Resuelto por', p.revisadoPor ?? '—'], ['Resolución', corta(p.revisadoEn)]],
+  });
+  if (p.estado === 'rechazada' && p.motivoRechazo) pdf.aviso(`Motivo del rechazo: ${p.motivoRechazo}`, 'rojo');
+  pdf.seccion('Centros');
+  pdf.fichas([['Centro solicitante', p.solicitante.nombre], ['Centro proveedor', p.proveedora.nombre], ['Motivo', p.motivo], ['Solicitud del paciente', p.solicitudLocal ?? '—']]);
+  pdf.seccion('Unidades');
+  if (p.bolsas?.length) {
+    pdf.tabla([{ titulo: 'Bolsa', ancho: 2, mono: true }, { titulo: 'Componente', ancho: 2.4 }, { titulo: 'Tipo', ancho: 1, alinear: 'centro' }, { titulo: 'Vence', ancho: 1.4 }],
+      p.bolsas.map((b) => [b.codigo, p.componente, p.tipoSangre, corta(b.vence)]));
+  } else pdf.fichas([['Componente', p.componente], ['Tipo de sangre', p.tipoSangre], ['Unidades', String(p.unidades)]], 3);
+  pdf.firmas(['Director(a) del centro proveedor', 'Operador que despacha', 'Recibe en el centro solicitante']);
+  await pdf.descargar(nombrePdf(`pedido-${p.id}`));
 }
 
 // ------------------------------------------------------------------ 5. Hemovigilancia

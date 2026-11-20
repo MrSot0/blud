@@ -256,18 +256,20 @@ export function stockPorTipo(): Record<string, number> {
 export const enCuarentena = () => donaciones.all().filter((d) => d.estadoLab === 'pendiente');
 
 // ------------------------------------------------------------------ Solicitudes (pedidos) y entregas
+// Solicitud local (paciente del propio hospital): no pasa por la dirección. «aprobado» = unidades reservadas
+// en la sede (pasa al laboratorio); «pendiente» = en espera de stock; «rechazado» = anulada con motivo.
 export const ESTADO_PEDIDO: Record<EstadoPedido, string> = {
-  pendiente: 'Por aprobar',
-  aprobado: 'Aprobada',
-  rechazado: 'Rechazada',
+  pendiente: 'En espera de stock',
+  aprobado: 'Reservada',
+  rechazado: 'Anulada',
   despachado: 'Despachada',
 };
 export const PRIORIDAD_LABEL: Record<Prioridad, string> = { normal: 'Normal', urgente: 'Urgente', critica: 'Crítica' };
 
 export const getPedidos = () => pedidos.all().sort(porFechaDesc);
-/** Esperan la decisión de la dirección. */
+/** En espera de stock en la sede (sin unidades reservadas todavía). */
 export const getPedidosPorAprobar = () => getPedidos().filter((p) => p.estado === 'pendiente');
-/** Aprobados por la dirección: listos para despachar. */
+/** Con unidades reservadas: pasan por el laboratorio y luego se despachan. */
 export const getPedidosPorDespachar = () => getPedidos().filter((p) => p.estado === 'aprobado');
 /** "Pendientes" para el operador = los que ya puede despachar. */
 export const getPedidosPendientes = getPedidosPorDespachar;
@@ -284,11 +286,15 @@ export function validarPedido(input: DatosPedido): string | null {
   return null;
 }
 
-/** La orden médica que carga el operador queda "por aprobar" hasta que la dirección decida. */
+/**
+ * La orden médica del operador no pasa por la dirección: si hay stock en la sede se reservan las unidades
+ * (con base real lo decide la base) y va al laboratorio; si no, queda en espera de stock.
+ */
 export function registrarPedido(input: DatosPedido): Resultado<PedidoOp> {
   const error = validarPedido(input);
   if (error) return fail(error);
   const op = operadorActual();
+  const hayStock = stockDe(input.tipoSangre, input.tipoHemocomponente) >= input.unidades;
   const data = pedidos.upsert({
     ...input,
     pacienteNombre: input.pacienteNombre.trim(),
@@ -297,11 +303,35 @@ export function registrarPedido(input: DatosPedido): Resultado<PedidoOp> {
     prioridad: input.prioridad ?? 'normal',
     id: uid(),
     fecha: hoyISO(),
-    estado: 'pendiente',
+    estado: usaSupabase() || !hayStock ? 'pendiente' : 'aprobado',
     creadoPor: op.id,
     creadoPorNombre: op.nombre,
   });
-  return { ok: true, data, aviso: 'La dirección la revisará antes del despacho.' };
+  return {
+    ok: true, data,
+    aviso: usaSupabase() ? undefined
+      : hayStock ? 'Unidades reservadas: el laboratorio hará el tipaje y la prueba cruzada.'
+      : 'En espera de stock: la dirección puede pedir unidades a otro centro.',
+  };
+}
+
+/** Reintenta la reserva de una solicitud en espera de stock (la base decide si ya alcanza). */
+export function reintentarReserva(id: string): Resultado<PedidoOp> {
+  const p = pedidos.get(id);
+  if (!p) return fail('No encontramos esa solicitud.');
+  if (p.estado !== 'pendiente') return fail('Esa solicitud ya tiene unidades reservadas o está cerrada.');
+  if (!usaSupabase() && stockDe(p.tipoSangre, p.tipoHemocomponente) < p.unidades) return fail('Sigue sin stock suficiente en tu sede.');
+  return { ok: true, data: pedidos.upsert({ ...p, estado: 'aprobado' }) };
+}
+
+/** Anula una solicitud local (libera las unidades reservadas, si las había). */
+export function anularPedido(id: string, motivo: string): Resultado<PedidoOp> {
+  const p = pedidos.get(id);
+  if (!p) return fail('No encontramos esa solicitud.');
+  if (p.estado === 'despachado') return fail('Ya fue despachada.');
+  if (motivo.trim().length < 5) return fail('Explica el motivo (mínimo 5 caracteres).');
+  const op = operadorActual();
+  return { ok: true, data: pedidos.upsert({ ...p, estado: 'rechazado', motivoRechazo: motivo.trim(), revisadoPor: op.id, revisadoPorNombre: op.nombre, fechaRevision: hoyISO() }) };
 }
 
 /** Registra la salida y, si venía de una solicitud aprobada, la cierra. Avisa (sin bloquear) si el stock no alcanza. */
@@ -312,7 +342,7 @@ export function registrarEntrega(input: DatosPedido & { pedidoId?: string }): Re
   if (input.pedidoId && !pedido) return fail('No encontramos esa solicitud.');
   if (pedido && pedido.estado !== 'aprobado') {
     return fail(pedido.estado === 'pendiente'
-      ? 'La dirección aún no aprueba esa solicitud.'
+      ? 'Esa solicitud aún no tiene unidades reservadas (en espera de stock).'
       : `Esa solicitud está ${ESTADO_PEDIDO[pedido.estado].toLowerCase()}.`);
   }
 

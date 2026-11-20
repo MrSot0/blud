@@ -27,7 +27,7 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
     <div class="space-y-6" data-lista aria-live="polite"></div>
     <div class="hidden panel p-10 text-center space-y-2" data-vacio>
       <p class="font-semibold text-ink">No hay solicitudes en esta lista</p>
-      <p class="text-sm text-ink-3">Cuando la dirección apruebe una solicitud de transfusión, aparecerá aquí.</p>
+      <p class="text-sm text-ink-3">Cuando el operador registre una solicitud de transfusión de su hospital, aparecerá aquí para el tipaje y la prueba cruzada.</p>
     </div>
   </div>
 </LayoutLaboratorio>
@@ -58,7 +58,8 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
     const estado = t.estado === 'despachado'
       ? '<span class="chip chip-neutro">Despachada</span>'
       : t.faltaParaDespachar ? `<span class="chip chip-warn">${esc(t.faltaParaDespachar)}</span>` : '<span class="chip chip-ok">Lista para despachar</span>';
-    const editable = t.estado === 'aprobado';
+    // En espera de stock se puede adelantar el tipaje; la prueba cruzada necesita unidades reservadas.
+    const editable = t.estado === 'aprobado' || t.estado === 'pendiente';
     const tj = t.tipaje;
 
     const tipaje = tj && (tj.conforme || !editable)
@@ -69,7 +70,7 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
           <div><span class="lbl">Tubo</span><span class="font-mono">${esc(tj.tubo)}</span></div>
           <div><span class="lbl">Fecha</span>${esc(new Date(tj.fecha).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }))}</div>
         </div>
-        ${tj.abo && t.tipoSolicitado && (tj.abo + tj.rh) !== t.tipoSolicitado ? `<p class="text-xs font-semibold text-accent-ink">El grupo determinado (${esc(tj.abo + tj.rh)}) no coincide con el de la solicitud (${esc(t.tipoSolicitado)}): avisa a la dirección.</p>` : ''}`
+        ${tj.abo && t.tipoSolicitado && (tj.abo + tj.rh) !== t.tipoSolicitado ? `<p class="text-xs font-semibold text-accent-ink">El grupo determinado (${esc(tj.abo + tj.rh)}) no coincide con el de la solicitud (${esc(t.tipoSolicitado)}): avisa al operador y al médico tratante.</p>` : ''}`
       : editable ? `
         ${tj && !tj.conforme ? `<p class="rounded-control bg-accent-soft px-3 py-2 text-sm text-accent-ink">Muestra anterior rechazada: ${esc(tj.motivoRechazo ?? '')}. Registra la nueva.</p>` : ''}
         <form class="grid grid-cols-2 sm:grid-cols-4 gap-3" data-tipaje="${esc(t.id)}" novalidate>
