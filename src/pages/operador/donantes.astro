@@ -1,6 +1,7 @@
 ---
 // src/pages/operador/donantes.astro
 import FichaDonante from '../../components/app/FichaDonante.astro';
+import Paginador from '../../components/app/Paginador.astro';
 import LayoutOperador from '../../layouts/LayoutOperador.astro';
 import { BLOOD_TYPES } from '../../lib/db';
 ---
@@ -151,6 +152,7 @@ import { BLOOD_TYPES } from '../../lib/db';
               </table>
             </div>
             <p id="tabla-vacia" class="hidden py-6 text-center text-sm text-ink-3">Aún no has verificado ni registrado donantes.</p>
+            <Paginador id="pag-mios" />
           </div>
         </div>
     </div>
@@ -158,10 +160,12 @@ import { BLOOD_TYPES } from '../../lib/db';
 </LayoutOperador>
 
 <script>
-  import { buscarDonante, esc, fmtFecha, getDonantesOp, getPorVerificar, onDb, registrarDonanteOp, toast, verificarDonanteOp } from '../../lib/operador';
+  import { buscarDonante, esc, fmtFecha, getDonantesOp, getPorVerificar, onDb, operadorActual, registrarDonanteOp, toast, verificarDonanteOp } from '../../lib/operador';
   import type { RegistroDonante } from '../../lib/operador';
   import { fichaDeRegistro, obtenerFicha, pintarFicha } from '../../lib/ficha';
   import { usaSupabase } from '../../lib/supabase';
+  import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
+  import { cachear } from '../../lib/db';
   import { registro } from '../../lib/db';
   import type { Escaner } from '../../lib/escaner';
 
@@ -235,9 +239,28 @@ import { BLOOD_TYPES } from '../../lib/db';
         return;
       }
       const msg = $('#res-vacio');
-      msg.textContent = 'No encontramos ese donante. Pídele que complete su perfil en la app o regístralo manualmente.';
+      const noEsta = () => {
+        msg.textContent = 'No encontramos ese donante. Pídele que complete su perfil en la app o regístralo manualmente.';
+        msg.classList.remove('hidden');
+        ($('#reg-cedula') as HTMLInputElement).value = q.trim();
+      };
+      if (!usaSupabase() || t.length < 3) return noEsta();
+      // La caché solo trae donantes con actividad reciente: el resto se busca en la base.
+      msg.textContent = 'Buscando en todo el registro…';
       msg.classList.remove('hidden');
-      ($('#reg-cedula') as HTMLInputElement).value = q.trim();
+      const qRemoto = q.match(/BLD-[A-Z0-9]{4,}/i)?.[0] ?? q;
+      paginaRemota<RegistroDonante>('donantes', { q: qRemoto, limite: 20 })
+        .then((r) => {
+          const lista = r?.items ?? [];
+          cachear('blud-db-donantes', lista);
+          if (lista.length === 1) { msg.classList.add('hidden'); return mostrar(lista[0]); }
+          if (!lista.length) return noEsta();
+          msg.classList.add('hidden');
+          coinc.hidden = false;
+          $('#coinc-titulo').textContent = `${r!.total} donantes coinciden con «${q.trim()}»${r!.total > lista.length ? ` (se muestran ${lista.length}; afina la búsqueda)` : ''}`;
+          $('#coinc-lista').innerHTML = lista.map((x) => fila(x, x.estado === 'verificado' ? 'verificado' : 'sin verificar')).join('');
+        })
+        .catch(() => noEsta());
     };
 
     $('#form-buscar').addEventListener('submit', (e) => {
@@ -325,6 +348,26 @@ import { BLOOD_TYPES } from '../../lib/db';
         : '<li class="py-6 text-center text-sm text-ink-3">No hay donantes esperando verificación.</li>';
     };
 
+    const pagMios = new Paginador<RegistroDonante>({
+      lista: $('#tabla'), pie: $('#pag-mios'), nombre: 'donantes', clave: (d) => d.id,
+      vacio: () => (getDonantesOp().length ? '<tr><td colspan="5" class="py-6 text-center text-sm text-ink-3">Ningún donante coincide con el filtro.</td></tr>' : ''),
+      render: (vis) => vis.map((d) => `<tr>
+        <td class="py-3"><span class="flex items-center gap-3"><span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white" aria-hidden="true">${esc(iniciales(d.nombreCompleto))}</span>
+          <span class="min-w-0"><span class="block font-semibold text-ink">${esc(d.nombreCompleto)}</span><span class="block text-xs font-normal text-ink-3">${esc(d.cedula)} · ${esc(d.id)}</span></span></span></td>
+        <td class="py-3"><span class="blood-chip">${esc(d.sangre || '—')}</span></td>
+        <td class="py-3 text-xs text-ink-2">${d.origen === 'app' ? 'Verificado desde la app' : 'Registro manual'}</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short', year: 'numeric' }))}</td>
+        <td class="py-3 text-right"><button type="button" class="btn btn-secondary btn-sm" data-revisar="${esc(d.id)}">Ver ficha</button></td></tr>`).join(''),
+      remoto: async (cursor) => {
+        const r = await paginaRemota<RegistroDonante>('donantes', {
+          q: ($('#filtro') as HTMLInputElement).value, cursor,
+          filtros: { operadorId: operadorActual().id, antesDe: masAntigua(getDonantesOp(), (d) => d.fechaVerificacion ?? d.fechaRegistro) },
+        });
+        if (r) cachear('blud-db-donantes', r.items);
+        return r;
+      },
+    });
+
     const renderTabla = () => {
       const f = ($('#filtro') as HTMLInputElement).value.trim().toLowerCase();
       const lista = getDonantesOp();
@@ -332,13 +375,7 @@ import { BLOOD_TYPES } from '../../lib/db';
       $('#n-mios').textContent = String(lista.length);
       $('[data-cuenta="mios"]').textContent = String(lista.length);
       $('#tabla-vacia').classList.toggle('hidden', lista.length > 0);
-      $('#tabla').innerHTML = vis.map((d) => `<tr>
-        <td class="py-3"><span class="flex items-center gap-3"><span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-white" aria-hidden="true">${esc(iniciales(d.nombreCompleto))}</span>
-          <span class="min-w-0"><span class="block font-semibold text-ink">${esc(d.nombreCompleto)}</span><span class="block text-xs font-normal text-ink-3">${esc(d.cedula)} · ${esc(d.id)}</span></span></span></td>
-        <td class="py-3"><span class="blood-chip">${esc(d.sangre || '—')}</span></td>
-        <td class="py-3 text-xs text-ink-2">${d.origen === 'app' ? 'Verificado desde la app' : 'Registro manual'}</td>
-        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fechaVerificacion ?? d.fechaRegistro, { day: 'numeric', month: 'short', year: 'numeric' }))}</td>
-        <td class="py-3 text-right"><button type="button" class="btn btn-secondary btn-sm" data-revisar="${esc(d.id)}">Ver ficha</button></td></tr>`).join('');
+      pagMios.mostrar(vis, f);
     };
 
     $('#cola').addEventListener('click', (e) => {

@@ -1,6 +1,7 @@
 ---
 // src/pages/donante/historial.astro
 import LayoutDonante from '../../layouts/LayoutDonante.astro';
+import Paginador from '../../components/app/Paginador.astro';
 ---
 
 <LayoutDonante title="BLUD | Mi historial">
@@ -68,6 +69,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       <h2 id="h-lista" class="text-lg font-bold text-ink border-b border-line pb-4">Donaciones pasadas</h2>
 
       <ol id="lista" class="relative mt-6 space-y-5"></ol>
+      <Paginador id="pag-historial" class="mt-6" />
 
       <div id="vacio" class="hidden py-10 text-center space-y-3">
         <span class="mx-auto grid size-16 place-items-center rounded-full bg-accent-soft text-accent-ink drop-float" aria-hidden="true">
@@ -118,6 +120,7 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
 </style>
 
 <script>
+  import { Paginador } from '../../lib/paginacion';
   import { cargarFicha, centroById, estadoDonacion, getCita, cancelCita, getHistorial, loadDonor, seedDemo, fmtFecha, esc, toast, type Donor } from '../../lib/donante';
 
   function init() {
@@ -148,7 +151,13 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
       $('[data-stat="ultima"]').textContent = hist[0] ? fmtFecha(hist[0].fecha, { day: 'numeric', month: 'short' }) : '—';
       $('#vacio').classList.toggle('hidden', hist.length > 0);
 
-      lista!.innerHTML = hist
+      pag.mostrar(hist);
+    }
+
+    // El donante recibe todas sus donaciones; se muestran de 10 en 10.
+    const pag = new Paginador<ReturnType<typeof getHistorial>[number]>({
+      lista: lista!, pie: $('#pag-historial'), tam: 10, nombre: 'donaciones', clave: (d) => d.id, vacio: () => '',
+      render: (vis) => vis
         .map((d, i) => `
           <li class="item" style="--i:${i}">
             <span class="dot" aria-hidden="true">
@@ -163,8 +172,8 @@ import LayoutDonante from '../../layouts/LayoutDonante.astro';
               <p class="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-ok">✓ Completada</p>
             </div>
           </li>`)
-        .join('');
-    }
+        .join(''),
+    });
 
     $('#cita-cancel').addEventListener('click', async () => {
       if (!confirm('¿Seguro que quieres cancelar tu cita?')) return;

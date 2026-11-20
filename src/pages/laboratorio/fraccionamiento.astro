@@ -9,6 +9,7 @@ const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
   unidades: c === 'Concentrado Globular' || c === 'Plasma Fresco Congelado' ? 1 : 0,
   volumen: c === 'Concentrado Globular' ? 250 : c === 'Plasma Fresco Congelado' ? 200 : c === 'Plaquetas' ? 50 : 15,
 }));
+import Paginador from '../../components/app/Paginador.astro';
 ---
 
 <LayoutLaboratorio title="BLUD | Fraccionamiento">
@@ -91,6 +92,7 @@ const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
             </table>
           </div>
           <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">Aún no hay fraccionamientos.</p>
+          <Paginador id="pag-fracc" />
         </section>
       </div>
     </div>
@@ -99,7 +101,8 @@ const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
 
 <script>
   import { codigoDonacion, esc, estadoLabDe, fmtFecha, fraccionables, getFraccionamientos, onDb, registrarFraccionamiento, toast } from '../../lib/laboratorio';
-  import type { Hemocomponente } from '../../lib/laboratorio';
+  import type { Fraccionamiento, Hemocomponente } from '../../lib/laboratorio';
+  import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -148,15 +151,21 @@ const productos = COMPONENTES.filter((c) => c !== 'Sangre Total').map((c) => ({
       renderSelect();
     });
 
+    const pag = new Paginador<Fraccionamiento>({
+      lista: $('#tabla'), pie: $('#pag-fracc'), nombre: 'fraccionamientos', clave: (f) => f.id, vacio: () => '',
+      render: (vis) => vis.map((f) => `<tr>
+        <td class="py-3 font-mono font-bold text-ink">${esc(f.codigo)}</td>
+        <td class="py-3 text-ink-2">${f.productos.map((p) => `${p.unidades} ×${esc(p.componente)} <span class="text-xs text-ink-3">(${p.volumenMl} ml)</span>`).join('<br>')}</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(f.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join(''),
+      remoto: (cursor) => paginaRemota<Fraccionamiento>('fracciones', { cursor, filtros: { antesDe: masAntigua(getFraccionamientos(), (f) => f.fecha) } }),
+    });
+
     const render = () => {
       const lista = getFraccionamientos();
       $('#n').textContent = String(lista.length);
       $('[data-cuenta="fraccionamientos"]').textContent = String(lista.length);
       $('#vacia').classList.toggle('hidden', lista.length > 0);
-      $('#tabla').innerHTML = lista.map((f) => `<tr>
-        <td class="py-3 font-mono font-bold text-ink">${esc(f.codigo)}</td>
-        <td class="py-3 text-ink-2">${f.productos.map((p) => `${p.unidades} ×${esc(p.componente)} <span class="text-xs text-ink-3">(${p.volumenMl} ml)</span>`).join('<br>')}</td>
-        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(f.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+      pag.mostrar(lista);
 
       const tot: Record<string, number> = {};
       lista.forEach((f) => f.productos.forEach((p) => (tot[p.componente] = (tot[p.componente] ?? 0) + p.unidades)));

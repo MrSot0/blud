@@ -3,6 +3,7 @@
 // Inventario real: unidades liberadas por el laboratorio (y sus fracciones) menos lo entregado, con vencimientos (FIFO).
 import Layout from '../../layouts/LayoutD.astro';
 import Filtros from '../../components/app/Filtros.astro';
+import Paginador from '../../components/app/Paginador.astro';
 import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
@@ -97,6 +98,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
           <tbody id="unidades" class="divide-y divide-line"></tbody>
         </table>
       </div>
+      <Paginador id="pag-unidades" />
     </section>
   </div>
 </Layout>
@@ -104,6 +106,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 <script>
   import { downloadFile, esc, fmtFecha, hoyISO, onDb, resumenInventario, toCSV } from '../../lib/director';
   import type { Unidad } from '../../lib/director';
+  import { Paginador } from '../../lib/paginacion';
   import { BLOOD_TYPES } from '../../lib/db';
 
   const sel = (id: string) => document.getElementById(id) as HTMLSelectElement;
@@ -147,17 +150,22 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 
     const fe = sel('f-estado').value, fc = sel('f-comp').value, ft = sel('f-tipo').value;
     const lista = inv.unidades.filter((u) => (!fe || u.estado === fe) && (!fc || u.componente === fc) && (!ft || u.tipoSangre === ft));
-    document.getElementById('unidades')!.innerHTML = lista.length
-      ? lista.map((u) => {
+    pagUnidades.mostrar(lista, `${fe}|${fc}|${ft}`);
+    document.getElementById('n-unidades')!.textContent = `(${lista.length})`;
+  }
+
+  // Unidades: 25 por tanda (las tarjetas apiladas en móvil se vuelven muy largas con todo el stock).
+  const pagUnidades = new Paginador<Unidad>({
+    lista: document.getElementById('unidades')!, pie: document.getElementById('pag-unidades')!, tam: 25, nombre: 'unidades', clave: (u) => u.id,
+    vacio: () => '<tr><td colspan="6" class="celda-vacia p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>',
+    render: (vis) => vis.map((u) => {
           const [txt, cls] = etiqueta(u);
           return `<tr><td class="celda-titulo celda-corta p-3 font-mono text-xs font-bold text-ink">${esc(u.codigo)}</td>
             <td class="p-3 text-ink" data-label="Componente">${esc(u.componente)}</td><td class="p-3" data-label="Tipo"><span class="blood-chip">${esc(u.tipoSangre)}</span></td>
             <td class="celda-movil-oculta p-3 text-ink-2" data-label="Extracción">${esc(fecha(u.extraccion))}</td><td class="p-3 text-ink-2" data-label="Vence">${esc(fecha(u.vence))}</td>
             <td class="celda-estado p-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${esc(txt)}</span></td></tr>`;
-        }).join('')
-      : '<tr><td colspan="6" class="celda-vacia p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>';
-    document.getElementById('n-unidades')!.textContent = `(${lista.length})`;
-  }
+        }).join(''),
+  });
 
   ['f-estado', 'f-comp', 'f-tipo'].forEach((id) => sel(id).addEventListener('change', render));
   document.getElementById('btn-pdf')!.addEventListener('click', async (e) => {

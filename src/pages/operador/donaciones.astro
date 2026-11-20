@@ -1,6 +1,7 @@
 ---
 // src/pages/operador/donaciones.astro
 import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import Paginador from '../../components/app/Paginador.astro';
 import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
@@ -170,6 +171,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
           </table>
         </div>
         <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">Todavía no hay extracciones registradas.</p>
+        <Paginador id="pag-historial" />
       </div>
     </div>
   </div>
@@ -177,7 +179,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 
 <script>
   import { buscarDonante, esc, fmtFecha, getDonacionesOp, onDb, operadorActual, registrarDonacionOp, toast } from '../../lib/operador';
-  import type { Hemocomponente } from '../../lib/operador';
+  import type { DonacionOp, Hemocomponente } from '../../lib/operador';
+  import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
   import { cerrarCitaDemo } from '../../lib/citas';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -361,6 +364,22 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       pintarDictamen();
     });
 
+    // Historial paginado: 20 por tanda; lo anterior al último año se pide a la base.
+    const pag = new Paginador<DonacionOp>({
+      lista: $('#tabla'), pie: $('#pag-historial'), nombre: 'extracciones', clave: (d) => d.id,
+      vacio: () => (getDonacionesOp().length ? '<tr><td colspan="5" class="py-6 text-center text-sm text-ink-3">Ninguna extracción coincide con el filtro.</td></tr>' : ''),
+      render: (vis) => vis.map((d) => `<tr>
+        <td class="py-3 font-semibold text-ink">${esc(d.donanteNombre)}<br><span class="text-xs font-normal text-ink-3">${esc(d.donanteCedula)}</span></td>
+        <td class="py-3"><span class="blood-chip">${esc(d.tipoSangre)}</span></td>
+        <td class="py-3 text-ink-2">${esc(d.tipoHemocomponente)}</td>
+        <td class="py-3 font-mono">${d.volumenMl} ml</td>
+        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join(''),
+      remoto: (cursor) => paginaRemota<DonacionOp>('donaciones', {
+        q: $<HTMLInputElement>('#filtro').value, cursor,
+        filtros: { antesDe: masAntigua(getDonacionesOp(), (d) => d.fecha) },
+      }),
+    });
+
     const render = () => {
       const f = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
       const all = getDonacionesOp();
@@ -368,12 +387,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       $('#n').textContent = String(all.length);
       $('[data-cuenta="historial"]').textContent = String(all.length);
       $('#vacia').classList.toggle('hidden', all.length > 0);
-      $('#tabla').innerHTML = vis.map((d) => `<tr>
-        <td class="py-3 font-semibold text-ink">${esc(d.donanteNombre)}<br><span class="text-xs font-normal text-ink-3">${esc(d.donanteCedula)}</span></td>
-        <td class="py-3"><span class="blood-chip">${esc(d.tipoSangre)}</span></td>
-        <td class="py-3 text-ink-2">${esc(d.tipoHemocomponente)}</td>
-        <td class="py-3 font-mono">${d.volumenMl} ml</td>
-        <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(d.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`).join('');
+      pag.mostrar(vis, f);
 
       // Últimas 5 (la más reciente arriba; a igual fecha, la última registrada)
       const ult = all

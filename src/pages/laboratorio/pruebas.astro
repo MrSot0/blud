@@ -1,6 +1,7 @@
 ---
 // src/pages/laboratorio/pruebas.astro
 import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+import Paginador from '../../components/app/Paginador.astro';
 import { BLOOD_TYPES, PRUEBAS } from '../../lib/db';
 
 const opciones = [
@@ -108,6 +109,7 @@ const opciones = [
           </table>
         </div>
         <p id="vacia" class="hidden py-6 text-center text-sm text-ink-3">No hay pruebas que coincidan.</p>
+        <Paginador id="pag-pruebas" />
       </section>
     </div>
   </div>
@@ -127,7 +129,8 @@ const opciones = [
 
 <script>
   import { PRUEBAS, codigoDonacion, donacionPorId, esc, fmtFecha, getPruebas, onDb, porAnalizar, registrarPruebas, toast } from '../../lib/laboratorio';
-  import type { ResultadoPrueba } from '../../lib/laboratorio';
+  import type { PruebaLab, ResultadoPrueba } from '../../lib/laboratorio';
+  import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -180,6 +183,23 @@ const opciones = [
       renderSelect();
     });
 
+    // 20 por tanda; las pruebas de más de un año se piden a la base (solo sin filtro de resultado).
+    const pag = new Paginador<PruebaLab>({
+      lista: $('#tabla'), pie: $('#pag-pruebas'), nombre: 'pruebas', clave: (p) => p.id, vacio: () => '',
+      render: (vis) => vis.map((p) => {
+        const [txt, cls] = CHIP[p.resultadoGlobal];
+        const react = Object.values(p.resultados ?? {}).filter((v) => v === 'reactivo').length;
+        return `<tr><td class="py-3 font-mono font-bold text-ink">${esc(p.codigo)}</td>
+          <td class="py-3"><span class="blood-chip">${esc(p.tipoSangreConfirmado)}</span></td>
+          <td class="py-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${txt}</span></td>
+          <td class="py-3 text-ink-2">${react || '—'}</td>
+          <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(p.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`;
+      }).join(''),
+      remoto: async (cursor) => resFiltro !== 'todos' ? null : paginaRemota<PruebaLab>('pruebas', {
+        q: $<HTMLInputElement>('#filtro').value, cursor, filtros: { antesDe: masAntigua(getPruebas(), (p) => p.fecha) },
+      }),
+    });
+
     const render = () => {
       const q = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
       const todas = getPruebas();
@@ -187,15 +207,7 @@ const opciones = [
       $('#n').textContent = String(todas.length);
       $('[data-cuenta="pruebas"]').textContent = String(todas.length);
       $('#vacia').classList.toggle('hidden', vis.length > 0);
-      $('#tabla').innerHTML = vis.map((p) => {
-        const [txt, cls] = CHIP[p.resultadoGlobal];
-        const react = Object.values(p.resultados).filter((v) => v === 'reactivo').length;
-        return `<tr><td class="py-3 font-mono font-bold text-ink">${esc(p.codigo)}</td>
-          <td class="py-3"><span class="blood-chip">${esc(p.tipoSangreConfirmado)}</span></td>
-          <td class="py-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${txt}</span></td>
-          <td class="py-3 text-ink-2">${react || '—'}</td>
-          <td class="py-3 text-xs text-ink-3">${esc(fmtFecha(p.fecha, { day: 'numeric', month: 'short', year: 'numeric' }))}</td></tr>`;
-      }).join('');
+      pag.mostrar(vis, `${resFiltro}|${q}`);
     };
 
     document.querySelectorAll<HTMLElement>('[data-res]').forEach((b) => b.addEventListener('click', () => {

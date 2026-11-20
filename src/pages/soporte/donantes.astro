@@ -55,6 +55,10 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
 
 <script>
   import { ESTADO_LABEL, consultarDonante, esc, fmtFecha, fmtFechaHora, onDb, toast } from '../../lib/soporte';
+  import type { RegistroDonante } from '../../lib/soporte';
+  import { paginaRemota } from '../../lib/paginacion';
+  import { cachear } from '../../lib/db';
+  import { usaSupabase } from '../../lib/supabase';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -63,6 +67,7 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
     if (form.dataset.ready) return;
     form.dataset.ready = '1';
     let ultima = '';
+    const remotoBuscado = new Set<string>();
 
     const buscar = (q: string) => {
       ultima = q;
@@ -72,6 +77,14 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
       vacio.classList.toggle('hidden', !!f);
       if (!f) {
         vacio.textContent = 'No encontramos a ese donante. Revisa la cédula o el ID, o pídele que complete su perfil en la app.';
+        // La caché solo trae donantes con actividad del último año: el resto se busca en la base y se reintenta.
+        if (usaSupabase() && q.trim().length >= 3 && !remotoBuscado.has(q)) {
+          remotoBuscado.add(q);
+          vacio.textContent = 'Buscando en todo el registro…';
+          paginaRemota<RegistroDonante>('donantes', { q: q.match(/BLD-[A-Z0-9]{4,}/i)?.[0] ?? q, limite: 5 })
+            .then((r) => { if (r?.items.length) { cachear('blud-db-donantes', r.items); buscar(r.items[0].id); } else buscar(q); })
+            .catch(() => buscar(q));
+        }
         return;
       }
       const r = f.registro;

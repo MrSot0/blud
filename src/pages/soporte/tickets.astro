@@ -1,6 +1,7 @@
 ---
 // src/pages/soporte/tickets.astro
 import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
+import Paginador from '../../components/app/Paginador.astro';
 import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
 ---
 
@@ -32,6 +33,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
           <input type="search" id="filtro" class="field sm:w-80" placeholder="Buscar por código, donante o asunto…" aria-label="Buscar solicitudes" />
         </div>
         <ul id="lista" class="divide-y divide-line"></ul>
+        <Paginador id="pag-tickets" />
         <p id="lista-vacia" class="hidden py-8 text-center text-sm text-ink-3"></p>
       </div>
     </section>
@@ -100,6 +102,8 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
     marcarUrgente, misCasos, onDb, resueltos, responderComoSoporte, soltarCaso, soporteActual, toast, tomarCaso,
   } from '../../lib/soporte';
   import type { Ticket } from '../../lib/soporte';
+  import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
+  import { cachear } from '../../lib/db';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -154,7 +158,33 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
     });
     $('#filtro').addEventListener('input', renderLista);
 
-    // ---------- Lista
+    // ---------- Lista (20 por tanda; los resueltos de más de 90 días se piden a la base)
+    const pag = new Paginador<Ticket>({
+      lista: $('#lista'), pie: $('#pag-tickets'), nombre: 'solicitudes', clave: (t) => t.id, vacio: () => '',
+      render: (vis) => vis.map((t) => {
+        const ult = t.mensajes.at(-1);
+        return `<li><button type="button" data-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 py-4 text-left transition-colors hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2 rounded-control">
+          <div class="min-w-0 flex-1">
+            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span> ${chipUrgente(t)}</p>
+            <p class="truncate text-sm text-ink-2"><span class="font-semibold">${esc(t.donanteNombre)}:</span> ${esc(ult?.texto ?? '')}</p>
+          </div>
+          <div class="flex items-center gap-3 sm:shrink-0">
+            ${chipEstado(t)}
+            <span class="text-xs text-ink-3">${esc(t.asignadoA ? t.asignadoA.nombre.split(' ').slice(-1)[0] : 'Sin asignar')}</span>
+            <span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span>
+          </div></button></li>`;
+      }).join(''),
+      remoto: async (cursor) => {
+        if (vista !== 'resueltos') return null;
+        const r = await paginaRemota<Ticket>('tickets', {
+          q: $<HTMLInputElement>('#filtro').value, cursor,
+          filtros: { estado: 'resuelto', antesDe: masAntigua(resueltos(), (t) => t.actualizado) },
+        });
+        if (r) cachear('blud-db-tickets', r.items);
+        return r;
+      },
+    });
+
     function renderLista() {
       const q = $<HTMLInputElement>('#filtro').value.trim().toLowerCase();
       const base = vista === 'bandeja' ? bandeja() : vista === 'mios' ? misCasos() : resueltos();
@@ -167,19 +197,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       $('[data-cuenta="mios"]').textContent = String(all.filter((t) => t.estado !== 'resuelto' && t.asignadoA?.id === yo).length);
       $('[data-cuenta="resueltos"]').textContent = String(all.filter((t) => t.estado === 'resuelto').length);
 
-      $('#lista').innerHTML = vis.map((t) => {
-        const ult = t.mensajes.at(-1);
-        return `<li><button type="button" data-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 py-4 text-left transition-colors hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2 rounded-control">
-          <div class="min-w-0 flex-1">
-            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span> ${chipUrgente(t)}</p>
-            <p class="truncate text-sm text-ink-2"><span class="font-semibold">${esc(t.donanteNombre)}:</span> ${esc(ult?.texto ?? '')}</p>
-          </div>
-          <div class="flex items-center gap-3 sm:shrink-0">
-            ${chipEstado(t)}
-            <span class="text-xs text-ink-3">${esc(t.asignadoA ? t.asignadoA.nombre.split(' ').slice(-1)[0] : 'Sin asignar')}</span>
-            <span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span>
-          </div></button></li>`;
-      }).join('');
+      pag.mostrar(vis, `${vista}|${q}`);
       const vacio = $('#lista-vacia');
       vacio.classList.toggle('hidden', vis.length > 0);
       vacio.textContent = q ? 'Ninguna solicitud coincide con tu búsqueda.' : vista === 'resueltos' ? 'Todavía no hay solicitudes resueltas.' : vista === 'mios' ? 'No tienes casos asignados. Toma uno de la bandeja.' : 'No hay solicitudes pendientes.';

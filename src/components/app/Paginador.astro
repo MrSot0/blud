@@ -1,0 +1,11 @@
+---
+// src/components/app/Paginador.astro
+// Pie de una lista paginada: cuántas filas se ven y el botón para traer más (lib/paginacion.ts).
+interface Props { id?: string; class?: string }
+const { id, class: cls = '' } = Astro.props;
+---
+
+<div id={id} data-paginador hidden class:list={['flex flex-col items-center gap-2 border-t border-line pt-4 sm:flex-row sm:justify-between', cls]}>
+  <p class="text-xs text-ink-3 tabular" data-pag-estado aria-live="polite"></p>
+  <button type="button" class="btn btn-secondary btn-sm w-full sm:w-auto" data-pag-mas hidden>Mostrar más</button>
+</div>

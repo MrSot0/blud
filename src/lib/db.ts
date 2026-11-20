@@ -45,6 +45,19 @@ export function collection<T extends { id: string }>(key: string): Collection<T>
   };
 }
 
+/**
+ * Agrega a la caché registros traídos por páginas (blud_pagina) sin reenviarlos a la base ni avisar a la pantalla:
+ * así una ficha antigua se puede abrir o verificar. La próxima sincronización reemplaza la caché completa.
+ */
+export function cachear<T extends { id: string }>(key: string, items: T[]): void {
+  if (!items.length) return;
+  try {
+    const list = JSON.parse(localStorage.getItem(key) || '[]') as T[];
+    const ids = new Set(list.map((x) => x.id));
+    localStorage.setItem(key, JSON.stringify(list.concat(items.filter((x) => !ids.has(x.id)))));
+  } catch {}
+}
+
 /** Ejecuta cb cuando cambia cualquier colección (misma pestaña u otra pestaña). Devuelve la función para cancelar. */
 export function onDb(cb: () => void): () => void {
   const a = () => cb();
