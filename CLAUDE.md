@@ -1,3 +1,8 @@
+## Contexto del proyecto
+
+Antes de trabajar, lee `docs/CONTEXTO.md`: decisiones acordadas, flujos por rol, cuentas de prueba, cómo probar y
+pendientes. Responde en español y sube los cambios directo a `main` (ver sección 2 de ese documento).
+
 ## Development
 
 When starting the dev server, use background mode:
