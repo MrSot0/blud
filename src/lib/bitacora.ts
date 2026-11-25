@@ -19,7 +19,12 @@ export interface EntradaBitacora {
   detalle?: Record<string, unknown>;
 }
 
-export interface PaginaBitacora { items: EntradaBitacora[]; siguiente: string | null; tablas: string[] }
+export interface PaginaBitacora { items: EntradaBitacora[]; siguiente: string | null }
+
+/** Filas por página. La base no acepta más de 100. */
+export const POR_PAGINA = 25;
+/** Letras mínimas para buscar (la base ignora búsquedas más cortas). */
+export const MIN_BUSQUEDA = 3;
 
 export interface FiltrosBitacora { q?: string; tabla?: string; desde?: string; hasta?: string }
 
@@ -80,31 +85,46 @@ function demo(): EntradaBitacora[] {
 }
 
 // ------------------------------------------------------------------ API
-export async function paginaBitacora(f: FiltrosBitacora, cursor: string | null, limite = 50): Promise<PaginaBitacora> {
+/**
+ * Una página de la bitácora. `cursor` es el id de la última entrada de la página anterior (null = primera).
+ * Las páginas ya pedidas con los mismos filtros se reutilizan durante 60 s: volver atrás no consulta otra vez.
+ */
+const cache = new Map<string, { t: number; pagina: PaginaBitacora }>();
+const normalizar = (f: FiltrosBitacora): FiltrosBitacora => ({
+  q: (f.q?.trim().length ?? 0) >= MIN_BUSQUEDA ? f.q!.trim() : '', tabla: f.tabla || '', desde: f.desde || '', hasta: f.hasta || '',
+});
+
+export async function paginaBitacora(filtros: FiltrosBitacora, cursor: string | null, limite = POR_PAGINA): Promise<PaginaBitacora> {
+  const f = normalizar(filtros);
+  const clave = JSON.stringify([f, cursor, limite]);
+  const enCache = cache.get(clave);
+  if (enCache && Date.now() - enCache.t < 60000) return enCache.pagina;
+
+  let pagina: PaginaBitacora;
   if (!usaSupabase()) {
-    const q = f.q?.trim().toLowerCase();
+    const q = f.q?.toLowerCase();
     const todo = demo().filter((e) =>
       (!f.tabla || e.tabla === f.tabla) &&
       (!f.desde || String(e.fecha).slice(0, 10) >= f.desde) &&
       (!f.hasta || String(e.fecha).slice(0, 10) <= f.hasta) &&
       (!q || `${e.operacion} ${e.usuario ?? ''} ${JSON.stringify(e.detalle ?? {})}`.toLowerCase().includes(q)));
     const desde = cursor ? Number(cursor) : 0;
-    const items = todo.slice(desde, desde + limite);
-    return {
-      items, siguiente: desde + limite < todo.length ? String(desde + limite) : null,
-      tablas: [...new Set(demo().map((e) => e.tabla))],
-    };
+    pagina = { items: todo.slice(desde, desde + limite), siguiente: desde + limite < todo.length ? String(desde + limite) : null };
+  } else {
+    const { data, error } = await sb()!.rpc('blud_bitacora', {
+      p_q: f.q || null, p_tabla: f.tabla || null, p_desde: f.desde || null, p_hasta: f.hasta || null,
+      p_cursor: cursor ? Number(cursor) : null, p_limite: limite,
+    });
+    if (error) {
+      if (sinFuncion(error)) throw new BitacoraNoDisponible('La bitácora aún no está activa en el servidor.');
+      throw new Error(error.message || 'No pudimos cargar la bitácora.');
+    }
+    const r = (data ?? {}) as Partial<PaginaBitacora>;
+    pagina = { items: r.items ?? [], siguiente: r.siguiente ?? null };
   }
-  const { data, error } = await sb()!.rpc('blud_bitacora', {
-    p_q: f.q?.trim() || null, p_tabla: f.tabla || null, p_desde: f.desde || null, p_hasta: f.hasta || null,
-    p_cursor: cursor ? Number(cursor) : null, p_limite: limite,
-  });
-  if (error) {
-    if (sinFuncion(error)) throw new BitacoraNoDisponible('La bitácora aún no está activa en el servidor.');
-    throw new Error(error.message || 'No pudimos cargar la bitácora.');
-  }
-  const r = (data ?? {}) as Partial<PaginaBitacora>;
-  return { items: r.items ?? [], siguiente: r.siguiente ?? null, tablas: r.tablas ?? [] };
+  cache.set(clave, { t: Date.now(), pagina });
+  if (cache.size > 40) cache.delete(cache.keys().next().value!);
+  return pagina;
 }
 
 /** Texto corto del detalle (valores_nuevos) para la lista. */

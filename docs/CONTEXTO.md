@@ -115,7 +115,9 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
   - **Ayuda** (`/operador|laboratorio|director/ayuda`, `lib/ayuda.ts`, `AyudaPersonal.astro`): guía por rol y
     «Reportar un problema» → ticket con `donanteId = 'personal:<rol>'`; soporte lo ve marcado «Personal · Rol».
   - **Bitácora** (`/director/bitacora` su sede, `/soporte/bitacora` toda la red; `lib/bitacora.ts`,
-    `Bitacora.astro`): RPC `blud_bitacora` por cursor, filtros y CSV.
+    `Bitacora.astro`): RPC `blud_bitacora` paginada por cursor (25 por página, máx. 100, una fila de más para saber si hay
+    siguiente, sin conteo total, ventana de 1 año y máx. 2 años por consulta, búsqueda desde 3 letras). La pantalla
+    abre con los últimos 30 días, navega «Más recientes / Más antiguas» y guarda 60 s las páginas ya vistas.
   - **Hemovigilancia real** (H1, H2, H4): el operador registra cada unidad despachada (doble verificación con
     segundo verificador, tiempos, signos antes/15 min/al terminar, reacción o incidente con categoría, severidad,
     imputabilidad y acciones; «en curso» o «cerrado»). La dirección consulta su sede o la red, KPIs, categorías,

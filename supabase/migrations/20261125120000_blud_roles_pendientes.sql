@@ -227,49 +227,62 @@ begin
 end $$;
 
 -- ============================================================ 3. Bitácora
--- Página de la bitácora por cursor (auditoria_id descendente). Dirección: su sede. Soporte: toda la red.
+-- Una página de la bitácora por cursor (auditoria_id descendente). Dirección: su sede. Soporte: toda la red.
+-- Para no sobrecargar la base: páginas de 25 (máximo 100), sin conteo total, ventana de un año si no se indica
+-- «desde», búsqueda solo con 3 letras o más, y se lee una fila de más para saber si hay página siguiente.
 create or replace function public.blud_bitacora(
   p_q text default null, p_tabla text default null, p_desde date default null, p_hasta date default null,
-  p_cursor bigint default null, p_limite int default 50)
+  p_cursor bigint default null, p_limite int default 25)
 returns jsonb
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare
   v_rol text := public.mi_rol();
   v_sede int := public._sede_id();
-  v_lim int := least(greatest(coalesce(p_limite, 50), 1), 200);
-  v_q text := nullif(lower(trim(coalesce(p_q, ''))), '');
+  v_lim int := least(greatest(coalesce(p_limite, 25), 1), 100);
+  v_q text := case when length(trim(coalesce(p_q, ''))) >= 3 then lower(trim(p_q)) end;
+  v_desde timestamptz := coalesce(p_desde, (now() - interval '1 year')::date);
+  v_hasta timestamptz := coalesce(p_hasta, now()::date) + interval '1 day';
   v_items jsonb;
+  v_hay_mas boolean;
 begin
   perform public._exigir_rol(array['director', 'soporte']);
-  select coalesce(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
-           'id', x.auditoria_id, 'fecha', x.fecha_hora, 'tabla', x.tabla_afectada, 'registro', x.registro_id,
-           'operacion', x.operacion, 'usuario', x.nombre, 'correo', x.correo, 'sede', x.sede, 'detalle', x.valores_nuevos
-         )) order by x.auditoria_id desc), '[]')
-    into v_items
-  from (
-    select b.auditoria_id, b.fecha_hora, b.tabla_afectada, b.registro_id, b.operacion, b.valores_nuevos,
-           trim(u.nombres || ' ' || u.apellidos) nombre, lower(u.correo) correo, s.nombre sede
+  if v_hasta - v_desde > interval '2 years 1 day' then
+    raise exception 'Consulta como máximo dos años de bitácora a la vez.';
+  end if;
+
+  with pagina as (
+    select b.auditoria_id, b.fecha_hora, b.tabla_afectada, b.registro_id, b.operacion, b.valores_nuevos, b.usuario_id, b.sede_id
     from bitacora_auditoria b
-    left join usuario u on u.usuarioid = b.usuario_id
-    left join sede s on s.sedeid = b.sede_id
     where (v_rol = 'soporte' or b.sede_id = v_sede)
       and (p_cursor is null or b.auditoria_id < p_cursor)
       and (p_tabla is null or b.tabla_afectada = p_tabla)
-      and (p_desde is null or b.fecha_hora >= p_desde)
-      and (p_hasta is null or b.fecha_hora < p_hasta + 1)
-      and (v_q is null or lower(b.operacion) like '%' || v_q || '%' or lower(coalesce(u.correo, '')) like '%' || v_q || '%'
-           or lower(coalesce(u.nombres || ' ' || u.apellidos, '')) like '%' || v_q || '%' or b.registro_id::text = v_q)
+      and b.fecha_hora >= v_desde and b.fecha_hora < v_hasta
+      and (v_q is null or lower(b.operacion) like '%' || v_q || '%' or b.registro_id::text = v_q
+           or exists (select 1 from usuario u where u.usuarioid = b.usuario_id
+                        and (lower(u.correo) like '%' || v_q || '%' or lower(u.nombres || ' ' || u.apellidos) like '%' || v_q || '%')))
     order by b.auditoria_id desc
-    limit v_lim
-  ) x;
+    limit v_lim + 1
+  )
+  select coalesce(jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+           'id', p.auditoria_id, 'fecha', p.fecha_hora, 'tabla', p.tabla_afectada, 'registro', p.registro_id,
+           'operacion', p.operacion, 'usuario', trim(u.nombres || ' ' || u.apellidos), 'correo', lower(u.correo),
+           'sede', s.nombre, 'detalle', p.valores_nuevos
+         )) order by p.auditoria_id desc) filter (where p.n <= v_lim), '[]'),
+         count(*) > v_lim
+    into v_items, v_hay_mas
+  from (select pagina.*, row_number() over (order by auditoria_id desc) n from pagina) p
+  left join usuario u on u.usuarioid = p.usuario_id
+  left join sede s on s.sedeid = p.sede_id;
+
   return jsonb_build_object(
     'items', v_items,
-    'siguiente', case when jsonb_array_length(v_items) = v_lim then (v_items -> (v_lim - 1) ->> 'id') end,
-    'tablas', (select coalesce(jsonb_agg(distinct b.tabla_afectada), '[]') from bitacora_auditoria b where v_rol = 'soporte' or b.sede_id = v_sede)
+    'siguiente', case when v_hay_mas then (v_items -> (jsonb_array_length(v_items) - 1) ->> 'id') end
   );
 end $$;
 
 create index if not exists idx_bitacora_sede_id on public.bitacora_auditoria (sede_id, auditoria_id desc);
+create index if not exists idx_bitacora_tabla_id on public.bitacora_auditoria (tabla_afectada, auditoria_id desc);
+create index if not exists idx_bitacora_fecha on public.bitacora_auditoria (fecha_hora);
 
 revoke all on function private.hv_json(public.hemo_vigilancia) from public, anon, authenticated;
 revoke all on function public.blud_hemovigilancia(date, date, boolean), public.blud_registrar_hemovigilancia(jsonb),
