@@ -12,7 +12,9 @@ hasta el 25-11-2026 (pantallas pendientes de los roles; ver sección 7). Léelo 
   Variables públicas (también en Vercel): `PUBLIC_SUPABASE_URL=https://flcuenjrgnlhbfmqpgav.supabase.co`,
   `PUBLIC_SUPABASE_ANON_KEY=sb_publishable_BJDltybWY7KGoP9cQUbdUA_nuyFICFK`. Sin `.env` el sitio corre en **modo demo**
   (todo en `localStorage`). Para probar con la base real crea `.env` con esas dos líneas (está en `.gitignore`).
-- **Requerimientos**: «BLUD – Requerimientos funcionales unificados.docx» (92 RF, versión del 11-11-2026; no cambió).
+- **Requerimientos**: [`docs/requerimientos-funcionales.md`](./requerimientos-funcionales.md), copia del documento de
+  Claude Docs «BLUD — Requerimientos funcionales unificados» (https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy, 92 RF)
+  con una columna de estado revisada contra el código al 25-11-2026. Actualiza esa columna al terminar cada RF.
   Grupos: RF-T (transversales), D (donante), O (operador), L (laboratorio), DIR (director), S (soporte),
   A (administrador técnico = **soporte**, mismo rol), I (inventario), DS (despacho), TR (transfusión), H (hemovigilancia).
 
