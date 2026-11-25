@@ -79,7 +79,8 @@ los RF está anotado como comentario en la sección donde irá.
   Análisis: Mapa de calor, Reportes · Gestión: Personal, Bitácora · Cuenta: Mi perfil, Configuración, Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
   necesita bolsas pide a otro centro; el director del centro proveedor aprueba/rechaza; su operador despacha; el
   solicitante confirma la recepción. No aprueba lo que registra el operador.
-- **Soporte = administrador técnico** (menú: Inicio: Panel, Avisos · Atención: Solicitudes, Mensajes, Donantes ·
+- **Soporte = administrador técnico**. Decidido el 25-11-2026: también gestiona cuentas (RF-A1: alta, baja,
+  restablecer acceso) de toda la red, igual que el director con las de su sede; todo queda en la bitácora (menú: Inicio: Panel, Avisos · Atención: Solicitudes, Mensajes, Donantes ·
   Administración: Bitácora · Cuenta): avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
   en solo lectura, chat y bitácora de toda la red.
 

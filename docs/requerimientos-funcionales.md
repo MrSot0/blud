@@ -134,7 +134,7 @@ Soporte atiende al donante y el administrador técnico atiende al sistema; son r
 | RF-S2 | Soporte debe consultar a un donante en solo lectura, sin ver resultados médicos | Nuevo | Hecho | Hecho |  |
 | RF-S3 | Soporte debe tener un dashboard con solicitudes sin resolver, sin asignar y propias | Nuevo | Hecho | Hecho |  |
 | RF-S4 | El sistema debe medir el tiempo de primera respuesta y de resolución de cada solicitud | Nuevo | Pendiente | Pendiente |  |
-| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Pendiente | hoy solo el director gestiona cuentas |
+| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Pendiente | decidido (25-11): soporte también gestiona cuentas (alta, baja, restablecer acceso), además del director |
 | RF-A2 | El administrador técnico debe registrar fallas del sistema e incidencias técnicas | Procesos (actores) | Pendiente | Pendiente |  |
 | RF-A3 | El administrador técnico debe resolver incidencias de inventario, muestras y pruebas, corrigiendo estados con justificación | Procesos (actores) | Pendiente | Pendiente |  |
 | RF-A4 | El administrador técnico debe poder consultar la bitácora de auditoría (RF-T9) | Nuevo | Pendiente | Parcial | /soporte/bitacora; migración sin aplicar |
@@ -196,8 +196,8 @@ Siete decisiones bloquean el alcance de varios requerimientos; las tres primeras
 ### Decisiones abiertas
 
 1. **Quién registra la solicitud de transfusión.** Hoy vive en el director (RF-DIR7), pero el diagrama la sitúa en las clínicas externas; define si es un portal propio o se queda con el director.
-2. **Quién crea cuentas.** RF-DIR4 (director) y RF-A1 (administrador técnico) se solapan.
-3. **Soporte y administrador técnico.** El documento de procesos define al técnico; el de requerimientos define a soporte. Confirma si son dos roles.
+2. **Quién crea cuentas.** RF-DIR4 (director) y RF-A1 (administrador técnico) se solapan. *Decidido el 25-11-2026: los dos; el director con el personal de su sede y soporte con cualquier cuenta de la red, ambos con registro en la bitácora.*
+3. **Soporte y administrador técnico.** El documento de procesos define al técnico; el de requerimientos define a soporte. Confirma si son dos roles. *Decidido: un solo rol, soporte.*
 4. **Malaria.** El panel de pruebas la incluye y el documento no la pide.
 5. **Caducidad del plasma.** El texto dice 1 a 3 años y la tabla dice 12 meses a −25 °C y 24 meses a −30 °C.
 6. **Intervalo entre donaciones.** El documento lo define por sexo y tipo de extracción sin dar los valores; hoy se usan 90 días fijos.
