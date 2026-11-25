@@ -49,17 +49,22 @@ export const ICON_PATHS: Record<IconKey, string> = {
   package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
 };
 
+// Todos los roles siguen el mismo orden: «Inicio» (panel y avisos), las secciones de trabajo del rol y, al final,
+// «Cuenta» (perfil, configuración y ayuda). Las opciones de una sección van seguidas y con el mismo `grupo`.
+// Al lado de cada sección se anota lo que aún falta según los requerimientos funcionales (RF), para que la pantalla
+// nueva entre en su sección cuando exista.
 export const MENUS: Partial<Record<Role, RoleMenu>> = {
   donante: {
     titulo: 'Mi espacio',
     items: [
-      { label: 'Mi perfil', hint: 'Tu carnet digital', href: '/donante/perfil', icon: 'user' },
-      { label: 'Donar sangre', hint: 'Agenda tu donación', href: '/donante/donar', icon: 'drop' },
-      { label: 'Mis citas', hint: 'Tus citas agendadas', href: '/donante/citas', icon: 'calendar' },
-      { label: 'Mensajes', hint: 'Habla con el banco de sangre', href: '/donante/mensajes', icon: 'chat' },
-      { label: 'Mi historial', hint: 'Tus donaciones pasadas', href: '/donante/historial', icon: 'clock' },
-      { label: 'Centros cercanos', hint: 'Dónde puedes donar', href: '/donante/centros', icon: 'pin' },
-      { label: 'Soporte', hint: 'Estamos para ayudarte', href: '/donante/soporte', icon: 'help' },
+      { grupo: 'Inicio', label: 'Mi perfil', hint: 'Tu carnet digital', href: '/donante/perfil', icon: 'user' },
+      // Pendiente RF-D8: avisos de cita y resultados (necesita SMTP o notificaciones de la base).
+      { grupo: 'Donación', label: 'Donar sangre', hint: 'Agenda tu donación', href: '/donante/donar', icon: 'drop' },
+      { grupo: 'Donación', label: 'Mis citas', hint: 'Tus citas agendadas', href: '/donante/citas', icon: 'calendar' },
+      { grupo: 'Donación', label: 'Mi historial', hint: 'Tus donaciones pasadas', href: '/donante/historial', icon: 'clock' },
+      { grupo: 'Donación', label: 'Centros cercanos', hint: 'Dónde puedes donar', href: '/donante/centros', icon: 'pin' },
+      { grupo: 'Contacto', label: 'Mensajes', hint: 'Habla con el banco de sangre', href: '/donante/mensajes', icon: 'chat' },
+      { grupo: 'Contacto', label: 'Soporte', hint: 'Estamos para ayudarte', href: '/donante/soporte', icon: 'help' },
     ],
     cuenta: [
       { label: 'Configuración', hint: 'Tema, avisos y privacidad', href: '/donante/configuracion', icon: 'settings' },
@@ -68,14 +73,14 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
   operador: {
     titulo: 'Operación',
     items: [
-      { label: 'Panel', hint: 'Resumen del día y stock', href: '/operador/panel', icon: 'dashboard' },
+      { grupo: 'Inicio', label: 'Panel', hint: 'Resumen del día y stock', href: '/operador/panel', icon: 'dashboard' },
+      { grupo: 'Inicio', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/operador/avisos', icon: 'bell' },
       { grupo: 'Donación', label: 'Citas del centro', hint: 'Donantes agendados hoy', href: '/operador/citas', icon: 'calendar' },
       { grupo: 'Donación', label: 'Donantes', hint: 'Verificar, buscar y registrar', href: '/operador/donantes', icon: 'verify' },
       { grupo: 'Donación', label: 'Donaciones', hint: 'Evaluación y extracción', href: '/operador/donaciones', icon: 'drop' },
       { grupo: 'Transfusión', label: 'Solicitar transfusión', hint: 'Orden médica de tu hospital', href: '/operador/prescribir', icon: 'file' },
       { grupo: 'Transfusión', label: 'Despachos', hint: 'Pacientes y otros centros', href: '/operador/entregas', icon: 'truck' },
       { grupo: 'Transfusión', label: 'Hemovigilancia', hint: 'Registro de la transfusión', href: '/operador/hemovigilancia', icon: 'alert' },
-      { grupo: 'Seguimiento', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/operador/avisos', icon: 'bell' },
       { grupo: 'Seguimiento', label: 'Mensajes', hint: 'Chat con donantes', href: '/operador/mensajes', icon: 'chat' },
       { grupo: 'Seguimiento', label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
     ],
@@ -88,14 +93,15 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
   laboratorio: {
     titulo: 'Laboratorio',
     items: [
-      { label: 'Panel', hint: 'Resumen del laboratorio', href: '/laboratorio/panel', icon: 'dashboard' },
-      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/laboratorio/avisos', icon: 'bell' },
-      { label: 'Pruebas', hint: 'Tamizaje de donaciones', href: '/laboratorio/pruebas', icon: 'flask' },
-      { label: 'Fraccionamiento', hint: 'Hemocomponentes obtenidos', href: '/laboratorio/fraccionamiento', icon: 'layers' },
-      { label: 'Compatibilidad', hint: 'Tipaje y pruebas cruzadas', href: '/laboratorio/compatibilidad', icon: 'verify' },
-      { label: 'Casos positivos', hint: 'Reportar y notificar', href: '/laboratorio/positivos', icon: 'alert' },
-      { label: 'Reportes', hint: 'Estadísticas y exportación', href: '/laboratorio/reportes', icon: 'chart' },
-      { label: 'Registros', hint: 'Toda tu actividad', href: '/laboratorio/registros', icon: 'clock' },
+      { grupo: 'Inicio', label: 'Panel', hint: 'Resumen del laboratorio', href: '/laboratorio/panel', icon: 'dashboard' },
+      { grupo: 'Inicio', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/laboratorio/avisos', icon: 'bell' },
+      { grupo: 'Donaciones', label: 'Pruebas', hint: 'Tamizaje de donaciones', href: '/laboratorio/pruebas', icon: 'flask' },
+      { grupo: 'Donaciones', label: 'Fraccionamiento', hint: 'Hemocomponentes obtenidos', href: '/laboratorio/fraccionamiento', icon: 'layers' },
+      { grupo: 'Donaciones', label: 'Casos positivos', hint: 'Reportar y notificar', href: '/laboratorio/positivos', icon: 'alert' },
+      { grupo: 'Transfusión', label: 'Compatibilidad', hint: 'Tipaje y pruebas cruzadas', href: '/laboratorio/compatibilidad', icon: 'verify' },
+      // Pendiente: Mensajes del laboratorio (hoy el contacto con el donante pasa por el operador).
+      { grupo: 'Seguimiento', label: 'Reportes', hint: 'Estadísticas y exportación', href: '/laboratorio/reportes', icon: 'chart' },
+      { grupo: 'Seguimiento', label: 'Registros', hint: 'Toda tu actividad', href: '/laboratorio/registros', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/laboratorio/perfil', icon: 'user' },
@@ -106,13 +112,14 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
   director: {
     titulo: 'Dirección',
     items: [
-      { label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
-      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/director/avisos', icon: 'bell' },
-      { label: 'Solicitudes entre centros', hint: 'Pedir y aprobar bolsas', href: '/director/solicitudes/historial', icon: 'inbox' },
+      { grupo: 'Inicio', label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
+      { grupo: 'Inicio', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/director/avisos', icon: 'bell' },
       { grupo: 'Banco de sangre', label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
+      { grupo: 'Banco de sangre', label: 'Solicitudes entre centros', hint: 'Pedir y aprobar bolsas', href: '/director/solicitudes/historial', icon: 'inbox' },
       { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
-      { grupo: 'Banco de sangre', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },
-      { grupo: 'Banco de sangre', label: 'Reportes', hint: 'Consolidado en PDF', href: '/director/reportes', icon: 'chart' },
+      // Pendiente: Mensajes entre directores para coordinar los pedidos entre centros.
+      { grupo: 'Análisis', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },
+      { grupo: 'Análisis', label: 'Reportes', hint: 'Consolidado en PDF', href: '/director/reportes', icon: 'chart' },
       { grupo: 'Gestión', label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
       { grupo: 'Gestión', label: 'Bitácora', hint: 'Quién hizo qué y cuándo', href: '/director/bitacora', icon: 'clock' },
     ],
@@ -125,12 +132,13 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
   soporte: {
     titulo: 'Soporte',
     items: [
-      { label: 'Panel', hint: 'Resumen de la atención', href: '/soporte/panel', icon: 'dashboard' },
-      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/soporte/avisos', icon: 'bell' },
-      { label: 'Solicitudes', hint: 'Bandeja y respuestas', href: '/soporte/tickets', icon: 'inbox' },
-      { label: 'Donantes', hint: 'Consultar un donante', href: '/soporte/donantes', icon: 'search' },
-      { label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
-      { label: 'Bitácora', hint: 'Auditoría de la red', href: '/soporte/bitacora', icon: 'clock' },
+      { grupo: 'Inicio', label: 'Panel', hint: 'Resumen de la atención', href: '/soporte/panel', icon: 'dashboard' },
+      { grupo: 'Inicio', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/soporte/avisos', icon: 'bell' },
+      { grupo: 'Atención', label: 'Solicitudes', hint: 'Donantes y personal', href: '/soporte/tickets', icon: 'inbox' },
+      { grupo: 'Atención', label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
+      { grupo: 'Atención', label: 'Donantes', hint: 'Consultar un donante', href: '/soporte/donantes', icon: 'search' },
+      // Pendiente RF-A1 a A3: cuentas (activar, desactivar, restablecer acceso), incidencias y corrección de estados.
+      { grupo: 'Administración', label: 'Bitácora', hint: 'Auditoría de la red', href: '/soporte/bitacora', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/soporte/perfil', icon: 'user' },

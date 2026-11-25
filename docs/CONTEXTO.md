@@ -54,10 +54,15 @@ hasta el 25-11-2026 (pantallas pendientes de los roles; ver sección 7). Léelo 
 
 ## 4. Flujos vigentes por rol (decisiones del usuario)
 
-- **Donante**: registro con confirmación de correo → perfil completo obligatorio para donar → cuestionario de salud
+Todos los menús (`src/lib/menus.ts`) siguen el orden Inicio → secciones de trabajo → Cuenta. Lo que falta según
+los RF está anotado como comentario en la sección donde irá.
+
+- **Donante** (menú: Inicio: Mi perfil · Donación: Donar sangre, Mis citas, Mi historial, Centros cercanos ·
+  Contacto: Mensajes, Soporte · Cuenta: Configuración): registro con confirmación de correo → perfil completo obligatorio para donar → cuestionario de salud
   por partes → agenda cita en una sede del mapa → carnet con QR (vista pública con token) → chat con el banco.
-- **Operador** (menú: Panel · Donación: Citas del centro, Donantes, Donaciones · Transfusión: Solicitar transfusión,
-  Despachos, Hemovigilancia · Seguimiento: Avisos, Mensajes, Historial · cuenta: Ayuda):
+- **Operador** (menú: Inicio: Panel, Avisos · Donación: Citas del centro, Donantes, Donaciones · Transfusión:
+  Solicitar transfusión, Despachos, Hemovigilancia · Seguimiento: Mensajes, Historial · Cuenta: Mi perfil,
+  Configuración, Ayuda):
   1. **Citas del centro**: bandeja de citas de su sede (Llegó → En espera → Atender/No asistió). La cita se cierra
      sola al guardar donación (Atendida) o evaluación no apta (No apto) por triggers. Selector de sede: otras sedes
      y «Toda la red» en solo lectura.
@@ -66,12 +71,14 @@ hasta el 25-11-2026 (pantallas pendientes de los roles; ver sección 7). Léelo 
   3. **Donaciones**: evaluación médica obligatoria (O7) + extracción (O8) → cuarentena con DIN.
   4. **Transfusión local**: el operador la registra, **sin aprobación de la dirección**; se reservan unidades de su
      sede; laboratorio hace tipaje y prueba cruzada; el operador despacha. Sin stock: «En espera de stock».
-- **Laboratorio**: avisos, tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
-- **Director** (menú: Panel, Avisos, Solicitudes entre centros · Banco de sangre: Inventario, Hemovigilancia, Mapa
-  de calor, Reportes · Gestión: Personal, Bitácora · cuenta: Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
+- **Laboratorio** (menú: Inicio: Panel, Avisos · Donaciones: Pruebas, Fraccionamiento, Casos positivos ·
+  Transfusión: Compatibilidad · Seguimiento: Reportes, Registros · Cuenta): tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
+- **Director** (menú: Inicio: Panel, Avisos · Banco de sangre: Inventario, Solicitudes entre centros, Hemovigilancia ·
+  Análisis: Mapa de calor, Reportes · Gestión: Personal, Bitácora · Cuenta: Mi perfil, Configuración, Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
   necesita bolsas pide a otro centro; el director del centro proveedor aprueba/rechaza; su operador despacha; el
   solicitante confirma la recepción. No aprueba lo que registra el operador.
-- **Soporte = administrador técnico**: avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
+- **Soporte = administrador técnico** (menú: Inicio: Panel, Avisos · Atención: Solicitudes, Mensajes, Donantes ·
+  Administración: Bitácora · Cuenta): avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
   en solo lectura, chat y bitácora de toda la red.
 
 ## 5. Cuentas de prueba (en `src/lib/auth.ts`, selector del login)
