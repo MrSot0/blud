@@ -379,12 +379,47 @@ let n = 0;
   }
 
 
+
+  /** Personal: contador de avisos que piden acción (urgentes y pendientes). Se recalcula cada 2 minutos como máximo. */
+  const AVISOS_KEY = 'blud-avisos-n';
+  function pintarAvisos(n: number) {
+    document.querySelectorAll<HTMLElement>('[data-menu$="/avisos"] [data-menu-badge]').forEach((b) => {
+      b.textContent = n > 99 ? '99+' : String(n);
+      b.classList.toggle('hidden', !n);
+      b.classList.toggle('grid', !!n);
+      b.setAttribute('aria-label', `${n} avisos pendientes`);
+    });
+  }
+  let avisosCargando = false;
+  async function renderAvisos() {
+    const rol = document.querySelector<HTMLElement>('#sidebar-drawer')?.dataset.role;
+    if (!rol || !['operador', 'laboratorio', 'director', 'soporte'].includes(rol) || avisosCargando) return;
+    try {
+      const c = JSON.parse(sessionStorage.getItem(AVISOS_KEY) || 'null') as { n: number; t: number; rol: string } | null;
+      if (c && c.rol === rol && Date.now() - c.t < 120000) return pintarAvisos(c.n);
+    } catch {}
+    avisosCargando = true;
+    try {
+      const { avisosDe, importantes } = await import('../../lib/avisos');
+      const n = importantes(await avisosDe(rol as 'operador'));
+      try { sessionStorage.setItem(AVISOS_KEY, JSON.stringify({ n, t: Date.now(), rol })); } catch {}
+      pintarAvisos(n);
+    } catch {} finally { avisosCargando = false; }
+  }
+  window.addEventListener('blud:avisos', (e) => {
+    const n = (e as CustomEvent<{ n: number }>).detail.n;
+    const rol = document.querySelector<HTMLElement>('#sidebar-drawer')?.dataset.role ?? '';
+    try { sessionStorage.setItem(AVISOS_KEY, JSON.stringify({ n, t: Date.now(), rol })); } catch {}
+    pintarAvisos(n);
+  });
+
   window.addEventListener('blud:citas', (e) => pintarCitas((e as CustomEvent<{ abiertas: number }>).detail.abiertas));
 
   renderSidebarAuth();
   renderBloqueoDonar();
   renderCitasHoy();
   renderPorAprobar();
+  renderAvisos();
   window.addEventListener('blud:donor', renderBloqueoDonar);
   window.addEventListener('blud:auth', renderSidebarAuth);
   window.addEventListener('storage', (e) => {
@@ -398,5 +433,6 @@ let n = 0;
     renderBloqueoDonar();
     renderCitasHoy();
     renderPorAprobar();
+    renderAvisos();
   });
 </script>

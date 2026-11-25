@@ -1,0 +1,132 @@
+---
+// src/components/app/CentroAvisos.astro
+// Centro de avisos del personal (operador, laboratorio, dirección y soporte). Ver lib/avisos.
+// Se recalcula al cambiar la caché y cada 2 minutos; los avisos desaparecen al resolver su causa.
+import type { Role } from '../../lib/roles';
+
+interface Props { role: Role }
+const { role } = Astro.props;
+---
+
+<div class="container-blud py-8 space-y-6" data-avisos-centro data-rol={role}>
+  <div class="page-head">
+    <div class="min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Avisos</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Lo que espera una acción tuya. Cada aviso se va solo cuando resuelves lo que lo causó.</p>
+    </div>
+    <div class="page-head-acciones">
+      <button type="button" class="btn btn-secondary btn-sm" data-avisos-recargar>Actualizar</button>
+    </div>
+  </div>
+
+  <div class="chips-scroll" role="group" aria-label="Filtrar avisos">
+    <button type="button" class="aviso-chip" data-avisos-filtro="todos" aria-pressed="true">Todos <span data-avisos-n="todos">0</span></button>
+    <button type="button" class="aviso-chip" data-avisos-filtro="alta" aria-pressed="false">Urgentes <span data-avisos-n="alta">0</span></button>
+    <button type="button" class="aviso-chip" data-avisos-filtro="media" aria-pressed="false">Pendientes <span data-avisos-n="media">0</span></button>
+    <button type="button" class="aviso-chip" data-avisos-filtro="info" aria-pressed="false">Para revisar <span data-avisos-n="info">0</span></button>
+  </div>
+
+  <section class="panel p-4 sm:p-6" aria-live="polite" aria-busy="true" data-avisos-panel>
+    <ul class="divide-y divide-line" data-avisos-lista>
+      {[0, 1, 2].map(() => (
+        <li class="flex items-center gap-4 py-4"><span class="skeleton size-10 rounded-full"></span><span class="skeleton h-4 flex-1 rounded"></span></li>
+      ))}
+    </ul>
+    <div class="hidden py-10 text-center" data-avisos-vacio>
+      <span class="mx-auto grid size-12 place-items-center rounded-full bg-ok-soft text-ok" aria-hidden="true">
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </span>
+      <p class="mt-3 font-bold text-ink">Todo al día</p>
+      <p class="mt-1 text-sm text-ink-3" data-avisos-vacio-texto>No hay nada pendiente por ahora.</p>
+    </div>
+    <p class="mt-4 border-t border-line pt-3 text-xs text-ink-3" data-avisos-hora></p>
+  </section>
+</div>
+
+<style is:global>
+  [data-avisos-centro] .aviso-chip { flex-shrink: 0; scroll-snap-align: start; display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .9rem; border: 1px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: .875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+  [data-avisos-centro] .aviso-chip span { font-variant-numeric: tabular-nums; opacity: .7; }
+  [data-avisos-centro] .aviso-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+  [data-avisos-centro] .aviso-borde-alta { box-shadow: inset 3px 0 0 var(--accent); }
+  [data-avisos-centro] .aviso-borde-media { box-shadow: inset 3px 0 0 var(--warn); }
+  [data-avisos-centro] .aviso-borde-info { box-shadow: inset 3px 0 0 var(--line-strong); }
+</style>
+
+<script>
+  import { ICON_PATHS } from '../../lib/menus';
+  import { NIVEL_LABEL, avisosDe, importantes } from '../../lib/avisos';
+  import type { Aviso, Nivel } from '../../lib/avisos';
+  import type { Role } from '../../lib/roles';
+  import { onDb } from '../../lib/db';
+  import { esc } from '../../lib/ui';
+
+  const TONO: Record<Nivel, string> = {
+    alta: 'bg-accent-soft text-accent-ink',
+    media: 'bg-warn-soft text-warn',
+    info: 'bg-sunken text-ink-2',
+  };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-avisos-centro]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const rol = raiz.dataset.rol as Role;
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => raiz.querySelector<T>(s)!;
+    let filtro: 'todos' | Nivel = 'todos';
+    let avisos: Aviso[] = [];
+    let cargando = false;
+
+    const pintar = () => {
+      const vis = filtro === 'todos' ? avisos : avisos.filter((a) => a.nivel === filtro);
+      raiz.querySelectorAll<HTMLElement>('[data-avisos-n]').forEach((el) => {
+        const k = el.dataset.avisosN as 'todos' | Nivel;
+        el.textContent = String(k === 'todos' ? avisos.length : avisos.filter((a) => a.nivel === k).length);
+      });
+      q('[data-avisos-lista]').innerHTML = vis.map((a) => `
+        <li class="aviso-borde-${a.nivel} flex flex-col gap-3 py-4 pl-4 pr-1 sm:flex-row sm:items-center sm:gap-4">
+          <div class="flex min-w-0 flex-1 items-start gap-3">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full ${TONO[a.nivel]}" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[a.icono]}</svg>
+            </span>
+            <div class="min-w-0">
+              <p class="flex flex-wrap items-center gap-x-2 gap-y-1"><span class="font-bold text-ink">${esc(a.titulo)}</span>
+                <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${TONO[a.nivel]}">${NIVEL_LABEL[a.nivel]}</span></p>
+              <p class="mt-0.5 text-sm text-ink-2">${esc(a.detalle)}</p>
+            </div>
+          </div>
+          <a href="${esc(a.href)}" class="btn btn-secondary btn-sm shrink-0 self-start sm:self-auto">${esc(a.accion)}</a>
+        </li>`).join('');
+      const vacio = vis.length === 0;
+      q('[data-avisos-vacio]').classList.toggle('hidden', !vacio);
+      q('[data-avisos-vacio-texto]').textContent = filtro === 'todos' ? 'No hay nada pendiente por ahora.' : 'No hay avisos de este tipo.';
+      q('[data-avisos-panel]').setAttribute('aria-busy', 'false');
+    };
+
+    const cargar = async () => {
+      if (cargando) return;
+      cargando = true;
+      try {
+        avisos = await avisosDe(rol);
+        window.dispatchEvent(new CustomEvent('blud:avisos', { detail: { n: importantes(avisos) } }));
+        q('[data-avisos-hora]').textContent = `Actualizado a las ${new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}.`;
+        pintar();
+      } finally { cargando = false; }
+    };
+
+    raiz.querySelectorAll<HTMLButtonElement>('[data-avisos-filtro]').forEach((b) => b.addEventListener('click', () => {
+      filtro = b.dataset.avisosFiltro as typeof filtro;
+      raiz.querySelectorAll('[data-avisos-filtro]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      pintar();
+    }));
+    q('[data-avisos-recargar]').addEventListener('click', cargar);
+
+    let t: number | undefined;
+    onDb(() => { clearTimeout(t); t = window.setTimeout(cargar, 400); });
+    const intervalo = window.setInterval(() => { if (document.visibilityState === 'visible') cargar(); }, 120000);
+    document.addEventListener('astro:before-swap', () => clearInterval(intervalo), { once: true });
+    cargar();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

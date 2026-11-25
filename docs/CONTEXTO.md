@@ -1,7 +1,7 @@
 # BLUD · Contexto del proyecto para continuar en otra sesión
 
 Documento de traspaso. Resume decisiones, estado y forma de trabajo acordados con el dueño del proyecto
-hasta el commit `f9050dc` (20-11-2026). Léelo completo antes de cambiar algo.
+hasta el 25-11-2026 (pantallas pendientes de los roles; ver sección 7). Léelo completo antes de cambiar algo.
 
 ## 1. Qué es y dónde vive
 
@@ -57,7 +57,7 @@ hasta el commit `f9050dc` (20-11-2026). Léelo completo antes de cambiar algo.
 - **Donante**: registro con confirmación de correo → perfil completo obligatorio para donar → cuestionario de salud
   por partes → agenda cita en una sede del mapa → carnet con QR (vista pública con token) → chat con el banco.
 - **Operador** (menú: Panel · Donación: Citas del centro, Donantes, Donaciones · Transfusión: Solicitar transfusión,
-  Despachos, Hemovigilancia · Seguimiento: Mensajes, Historial):
+  Despachos, Hemovigilancia · Seguimiento: Avisos, Mensajes, Historial · cuenta: Ayuda):
   1. **Citas del centro**: bandeja de citas de su sede (Llegó → En espera → Atender/No asistió). La cita se cierra
      sola al guardar donación (Atendida) o evaluación no apta (No apto) por triggers. Selector de sede: otras sedes
      y «Toda la red» en solo lectura.
@@ -66,12 +66,13 @@ hasta el commit `f9050dc` (20-11-2026). Léelo completo antes de cambiar algo.
   3. **Donaciones**: evaluación médica obligatoria (O7) + extracción (O8) → cuarentena con DIN.
   4. **Transfusión local**: el operador la registra, **sin aprobación de la dirección**; se reservan unidades de su
      sede; laboratorio hace tipaje y prueba cruzada; el operador despacha. Sin stock: «En espera de stock».
-- **Laboratorio**: tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
-- **Director** (menú: Panel, Solicitudes entre centros · Banco de sangre: Inventario, Hemovigilancia, Mapa de calor,
-  Reportes · Gestión: Personal): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
+- **Laboratorio**: avisos, tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
+- **Director** (menú: Panel, Avisos, Solicitudes entre centros · Banco de sangre: Inventario, Hemovigilancia, Mapa
+  de calor, Reportes · Gestión: Personal, Bitácora · cuenta: Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
   necesita bolsas pide a otro centro; el director del centro proveedor aprueba/rechaza; su operador despacha; el
   solicitante confirma la recepción. No aprueba lo que registra el operador.
-- **Soporte = administrador técnico**: bandeja de tickets, consulta de donantes en solo lectura, chat.
+- **Soporte = administrador técnico**: avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
+  en solo lectura, chat y bitácora de toda la red.
 
 ## 5. Cuentas de prueba (en `src/lib/auth.ts`, selector del login)
 
@@ -103,6 +104,23 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
 
 ## 7. Hecho recientemente (de más nuevo a más viejo)
 
+- **Pantallas pendientes de los roles (25-11-2026)**. Frontend completo; la migración
+  `20261125120000_blud_roles_pendientes.sql` está **escrita pero SIN APLICAR**: esa sesión no tenía acceso MCP al
+  proyecto Bloodonor. Antes de aplicarla, revisar las columnas reales de `hemo_vigilancia` (se creó fuera del
+  repositorio) por si alguna NOT NULL sin valor por defecto falta en el insert de `blud_registrar_hemovigilancia`.
+  Mientras no se aplique, Hemovigilancia y Bitácora muestran un aviso «todavía no está habilitado» y los reportes
+  del personal a soporte son rechazados por `g_ticket`.
+  - **Avisos** (`/operador|laboratorio|director|soporte/avisos`, `lib/avisos.ts`, `CentroAvisos.astro`): lo que
+    espera acción, calculado de la caché y de las bandejas; contador en el menú (caché de 2 min en sessionStorage).
+  - **Ayuda** (`/operador|laboratorio|director/ayuda`, `lib/ayuda.ts`, `AyudaPersonal.astro`): guía por rol y
+    «Reportar un problema» → ticket con `donanteId = 'personal:<rol>'`; soporte lo ve marcado «Personal · Rol».
+  - **Bitácora** (`/director/bitacora` su sede, `/soporte/bitacora` toda la red; `lib/bitacora.ts`,
+    `Bitacora.astro`): RPC `blud_bitacora` por cursor, filtros y CSV.
+  - **Hemovigilancia real** (H1, H2, H4): el operador registra cada unidad despachada (doble verificación con
+    segundo verificador, tiempos, signos antes/15 min/al terminar, reacción o incidente con categoría, severidad,
+    imputabilidad y acciones; «en curso» o «cerrado»). La dirección consulta su sede o la red, KPIs, categorías,
+    CSV, PDF por registro y consolidado. RPC `blud_hemovigilancia` y `blud_registrar_hemovigilancia`;
+    `lib/hemovigilancia.ts`, `lib/hemovigilancia-vista.ts`. Se quitaron las maquetas.
 - Índices de `pedido_entre_centros` (`f9050dc`).
 - Rendimiento: índices (34 FK sin índice → 0), RLS con `(select auth.jwt())`, `blud_panel` acotado, `blud_pagina`,
   paginador en todos los roles. Panel por rol de ~450 ms/1 MB a ~190 ms/480 KB (`08b7a5f`).
@@ -116,19 +134,16 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
 
 ## 8. Pendiente (orden recomendado)
 
-1. **Hemovigilancia real (H1, H2, H4)**: hoy no guarda nada. `operador/hemovigilancia.astro` usa datos fijos y
-   `director/hemovigilancia.astro` es una maqueta (sedes inventadas; su PDF imprime esos datos). Tabla
-   `hemo_vigilancia` vacía. Idea: registrar desde el despacho (unidad despachada → doble verificación, signos,
-   reacciones) y que el director consulte.
-2. **Bitácora y administrador técnico (T9, I2, A1–A4, T3)**: 227 filas en `bitacora_auditoria` sin pantalla;
-   activar/desactivar cuentas y restablecer acceso, incidencias, corrección de estados con justificación (en soporte).
-3. **Pantallas transversales que faltan** (pendiente que el usuario confirme cuáles):
-   operador (Ayuda a soporte, notificaciones), laboratorio (Mensajes, Ayuda, Notificaciones), director (Mensajes
-   entre directores, Historial/bitácora, Ayuda, avisos de pedidos entrantes), soporte (Historial).
+1. **Aplicar `20261125120000_blud_roles_pendientes.sql`** (ver sección 7) y probar como operador, director y
+   soporte con SQL `begin … rollback`.
+2. **Administrador técnico (A1–A3, T3)**: activar/desactivar cuentas y restablecer acceso desde soporte,
+   incidencias, corrección de estados con justificación. La bitácora ya existe.
+3. **Mensajes** para laboratorio y entre directores (para pedidos entre centros): requiere canales nuevos en
+   Realtime. Hoy el laboratorio contacta al donante a través del operador.
 4. **Sedes desde la base**: `/centros`, Donar y el diálogo de agendar aún usan `src/data/centers.ts`; la cita se
    enlaza por nombre (`blud_agendar_cita`); no se validan horario ni cupos en el servidor.
-5. Contador en el menú del operador para pedidos por despachar/recibir; agregación en servidor para rangos > 1 año
-   (mapa de calor «Todo», reportes); notas internas de tickets antiguos; triggers lentos en inserciones masivas.
+5. Agregación en servidor para rangos > 1 año (mapa de calor «Todo», reportes); notas internas de tickets antiguos;
+   triggers lentos en inserciones masivas; prioridad «urgente» en reportes del personal (g_ticket la ignora).
 6. **Avisos por correo (T10, D8)**: requieren configurar SMTP en Supabase (las plantillas `supabase/templates/`
    ya existen y necesitan SMTP para editarse). Decidir si la 2FA será obligatoria para el personal.
 

@@ -13,6 +13,8 @@ import type { Unidad } from './operador';
 import { ESTADO_PEDIDO, PRIORIDAD_LABEL } from './operador';
 import { ESTADO_PEDIDO_CENTRO } from './centros';
 import type { PedidoCentro } from './centros';
+import { TIPO_EVENTO, duracionMin, esGrave, fmtFechaHora as fmtFechaHoraHV } from './hemovigilancia';
+import type { RegistroHV, Signos } from './hemovigilancia';
 
 const quien = () => {
   const s = (getSession() ?? {}) as Record<string, string>;
@@ -222,45 +224,90 @@ export async function pdfPedidoCentro(p: PedidoCentro) {
 }
 
 // ------------------------------------------------------------------ 5. Hemovigilancia
-export interface ReporteHV {
-  id: string; din: string; fecha: string; enCurso: boolean; tipoEvento: string; categoria: string; severidad: string;
-  componente: string; volumen: string; centroOrigen: string; centrifugado?: string;
-  infusion: { inicio: string; transicion: string; finalizacion: string; goteo: string };
-  donante: { nombre: string; cedula: string; tipoDonacion: string };
-  paciente: { nombre: string; cedula: string; ubicacion: string; medico: string };
-  preTransfucion: { consentimiento: boolean; dobleChequeo: boolean; coombs: string; pruebaCruzada: string };
-  signosVitales: { pa: string; temp: string; fc: string };
-  acciones: string;
+/** Registro de una transfusión (RF-H1, H2, H4): verificación, infusión, signos y evento adverso. */
+export async function pdfHemovigilancia(r: RegistroHV) {
+  const evento = r.tipoEvento ? TIPO_EVENTO[r.tipoEvento] : 'Sin cerrar';
+  const grave = esGrave(r);
+  const sev: Tono = !r.tipoEvento || r.tipoEvento === 'sin_reaccion' ? 'ok' : grave ? 'rojo' : 'aviso';
+  const dur = duracionMin(r);
+  const pdf = await nuevoPdf({
+    tipo: 'Hemovigilancia · registro transfusional',
+    titulo: `Registro ${r.id}`,
+    subtitulo: r.categoria ? `${evento} · ${r.categoria}` : evento,
+    meta: [['Registrado', fmtFechaHoraHV(r.registrado)], ['Estado', r.estado === 'cerrado' ? 'Cerrado' : 'En curso'],
+      ['Solicitud', r.solicitudId], ['Unidad', r.unidadCodigo ?? String(r.unidadId)],
+      ['Componente', [r.componente, r.tipoSangre].filter(Boolean).join(' · ') || '—'], ['Sede', r.sede?.nombre ?? '—']],
+  });
+  pdf.aviso(
+    !r.tipoEvento ? 'La transfusión sigue en curso: el registro no está cerrado.'
+      : r.tipoEvento === 'sin_reaccion' ? 'Transfusión sin reacción adversa.'
+      : `${evento} ${r.severidad ? 'de severidad ' + r.severidad.toLowerCase() : ''}${r.imputabilidad ? ' · imputabilidad ' + r.imputabilidad.toLowerCase() : ''}.`,
+    sev,
+  );
+  pdf.seccion('Paciente receptor');
+  pdf.fichas([['Nombre', r.paciente?.nombre ?? '—'], ['Cédula', r.paciente?.cedula ?? '—'], ['Historia', r.paciente?.historia ?? '—'],
+    ['Servicio', r.paciente?.servicio ?? '—'], ['Ubicación', r.ubicacion ?? '—'], ['Médico responsable', r.medico ?? '—']], 3);
+  pdf.seccion('Doble verificación en cabecera');
+  const v = r.verificacion;
+  const fila = (t: string, ok: boolean): [string, { texto: string; tono: Tono }] => [t, { texto: ok ? 'Conforme' : 'No consta', tono: ok ? 'ok' : 'rojo' }];
+  pdf.tabla([{ titulo: 'Control', ancho: 4 }, { titulo: 'Resultado', ancho: 1.5 }], [
+    fila('Identidad del paciente contra brazalete y solicitud', v.identidad),
+    fila('Grupo ABO/Rh del paciente compatible con la unidad', v.grupo),
+    fila('Etiqueta, DIN y vencimiento de la bolsa', v.etiqueta),
+    fila('Consentimiento informado firmado', v.consentimiento),
+    ['Segundo verificador', v.segundoVerificador || '—'],
+  ]);
+  pdf.seccion('Infusión');
+  pdf.fichas([['Inicio', fmtFechaHoraHV(r.inicio)], ['Fin', fmtFechaHoraHV(r.fin)], ['Duración', dur === null ? '—' : `${dur} min`],
+    ['Volumen infundido', r.volumenMl ? `${r.volumenMl} ml` : '—']], 4);
+  pdf.seccion('Signos vitales');
+  const sg = (x?: Signos): string[] => [x?.pa || '—', x?.fc || '—', x?.temp ? `${x.temp} °C` : '—', x?.fr || '—', x?.spo2 ? `${x.spo2} %` : '—'];
+  pdf.tabla(
+    [{ titulo: 'Momento', ancho: 2 }, { titulo: 'PA', ancho: 1.4 }, { titulo: 'FC', ancho: 1 }, { titulo: 'Temp.', ancho: 1.1 }, { titulo: 'FR', ancho: 1 }, { titulo: 'SpO2', ancho: 1 }],
+    [['Antes de iniciar', ...sg(r.signos.antes)], ['A los 15 minutos', ...sg(r.signos.durante)], ['Al terminar', ...sg(r.signos.despues)]],
+  );
+  if (r.tipoEvento && r.tipoEvento !== 'sin_reaccion') {
+    pdf.seccion('Evento adverso');
+    pdf.fichas([['Tipo', evento], ['Categoría', r.categoria ?? '—'], ['Severidad', r.severidad ?? '—'], ['Imputabilidad', r.imputabilidad ?? '—']], 4);
+    if (r.sintomas) { pdf.seccion('Signos y síntomas'); pdf.parrafos([r.sintomas]); }
+    pdf.seccion('Acciones tomadas');
+    pdf.parrafos([r.acciones || 'Sin acciones registradas.']);
+  }
+  pdf.firmas(['Operador que transfunde', 'Segundo verificador', 'Médico responsable']);
+  await pdf.descargar(nombrePdf(`hemovigilancia-${r.id}`));
 }
 
-export async function pdfHemovigilancia(r: ReporteHV) {
-  const sev: Tono = r.severidad === 'Crítica' ? 'rojo' : r.severidad === 'Urgente' ? 'aviso' : 'neutro';
+/** Consolidado de hemovigilancia del periodo para la dirección. */
+export async function pdfConsolidadoHV(registros: RegistroHV[], o: { desde: string; hasta: string; alcance: string }) {
+  const q = quien();
+  const conEvento = registros.filter((r) => r.tipoEvento && r.tipoEvento !== 'sin_reaccion');
+  const graves = registros.filter(esGrave);
   const pdf = await nuevoPdf({
-    tipo: 'Hemovigilancia · trazabilidad',
-    titulo: `Reporte ${r.id}`,
-    subtitulo: `${r.tipoEvento} · ${r.categoria}`,
-    meta: [['Fecha del evento', r.fecha], ['Severidad', r.severidad], ['Estado', r.enCurso ? 'En curso' : 'Cerrado'],
-      ['DIN de la bolsa', r.din], ['Componente', `${r.componente} · ${r.volumen}`], ['Centro', r.centroOrigen]],
+    tipo: 'Hemovigilancia · consolidado',
+    titulo: 'Eventos transfusionales',
+    subtitulo: `${o.alcance} · ${corta(o.desde)} al ${corta(o.hasta)}`,
+    meta: [['Periodo', `${corta(o.desde)} — ${corta(o.hasta)}`], ['Alcance', o.alcance], ['Elaborado por', q.nombre], ['Fecha', hoyLargo()]],
   });
-  pdf.aviso(`Severidad ${r.severidad.toLowerCase()}${r.enCurso ? ': el evento sigue en curso.' : '.'}`, sev);
-  pdf.seccion('Paciente receptor');
-  pdf.fichas([['Nombre', r.paciente.nombre], ['Cédula', r.paciente.cedula], ['Ubicación', r.paciente.ubicacion], ['Médico responsable', r.paciente.medico]]);
-  pdf.seccion('Controles previos a la transfusión');
-  pdf.tabla([{ titulo: 'Control', ancho: 3 }, { titulo: 'Resultado', ancho: 2 }], [
-    ['Consentimiento informado', { texto: r.preTransfucion.consentimiento ? 'Firmado' : 'No consta', tono: r.preTransfucion.consentimiento ? 'ok' : 'rojo' }],
-    ['Doble verificación en cabecera', { texto: r.preTransfucion.dobleChequeo ? 'Realizada' : 'No consta', tono: r.preTransfucion.dobleChequeo ? 'ok' : 'rojo' }],
-    ['Coombs', { texto: r.preTransfucion.coombs, tono: r.preTransfucion.coombs === 'Negativo' ? 'ok' : 'neutro' }],
-    ['Prueba cruzada', { texto: r.preTransfucion.pruebaCruzada, tono: r.preTransfucion.pruebaCruzada === 'Compatible' ? 'ok' : 'neutro' }],
+  pdf.kpis([
+    { label: 'Transfusiones', valor: String(registros.length), nota: 'unidades registradas' },
+    { label: 'Con evento', valor: String(conEvento.length), nota: registros.length ? `${Math.round((conEvento.length / registros.length) * 1000) / 10} % del total` : '—', tono: conEvento.length ? 'aviso' : 'ok' },
+    { label: 'Graves', valor: String(graves.length), nota: 'grave, amenaza la vida o muerte', tono: graves.length ? 'rojo' : 'ok' },
+    { label: 'En curso', valor: String(registros.filter((r) => r.estado === 'en_curso').length), nota: 'registros sin cerrar' },
   ]);
-  pdf.seccion('Infusión y signos vitales');
-  pdf.fichas([['Inicio', r.infusion.inicio], ['Transición', r.infusion.transicion], ['Finalización', r.infusion.finalizacion], ['Goteo', r.infusion.goteo],
-    ['Presión arterial', r.signosVitales.pa], ['Temperatura', r.signosVitales.temp], ['Frecuencia cardíaca', r.signosVitales.fc], ['Procesamiento', r.centrifugado ?? '—']]);
-  pdf.seccion('Donante de la unidad');
-  pdf.fichas([['Nombre', r.donante.nombre], ['Cédula', r.donante.cedula], ['Tipo de donación', r.donante.tipoDonacion]], 3);
-  pdf.seccion('Acciones tomadas');
-  pdf.parrafos([r.acciones.replace(/\[cite:[^\]]*\]/g, '')]);
-  pdf.firmas(['Médico responsable', 'Hemovigilancia', 'Director(a)']);
-  await pdf.descargar(nombrePdf(`hemovigilancia-${r.id}`));
+  pdf.seccion('Eventos por categoría');
+  const cat = new Map<string, number>();
+  conEvento.forEach((r) => cat.set(r.categoria ?? 'Sin categoría', (cat.get(r.categoria ?? 'Sin categoría') ?? 0) + 1));
+  pdf.tabla([{ titulo: 'Categoría', ancho: 5 }, { titulo: 'Eventos', ancho: 1.2, alinear: 'der' }],
+    [...cat.entries()].sort((a, b) => b[1] - a[1]).map(([c, n]) => [c, String(n)]), { vacio: 'Sin eventos adversos en el periodo.' });
+  pdf.seccion('Registros con evento');
+  pdf.tabla(
+    [{ titulo: 'Folio', ancho: 1.6 }, { titulo: 'Fecha', ancho: 1.4 }, { titulo: 'Sede', ancho: 2.4 }, { titulo: 'Categoría', ancho: 3 }, { titulo: 'Severidad', ancho: 1.5 }],
+    conEvento.map((r) => [r.id, corta(r.registrado), r.sede?.nombre ?? '—', r.categoria ?? '—',
+      { texto: r.severidad ?? '—', tono: esGrave(r) ? 'rojo' : 'aviso' }]),
+    { vacio: 'Sin eventos adversos en el periodo.' },
+  );
+  pdf.firmas(['Hemovigilancia', 'Director(a)']);
+  await pdf.descargar(nombrePdf(`hemovigilancia-consolidado-${o.desde}-${o.hasta}`));
 }
 
 // ------------------------------------------------------------------ 6. Personal

@@ -6,7 +6,7 @@ import type { Role } from './roles';
 export type IconKey =
   | 'user' | 'drop' | 'clock' | 'pin' | 'help' | 'settings'
   | 'dashboard' | 'verify' | 'users' | 'file' | 'truck' | 'package'
-  | 'flask' | 'layers' | 'alert' | 'chart' | 'inbox' | 'search' | 'calendar' | 'lock' | 'chat';
+  | 'flask' | 'layers' | 'alert' | 'chart' | 'inbox' | 'search' | 'calendar' | 'lock' | 'chat' | 'bell';
 
 export interface MenuItem {
   label: string;
@@ -44,6 +44,7 @@ export const ICON_PATHS: Record<IconKey, string> = {
   calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/>',
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/>',
   lock: '<rect width="16" height="10" x="4" y="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  bell: '<path d="M10.27 21a2 2 0 0 0 3.46 0"/><path d="M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"/>',
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   package: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
 };
@@ -74,18 +75,21 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Transfusión', label: 'Solicitar transfusión', hint: 'Orden médica de tu hospital', href: '/operador/prescribir', icon: 'file' },
       { grupo: 'Transfusión', label: 'Despachos', hint: 'Pacientes y otros centros', href: '/operador/entregas', icon: 'truck' },
       { grupo: 'Transfusión', label: 'Hemovigilancia', hint: 'Registro de la transfusión', href: '/operador/hemovigilancia', icon: 'alert' },
+      { grupo: 'Seguimiento', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/operador/avisos', icon: 'bell' },
       { grupo: 'Seguimiento', label: 'Mensajes', hint: 'Chat con donantes', href: '/operador/mensajes', icon: 'chat' },
       { grupo: 'Seguimiento', label: 'Historial', hint: 'Toda tu actividad', href: '/operador/historial', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/operador/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/operador/configuracion', icon: 'settings' },
+      { label: 'Ayuda', hint: 'Guía y reportar un problema', href: '/operador/ayuda', icon: 'help' },
     ],
   },
   laboratorio: {
     titulo: 'Laboratorio',
     items: [
       { label: 'Panel', hint: 'Resumen del laboratorio', href: '/laboratorio/panel', icon: 'dashboard' },
+      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/laboratorio/avisos', icon: 'bell' },
       { label: 'Pruebas', hint: 'Tamizaje de donaciones', href: '/laboratorio/pruebas', icon: 'flask' },
       { label: 'Fraccionamiento', hint: 'Hemocomponentes obtenidos', href: '/laboratorio/fraccionamiento', icon: 'layers' },
       { label: 'Compatibilidad', hint: 'Tipaje y pruebas cruzadas', href: '/laboratorio/compatibilidad', icon: 'verify' },
@@ -96,31 +100,37 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/laboratorio/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/laboratorio/configuracion', icon: 'settings' },
+      { label: 'Ayuda', hint: 'Guía y reportar un problema', href: '/laboratorio/ayuda', icon: 'help' },
     ],
   },
   director: {
     titulo: 'Dirección',
     items: [
       { label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
+      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/director/avisos', icon: 'bell' },
       { label: 'Solicitudes entre centros', hint: 'Pedir y aprobar bolsas', href: '/director/solicitudes/historial', icon: 'inbox' },
       { grupo: 'Banco de sangre', label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
       { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
       { grupo: 'Banco de sangre', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },
       { grupo: 'Banco de sangre', label: 'Reportes', hint: 'Consolidado en PDF', href: '/director/reportes', icon: 'chart' },
       { grupo: 'Gestión', label: 'Personal', hint: 'Cuentas y roles', href: '/director/operadores', icon: 'users' },
+      { grupo: 'Gestión', label: 'Bitácora', hint: 'Quién hizo qué y cuándo', href: '/director/bitacora', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/director/perfil', icon: 'user' },
       { label: 'Configuración', hint: 'Datos y contraseña', href: '/director/configuracion', icon: 'settings' },
+      { label: 'Ayuda', hint: 'Guía y reportar un problema', href: '/director/ayuda', icon: 'help' },
     ],
   },
   soporte: {
     titulo: 'Soporte',
     items: [
       { label: 'Panel', hint: 'Resumen de la atención', href: '/soporte/panel', icon: 'dashboard' },
+      { label: 'Avisos', hint: 'Lo que espera tu acción', href: '/soporte/avisos', icon: 'bell' },
       { label: 'Solicitudes', hint: 'Bandeja y respuestas', href: '/soporte/tickets', icon: 'inbox' },
       { label: 'Donantes', hint: 'Consultar un donante', href: '/soporte/donantes', icon: 'search' },
       { label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
+      { label: 'Bitácora', hint: 'Auditoría de la red', href: '/soporte/bitacora', icon: 'clock' },
     ],
     cuenta: [
       { label: 'Mi perfil', hint: 'Tu carnet del personal', href: '/soporte/perfil', icon: 'user' },

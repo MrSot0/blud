@@ -1,0 +1,150 @@
+---
+// src/components/app/Bitacora.astro
+// Bitácora de auditoría paginada (dirección: su sede; soporte: toda la red). Ver lib/bitacora.
+import Filtros from './Filtros.astro';
+
+interface Props { alcance: 'sede' | 'red' }
+const { alcance } = Astro.props;
+---
+
+<div class="container-blud py-8 space-y-6" data-bitacora>
+  <div class="page-head">
+    <div class="min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Bitácora</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">
+        {alcance === 'sede'
+          ? 'Quién hizo qué y cuándo en tu sede: despachos, reservas, rechazos, notificaciones y hemovigilancia.'
+          : 'Registro de auditoría de toda la red, para revisar incidencias y reclamos con datos.'}
+      </p>
+    </div>
+    <div class="page-head-acciones">
+      <button type="button" class="btn btn-secondary btn-sm" data-bit-csv>Exportar CSV</button>
+    </div>
+  </div>
+
+  <section class="panel p-4 sm:p-6 space-y-4">
+    <Filtros>
+      <input type="search" class="field filtro-ancho" placeholder="Persona, operación o n.º de registro" aria-label="Buscar en la bitácora" data-bit-q />
+      <select class="field" aria-label="Módulo" data-bit-tabla><option value="">Todos los módulos</option></select>
+      <input type="date" class="field" aria-label="Desde" data-bit-desde />
+      <input type="date" class="field" aria-label="Hasta" data-bit-hasta />
+    </Filtros>
+
+    <p class="hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn" role="status" data-bit-aviso></p>
+
+    <div class="tabla-apilable" role="region" aria-label="Entradas de la bitácora" tabindex="0">
+      <table class="w-full min-w-[44rem] text-left text-sm">
+        <thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
+          <tr>
+            <th class="p-3 font-bold">Fecha y hora</th>
+            <th class="p-3 font-bold">Operación</th>
+            <th class="p-3 font-bold">Módulo</th>
+            <th class="p-3 font-bold">Persona</th>
+            {alcance === 'red' && <th class="p-3 font-bold">Sede</th>}
+            <th class="p-3 font-bold">Detalle</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line" data-bit-filas></tbody>
+      </table>
+    </div>
+    <p class="hidden py-8 text-center text-sm text-ink-3" data-bit-vacio>No hay entradas que coincidan con los filtros.</p>
+    <div class="flex flex-col items-center gap-2 pt-2">
+      <p class="text-xs text-ink-3" data-bit-estado></p>
+      <button type="button" class="btn btn-secondary btn-sm hidden" data-bit-mas>Ver entradas anteriores</button>
+    </div>
+  </section>
+</div>
+
+<script>
+  import { BitacoraNoDisponible, moduloDe, operacionDe, paginaBitacora, resumenDetalle, tonoOperacion } from '../../lib/bitacora';
+  import type { EntradaBitacora, FiltrosBitacora } from '../../lib/bitacora';
+  import { downloadFile, esc, toCSV, toast } from '../../lib/ui';
+
+  const fmt = (iso: string) => {
+    const d = new Date(iso.length === 10 ? iso + 'T00:00:00' : iso);
+    if (isNaN(d.getTime())) return iso;
+    const f = d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' });
+    return iso.length === 10 ? f : `${f} · ${d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-bitacora]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => raiz.querySelector<T>(s)!;
+    const conSede = raiz.querySelectorAll('thead th').length === 6;
+    let items: EntradaBitacora[] = [];
+    let cursor: string | null = null;
+    let peticion = 0;
+    let tablasListas = false;
+
+    const filtros = (): FiltrosBitacora => ({
+      q: q<HTMLInputElement>('[data-bit-q]').value,
+      tabla: q<HTMLSelectElement>('[data-bit-tabla]').value,
+      desde: q<HTMLInputElement>('[data-bit-desde]').value,
+      hasta: q<HTMLInputElement>('[data-bit-hasta]').value,
+    });
+
+    const fila = (e: EntradaBitacora) => `<tr class="align-top">
+      <td class="p-3 celda-titulo celda-corta whitespace-nowrap tabular" data-label="Fecha">${esc(fmt(String(e.fecha)))}</td>
+      <td class="p-3 celda-estado" data-label="Operación"><span class="inline-flex items-center gap-2 font-semibold text-ink"><span class="size-2 shrink-0 rounded-full ${tonoOperacion(e.operacion)}" aria-hidden="true"></span>${esc(operacionDe(e.operacion))}</span></td>
+      <td class="p-3 text-ink-2" data-label="Módulo">${esc(moduloDe(e.tabla))}${e.registro != null ? ` <span class="text-ink-3 tabular">#${esc(e.registro)}</span>` : ''}</td>
+      <td class="p-3" data-label="Persona"><span class="block text-ink">${esc(e.usuario || 'Sistema')}</span>${e.correo ? `<span class="block text-xs text-ink-3">${esc(e.correo)}</span>` : ''}</td>
+      ${conSede ? `<td class="p-3 text-ink-2" data-label="Sede">${esc(e.sede ?? '—')}</td>` : ''}
+      <td class="p-3 celda-ancha text-xs text-ink-2" data-label="Detalle">${esc(resumenDetalle(e.detalle)) || '—'}</td>
+    </tr>`;
+
+    const pintar = () => {
+      q('[data-bit-filas]').innerHTML = items.map(fila).join('');
+      q('[data-bit-vacio]').classList.toggle('hidden', items.length > 0);
+      q('[data-bit-mas]').classList.toggle('hidden', !cursor);
+      q('[data-bit-estado]').textContent = items.length ? `${items.length} entradas${cursor ? ' cargadas' : ''}` : '';
+    };
+
+    const cargar = async (mas = false) => {
+      const yo = ++peticion;
+      const btn = q<HTMLButtonElement>('[data-bit-mas]');
+      btn.disabled = true;
+      try {
+        const r = await paginaBitacora(filtros(), mas ? cursor : null);
+        if (yo !== peticion) return;
+        items = mas ? items.concat(r.items) : r.items;
+        cursor = r.siguiente;
+        if (!tablasListas && r.tablas.length) {
+          tablasListas = true;
+          const sel = q<HTMLSelectElement>('[data-bit-tabla]');
+          r.tablas.slice().sort((a, b) => moduloDe(a).localeCompare(moduloDe(b))).forEach((t) => sel.add(new Option(moduloDe(t), t)));
+        }
+        q('[data-bit-aviso]').classList.add('hidden');
+        pintar();
+      } catch (e) {
+        const aviso = q('[data-bit-aviso]');
+        aviso.textContent = e instanceof BitacoraNoDisponible
+          ? 'La bitácora todavía no está habilitada en el servidor. Los registros se siguen guardando y aparecerán aquí cuando se active.'
+          : (e as Error).message;
+        aviso.classList.remove('hidden');
+        items = [];
+        cursor = null;
+        pintar();
+        q('[data-bit-vacio]').classList.add('hidden');
+      } finally { btn.disabled = false; }
+    };
+
+    let t: number | undefined;
+    q('[data-bit-q]').addEventListener('input', () => { clearTimeout(t); t = window.setTimeout(() => cargar(), 350); });
+    ['[data-bit-tabla]', '[data-bit-desde]', '[data-bit-hasta]'].forEach((s) => q(s).addEventListener('change', () => cargar()));
+    q('[data-bit-mas]').addEventListener('click', () => cargar(true));
+    q('[data-bit-csv]').addEventListener('click', () => {
+      if (!items.length) return toast('No hay entradas para exportar.');
+      const rows = items.map((e) => ({
+        Fecha: e.fecha, Operacion: operacionDe(e.operacion), Codigo: e.operacion, Modulo: moduloDe(e.tabla), Registro: e.registro ?? '',
+        Persona: e.usuario ?? '', Correo: e.correo ?? '', Sede: e.sede ?? '', Detalle: resumenDetalle(e.detalle),
+      }));
+      downloadFile(`blud-bitacora-${new Date().toISOString().slice(0, 10)}.csv`, toCSV(rows), 'text/csv');
+    });
+    cargar();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -52,7 +52,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
         </div>
 
         <dl class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-          <div><dt class="text-xs font-bold uppercase text-ink-3">Donante</dt><dd class="mt-0.5 font-semibold text-ink"><a id="d-donante" class="link-arrow" href="/soporte/donantes"></a></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3" id="d-donante-label">Donante</dt><dd class="mt-0.5 font-semibold text-ink"><a id="d-donante" class="link-arrow" href="/soporte/donantes"></a></dd></div>
           <div class="min-w-0"><dt class="text-xs font-bold uppercase text-ink-3">Correo</dt><dd class="mt-0.5 truncate text-ink-2" id="d-email"></dd></div>
           <div><dt class="text-xs font-bold uppercase text-ink-3">Recibida</dt><dd class="mt-0.5 text-ink-2" id="d-creado"></dd></div>
           <div><dt class="text-xs font-bold uppercase text-ink-3">Atiende</dt><dd class="mt-0.5 text-ink-2" id="d-asignado"></dd></div>
@@ -104,6 +104,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
   import type { Ticket } from '../../lib/soporte';
   import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
   import { cachear } from '../../lib/db';
+  import { esDelPersonal, rolDelReporte } from '../../lib/ayuda';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
@@ -111,6 +112,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
     const c = t.estado === 'resuelto' ? 'bg-ok-soft text-ok' : t.estado === 'en_proceso' ? 'bg-warn-soft text-warn' : 'bg-accent-soft text-accent-ink';
     return `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${c}">${ESTADO_LABEL[t.estado]}</span>`;
   };
+  const chipPersonal = (t: Ticket) => (esDelPersonal(t) ? `<span class="rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2">Personal · ${rolDelReporte(t)}</span>` : '');
   const chipUrgente = (t: Ticket) => (t.prioridad === 'alta' ? '<span class="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-white">Urgente</span>' : '');
 
   function init() {
@@ -165,7 +167,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
         const ult = t.mensajes.at(-1);
         return `<li><button type="button" data-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 py-4 text-left transition-colors hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2 rounded-control">
           <div class="min-w-0 flex-1">
-            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span> ${chipUrgente(t)}</p>
+            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span> ${chipUrgente(t)} ${chipPersonal(t)}</p>
             <p class="truncate text-sm text-ink-2"><span class="font-semibold">${esc(t.donanteNombre)}:</span> ${esc(ult?.texto ?? '')}</p>
           </div>
           <div class="flex items-center gap-3 sm:shrink-0">
@@ -215,10 +217,12 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       const mio = t.asignadoA?.id === yo;
       $('#d-asunto').textContent = t.asunto;
       $('#d-codigo').textContent = t.codigo;
-      $('#d-chips').innerHTML = `${chipUrgente(t)} ${chipEstado(t)}`;
+      $('#d-chips').innerHTML = `${chipUrgente(t)} ${chipPersonal(t)} ${chipEstado(t)}`;
       const dn = $<HTMLAnchorElement>('#d-donante');
       dn.textContent = t.donanteNombre;
-      dn.href = `/soporte/donantes?q=${encodeURIComponent(t.donanteId)}`;
+      $('#d-donante-label').textContent = esDelPersonal(t) ? `Personal (${rolDelReporte(t).toLowerCase()})` : 'Donante';
+      if (esDelPersonal(t)) dn.removeAttribute('href');
+      else dn.href = `/soporte/donantes?q=${encodeURIComponent(t.donanteId)}`;
       $('#d-email').textContent = t.donanteEmail || '—';
       $('#d-creado').textContent = fmtFechaHora(t.creado);
       $('#d-asignado').textContent = t.asignadoA ? (mio ? 'Tú' : t.asignadoA.nombre) : 'Sin asignar';
