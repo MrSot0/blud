@@ -150,6 +150,30 @@ async function compatibilidad(rol: Role): Promise<Aviso[]> {
   return out;
 }
 
+// ------------------------------------------------------------------ Equipos de frío (laboratorio y dirección)
+async function equipos(rol: Role): Promise<Aviso[]> {
+  const { listarEquipos, alertaDe, fmtTemp } = await import('./equipos');
+  const l = await listarEquipos();
+  const href = `/${rol}/equipos`;
+  const out: Aviso[] = [];
+  const fuera = l.filter((e) => alertaDe(e) === 'fuera');
+  if (fuera.length) out.push({
+    id: 'eq-fuera', nivel: 'alta', icono: 'alert', titulo: `${plural(fuera.length, 'equipo fuera', 'equipos fuera')} de rango de temperatura`,
+    detalle: fuera.slice(0, 2).map((e) => `${e.nombre}: ${fmtTemp(e.ultima?.temperatura)}`).join(' · '), href, accion: 'Revisar equipos',
+  });
+  const sin = l.filter((e) => alertaDe(e) === 'sin_lectura');
+  if (sin.length) out.push({
+    id: 'eq-sin-lectura', nivel: 'media', icono: 'clock', titulo: `${plural(sin.length, 'equipo', 'equipos')} sin lectura en 12 horas`,
+    detalle: sin.slice(0, 3).map((e) => e.nombre).join(' · '), href, accion: 'Registrar lectura',
+  });
+  const cal = l.filter((e) => alertaDe(e) === 'calibracion');
+  if (cal.length) out.push({
+    id: 'eq-calibracion', nivel: 'info', icono: 'settings', titulo: `${plural(cal.length, 'equipo con calibración vencida', 'equipos con calibración vencida')}`,
+    detalle: cal.slice(0, 3).map((e) => e.nombre).join(' · '), href, accion: 'Ver equipos',
+  });
+  return out;
+}
+
 // ------------------------------------------------------------------ Por rol
 async function operador(): Promise<Aviso[]> {
   const out: Aviso[] = [];
@@ -206,6 +230,15 @@ async function soporte(): Promise<Aviso[]> {
     detalle: urgentes.slice(0, 2).map((t) => `${t.codigo} · ${t.asunto}`).join(' · '), href: '/soporte/tickets', accion: 'Tomar casos',
   });
   const personal = abiertos.filter((t) => t.donanteId.startsWith('personal:'));
+  const inc = await fuente(async () => {
+    const { listarIncidencias } = await import('./administracion');
+    const r = await listarIncidencias({ estado: 'activas' }, null, 1);
+    return r.resumen.criticas ? [{
+      id: 'incidencias', nivel: 'alta' as Nivel, icono: 'alert' as IconKey, titulo: `${plural(r.resumen.criticas, 'incidencia alta o crítica', 'incidencias altas o críticas')} sin cerrar`,
+      detalle: `${r.resumen.abiertas} abiertas y ${r.resumen.enProceso} en proceso en total.`, href: '/soporte/incidencias', accion: 'Ver incidencias',
+    }] : [];
+  });
+  out.push(...inc);
   if (personal.length) out.push({
     id: 'personal', nivel: 'media', icono: 'users', titulo: `${plural(personal.length, 'reporte del personal', 'reportes del personal')} abiertos`,
     detalle: 'Problemas de la plataforma reportados por operadores, laboratorio o dirección.', href: '/soporte/tickets', accion: 'Atender',
@@ -223,8 +256,8 @@ async function soporte(): Promise<Aviso[]> {
 export async function avisosDe(rol: Role): Promise<Aviso[]> {
   const fuentes: Promise<Aviso[]>[] = [];
   if (rol === 'operador') fuentes.push(fuente(operador), fuente(() => compatibilidad(rol)), fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/operador/panel')));
-  if (rol === 'laboratorio') fuentes.push(fuente(laboratorio), fuente(() => compatibilidad(rol)));
-  if (rol === 'director') fuentes.push(fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/director/inventario')));
+  if (rol === 'laboratorio') fuentes.push(fuente(laboratorio), fuente(() => compatibilidad(rol)), fuente(() => equipos(rol)));
+  if (rol === 'director') fuentes.push(fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/director/inventario')), fuente(() => equipos(rol)));
   if (rol === 'soporte') fuentes.push(fuente(soporte));
   const todos = (await Promise.all(fuentes)).flat();
   return todos.sort((a, b) => ORDEN[a.nivel] - ORDEN[b.nivel]);

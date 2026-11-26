@@ -2,9 +2,9 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 25-11-2026:** 49 hechos, 27 parciales, 15 pendientes y 1 que cambió por decisión del
+> **Estado al 26-11-2026:** 49 hechos, 32 parciales, 10 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Lo marcado «migración sin aplicar» funciona en la interfaz, pero necesita
-> `supabase/migrations/20261125120000_blud_roles_pendientes.sql` en la base.
+> `supabase/migrations/20261125120000_blud_roles_pendientes.sql` y `20261125150000_blud_administracion.sql` en la base.
 
 # BLUD — Requerimientos funcionales unificados
 
@@ -134,10 +134,10 @@ Soporte atiende al donante y el administrador técnico atiende al sistema; son r
 | RF-S2 | Soporte debe consultar a un donante en solo lectura, sin ver resultados médicos | Nuevo | Hecho | Hecho |  |
 | RF-S3 | Soporte debe tener un dashboard con solicitudes sin resolver, sin asignar y propias | Nuevo | Hecho | Hecho |  |
 | RF-S4 | El sistema debe medir el tiempo de primera respuesta y de resolución de cada solicitud | Nuevo | Pendiente | Pendiente |  |
-| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Pendiente | decidido (25-11): soporte también gestiona cuentas (alta, baja, restablecer acceso), además del director |
-| RF-A2 | El administrador técnico debe registrar fallas del sistema e incidencias técnicas | Procesos (actores) | Pendiente | Pendiente |  |
-| RF-A3 | El administrador técnico debe resolver incidencias de inventario, muestras y pruebas, corrigiendo estados con justificación | Procesos (actores) | Pendiente | Pendiente |  |
-| RF-A4 | El administrador técnico debe poder consultar la bitácora de auditoría (RF-T9) | Nuevo | Pendiente | Parcial | /soporte/bitacora; migración sin aplicar |
+| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/cuentas (activar, rol y sede, quitar 2FA, restablecer acceso); migración 20261125150000 sin aplicar |
+| RF-A2 | El administrador técnico debe registrar fallas del sistema e incidencias técnicas | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/incidencias con seguimiento; migración 20261125150000 sin aplicar |
+| RF-A3 | El administrador técnico debe resolver incidencias de inventario, muestras y pruebas, corrigiendo estados con justificación | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/correcciones (unidad, tamizaje, tipaje) con motivo; migración 20261125150000 sin aplicar |
+| RF-A4 | El administrador técnico debe poder consultar la bitácora de auditoría (RF-T9) | Nuevo | Pendiente | Parcial | /soporte/bitacora; migraciones sin aplicar |
 
 ## Procesos de banco de sangre (M06–M09)
 
@@ -150,7 +150,7 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 | RF-I1 | Cada unidad debe tener un estado: cuarentena (por defecto al extraer), disponible, reservado, en tránsito, transfundido o descartado | Procesos M06 | Parcial | Parcial | estados en unidadsangre; falta «en tránsito» y «transfundido» explícitos |
 | RF-I2 | Cada cambio de estado debe guardar fecha, hora y operador responsable | Procesos M06 | Pendiente | Parcial | bitácora de reservas, despachos y rechazos |
 | RF-I3 | Cada unidad debe tener ubicación física: equipo (cámara, refrigerador, congelador, agitador), estante, gradilla y posición | Procesos M06 | Pendiente | Pendiente |  |
-| RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Pendiente |  |
+| RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Parcial | pantalla Equipos y temperatura (laboratorio y dirección); migración 20261125150000 sin aplicar |
 | RF-I5 | El sistema debe calcular la caducidad según el componente y alertar: 7 días antes en eritrocitos, 30 días antes en plasma y 48 horas antes en plaquetas | Procesos M04 | Pendiente | Parcial | alerta fija a 7 días; faltan los plazos por componente |
 | RF-I6 | Las unidades deben asignarse por FIFO según la fecha de caducidad más cercana | Procesos M08 | Pendiente | Parcial | FIFO en modo demo; revisar reservar_unidades en la base |
 | RF-I7 | Cada baja debe registrar causa (caducidad, serología reactiva, rotura, alteración térmica, hemólisis), fecha, hora, método de disposición y firma del responsable | Procesos M06 | Parcial | Parcial |  |
@@ -186,7 +186,7 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 | RF-H2 | El sistema debe exigir el consentimiento informado firmado y la orden médica por escrito | Procesos M09 | Pendiente | Parcial | consentimiento en la solicitud y en la verificación; falta la orden escrita adjunta |
 | RF-H3 | El sistema debe registrar el monitoreo: inicio antes de 30 min fuera de refrigeración, fin en máximo 4 horas, signos vitales y velocidad de infusión | Procesos M09 | Pendiente | Parcial | tiempos, volumen y signos; faltan las alertas de 30 min y 4 h y la velocidad |
 | RF-H4 | El sistema debe registrar reacciones adversas (categoría, hora, síntomas, acciones tomadas) y notificarlas al comité de hemovigilancia | Procesos M09 | Pendiente | Parcial | reacciones con categoría, severidad e imputabilidad; falta notificar al comité |
-| RF-H5 | El sistema debe permitir la trazabilidad en ambos sentidos entre donante y receptor | Procesos M09 | Pendiente | Pendiente |  |
+| RF-H5 | El sistema debe permitir la trazabilidad en ambos sentidos entre donante y receptor | Procesos M09 | Pendiente | Parcial | pantalla Trazabilidad (dirección y laboratorio); migración 20261125150000 sin aplicar |
 | RF-H6 | Si la transfusión se suspende o la bolsa se rechaza, el sistema debe registrar la devolución y notificar al banco de sangre | Diagrama de procesos | Pendiente | Pendiente |  |
 
 ## No funcionales y decisiones abiertas

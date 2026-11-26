@@ -1,0 +1,260 @@
+---
+// src/components/app/Equipos.astro
+// RF-I4: equipos de almacenamiento de la sede con su temperatura. Lo usan laboratorio y dirección. Ver lib/equipos.
+import { TIPOS } from '../../lib/equipos';
+---
+
+<div class="container-blud py-8 space-y-6" data-equipos>
+  <div class="page-head">
+    <div class="min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Equipos y temperatura</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Cámaras, refrigeradores, congeladores y agitadores de tu sede. Registra la temperatura en cada turno; una lectura fuera de rango pide qué se hizo y queda en la bitácora.</p>
+    </div>
+    <div class="page-head-acciones">
+      <button type="button" class="btn btn-primary btn-sm" data-eq-nuevo>Agregar equipo</button>
+    </div>
+  </div>
+
+  <p class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status" data-eq-aviso></p>
+
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-live="polite">
+    <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Equipos activos</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-eq-k="activos">—</p></div>
+    <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Fuera de rango</p><p class="mt-1 text-2xl font-extrabold tabular" data-eq-k="fuera">—</p></div>
+    <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Sin lectura reciente</p><p class="mt-1 text-2xl font-extrabold tabular" data-eq-k="sin_lectura">—</p></div>
+    <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Calibración vencida</p><p class="mt-1 text-2xl font-extrabold tabular" data-eq-k="calibracion">—</p></div>
+  </div>
+
+  <ul class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-eq-lista></ul>
+  <p class="hidden panel p-8 text-center text-sm text-ink-3" data-eq-vacio>Tu sede no tiene equipos registrados. Agrega el primero para empezar a llevar el control de temperatura.</p>
+</div>
+
+<!-- Lectura -->
+<dialog class="blud-dialog blud-dialog-angosto" data-eq-dlg-lectura aria-labelledby="eq-l-titulo">
+  <form class="blud-dialog-marco" data-eq-form-lectura novalidate>
+    <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+      <div><h2 id="eq-l-titulo" class="text-lg font-bold text-ink">Registrar temperatura</h2><p class="text-sm text-ink-2" data-eq-l-sub></p></div>
+      <button type="button" class="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="blud-dialog-cuerpo space-y-4">
+      <div>
+        <label for="eq-temp" class="etiqueta-campo">Temperatura (°C)</label>
+        <input id="eq-temp" type="number" step="0.1" inputmode="decimal" class="field text-2xl font-bold tabular" required />
+        <p class="mt-1 text-xs font-semibold" data-eq-l-rango></p>
+      </div>
+      <div>
+        <label for="eq-nota" class="etiqueta-campo">Observación <span class="font-normal normal-case text-ink-3" data-eq-nota-hint>(opcional)</span></label>
+        <textarea id="eq-nota" rows="3" class="field" placeholder="Si está fuera de rango: qué se hizo y si se movieron unidades"></textarea>
+      </div>
+      <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert" data-eq-l-error></p>
+    </div>
+    <footer class="grid grid-cols-2 gap-2 border-t border-line p-4">
+      <button type="button" class="btn btn-secondary" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar lectura</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Equipo -->
+<dialog class="blud-dialog" data-eq-dlg-equipo aria-labelledby="eq-e-titulo">
+  <form class="blud-dialog-marco" data-eq-form-equipo novalidate>
+    <header class="flex items-center justify-between gap-4 border-b border-line p-5">
+      <h2 id="eq-e-titulo" class="text-lg font-bold text-ink" data-eq-e-titulo>Agregar equipo</h2>
+      <button type="button" class="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </header>
+    <div class="blud-dialog-cuerpo form-grid">
+      <div class="col-full"><label for="eq-nombre" class="etiqueta-campo">Nombre</label><input id="eq-nombre" class="field" placeholder="Ej. Congelador de plasma 2" /></div>
+      <div><label for="eq-tipo" class="etiqueta-campo">Tipo</label><select id="eq-tipo" class="field">{TIPOS.map((t) => <option>{t}</option>)}</select></div>
+      <div><label for="eq-serial" class="etiqueta-campo">Serial</label><input id="eq-serial" class="field" /></div>
+      <div><label for="eq-min" class="etiqueta-campo">Mínima (°C)</label><input id="eq-min" type="number" step="0.1" class="field" /></div>
+      <div><label for="eq-max" class="etiqueta-campo">Máxima (°C)</label><input id="eq-max" type="number" step="0.1" class="field" /></div>
+      <div class="col-full"><label for="eq-ubic" class="etiqueta-campo">Ubicación</label><input id="eq-ubic" class="field" placeholder="Área, piso o estante" /></div>
+      <div><label for="eq-cal1" class="etiqueta-campo">Última calibración</label><input id="eq-cal1" type="date" class="field" /></div>
+      <div><label for="eq-cal2" class="etiqueta-campo">Próxima calibración</label><input id="eq-cal2" type="date" class="field" /></div>
+      <label class="col-full flex items-center gap-2 text-sm text-ink-2" data-eq-activo-box><input type="checkbox" id="eq-activo" class="size-4 accent-[var(--accent)]" checked /> En servicio</label>
+      <p class="col-full hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert" data-eq-e-error></p>
+    </div>
+    <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+      <button type="button" class="btn btn-secondary" data-cerrar>Cancelar</button>
+      <button type="submit" class="btn btn-primary">Guardar equipo</button>
+    </footer>
+  </form>
+</dialog>
+
+<script>
+  import {
+    ALERTA_LABEL, MENSAJE_NO_DISPONIBLE, NoDisponible, RANGO_SUGERIDO, alertaDe, fmtTemp, guardarEquipo, listarEquipos, registrarTemperatura,
+  } from '../../lib/equipos';
+  import type { Alerta, Equipo } from '../../lib/equipos';
+  import { esc, toast } from '../../lib/ui';
+
+  const fechaHora = (iso?: string) => {
+    if (!iso) return 'Sin lecturas';
+    const d = new Date(iso);
+    return `${d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  };
+
+  /** Línea de los últimos 7 días con la franja del rango permitido. */
+  function grafico(e: Equipo): string {
+    const pts = e.lecturas;
+    if (pts.length < 2) return '<p class="grid h-20 place-items-center rounded-control bg-sunken text-xs text-ink-3">Sin lecturas suficientes en 7 días</p>';
+    const W = 300, H = 80, P = 6;
+    const vals = pts.map((p) => Number(p.t));
+    const lo = Math.min(Number(e.min), ...vals) - 1, hi = Math.max(Number(e.max), ...vals) + 1;
+    const t0 = new Date(pts[0].f).getTime(), t1 = new Date(pts[pts.length - 1].f).getTime() || t0 + 1;
+    const x = (f: string) => P + ((new Date(f).getTime() - t0) / Math.max(1, t1 - t0)) * (W - 2 * P);
+    const y = (v: number) => P + (1 - (v - lo) / (hi - lo)) * (H - 2 * P);
+    const linea = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.f).toFixed(1)},${y(Number(p.t)).toFixed(1)}`).join(' ');
+    const fuera = pts.filter((p) => Number(p.t) < Number(e.min) || Number(p.t) > Number(e.max));
+    return `<svg viewBox="0 0 ${W} ${H}" class="h-20 w-full" role="img" aria-label="Temperatura de los últimos 7 días, rango de ${e.min} a ${e.max} grados">
+      <rect x="0" y="${y(Number(e.max)).toFixed(1)}" width="${W}" height="${(y(Number(e.min)) - y(Number(e.max))).toFixed(1)}" fill="var(--ok-soft)" />
+      <path d="${linea}" fill="none" stroke="var(--ink-2)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      ${fuera.map((p) => `<circle cx="${x(p.f).toFixed(1)}" cy="${y(Number(p.t)).toFixed(1)}" r="3.2" fill="var(--accent)" />`).join('')}
+    </svg>`;
+  }
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-equipos]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+    const dlgL = q<HTMLDialogElement>('[data-eq-dlg-lectura]');
+    const dlgE = q<HTMLDialogElement>('[data-eq-dlg-equipo]');
+    let equipos: Equipo[] = [];
+    let actual: Equipo | null = null;
+    const ORDEN: Record<Alerta, number> = { fuera: 0, sin_lectura: 1, calibracion: 2, ok: 3, inactivo: 4 };
+
+    function pintar() {
+      const cuenta = (a: Alerta) => equipos.filter((e) => alertaDe(e) === a).length;
+      q('[data-eq-k="activos"]').textContent = String(equipos.filter((e) => e.activo).length);
+      (['fuera', 'sin_lectura', 'calibracion'] as const).forEach((a) => {
+        const el = q(`[data-eq-k="${a}"]`);
+        const n = cuenta(a);
+        el.textContent = String(n);
+        el.className = `mt-1 text-2xl font-extrabold tabular ${n ? (a === 'fuera' ? 'text-accent-ink' : 'text-warn') : 'text-ink'}`;
+      });
+      const lista = [...equipos].sort((a, b) => ORDEN[alertaDe(a)] - ORDEN[alertaDe(b)] || a.nombre.localeCompare(b.nombre));
+      q('[data-eq-lista]').innerHTML = lista.map((e) => {
+        const al = alertaDe(e);
+        const t = e.ultima ? Number(e.ultima.temperatura) : null;
+        return `<li class="panel flex flex-col gap-4 p-5 ${al === 'fuera' ? 'ring-2 ring-accent' : ''} ${!e.activo ? 'opacity-70' : ''}">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0"><p class="font-bold text-ink">${esc(e.nombre)}</p><p class="text-xs text-ink-3">${esc(e.tipo)}${e.ubicacion ? ` · ${esc(e.ubicacion)}` : ''}</p></div>
+            <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${ALERTA_LABEL[al].tono}">${ALERTA_LABEL[al].texto}</span>
+          </div>
+          <div class="flex items-end justify-between gap-3">
+            <p class="text-3xl font-extrabold tabular ${al === 'fuera' ? 'text-accent-ink' : 'text-ink'}">${t === null ? '—' : esc(fmtTemp(t))}</p>
+            <p class="text-right text-xs text-ink-3">Rango ${esc(fmtTemp(e.min))} a ${esc(fmtTemp(e.max))}<br />${esc(fechaHora(e.ultima?.fecha))}${e.ultima?.por ? ` · ${esc(e.ultima.por)}` : ''}</p>
+          </div>
+          ${grafico(e)}
+          ${e.ultima?.nota ? `<p class="rounded-control bg-sunken px-3 py-2 text-xs text-ink-2">${esc(e.ultima.nota)}</p>` : ''}
+          <p class="text-xs text-ink-3">Calibración: ${esc(e.ultimaCalibracion ?? '—')} · próxima ${esc(e.proximaCalibracion ?? '—')}</p>
+          <div class="mt-auto grid grid-cols-2 gap-2">
+            <button type="button" class="btn btn-primary btn-sm" data-eq-leer="${esc(String(e.id))}" ${e.activo ? '' : 'disabled'}>Registrar lectura</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-eq-editar="${esc(String(e.id))}">Editar</button>
+          </div>
+        </li>`;
+      }).join('');
+      q('[data-eq-vacio]').classList.toggle('hidden', equipos.length > 0);
+    }
+
+    async function cargar() {
+      try {
+        equipos = await listarEquipos();
+        q('[data-eq-aviso]').classList.add('hidden');
+      } catch (e) {
+        equipos = [];
+        q('[data-eq-aviso]').textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+        q('[data-eq-aviso]').classList.remove('hidden');
+      }
+      pintar();
+    }
+
+    // ---------- Lectura
+    const pintarRango = () => {
+      if (!actual) return;
+      const v = parseFloat(q<HTMLInputElement>('#eq-temp').value.replace(',', '.'));
+      const fuera = Number.isFinite(v) && (v < Number(actual.min) || v > Number(actual.max));
+      const r = q('[data-eq-l-rango]');
+      r.textContent = fuera ? `Fuera del rango (${fmtTemp(actual.min)} a ${fmtTemp(actual.max)}): describe qué se hizo.` : `Rango permitido: ${fmtTemp(actual.min)} a ${fmtTemp(actual.max)}`;
+      r.className = `mt-1 text-xs font-semibold ${fuera ? 'text-accent-ink' : 'text-ink-3'}`;
+      q('[data-eq-nota-hint]').textContent = fuera ? '(obligatoria)' : '(opcional)';
+    };
+    q('#eq-temp').addEventListener('input', pintarRango);
+    q('[data-eq-form-lectura]').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!actual) return;
+      const err = q('[data-eq-l-error]');
+      try {
+        const t = parseFloat(q<HTMLInputElement>('#eq-temp').value.replace(',', '.'));
+        await registrarTemperatura(actual, t, q<HTMLTextAreaElement>('#eq-nota').value);
+        dlgL.close();
+        toast(`Lectura de ${actual.nombre} guardada.`);
+        cargar();
+      } catch (e) {
+        err.textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+        err.classList.remove('hidden');
+      }
+    });
+
+    // ---------- Equipo
+    const v = (id: string) => q<HTMLInputElement>(`#${id}`);
+    function abrirEquipo(e?: Equipo) {
+      actual = e ?? null;
+      q<HTMLFormElement>('[data-eq-form-equipo]').reset();
+      q('[data-eq-e-error]').classList.add('hidden');
+      q('[data-eq-e-titulo]').textContent = e ? `Editar ${e.nombre}` : 'Agregar equipo';
+      q('[data-eq-activo-box]').classList.toggle('hidden', !e);
+      if (e) {
+        v('eq-nombre').value = e.nombre; q<HTMLSelectElement>('#eq-tipo').value = e.tipo; v('eq-serial').value = e.serial ?? '';
+        v('eq-min').value = String(e.min); v('eq-max').value = String(e.max); v('eq-ubic').value = e.ubicacion ?? '';
+        v('eq-cal1').value = e.ultimaCalibracion ?? ''; v('eq-cal2').value = e.proximaCalibracion ?? ''; v('eq-activo').checked = e.activo;
+      } else sugerir();
+      dlgE.showModal();
+    }
+    const sugerir = () => {
+      const [a, b] = RANGO_SUGERIDO[q<HTMLSelectElement>('#eq-tipo').value] ?? [2, 8];
+      v('eq-min').value = String(a); v('eq-max').value = String(b);
+    };
+    q('#eq-tipo').addEventListener('change', () => { if (!actual) sugerir(); });
+    q('[data-eq-form-equipo]').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const err = q('[data-eq-e-error]');
+      try {
+        const e = await guardarEquipo({
+          id: actual?.id, nombre: v('eq-nombre').value, tipo: q<HTMLSelectElement>('#eq-tipo').value,
+          min: parseFloat(v('eq-min').value), max: parseFloat(v('eq-max').value), ubicacion: v('eq-ubic').value || undefined,
+          serial: v('eq-serial').value || undefined, ultimaCalibracion: v('eq-cal1').value || undefined, proximaCalibracion: v('eq-cal2').value || undefined,
+          activo: actual ? v('eq-activo').checked : true,
+        });
+        dlgE.close();
+        toast(`${e.nombre} guardado.`);
+        cargar();
+      } catch (e) {
+        err.textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+        err.classList.remove('hidden');
+      }
+    });
+
+    q('[data-eq-nuevo]').addEventListener('click', () => abrirEquipo());
+    q('[data-eq-lista]').addEventListener('click', (ev) => {
+      const el = ev.target as HTMLElement;
+      const leer = el.closest<HTMLElement>('[data-eq-leer]')?.dataset.eqLeer;
+      const editar = el.closest<HTMLElement>('[data-eq-editar]')?.dataset.eqEditar;
+      const e = equipos.find((x) => String(x.id) === (leer ?? editar));
+      if (!e) return;
+      if (editar) return abrirEquipo(e);
+      actual = e;
+      q<HTMLFormElement>('[data-eq-form-lectura]').reset();
+      q('[data-eq-l-error]').classList.add('hidden');
+      q('[data-eq-l-sub]').textContent = `${e.nombre} · ${e.tipo}`;
+      pintarRango();
+      dlgL.showModal();
+      q<HTMLInputElement>('#eq-temp').focus();
+    });
+    [dlgL, dlgE].forEach((d) => d.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => d.close())));
+    cargar();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

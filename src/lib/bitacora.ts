@@ -42,6 +42,9 @@ export const MODULO: Record<string, string> = {
   personalsalud: 'Personal',
   cita: 'Citas',
   ticket_soporte: 'Soporte',
+  incidencia_tecnica: 'Incidencias',
+  equipo_almacenamiento: 'Equipos',
+  prueba_tipaje_muestra: 'Compatibilidad',
 };
 export const moduloDe = (t: string) => MODULO[t] ?? t.replace(/_/g, ' ');
 
@@ -52,13 +55,19 @@ const OPERACION: Record<string, string> = {
   NOTIFICACION: 'Notificó un caso', CONTACTO_DONANTE: 'Contactó al donante',
   HEMOVIGILANCIA: 'Registró una transfusión', HEMOVIGILANCIA_EDICION: 'Actualizó una transfusión', HEMOVIGILANCIA_CIERRE: 'Cerró una transfusión',
   LOGIN: 'Inició sesión', LOGOUT: 'Cerró sesión',
+  CUENTA_ACTIVADA: 'Activó una cuenta', CUENTA_DESACTIVADA: 'Desactivó una cuenta', CUENTA_ROL: 'Cambió rol o sede',
+  CUENTA_2FA_QUITADA: 'Quitó la verificación en dos pasos', RESTABLECER_ACCESO: 'Envió restablecer acceso',
+  INCIDENCIA_CREADA: 'Registró una incidencia', INCIDENCIA_EN_PROCESO: 'Tomó una incidencia', INCIDENCIA_RESUELTA: 'Resolvió una incidencia',
+  INCIDENCIA_DESCARTADA: 'Descartó una incidencia', INCIDENCIA_ABIERTA: 'Reabrió una incidencia',
+  CORRECCION_ESTADO: 'Corrigió un estado', EQUIPO_CREADO: 'Registró un equipo', EQUIPO_EDITADO: 'Editó un equipo',
+  TEMPERATURA_FUERA_DE_RANGO: 'Temperatura fuera de rango', CONSULTA_TRAZABILIDAD: 'Consultó trazabilidad',
 };
 export const operacionDe = (o: string) => OPERACION[o] ?? (o.charAt(0) + o.slice(1).toLowerCase()).replace(/_/g, ' ');
 
 /** Tono del punto según la operación. */
 export function tonoOperacion(o: string): string {
-  if (/RECHAZO|DELETE|INCOMPATIBLE/.test(o)) return 'bg-accent';
-  if (/HEMOVIGILANCIA|NOTIFICACION/.test(o)) return 'bg-warn';
+  if (/RECHAZO|DELETE|INCOMPATIBLE|DESACTIVADA|FUERA_DE_RANGO|2FA/.test(o)) return 'bg-accent';
+  if (/HEMOVIGILANCIA|NOTIFICACION|CORRECCION|INCIDENCIA|CUENTA_ROL|RESTABLECER/.test(o)) return 'bg-warn';
   if (/DESPACHO|RESERVA|INSERT/.test(o)) return 'bg-ok';
   return 'bg-ink-3';
 }
@@ -81,6 +90,10 @@ function demo(): EntradaBitacora[] {
     id: 't' + t.id, fecha: t.actualizado, tabla: 'ticket_soporte', operacion: t.estado === 'resuelto' ? 'UPDATE' : 'INSERT',
     usuario: t.asignadoA?.nombre ?? t.donanteNombre, sede: 'Banco de Sangre del Zulia', detalle: { resumen: `${t.codigo} · ${t.asunto}` },
   }));
+  try {
+    // Acciones administrativas de soporte en modo demo (lib/administracion y lib/equipos).
+    (JSON.parse(localStorage.getItem('blud-demo-admin-log') || '[]') as EntradaBitacora[]).forEach((e) => out.push(e));
+  } catch {}
   return out.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
 }
 

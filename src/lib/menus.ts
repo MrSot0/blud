@@ -99,6 +99,8 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Donaciones', label: 'Fraccionamiento', hint: 'Hemocomponentes obtenidos', href: '/laboratorio/fraccionamiento', icon: 'layers' },
       { grupo: 'Donaciones', label: 'Casos positivos', hint: 'Reportar y notificar', href: '/laboratorio/positivos', icon: 'alert' },
       { grupo: 'Transfusión', label: 'Compatibilidad', hint: 'Tipaje y pruebas cruzadas', href: '/laboratorio/compatibilidad', icon: 'verify' },
+      { grupo: 'Banco de sangre', label: 'Equipos y temperatura', hint: 'Cámaras, neveras y congeladores', href: '/laboratorio/equipos', icon: 'package' },
+      { grupo: 'Banco de sangre', label: 'Trazabilidad', hint: 'Del donante al paciente', href: '/laboratorio/trazabilidad', icon: 'search' },
       // Pendiente: Mensajes del laboratorio (hoy el contacto con el donante pasa por el operador).
       { grupo: 'Seguimiento', label: 'Reportes', hint: 'Estadísticas y exportación', href: '/laboratorio/reportes', icon: 'chart' },
       { grupo: 'Seguimiento', label: 'Registros', hint: 'Toda tu actividad', href: '/laboratorio/registros', icon: 'clock' },
@@ -115,8 +117,10 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Inicio', label: 'Panel', hint: 'Resumen del banco de sangre', href: '/director/dashboard', icon: 'dashboard' },
       { grupo: 'Inicio', label: 'Avisos', hint: 'Lo que espera tu acción', href: '/director/avisos', icon: 'bell' },
       { grupo: 'Banco de sangre', label: 'Inventario', hint: 'Stock y vencimientos', href: '/director/inventario', icon: 'package' },
+      { grupo: 'Banco de sangre', label: 'Equipos y temperatura', hint: 'Cadena de frío de la sede', href: '/director/equipos', icon: 'layers' },
       { grupo: 'Banco de sangre', label: 'Solicitudes entre centros', hint: 'Pedir y aprobar bolsas', href: '/director/solicitudes/historial', icon: 'inbox' },
       { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
+      { grupo: 'Banco de sangre', label: 'Trazabilidad', hint: 'Del donante al paciente', href: '/director/trazabilidad', icon: 'search' },
       // Pendiente: Mensajes entre directores para coordinar los pedidos entre centros.
       { grupo: 'Análisis', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },
       { grupo: 'Análisis', label: 'Reportes', hint: 'Consolidado en PDF', href: '/director/reportes', icon: 'chart' },
@@ -137,7 +141,9 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Atención', label: 'Solicitudes', hint: 'Donantes y personal', href: '/soporte/tickets', icon: 'inbox' },
       { grupo: 'Atención', label: 'Mensajes', hint: 'Chat con donantes', href: '/soporte/mensajes', icon: 'chat' },
       { grupo: 'Atención', label: 'Donantes', hint: 'Consultar un donante', href: '/soporte/donantes', icon: 'search' },
-      // Pendiente RF-A1 a A3: cuentas (activar, desactivar, restablecer acceso), incidencias y corrección de estados.
+      { grupo: 'Administración', label: 'Cuentas', hint: 'Acceso, roles y sedes', href: '/soporte/cuentas', icon: 'users' },
+      { grupo: 'Administración', label: 'Incidencias', hint: 'Fallas técnicas', href: '/soporte/incidencias', icon: 'alert' },
+      { grupo: 'Administración', label: 'Correcciones', hint: 'Estados con justificación', href: '/soporte/correcciones', icon: 'file' },
       { grupo: 'Administración', label: 'Bitácora', hint: 'Auditoría de la red', href: '/soporte/bitacora', icon: 'clock' },
     ],
     cuenta: [

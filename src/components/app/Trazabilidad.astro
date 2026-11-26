@@ -1,0 +1,155 @@
+---
+// src/components/app/Trazabilidad.astro
+// RF-H5: cadena completa donante → donación → tamizaje → bolsas → receptor → hemovigilancia, buscando por cualquier
+// eslabón. Lo usan dirección y laboratorio. Ver lib/trazabilidad.
+---
+
+<div class="container-blud py-8 space-y-6" data-traza>
+  <div class="page-head">
+    <div class="min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Trazabilidad</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Sigue una bolsa en los dos sentidos: del donante al paciente que la recibió y del paciente de vuelta al donante. Cada consulta queda en la bitácora.</p>
+    </div>
+    <div class="page-head-acciones">
+      <button type="button" class="btn btn-secondary btn-sm" data-tz-csv disabled>Exportar CSV</button>
+    </div>
+  </div>
+
+  <section class="panel p-4 sm:p-6 space-y-3">
+    <form class="flex flex-col gap-2 sm:flex-row" data-tz-form novalidate>
+      <label for="tz-q" class="sr-only">Buscar</label>
+      <input id="tz-q" type="search" class="field flex-1 font-mono" placeholder="DIN, código de bolsa, cédula o REQ-…" autocomplete="off" />
+      <button type="submit" class="btn btn-primary">Rastrear</button>
+    </form>
+    <p class="text-xs text-ink-3">Acepta el código de la donación (DON-…) o su DIN ISBT, el código de una bolsa, la cédula del donante o del paciente, o una solicitud de transfusión.</p>
+  </section>
+
+  <p class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status" data-tz-aviso></p>
+  <p class="hidden text-sm text-ink-2" data-tz-resumen aria-live="polite"></p>
+  <ol class="space-y-6" data-tz-lista></ol>
+</div>
+
+<style is:global>
+  [data-traza] .tz-cadena { display: grid; gap: .75rem; }
+  @media (min-width: 1024px) { [data-traza] .tz-cadena { grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); align-items: start; } }
+  [data-traza] .tz-unidad { position: relative; padding-left: 1.25rem; }
+  [data-traza] .tz-unidad::before { content: ''; position: absolute; left: .3rem; top: 0; bottom: 0; width: 2px; background: var(--line); }
+  [data-traza] .tz-unidad::after { content: ''; position: absolute; left: 0; top: 1.15rem; width: .75rem; height: .75rem; border-radius: 9999px; background: var(--surface); border: 2px solid var(--line-strong); }
+  [data-traza] .tz-unidad[data-destino]::after { background: var(--accent); border-color: var(--accent); }
+  [data-traza] mark { background: var(--warn-soft); color: inherit; border-radius: .25rem; padding: 0 .15rem; }
+</style>
+
+<script>
+  import { ESTADO_UNIDAD, MENSAJE_NO_DISPONIBLE, NoDisponible, POR_LABEL, rastrear } from '../../lib/trazabilidad';
+  import type { Traza, TrazaDonacion, TrazaUnidad } from '../../lib/trazabilidad';
+  import { downloadFile, esc, toCSV } from '../../lib/ui';
+
+  const fecha = (s?: string) => (s ? new Date(s.slice(0, 10) + 'T00:00:00').toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+  const chip = (t: string, c: string) => `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${c}">${esc(t)}</span>`;
+  const tonoTamizaje = (r?: string) => (r === 'Negativo' ? 'bg-ok-soft text-ok' : r === 'Positivo' ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn');
+  const tonoUnidad = (e: string) => (/Descart|Vencid/.test(e) ? 'bg-accent-soft text-accent-ink' : /Transfund|Despach|Tr[aá]nsito/.test(e) ? 'bg-sunken text-ink' : /Disponible/.test(e) ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn');
+  const EVENTO: Record<string, string> = { sin_reaccion: 'Sin reacción', reaccion: 'Reacción adversa', incidente: 'Incidente' };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-traza]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => raiz.querySelector<T>(s)!;
+    let ultimo: Traza | null = null;
+    let buscado = '';
+
+    /** Resalta el eslabón que coincide con la búsqueda. */
+    const marca = (texto: string) => {
+      const t = esc(texto);
+      const b = buscado.trim().toUpperCase().replace(/[.\s]/g, '');
+      return b && texto.toUpperCase().replace(/[.\s]/g, '') === b ? `<mark>${t}</mark>` : t;
+    };
+
+    const unidad = (u: TrazaUnidad) => {
+      const d = u.destino;
+      const hv = d?.hemovigilancia;
+      return `<li class="tz-unidad" ${d ? 'data-destino' : ''}>
+        <div class="rounded-control border border-line p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="font-semibold text-ink"><span class="font-mono">${marca(u.codigo)}</span> <span class="text-sm font-normal text-ink-2">· ${esc(u.componente)}${u.tipo ? ` · ${esc(u.tipo)}` : ''}</span></p>
+            ${chip(ESTADO_UNIDAD[u.estado] ?? u.estado, tonoUnidad(u.estado))}
+          </div>
+          <p class="text-xs text-ink-3">${esc(u.sede ?? '')}${u.vence ? ` · vence ${esc(fecha(u.vence))}` : ''}</p>
+          ${d ? `<div class="rounded-control bg-sunken/60 p-3 text-sm">
+              <p class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">Receptor</p>
+              <p class="font-semibold text-ink">${esc(d.paciente.nombre)} <span class="font-normal text-ink-2">· ${marca(d.paciente.cedula)}</span></p>
+              <p class="text-xs text-ink-2">${marca(d.solicitud)}${d.estado ? ` · ${esc(d.estado)}` : ''}${d.fecha ? ` · ${esc(fecha(d.fecha))}` : ''}${d.sede ? ` · ${esc(d.sede)}` : ''}${d.paciente.servicio ? ` · ${esc(d.paciente.servicio)}` : ''}</p>
+              ${hv ? `<p class="mt-2 flex flex-wrap items-center gap-2 text-xs"><span class="font-mono font-bold text-ink-2">${esc(hv.folio)}</span>
+                  ${chip(hv.tipoEvento ? EVENTO[hv.tipoEvento] ?? hv.tipoEvento : 'En curso', hv.tipoEvento && hv.tipoEvento !== 'sin_reaccion' ? 'bg-warn-soft text-warn' : 'bg-ok-soft text-ok')}
+                  ${hv.categoria ? `<span class="text-ink-2">${esc(hv.categoria)}${hv.severidad ? ` · ${esc(hv.severidad)}` : ''}</span>` : ''}</p>`
+                : '<p class="mt-2 text-xs text-ink-3">Sin registro de hemovigilancia.</p>'}
+            </div>` : ''}
+        </div></li>`;
+    };
+
+    const donacion = (t: TrazaDonacion) => `<li class="panel p-5 sm:p-6">
+      <div class="tz-cadena">
+        <div class="space-y-3">
+          <div>
+            <p class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">Donante</p>
+            <p class="font-bold text-ink">${esc(t.donante.nombre)}</p>
+            <p class="text-sm text-ink-2">${marca(t.donante.cedula)}${t.donante.sangre ? ` · ${esc(t.donante.sangre)}` : ''}</p>
+          </div>
+          <div>
+            <p class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">Donación</p>
+            <p class="font-mono text-sm font-bold text-ink">${marca(t.din)}</p>
+            ${t.dinIsbt ? `<p class="font-mono text-xs text-ink-2">${marca(t.dinIsbt)}</p>` : ''}
+            <p class="text-xs text-ink-3">${esc(fecha(t.fecha))}${t.sede ? ` · ${esc(t.sede)}` : ''}</p>
+          </div>
+          <p>${t.tamizaje ? `${chip(`Tamizaje ${t.tamizaje.resultado.toLowerCase()}`, tonoTamizaje(t.tamizaje.resultado))} <span class="text-xs text-ink-3">${esc(fecha(t.tamizaje.fecha))}</span>` : chip('Sin tamizaje', 'bg-warn-soft text-warn')}</p>
+        </div>
+        <div>
+          <p class="mb-2 text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">Bolsas (${t.unidades.length})</p>
+          ${t.unidades.length ? `<ol class="space-y-3">${t.unidades.map(unidad).join('')}</ol>` : '<p class="text-sm text-ink-3">La donación aún no tiene bolsas registradas.</p>'}
+        </div>
+      </div></li>`;
+
+    q('[data-tz-form]').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      buscado = q<HTMLInputElement>('#tz-q').value;
+      const aviso = q('[data-tz-aviso]');
+      const resumen = q('[data-tz-resumen]');
+      aviso.classList.add('hidden');
+      try {
+        ultimo = await rastrear(buscado);
+        const n = ultimo.donaciones.length;
+        const receptores = new Set(ultimo.donaciones.flatMap((d) => d.unidades.map((u) => u.destino?.paciente.cedula).filter(Boolean))).size;
+        resumen.textContent = n
+          ? `Encontrado por ${POR_LABEL[ultimo.por!].toLowerCase()}: ${n} ${n === 1 ? 'donación' : 'donaciones'}, ${ultimo.donaciones.reduce((a, d) => a + d.unidades.length, 0)} bolsas y ${receptores} ${receptores === 1 ? 'receptor' : 'receptores'}.`
+          : 'No encontramos nada con ese dato. Revisa el código o prueba con la cédula.';
+        resumen.classList.remove('hidden');
+        q('[data-tz-lista]').innerHTML = ultimo.donaciones.map(donacion).join('');
+        q<HTMLButtonElement>('[data-tz-csv]').disabled = !n;
+      } catch (ex) {
+        ultimo = null;
+        q('[data-tz-lista]').innerHTML = '';
+        resumen.classList.add('hidden');
+        aviso.textContent = ex instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (ex as Error).message;
+        aviso.classList.remove('hidden');
+        q<HTMLButtonElement>('[data-tz-csv]').disabled = true;
+      }
+    });
+
+    q('[data-tz-csv]').addEventListener('click', () => {
+      if (!ultimo?.donaciones.length) return;
+      const filas = ultimo.donaciones.flatMap((d) => (d.unidades.length ? d.unidades : [null]).map((u) => ({
+        Donante: d.donante.nombre, CedulaDonante: d.donante.cedula, Donacion: d.din, DIN: d.dinIsbt ?? '', Fecha: d.fecha,
+        Tamizaje: d.tamizaje?.resultado ?? '', Bolsa: u?.codigo ?? '', Componente: u?.componente ?? '', EstadoBolsa: u?.estado ?? '',
+        Solicitud: u?.destino?.solicitud ?? '', Receptor: u?.destino?.paciente.nombre ?? '', CedulaReceptor: u?.destino?.paciente.cedula ?? '',
+        Hemovigilancia: u?.destino?.hemovigilancia?.folio ?? '',
+      })));
+      downloadFile(`blud-trazabilidad-${buscado.trim().replace(/[^\w-]/g, '')}.csv`, toCSV(filas), 'text/csv');
+    });
+
+    const inicial = new URLSearchParams(location.search).get('q');
+    if (inicial) { q<HTMLInputElement>('#tz-q').value = inicial; q<HTMLFormElement>('[data-tz-form]').requestSubmit(); }
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

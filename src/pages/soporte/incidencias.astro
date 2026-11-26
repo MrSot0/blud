@@ -1,0 +1,293 @@
+---
+// src/pages/soporte/incidencias.astro
+// RF-A2: soporte registra las fallas del sistema y las incidencias técnicas, las toma, les da seguimiento y las cierra
+// con su resolución. Las correcciones de estado (RF-A3) pueden citar una incidencia y quedan en su seguimiento.
+import Layout from '../../layouts/LayoutSoporte.astro';
+import { CATEGORIAS, SEVERIDADES } from '../../lib/administracion';
+---
+
+<Layout title="BLUD | Incidencias" description="Fallas del sistema e incidencias técnicas.">
+  <div class="container-blud py-8 space-y-6" data-inc>
+    <div class="page-head">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Incidencias técnicas</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Fallas de la plataforma, de los equipos o de los datos, con su seguimiento hasta cerrarlas.</p>
+      </div>
+      <div class="page-head-acciones">
+        <button type="button" class="btn btn-primary btn-sm" id="nueva">Registrar incidencia</button>
+      </div>
+    </div>
+
+    <p id="aviso" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status"></p>
+
+    <div class="grid grid-cols-3 gap-3">
+      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Abiertas</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-k="abiertas">—</p></div>
+      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">En proceso</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-k="enProceso">—</p></div>
+      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Alta o crítica</p><p class="mt-1 text-2xl font-extrabold tabular" data-k="criticas">—</p></div>
+    </div>
+
+    <section class="panel p-4 sm:p-6 space-y-4">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="chips-scroll" role="group" aria-label="Estado">
+          <button type="button" class="pildora" data-estado="activas" aria-pressed="true">Activas</button>
+          <button type="button" class="pildora" data-estado="abierta" aria-pressed="false">Abiertas</button>
+          <button type="button" class="pildora" data-estado="en_proceso" aria-pressed="false">En proceso</button>
+          <button type="button" class="pildora" data-estado="resuelta" aria-pressed="false">Resueltas</button>
+          <button type="button" class="pildora" data-estado="descartada" aria-pressed="false">Descartadas</button>
+          <button type="button" class="pildora" data-estado="" aria-pressed="false">Todas</button>
+        </div>
+        <input type="search" id="q" class="field lg:max-w-xs" placeholder="Buscar (3 letras o más)" aria-label="Buscar incidencia" />
+      </div>
+      <ul id="lista" class="divide-y divide-line"></ul>
+      <p id="vacio" class="hidden py-8 text-center text-sm text-ink-3">No hay incidencias en esta vista.</p>
+      <nav class="flex items-center justify-between gap-3 border-t border-line pt-4" aria-label="Páginas de incidencias">
+        <button type="button" class="btn btn-secondary btn-sm" id="ant" disabled aria-label="Página anterior"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <p id="estado-pag" class="text-xs text-ink-3 tabular" aria-live="polite"></p>
+        <button type="button" class="btn btn-secondary btn-sm" id="sig" disabled aria-label="Página siguiente"><svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </section>
+  </div>
+
+  <!-- Nueva incidencia -->
+  <dialog id="dlg-nueva" class="blud-dialog" aria-labelledby="n-titulo-h">
+    <form id="form-nueva" class="blud-dialog-marco" novalidate>
+      <header class="flex items-center justify-between gap-4 border-b border-line p-5">
+        <h2 id="n-titulo-h" class="text-lg font-bold text-ink">Registrar incidencia</h2>
+        <button type="button" class="grid size-9 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </header>
+      <div class="blud-dialog-cuerpo form-grid">
+        <div class="col-full">
+          <label for="n-titulo" class="etiqueta-campo">Título</label>
+          <input id="n-titulo" class="field" placeholder="Qué falla, en pocas palabras" />
+        </div>
+        <div>
+          <label for="n-cat" class="etiqueta-campo">Categoría</label>
+          <select id="n-cat" class="field">{CATEGORIAS.map((c) => <option>{c}</option>)}</select>
+        </div>
+        <div>
+          <label for="n-sev" class="etiqueta-campo">Severidad</label>
+          <select id="n-sev" class="field">{SEVERIDADES.map((c) => <option selected={c === 'Media'}>{c}</option>)}</select>
+        </div>
+        <div class="col-full">
+          <label for="n-desc" class="etiqueta-campo">Descripción</label>
+          <textarea id="n-desc" rows="5" class="field" placeholder="Qué pasa, desde cuándo, en qué sede o pantalla, a quién afecta y qué se probó."></textarea>
+        </div>
+        <p id="n-error" class="col-full hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+        <button type="button" class="btn btn-secondary" data-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Detalle y seguimiento -->
+  <dialog id="dlg" class="blud-dialog" aria-labelledby="d-titulo">
+    <form id="form" class="blud-dialog-marco" novalidate>
+      <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div class="min-w-0">
+          <p class="font-mono text-xs font-bold text-ink-3" id="d-id"></p>
+          <h2 id="d-titulo" class="text-lg font-bold text-ink"></h2>
+          <p class="mt-1 flex flex-wrap gap-2" id="d-chips"></p>
+        </div>
+        <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-cerrar aria-label="Cerrar"><svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </header>
+      <div class="blud-dialog-cuerpo space-y-6">
+        <p id="d-desc" class="whitespace-pre-wrap text-sm text-ink"></p>
+        <dl id="d-datos" class="grid grid-cols-2 gap-3 sm:grid-cols-4"></dl>
+        <section>
+          <h3 class="etiqueta-campo">Seguimiento</h3>
+          <ol id="d-seg" class="mt-2 space-y-3 border-l-2 border-line pl-4"></ol>
+        </section>
+        <div id="d-editar" class="space-y-3 rounded-control border border-line p-4">
+          <div class="form-grid">
+            <div>
+              <label for="e-estado" class="etiqueta-campo">Estado</label>
+              <select id="e-estado" class="field">
+                <option value="">Sin cambio</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="resuelta">Resuelta</option>
+                <option value="descartada">Descartada</option>
+                <option value="abierta">Reabrir</option>
+              </select>
+            </div>
+            <div>
+              <label for="e-sev" class="etiqueta-campo">Severidad</label>
+              <select id="e-sev" class="field"><option value="">Sin cambio</option>{SEVERIDADES.map((c) => <option>{c}</option>)}</select>
+            </div>
+            <div class="col-full">
+              <label for="e-nota" class="etiqueta-campo">Nota de seguimiento</label>
+              <textarea id="e-nota" rows="2" class="field" placeholder="Qué se revisó o se hizo"></textarea>
+            </div>
+            <div class="col-full hidden" id="bloque-res">
+              <label for="e-res" class="etiqueta-campo">Resolución</label>
+              <textarea id="e-res" rows="2" class="field" placeholder="Cómo se resolvió o por qué se descarta"></textarea>
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-ink-2" id="bloque-tomar"><input type="checkbox" id="e-tomar" class="size-4 accent-[var(--accent)]" /> Asignármela</label>
+        </div>
+        <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+        <a class="btn btn-secondary" id="d-corregir" href="/soporte/correcciones">Corregir un estado</a>
+        <button type="submit" class="btn btn-primary" id="guardar">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
+</Layout>
+
+<script>
+  import { ESTADO_INCIDENCIA, MENSAJE_NO_DISPONIBLE, NoDisponible, guardarIncidencia, listarIncidencias } from '../../lib/administracion';
+  import type { EstadoIncidencia, Incidencia } from '../../lib/administracion';
+  import { esc, toast } from '../../lib/ui';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const TONO_ESTADO: Record<EstadoIncidencia, string> = {
+    abierta: 'bg-warn-soft text-warn', en_proceso: 'bg-accent-soft text-accent-ink', resuelta: 'bg-ok-soft text-ok', descartada: 'bg-sunken text-ink-3',
+  };
+  const TONO_SEV: Record<string, string> = { Baja: 'bg-sunken text-ink-2', Media: 'bg-sunken text-ink', Alta: 'bg-warn-soft text-warn', 'Crítica': 'bg-accent text-white' };
+  const chip = (t: string, c: string) => `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${c}">${esc(t)}</span>`;
+  const cuando = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : `${d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-inc]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const dlg = $<HTMLDialogElement>('#dlg');
+    const dlgNueva = $<HTMLDialogElement>('#dlg-nueva');
+    let estado = 'activas';
+    let cursores: (string | null)[] = [null];
+    let pagina = 0;
+    let siguiente: string | null = null;
+    let items: Incidencia[] = [];
+    let actual: Incidencia | null = null;
+    let peticion = 0;
+
+    function pintar() {
+      $('#lista').innerHTML = items.map((i, n) => `<li><button type="button" data-abrir="${n}" class="flex w-full flex-col gap-2 rounded-control py-4 text-left hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2">
+        <div class="min-w-0 flex-1">
+          <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(i.id)}</span><span class="font-semibold text-ink">${esc(i.titulo)}</span></p>
+          <p class="mt-0.5 truncate text-sm text-ink-2">${esc(i.categoria)} · ${esc(i.seguimiento.at(-1)?.texto ?? i.descripcion)}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:shrink-0">${chip(i.severidad, TONO_SEV[i.severidad] ?? '')} ${chip(ESTADO_INCIDENCIA[i.estado], TONO_ESTADO[i.estado])}
+          <span class="text-xs text-ink-3">${esc(i.asignadoA?.nombre ?? 'Sin asignar')}</span><span class="text-xs text-ink-3 tabular">${esc(cuando(i.actualizado))}</span></div>
+      </button></li>`).join('');
+      $('#vacio').classList.toggle('hidden', items.length > 0);
+      $<HTMLButtonElement>('#ant').disabled = pagina === 0;
+      $<HTMLButtonElement>('#sig').disabled = !siguiente;
+      $('#estado-pag').textContent = items.length ? `Página ${pagina + 1}${siguiente ? '' : ' (última)'}` : '';
+    }
+
+    async function ir(n: number) {
+      const yo = ++peticion;
+      try {
+        const q = $<HTMLInputElement>('#q').value;
+        const r = await listarIncidencias({ estado, q }, cursores[n] ?? null);
+        if (yo !== peticion) return;
+        pagina = n; items = r.items; siguiente = r.siguiente;
+        cursores = cursores.slice(0, n + 1);
+        if (siguiente) cursores[n + 1] = siguiente;
+        (['abiertas', 'enProceso', 'criticas'] as const).forEach((k) => ($(`[data-k="${k}"]`).textContent = String(r.resumen[k])));
+        $('[data-k="criticas"]').className = `mt-1 text-2xl font-extrabold tabular ${r.resumen.criticas ? 'text-accent-ink' : 'text-ink'}`;
+        $('#aviso').classList.add('hidden');
+      } catch (e) {
+        if (yo !== peticion) return;
+        items = []; siguiente = null;
+        $('#aviso').textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+        $('#aviso').classList.remove('hidden');
+      }
+      pintar();
+    }
+    const reiniciar = () => { cursores = [null]; ir(0); };
+
+    raiz.querySelectorAll<HTMLElement>('[data-estado]').forEach((b) => b.addEventListener('click', () => {
+      estado = b.dataset.estado!;
+      raiz.querySelectorAll('[data-estado]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      reiniciar();
+    }));
+    let t: number | undefined;
+    let ultima = '';
+    $('#q').addEventListener('input', () => {
+      clearTimeout(t);
+      t = window.setTimeout(() => { const v = $<HTMLInputElement>('#q').value.trim(); const q = v.length >= 3 ? v : ''; if (q !== ultima) { ultima = q; reiniciar(); } }, 400);
+    });
+    $('#ant').addEventListener('click', () => ir(pagina - 1));
+    $('#sig').addEventListener('click', () => ir(pagina + 1));
+
+    // ---------- Nueva
+    $('#nueva').addEventListener('click', () => { $<HTMLFormElement>('#form-nueva').reset(); $('#n-error').classList.add('hidden'); dlgNueva.showModal(); });
+    $('#form-nueva').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const i = await guardarIncidencia({
+          titulo: $<HTMLInputElement>('#n-titulo').value, descripcion: $<HTMLTextAreaElement>('#n-desc').value,
+          categoria: $<HTMLSelectElement>('#n-cat').value, severidad: $<HTMLSelectElement>('#n-sev').value,
+        });
+        dlgNueva.close();
+        toast(`Incidencia ${i.id} registrada.`);
+        reiniciar();
+      } catch (ex) {
+        $('#n-error').textContent = ex instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (ex as Error).message;
+        $('#n-error').classList.remove('hidden');
+      }
+    });
+
+    // ---------- Detalle
+    const dato = (k: string, v?: string) => `<div><dt class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">${esc(k)}</dt><dd class="mt-0.5 text-sm font-semibold text-ink">${esc(v || '—')}</dd></div>`;
+    function abrir(i: Incidencia) {
+      actual = i;
+      $<HTMLFormElement>('#form').reset();
+      $('#error').classList.add('hidden');
+      $('#d-id').textContent = i.id;
+      $('#d-titulo').textContent = i.titulo;
+      $('#d-chips').innerHTML = `${chip(i.severidad, TONO_SEV[i.severidad] ?? '')} ${chip(ESTADO_INCIDENCIA[i.estado], TONO_ESTADO[i.estado])} ${chip(i.categoria, 'bg-sunken text-ink-2')}`;
+      $('#d-desc').textContent = i.descripcion;
+      $('#d-datos').innerHTML = [dato('Reportada por', i.reportadoPor), dato('Asignada a', i.asignadoA?.nombre ?? 'Sin asignar'), dato('Sede', i.sede), dato('Registrada', cuando(i.creado))].join('')
+        + (i.resolucion ? `<div class="col-span-2 sm:col-span-4">${dato('Resolución', i.resolucion)}</div>` : '');
+      $('#d-seg').innerHTML = [...i.seguimiento].reverse().map((s) => `<li class="relative">
+        <span class="absolute -left-[1.4rem] top-1.5 size-2.5 rounded-full ${s.estado ? 'bg-ink' : 'bg-line-strong'}" aria-hidden="true"></span>
+        <p class="text-xs text-ink-3">${esc(cuando(s.fecha))} · ${esc(s.autor ?? '')}${s.estado ? ` · ${esc(ESTADO_INCIDENCIA[s.estado])}` : ''}</p>
+        <p class="text-sm text-ink">${esc(s.texto)}</p></li>`).join('');
+      $('#bloque-tomar').classList.toggle('hidden', !!i.asignadoA && i.estado !== 'abierta');
+      $<HTMLAnchorElement>('#d-corregir').href = `/soporte/correcciones?incidencia=${encodeURIComponent(i.id)}`;
+      pintarRes();
+      if (!dlg.open) dlg.showModal();
+    }
+    const pintarRes = () => {
+      const v = $<HTMLSelectElement>('#e-estado').value;
+      $('#bloque-res').classList.toggle('hidden', v !== 'resuelta' && v !== 'descartada');
+    };
+    $('#e-estado').addEventListener('change', pintarRes);
+    $('#form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!actual) return;
+      const tomar = $<HTMLInputElement>('#e-tomar').checked;
+      const est = $<HTMLSelectElement>('#e-estado').value as EstadoIncidencia | '';
+      try {
+        const i = await guardarIncidencia({
+          id: actual.id, estado: est || (tomar && actual.estado === 'abierta' ? 'en_proceso' : undefined),
+          severidad: $<HTMLSelectElement>('#e-sev').value || undefined, nota: $<HTMLTextAreaElement>('#e-nota').value,
+          resolucion: $<HTMLTextAreaElement>('#e-res').value, asignarme: tomar || undefined,
+        });
+        toast(`Incidencia ${i.id} actualizada.`);
+        abrir(i);
+        ir(pagina);
+      } catch (ex) {
+        $('#error').textContent = ex instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (ex as Error).message;
+        $('#error').classList.remove('hidden');
+      }
+    });
+    $('#lista').addEventListener('click', (e) => {
+      const n = (e.target as HTMLElement).closest<HTMLElement>('[data-abrir]')?.dataset.abrir;
+      if (n !== undefined && items[Number(n)]) abrir(items[Number(n)]);
+    });
+    [dlg, dlgNueva].forEach((d) => d.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => d.close())));
+    ir(0);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

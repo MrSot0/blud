@@ -74,14 +74,16 @@ los RF está anotado como comentario en la sección donde irá.
   4. **Transfusión local**: el operador la registra, **sin aprobación de la dirección**; se reservan unidades de su
      sede; laboratorio hace tipaje y prueba cruzada; el operador despacha. Sin stock: «En espera de stock».
 - **Laboratorio** (menú: Inicio: Panel, Avisos · Donaciones: Pruebas, Fraccionamiento, Casos positivos ·
-  Transfusión: Compatibilidad · Seguimiento: Reportes, Registros · Cuenta): tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
-- **Director** (menú: Inicio: Panel, Avisos · Banco de sangre: Inventario, Solicitudes entre centros, Hemovigilancia ·
+  Transfusión: Compatibilidad · Banco de sangre: Equipos y temperatura, Trazabilidad · Seguimiento: Reportes,
+  Registros · Cuenta): tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
+- **Director** (menú: Inicio: Panel, Avisos · Banco de sangre: Inventario, Equipos y temperatura, Solicitudes entre centros,
+  Hemovigilancia, Trazabilidad ·
   Análisis: Mapa de calor, Reportes · Gestión: Personal, Bitácora · Cuenta: Mi perfil, Configuración, Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
   necesita bolsas pide a otro centro; el director del centro proveedor aprueba/rechaza; su operador despacha; el
   solicitante confirma la recepción. No aprueba lo que registra el operador.
 - **Soporte = administrador técnico**. Decidido el 25-11-2026: también gestiona cuentas (RF-A1: alta, baja,
   restablecer acceso) de toda la red, igual que el director con las de su sede; todo queda en la bitácora (menú: Inicio: Panel, Avisos · Atención: Solicitudes, Mensajes, Donantes ·
-  Administración: Bitácora · Cuenta): avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
+  Administración: Cuentas, Incidencias, Correcciones, Bitácora · Cuenta): avisos, bandeja de tickets (de donantes y del personal), consulta de donantes
   en solo lectura, chat y bitácora de toda la red.
 
 ## 5. Cuentas de prueba (en `src/lib/auth.ts`, selector del login)
@@ -114,6 +116,22 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
 
 ## 7. Hecho recientemente (de más nuevo a más viejo)
 
+- **Administración, equipos y trazabilidad (26-11-2026)**. Migración `20261125150000_blud_administracion.sql`
+  **escrita, SIN APLICAR** (va después de `20261125120000`; ambas pasan el analizador `pglast`). Con `lib/rpc.ts`
+  cada pantalla avisa «todavía no está habilitada» si falta la función en la base.
+  - **RF-A1 Cuentas** (`/soporte/cuentas`, `lib/administracion.ts`): buscar cualquier cuenta, activar o desactivar,
+    cambiar rol y sede del personal, quitar la 2FA (borra `auth.mfa_factors`) y restablecer acceso (correo de Supabase
+    Auth + constancia). Motivo obligatorio (≥ 10 caracteres) y todo en la bitácora. No se puede actuar sobre la cuenta propia.
+  - **RF-A2 Incidencias** (`/soporte/incidencias`, tabla `incidencia_tecnica`): registrar, tomar, seguimiento, resolver
+    o descartar con resolución.
+  - **RF-A3 Correcciones** (`/soporte/correcciones`): estado de una unidad, resultado del tamizaje o muestra de tipaje,
+    con motivo y, opcionalmente, la incidencia (se anota en su seguimiento).
+  - **RF-I4 Equipos y temperatura** (`/laboratorio/equipos`, `/director/equipos`; tablas `equipo_almacenamiento` y
+    `lectura_temperatura`): rango por equipo, lecturas con gráfico de 7 días, alertas (fuera de rango, sin lectura en
+    12 h, calibración vencida) y nota obligatoria fuera de rango. Las alertas salen en Avisos.
+  - **RF-H5 Trazabilidad** (`/director/trazabilidad`, `/laboratorio/trazabilidad`): por DIN, bolsa, cédula del donante
+    o del paciente, o solicitud; cadena donante → donación → tamizaje → bolsas → receptor → hemovigilancia, con CSV.
+    La relación bolsa → solicitud sale de la bitácora (`RESERVA` con `solicitud_id`).
 - **Pantallas pendientes de los roles (25-11-2026)**. Frontend completo; la migración
   `20261125120000_blud_roles_pendientes.sql` está **escrita pero SIN APLICAR**: esa sesión no tenía acceso MCP al
   proyecto Bloodonor. Antes de aplicarla, revisar las columnas reales de `hemo_vigilancia` (se creó fuera del
@@ -146,10 +164,13 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
 
 ## 8. Pendiente (orden recomendado)
 
-1. **Aplicar `20261125120000_blud_roles_pendientes.sql`** (ver sección 7) y probar como operador, director y
-   soporte con SQL `begin … rollback`.
-2. **Administrador técnico (A1–A3, T3)**: activar/desactivar cuentas y restablecer acceso desde soporte,
-   incidencias, corrección de estados con justificación. La bitácora ya existe.
+1. **Aplicar `20261125120000_blud_roles_pendientes.sql` y luego `20261125150000_blud_administracion.sql`** (ver
+   sección 7) y probar como operador, laboratorio, director y soporte con SQL `begin … rollback`. Revisar en la base los
+   valores reales del enum de `unidadsangre.estado` (la corrección ofrece Cuarentena, Disponible, Reservado, EnTransito,
+   Descartado y Transfundido).
+2. **RF pendientes con interfaz**: S4 (tiempos de soporte), H6 (devolución de bolsas), L8 (variantes del
+   componente), I3 (ubicación física), DS3/DS4 (envío y recepción), TR5 (sugerencia por IA). Ver
+   `docs/requerimientos-funcionales.md`.
 3. **Mensajes** para laboratorio y entre directores (para pedidos entre centros): requiere canales nuevos en
    Realtime. Hoy el laboratorio contacta al donante a través del operador.
 4. **Sedes desde la base**: `/centros`, Donar y el diálogo de agendar aún usan `src/data/centers.ts`; la cita se

@@ -1,0 +1,162 @@
+---
+// src/pages/soporte/correcciones.astro
+// RF-A3: soporte corrige el estado de una unidad, del tamizaje de una donación o de una muestra de tipaje cuando
+// quedó mal por una falla o un error de registro. Pide motivo, puede citar una incidencia y queda en la bitácora.
+import Layout from '../../layouts/LayoutSoporte.astro';
+import { TIPO_REGISTRO } from '../../lib/administracion';
+const tipos = Object.entries(TIPO_REGISTRO);
+---
+
+<Layout title="BLUD | Corrección de estados" description="Corregir estados de unidades, tamizajes y muestras con justificación.">
+  <div class="container-blud py-8 space-y-6" data-corr>
+    <div class="page-head">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Corrección de estados</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Para cuando un registro quedó en un estado equivocado por una falla o un error. Usa la pantalla normal de cada rol siempre que se pueda: esto es una excepción y queda en la bitácora.</p>
+      </div>
+    </div>
+
+    <p id="aviso" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status"></p>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+      <section class="panel p-5 sm:p-8 space-y-5" aria-labelledby="h-corr">
+        <h2 id="h-corr" class="text-lg font-bold text-ink border-b border-line pb-3">1. Busca el registro</h2>
+        <div class="chips-scroll" role="radiogroup" aria-label="Tipo de registro">
+          {tipos.map(([k, v], i) => <button type="button" class="pildora" data-tipo={k} aria-pressed={i === 0 ? 'true' : 'false'}>{v.label}</button>)}
+        </div>
+        <form id="form-buscar" class="flex flex-col gap-2 sm:flex-row" novalidate>
+          <label for="ref" class="sr-only">Código</label>
+          <input id="ref" class="field flex-1 font-mono" autocomplete="off" />
+          <button type="submit" class="btn btn-secondary">Buscar</button>
+        </form>
+        <p id="ayuda" class="-mt-2 text-xs text-ink-3"></p>
+
+        <div id="registro" class="hidden space-y-5">
+          <div class="rounded-control border border-line bg-sunken/40 p-4">
+            <p class="font-mono text-sm font-bold text-ink" id="r-ref"></p>
+            <p class="text-sm text-ink-2" id="r-detalle"></p>
+            <p class="mt-2 text-sm">Estado actual: <span id="r-estado" class="rounded-full bg-ink px-2.5 py-0.5 text-xs font-bold text-surface"></span></p>
+          </div>
+
+          <h2 class="text-lg font-bold text-ink border-b border-line pb-3">2. Corrige con justificación</h2>
+          <form id="form" class="form-grid" novalidate>
+            <div>
+              <label for="nuevo" class="etiqueta-campo">Estado correcto</label>
+              <select id="nuevo" class="field"></select>
+            </div>
+            <div>
+              <label for="incidencia" class="etiqueta-campo">Incidencia <span class="font-normal normal-case text-ink-3">(opcional)</span></label>
+              <input id="incidencia" class="field font-mono" placeholder="INC-2026-0001" autocomplete="off" />
+            </div>
+            <div class="col-full">
+              <label for="motivo" class="etiqueta-campo">Motivo</label>
+              <textarea id="motivo" rows="3" class="field" placeholder="Qué pasó, cómo se comprobó el estado correcto y quién lo pidió."></textarea>
+            </div>
+            <p id="error" class="col-full hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+            <div class="col-full flex justify-end">
+              <button type="submit" class="btn btn-primary w-full sm:w-auto">Aplicar corrección</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="panel p-5 sm:p-6 space-y-4 self-start" aria-labelledby="h-ult">
+        <h2 id="h-ult" class="text-lg font-bold text-ink">Últimas correcciones</h2>
+        <ol id="ultimas" class="divide-y divide-line"></ol>
+        <p id="sin-ult" class="hidden text-sm text-ink-3">Todavía no hay correcciones.</p>
+        <a href="/soporte/bitacora" class="link-arrow text-sm">Ver la bitácora completa</a>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import {
+    ESTADO_LEGIBLE, MENSAJE_NO_DISPONIBLE, NoDisponible, TIPO_REGISTRO, consultarRegistro, corregirEstado, ultimasCorrecciones,
+  } from '../../lib/administracion';
+  import type { RegistroEstado, TipoRegistro } from '../../lib/administracion';
+  import { esc, toast } from '../../lib/ui';
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const legible = (e: string) => ESTADO_LEGIBLE[e] ?? e;
+  const cuando = (iso: string) => {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : `${d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-corr]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    let tipo: TipoRegistro = 'unidad';
+    let reg: RegistroEstado | null = null;
+    const inc = new URLSearchParams(location.search).get('incidencia');
+    if (inc) $<HTMLInputElement>('#incidencia').value = inc;
+
+    const pintarTipo = () => {
+      raiz.querySelectorAll('[data-tipo]').forEach((x) => x.setAttribute('aria-pressed', String((x as HTMLElement).dataset.tipo === tipo)));
+      $<HTMLInputElement>('#ref').placeholder = TIPO_REGISTRO[tipo].ejemplo;
+      $('#ayuda').textContent = TIPO_REGISTRO[tipo].ayuda;
+      $('#registro').classList.add('hidden');
+      reg = null;
+    };
+    raiz.querySelectorAll<HTMLElement>('[data-tipo]').forEach((b) => b.addEventListener('click', () => { tipo = b.dataset.tipo as TipoRegistro; pintarTipo(); }));
+
+    const avisar = (e: unknown, donde: string) => {
+      const el = $(donde);
+      el.textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+      el.classList.remove('hidden');
+    };
+
+    $('#form-buscar').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('#aviso').classList.add('hidden');
+      try {
+        reg = await consultarRegistro(tipo, $<HTMLInputElement>('#ref').value);
+        $('#r-ref').textContent = reg.ref;
+        $('#r-detalle').textContent = reg.detalle;
+        $('#r-estado').textContent = legible(reg.estado);
+        $<HTMLSelectElement>('#nuevo').innerHTML = reg.opciones.filter((o) => o !== reg!.estado).map((o) => `<option value="${esc(o)}">${esc(legible(o))}</option>`).join('');
+        $('#error').classList.add('hidden');
+        $('#registro').classList.remove('hidden');
+      } catch (ex) {
+        $('#registro').classList.add('hidden');
+        avisar(ex, '#aviso');
+      }
+    });
+
+    $('#form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!reg) return;
+      const nuevo = $<HTMLSelectElement>('#nuevo').value;
+      if (!confirm(`¿Cambiar ${reg.ref} de «${legible(reg.estado)}» a «${legible(nuevo)}»? Queda en la bitácora con tu nombre.`)) return;
+      try {
+        await corregirEstado(reg, nuevo, $<HTMLTextAreaElement>('#motivo').value, $<HTMLInputElement>('#incidencia').value);
+        toast(`${reg.ref}: ${legible(reg.estado)} → ${legible(nuevo)}.`);
+        $<HTMLTextAreaElement>('#motivo').value = '';
+        $<HTMLFormElement>('#form-buscar').requestSubmit();
+        cargarUltimas();
+      } catch (ex) { avisar(ex, '#error'); }
+    });
+
+    async function cargarUltimas() {
+      try {
+        const l = await ultimasCorrecciones();
+        $('#ultimas').innerHTML = l.map((c) => `<li class="py-3">
+          <p class="text-sm font-semibold text-ink">${esc(String(c.registro))} · ${esc(legible(c.detalle.antes ?? ''))} → ${esc(legible(c.detalle.despues ?? ''))}</p>
+          <p class="text-xs text-ink-3">${esc(cuando(c.fecha))} · ${esc(c.usuario ?? '')}${c.detalle.incidencia ? ` · ${esc(c.detalle.incidencia)}` : ''}</p>
+          ${c.detalle.motivo ? `<p class="mt-1 text-sm text-ink-2">${esc(c.detalle.motivo)}</p>` : ''}</li>`).join('');
+        $('#sin-ult').classList.toggle('hidden', l.length > 0);
+      } catch (ex) {
+        $('#ultimas').innerHTML = '';
+        $('#sin-ult').classList.add('hidden');
+        if (ex instanceof NoDisponible) avisar(ex, '#aviso');
+      }
+    }
+    pintarTipo();
+    cargarUltimas();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

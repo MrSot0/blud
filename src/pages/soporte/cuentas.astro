@@ -1,0 +1,299 @@
+---
+// src/pages/soporte/cuentas.astro
+// RF-A1: soporte gestiona cualquier cuenta de la red: activar o desactivar, cambiar rol y sede del personal,
+// quitar la verificación en dos pasos y restablecer el acceso. Cada acción pide motivo y queda en la bitácora.
+import Layout from '../../layouts/LayoutSoporte.astro';
+import Filtros from '../../components/app/Filtros.astro';
+import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
+---
+
+<Layout title="BLUD | Cuentas" description="Gestión de cuentas de donantes y del personal.">
+  <div class="container-blud py-8 space-y-6" data-cuentas>
+    <div class="page-head">
+      <div class="min-w-0">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Cuentas</h1>
+        <p class="text-ink-2 text-sm sm:text-base mt-1">Busca cualquier cuenta de la red para activarla o desactivarla, cambiar su rol o sede, o ayudar a la persona a recuperar el acceso.</p>
+      </div>
+    </div>
+
+    <p id="aviso" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status"></p>
+
+    <section class="panel p-4 sm:p-6 space-y-4">
+      <Filtros>
+        <input type="search" id="q" class="field filtro-ancho" placeholder="Nombre, correo o cédula (3 letras o más)" aria-label="Buscar cuenta" />
+        <select id="f-rol" class="field" aria-label="Rol">
+          <option value="">Todas las cuentas</option>
+          <option value="personal">Todo el personal</option>
+          {ROLES_PERSONAL.map((r) => <option value={r}>{ROL_LABEL[r]}</option>)}
+          <option value="donante">Donantes</option>
+        </select>
+        <select id="f-activo" class="field" aria-label="Estado">
+          <option value="">Activas e inactivas</option>
+          <option value="si">Solo activas</option>
+          <option value="no">Solo inactivas</option>
+        </select>
+      </Filtros>
+
+      <div class="tabla-apilable" role="region" aria-label="Cuentas" tabindex="0">
+        <table class="w-full min-w-[46rem] text-left text-sm">
+          <thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
+            <tr><th class="p-3 font-bold">Persona</th><th class="p-3 font-bold">Rol</th><th class="p-3 font-bold">Sede</th><th class="p-3 font-bold">Estado</th><th class="p-3 font-bold">Último acceso</th><th class="p-3"></th></tr>
+          </thead>
+          <tbody id="filas" class="divide-y divide-line"></tbody>
+        </table>
+      </div>
+      <p id="vacio" class="hidden py-8 text-center text-sm text-ink-3">No hay cuentas que coincidan.</p>
+      <nav class="flex items-center justify-between gap-3 border-t border-line pt-4" aria-label="Páginas de cuentas">
+        <button type="button" class="btn btn-secondary btn-sm" id="ant" disabled aria-label="Página anterior">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <p id="estado-pag" class="text-xs text-ink-3 tabular" aria-live="polite"></p>
+        <button type="button" class="btn btn-secondary btn-sm" id="sig" disabled aria-label="Página siguiente">
+          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </nav>
+    </section>
+  </div>
+
+  <dialog id="dlg" class="blud-dialog" aria-labelledby="d-nombre">
+    <form id="form" class="blud-dialog-marco" novalidate>
+      <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div class="min-w-0">
+          <h2 id="d-nombre" class="text-lg font-bold text-ink"></h2>
+          <p id="d-email" class="truncate text-sm text-ink-2"></p>
+        </div>
+        <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div class="blud-dialog-cuerpo space-y-6">
+        <dl id="d-datos" class="grid grid-cols-2 gap-3 sm:grid-cols-3"></dl>
+
+        <fieldset class="space-y-2">
+          <legend class="etiqueta-campo">Qué necesitas hacer</legend>
+          <div id="acciones" class="grid gap-2 sm:grid-cols-2" role="radiogroup"></div>
+        </fieldset>
+
+        <div id="bloque-rol" class="hidden form-grid rounded-control border border-line p-4">
+          <div>
+            <label for="n-rol" class="etiqueta-campo">Rol nuevo</label>
+            <select id="n-rol" class="field">{ROLES_PERSONAL.map((r) => <option value={r}>{ROL_LABEL[r]}</option>)}</select>
+          </div>
+          <div>
+            <label for="n-sede" class="etiqueta-campo">Sede</label>
+            <select id="n-sede" class="field"></select>
+          </div>
+        </div>
+
+        <div>
+          <label for="motivo" class="etiqueta-campo">Motivo</label>
+          <textarea id="motivo" rows="3" class="field" placeholder="Por qué haces el cambio y quién lo pidió. Queda en la bitácora."></textarea>
+        </div>
+        <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+        <p id="ok" class="hidden rounded-control bg-ok-soft px-3 py-2 text-sm font-medium text-ok" role="status"></p>
+      </div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+        <button type="button" class="btn btn-secondary" data-cerrar>Cerrar</button>
+        <button type="submit" class="btn btn-primary" id="aplicar" disabled>Aplicar</button>
+      </footer>
+    </form>
+  </dialog>
+</Layout>
+
+<style is:global>
+  [data-cuentas-accion] { display: grid; gap: .125rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; text-align: left; }
+  [data-cuentas-accion]:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  [data-cuentas-accion]:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  [data-cuentas-accion][data-peligro]:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+</style>
+
+<script>
+  import {
+    MENSAJE_NO_DISPONIBLE, NoDisponible, ROL_LABEL, buscarCuentas, cambiarActivo, cambiarRol, quitarDosPasos, restablecerAcceso,
+  } from '../../lib/administracion';
+  import type { Cuenta, FiltroCuentas, RolCuenta } from '../../lib/administracion';
+  import { sedesMapa } from '../../lib/estadisticas';
+  import { getSession } from '../../lib/auth';
+  import { esc, toast } from '../../lib/ui';
+
+  type Accion = 'activo' | 'rol' | '2fa' | 'acceso';
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const fecha = (iso?: string) => {
+    if (!iso) return '—';
+    const d = new Date(iso.length === 10 ? iso + 'T00:00:00' : iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+  const TONO_ROL: Record<RolCuenta, string> = {
+    donante: 'bg-sunken text-ink-2', operador: 'bg-accent-soft text-accent-ink', laboratorio: 'bg-ok-soft text-ok',
+    soporte: 'bg-warn-soft text-warn', director: 'bg-ink text-surface',
+  };
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-cuentas]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const dlg = $<HTMLDialogElement>('#dlg');
+    const miCorreo = String(getSession()?.email ?? '').toLowerCase();
+
+    let cursores: (string | null)[] = [null];
+    let pagina = 0;
+    let siguiente: string | null = null;
+    let items: Cuenta[] = [];
+    let actual: Cuenta | null = null;
+    let peticion = 0;
+    let sedes: { id: string; nombre: string }[] = [];
+    sedesMapa().then((l) => {
+      sedes = l.map((s) => ({ id: String(s.id), nombre: s.nombre }));
+      $<HTMLSelectElement>('#n-sede').innerHTML = sedes.map((s) => `<option value="${esc(s.id)}">${esc(s.nombre)}</option>`).join('');
+    }).catch(() => {});
+
+    const filtros = (): FiltroCuentas => ({
+      q: $<HTMLInputElement>('#q').value, rol: $<HTMLSelectElement>('#f-rol').value, activo: $<HTMLSelectElement>('#f-activo').value as FiltroCuentas['activo'],
+    });
+    const chipRol = (c: Cuenta) => `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${TONO_ROL[c.rol] ?? ''}">${esc(ROL_LABEL[c.rol] ?? c.rol)}</span>`;
+    const chipEstado = (c: Cuenta) => (c.activo
+      ? '<span class="rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Activa</span>'
+      : '<span class="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-ink">Inactiva</span>')
+      + (c.dosPasos ? ' <span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2" title="Verificación en dos pasos activa">2 pasos</span>' : '');
+
+    function pintar() {
+      $('#filas').innerHTML = items.map((c, i) => `<tr>
+        <td class="p-3 celda-titulo celda-corta" data-label="Persona"><span class="block font-semibold text-ink">${esc(c.nombre)}${c.email === miCorreo ? ' <span class="text-xs font-normal text-ink-3">(tú)</span>' : ''}</span><span class="block truncate text-xs font-normal text-ink-3">${esc(c.email)}</span></td>
+        <td class="p-3 celda-estado" data-label="Rol">${chipRol(c)}</td>
+        <td class="p-3 text-ink-2" data-label="Sede">${esc(c.sede?.nombre ?? '—')}</td>
+        <td class="p-3" data-label="Estado">${chipEstado(c)}</td>
+        <td class="p-3 text-xs text-ink-2 tabular" data-label="Último acceso">${esc(fecha(c.ultimoAcceso))}</td>
+        <td class="p-3 celda-acciones text-right"><button type="button" class="btn btn-secondary btn-sm" data-abrir="${i}" ${c.email === miCorreo ? 'disabled title="No puedes gestionar tu propia cuenta"' : ''}>Gestionar</button></td>
+      </tr>`).join('');
+      $('#vacio').classList.toggle('hidden', items.length > 0);
+      $<HTMLButtonElement>('#ant').disabled = pagina === 0;
+      $<HTMLButtonElement>('#sig').disabled = !siguiente;
+      $('#estado-pag').textContent = items.length ? `Página ${pagina + 1} · ${items.length} cuentas${siguiente ? '' : ' (últimas)'}` : '';
+    }
+
+    async function ir(n: number) {
+      const yo = ++peticion;
+      try {
+        const r = await buscarCuentas(filtros(), cursores[n] ?? null);
+        if (yo !== peticion) return;
+        pagina = n; items = r.items; siguiente = r.siguiente;
+        cursores = cursores.slice(0, n + 1);
+        if (siguiente) cursores[n + 1] = siguiente;
+        $('#aviso').classList.add('hidden');
+      } catch (e) {
+        if (yo !== peticion) return;
+        items = []; siguiente = null;
+        $('#aviso').textContent = e instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (e as Error).message;
+        $('#aviso').classList.remove('hidden');
+      }
+      pintar();
+    }
+    const reiniciar = () => { cursores = [null]; ir(0); };
+    let t: number | undefined;
+    let ultima = '';
+    $('#q').addEventListener('input', () => {
+      clearTimeout(t);
+      t = window.setTimeout(() => {
+        const v = $<HTMLInputElement>('#q').value.trim();
+        const q = v.length >= 3 ? v : '';
+        if (q !== ultima) { ultima = q; reiniciar(); }
+      }, 400);
+    });
+    ['#f-rol', '#f-activo'].forEach((s) => $(s).addEventListener('change', reiniciar));
+    $('#ant').addEventListener('click', () => ir(pagina - 1));
+    $('#sig').addEventListener('click', () => ir(pagina + 1));
+
+    // ---------- Gestionar
+    const accionSel = () => (document.querySelector<HTMLInputElement>('input[name="accion"]:checked')?.value ?? '') as Accion | '';
+    const dato = (k: string, v?: string) => `<div><dt class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">${esc(k)}</dt><dd class="mt-0.5 text-sm font-semibold text-ink">${esc(v || '—')}</dd></div>`;
+    const opcion = (valor: Accion, titulo: string, ayuda: string, peligro = false) => `<label data-cuentas-accion ${peligro ? 'data-peligro' : ''}>
+      <input type="radio" name="accion" value="${valor}" class="sr-only" /><span class="text-sm font-semibold text-ink">${titulo}</span><span class="text-xs text-ink-3">${ayuda}</span></label>`;
+
+    function abrir(c: Cuenta) {
+      actual = c;
+      $<HTMLFormElement>('#form').reset();
+      ['#error', '#ok'].forEach((s) => $(s).classList.add('hidden'));
+      $('#d-nombre').textContent = c.nombre;
+      $('#d-email').textContent = c.email;
+      $('#d-datos').innerHTML = [
+        dato('Rol', ROL_LABEL[c.rol]), dato('Cargo', c.cargo), dato('Sede', c.sede?.nombre), dato('Cédula', c.cedula),
+        dato('Estado', c.activo ? 'Activa' : 'Inactiva'), dato('Verificación en 2 pasos', c.dosPasos ? 'Activa' : 'No'),
+        dato('Registrada', fecha(c.registrado)), dato('Último acceso', fecha(c.ultimoAcceso)), dato('Correo confirmado', c.confirmado === false ? 'No' : 'Sí'),
+      ].join('');
+      $('#acciones').innerHTML = [
+        c.activo
+          ? opcion('activo', 'Desactivar la cuenta', 'La persona no podrá entrar. Su historial se conserva.', true)
+          : opcion('activo', 'Activar la cuenta', 'Podrá volver a entrar con su contraseña.'),
+        c.rol !== 'donante' ? opcion('rol', 'Cambiar rol o sede', 'Para traslados o cambios de puesto.') : '',
+        c.dosPasos ? opcion('2fa', 'Quitar verificación en dos pasos', 'Si perdió el teléfono. Podrá activarla de nuevo.', true) : '',
+        opcion('acceso', 'Restablecer acceso', 'Le enviamos un enlace para crear una contraseña nueva.'),
+      ].join('');
+      $<HTMLSelectElement>('#n-rol').value = c.rol === 'donante' ? 'operador' : c.rol;
+      const sede = sedes.find((s) => s.nombre === c.sede?.nombre || s.id === String(c.sede?.id ?? ''));
+      if (sede) $<HTMLSelectElement>('#n-sede').value = sede.id;
+      pintarAccion();
+      if (!dlg.open) dlg.showModal();
+    }
+    function pintarAccion() {
+      const a = accionSel();
+      $('#bloque-rol').classList.toggle('hidden', a !== 'rol');
+      const b = $<HTMLButtonElement>('#aplicar');
+      b.disabled = !a;
+      b.textContent = a === 'activo' ? (actual?.activo ? 'Desactivar' : 'Activar') : a === 'rol' ? 'Cambiar' : a === '2fa' ? 'Quitar' : a === 'acceso' ? 'Enviar enlace' : 'Aplicar';
+      b.classList.toggle('btn-primary', true);
+    }
+    $('#acciones').addEventListener('change', pintarAccion);
+
+    $('#form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!actual) return;
+      const a = accionSel();
+      const motivo = $<HTMLTextAreaElement>('#motivo').value;
+      const err = $('#error');
+      const ok = $('#ok');
+      err.classList.add('hidden'); ok.classList.add('hidden');
+      const b = $<HTMLButtonElement>('#aplicar');
+      b.disabled = true;
+      try {
+        let msg = '';
+        if (a === 'activo') { actual = await cambiarActivo(actual, !actual.activo, motivo); msg = actual.activo ? 'Cuenta activada.' : 'Cuenta desactivada.'; }
+        else if (a === 'rol') {
+          const id = $<HTMLSelectElement>('#n-sede').value;
+          const sede = sedes.find((s) => s.id === id);
+          if (!sede) throw new Error('Elige una sede.');
+          actual = await cambiarRol(actual, $<HTMLSelectElement>('#n-rol').value as RolCuenta, sede, motivo);
+          msg = `Ahora es ${ROL_LABEL[actual.rol].toLowerCase()} en ${actual.sede?.nombre ?? sede.nombre}. El cambio aplica en su próximo inicio de sesión.`;
+        } else if (a === '2fa') { actual = await quitarDosPasos(actual, motivo); msg = 'Verificación en dos pasos quitada. Pídele que la active de nuevo al entrar.'; }
+        else if (a === 'acceso') msg = await restablecerAcceso(actual, motivo);
+        ok.textContent = msg;
+        ok.classList.remove('hidden');
+        toast('Cambio registrado en la bitácora.');
+        const i = items.findIndex((x) => x.id === actual!.id);
+        if (i >= 0) items[i] = actual!;
+        pintar();
+        abrirSinReset(actual!, msg);
+      } catch (ex) {
+        err.textContent = ex instanceof NoDisponible ? MENSAJE_NO_DISPONIBLE : (ex as Error).message;
+        err.classList.remove('hidden');
+        b.disabled = false;
+      }
+    });
+    /** Tras aplicar, refresca los datos del diálogo sin perder el mensaje de confirmación. */
+    function abrirSinReset(c: Cuenta, msg: string) {
+      abrir(c);
+      const ok = $('#ok');
+      ok.textContent = msg;
+      ok.classList.remove('hidden');
+    }
+
+    $('#filas').addEventListener('click', (e) => {
+      const i = (e.target as HTMLElement).closest<HTMLElement>('[data-abrir]')?.dataset.abrir;
+      if (i !== undefined && items[Number(i)]) abrir(items[Number(i)]);
+    });
+    dlg.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => dlg.close()));
+    ir(0);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>
