@@ -18,7 +18,7 @@ export type TipoEvento = 'sin_reaccion' | 'reaccion' | 'incidente';
 
 export interface Signos { pa?: string; fc?: string; temp?: string; fr?: string; spo2?: string }
 export interface Verificacion {
-  identidad: boolean; grupo: boolean; etiqueta: boolean; consentimiento: boolean; segundoVerificador: string;
+  identidad: boolean; grupo: boolean; etiqueta: boolean; consentimiento: boolean; ordenMedica?: boolean; segundoVerificador: string;
 }
 export interface Paciente { nombre: string; cedula: string; servicio?: string; historia?: string }
 
@@ -116,7 +116,7 @@ export const esGrave = (r: RegistroHV) => r.tipoEvento !== 'sin_reaccion' && ['G
 // ------------------------------------------------------------------ Validación (la base repite estas reglas)
 export function validarHV(d: DatosHV): string | null {
   const v = d.verificacion;
-  if (!(v.identidad && v.grupo && v.etiqueta && v.consentimiento)) return 'Completa la doble verificación en cabecera antes de registrar la transfusión.';
+  if (!(v.identidad && v.grupo && v.etiqueta && v.consentimiento && v.ordenMedica)) return 'Completa la doble verificación en cabecera (incluida la orden médica escrita) antes de registrar la transfusión.';
   if (!v.segundoVerificador.trim()) return 'Indica quién hizo la segunda verificación.';
   if (d.cerrar && !d.tipoEvento) return 'Indica cómo terminó la transfusión antes de cerrarla.';
   if (d.tipoEvento && d.tipoEvento !== 'sin_reaccion' && (!d.categoria || !d.severidad)) return 'Indica la categoría y la severidad del evento.';
@@ -248,7 +248,7 @@ export function seedHVDemo() {
   if (usaSupabase() || leerDemo().length) return;
   const pend = pendientesDemo([]);
   if (!pend.length) return;
-  const ver: Verificacion = { identidad: true, grupo: true, etiqueta: true, consentimiento: true, segundoVerificador: 'Lcda. Ana Rivas' };
+  const ver: Verificacion = { identidad: true, grupo: true, etiqueta: true, consentimiento: true, ordenMedica: true, segundoVerificador: 'Lcda. Ana Rivas' };
   const hace = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
   const b = pend[0];
   const a = pend[1];

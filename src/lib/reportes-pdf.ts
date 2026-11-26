@@ -255,6 +255,7 @@ export async function pdfHemovigilancia(r: RegistroHV) {
     fila('Grupo ABO/Rh del paciente compatible con la unidad', v.grupo),
     fila('Etiqueta, DIN y vencimiento de la bolsa', v.etiqueta),
     fila('Consentimiento informado firmado', v.consentimiento),
+    fila('Orden médica escrita verificada', !!v.ordenMedica),
     ['Segundo verificador', v.segundoVerificador || '—'],
   ]);
   pdf.seccion('Infusión');

@@ -21,6 +21,7 @@ const verificaciones = [
   { id: 'grupo', label: 'Grupo ABO/Rh compatible', hint: 'Grupo del paciente contra la etiqueta de la unidad' },
   { id: 'etiqueta', label: 'Etiqueta de la bolsa', hint: 'DIN, componente, integridad y vencimiento' },
   { id: 'consentimiento', label: 'Consentimiento informado', hint: 'Firmado y en la historia' },
+  { id: 'ordenMedica', label: 'Orden médica escrita', hint: 'Indicación firmada por el médico, coincide con la unidad' },
 ];
 ---
 
@@ -338,7 +339,7 @@ const verificaciones = [
 
       if (reg && !soloLectura) {
         const v = reg.verificacion;
-        (['identidad', 'grupo', 'etiqueta', 'consentimiento'] as const).forEach((k) => {
+        (['identidad', 'grupo', 'etiqueta', 'consentimiento', 'ordenMedica'] as const).forEach((k) => {
           form.querySelector<HTMLInputElement>(`[name="ver-${k}"]`)!.checked = !!v[k];
         });
         campo('segundo').value = v.segundoVerificador ?? '';
@@ -385,7 +386,7 @@ const verificaciones = [
         id: actual.reg?.id,
         solicitudId: base.solicitudId,
         unidadId: base.unidadId,
-        verificacion: { identidad: chk('identidad'), grupo: chk('grupo'), etiqueta: chk('etiqueta'), consentimiento: chk('consentimiento'), segundoVerificador: campo('segundo').value.trim() },
+        verificacion: { identidad: chk('identidad'), grupo: chk('grupo'), etiqueta: chk('etiqueta'), consentimiento: chk('consentimiento'), ordenMedica: chk('ordenMedica'), segundoVerificador: campo('segundo').value.trim() },
         signos: { antes: sg('antes'), durante: sg('durante'), despues: sg('despues') },
         inicio: aISO(campo('inicio').value),
         fin: aISO(campo('fin').value),

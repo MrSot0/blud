@@ -42,7 +42,7 @@ export function detalleHTML(r: RegistroHV): string {
     </dl>`)}
     ${bloque('Doble verificación', `<ul class="divide-y divide-line">
       ${control('Identidad del paciente', v.identidad)}${control('Grupo ABO/Rh compatible', v.grupo)}
-      ${control('Etiqueta, DIN y vencimiento', v.etiqueta)}${control('Consentimiento firmado', v.consentimiento)}
+      ${control('Etiqueta, DIN y vencimiento', v.etiqueta)}${control('Consentimiento firmado', v.consentimiento)}${control('Orden médica escrita', !!v.ordenMedica)}
     </ul><p class="text-sm text-ink-2">Segundo verificador: <strong class="text-ink">${esc(v.segundoVerificador || '—')}</strong></p>`)}
     ${bloque('Infusión', `<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
       ${dato('Inicio', fmtFechaHora(r.inicio))}${dato('Fin', fmtFechaHora(r.fin))}${dato('Duración', dur === null ? null : `${dur} min`)}${dato('Volumen', r.volumenMl ? `${r.volumenMl} ml` : null)}

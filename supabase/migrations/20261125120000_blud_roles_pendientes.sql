@@ -7,9 +7,10 @@
 --      signos vitales, reacción adversa y acciones); el laboratorio y la dirección consultan. Usa hemo_vigilancia.
 --   3. Bitácora (T9, I2, A4): consulta paginada de bitacora_auditoria para la dirección (su sede) y soporte (red).
 --
--- Se puede repetir. ANTES DE APLICAR: hemo_vigilancia se creó fuera de las migraciones del repositorio. Revisa
--- sus columnas (information_schema.columns) y que ninguna NOT NULL sin valor por defecto quede fuera del insert
--- de private.hv_guardar; si la hay, añádela allí.
+-- Se puede repetir. hemo_vigilancia ya existía (fuera de las migraciones): se reutilizan sus columnas hora_inicio,
+-- hora_fin, signos_vitales_monitoreo, signos_vitales_post_transfision, sintomas_presentados, acciones_tomadas,
+-- categoria_reaccion, tipo_reaccion y las banderas consentimiento_informado_ok, orden_medica_verificada y
+-- doble_chequeo_camilla_ok (verificado contra la base el 26-11-2026).
 
 -- ============================================================ 1. Reportes del personal a soporte
 do $$
@@ -32,16 +33,10 @@ alter table public.hemo_vigilancia
   add column if not exists actualizado_en timestamptz default now(),
   add column if not exists estado_registro varchar default 'en_curso',
   add column if not exists verificacion jsonb default '{}',
-  add column if not exists signos jsonb default '{}',
-  add column if not exists hora_inicio timestamptz,
-  add column if not exists hora_fin timestamptz,
   add column if not exists volumen_infundido_ml smallint,
   add column if not exists tipo_evento varchar,
-  add column if not exists categoria_reaccion varchar,
   add column if not exists severidad_reaccion varchar,
   add column if not exists imputabilidad varchar,
-  add column if not exists sintomas text,
-  add column if not exists acciones_tomadas text,
   add column if not exists medico_nombre varchar,
   add column if not exists ubicacion_paciente varchar;
 
@@ -86,7 +81,7 @@ language sql stable set search_path = public, pg_temp as $$
     'registrado', h.registrado_en,
     'actualizado', h.actualizado_en,
     'verificacion', h.verificacion,
-    'signos', h.signos,
+    'signos', coalesce(h.signos_vitales_monitoreo, '{}'),
     'inicio', h.hora_inicio,
     'fin', h.hora_fin,
     'volumenMl', h.volumen_infundido_ml,
@@ -94,7 +89,7 @@ language sql stable set search_path = public, pg_temp as $$
     'categoria', h.categoria_reaccion,
     'severidad', h.severidad_reaccion,
     'imputabilidad', h.imputabilidad,
-    'sintomas', h.sintomas,
+    'sintomas', h.sintomas_presentados,
     'acciones', h.acciones_tomadas
   ))
 $$;
@@ -175,8 +170,9 @@ begin
 
   -- RF-H1: la doble verificación en cabecera es obligatoria antes de iniciar.
   if not (coalesce((v_ver ->> 'identidad')::boolean, false) and coalesce((v_ver ->> 'grupo')::boolean, false)
-          and coalesce((v_ver ->> 'etiqueta')::boolean, false) and coalesce((v_ver ->> 'consentimiento')::boolean, false)) then
-    raise exception 'Completa la doble verificación en cabecera antes de registrar la transfusión.';
+          and coalesce((v_ver ->> 'etiqueta')::boolean, false) and coalesce((v_ver ->> 'consentimiento')::boolean, false)
+          and coalesce((v_ver ->> 'ordenMedica')::boolean, false)) then
+    raise exception 'Completa la doble verificación en cabecera (incluida la orden médica escrita) antes de registrar la transfusión.';
   end if;
   if coalesce(trim(v_ver ->> 'segundoVerificador'), '') = '' then
     raise exception 'Indica quién hizo la segunda verificación.';
@@ -196,12 +192,16 @@ begin
     end if;
     v_folio := 'HV-' || to_char(now(), 'YYYY') || '-' || lpad(nextval('private.hemo_folio_seq')::text, 4, '0');
     insert into hemo_vigilancia (folio, solicitud_id, unidad_id, paciente_id, sede_id, registrado_por, registrado_en, actualizado_en,
-                                 estado_registro, verificacion, signos, hora_inicio, hora_fin, volumen_infundido_ml, tipo_evento,
-                                 categoria_reaccion, severidad_reaccion, imputabilidad, sintomas, acciones_tomadas, medico_nombre,
+                                 estado_registro, verificacion, consentimiento_informado_ok, orden_medica_verificada, doble_chequeo_camilla_ok,
+                                 reaccion_adversa_observada, tipo_reaccion, signos_vitales_monitoreo, signos_vitales_post_transfision,
+                                 hora_inicio, hora_fin, volumen_infundido_ml, tipo_evento,
+                                 categoria_reaccion, severidad_reaccion, imputabilidad, sintomas_presentados, acciones_tomadas, medico_nombre,
                                  ubicacion_paciente)
     values (v_folio, v_sid, v_uni, v_st.pacienteid, v_sede, public._uid(), now(), now(),
-            case when v_cerrar then 'cerrado' else 'en_curso' end, v_ver, coalesce(p -> 'signos', '{}'),
-            (p ->> 'inicio')::timestamptz, (p ->> 'fin')::timestamptz, nullif(p ->> 'volumenMl', '')::smallint, v_tipo,
+            case when v_cerrar then 'cerrado' else 'en_curso' end, v_ver, true, true, true,
+            v_tipo = 'reaccion', case when v_tipo in ('reaccion', 'incidente') then nullif(trim(p ->> 'categoria'), '') end,
+            coalesce(p -> 'signos', '{}'), p -> 'signos' -> 'despues',
+            coalesce((p ->> 'inicio')::timestamptz, now()), (p ->> 'fin')::timestamptz, nullif(p ->> 'volumenMl', '')::smallint, v_tipo,
             nullif(trim(p ->> 'categoria'), ''), nullif(trim(p ->> 'severidad'), ''), nullif(trim(p ->> 'imputabilidad'), ''),
             nullif(trim(p ->> 'sintomas'), ''), nullif(trim(p ->> 'acciones'), ''), nullif(trim(p ->> 'medico'), ''),
             nullif(trim(p ->> 'ubicacion'), ''));
@@ -209,11 +209,13 @@ begin
     v_folio := v_prev.folio;
     update hemo_vigilancia set
       actualizado_en = now(), estado_registro = case when v_cerrar then 'cerrado' else 'en_curso' end,
-      verificacion = v_ver, signos = coalesce(p -> 'signos', '{}'),
-      hora_inicio = (p ->> 'inicio')::timestamptz, hora_fin = (p ->> 'fin')::timestamptz,
+      verificacion = v_ver, signos_vitales_monitoreo = coalesce(p -> 'signos', '{}'), signos_vitales_post_transfision = p -> 'signos' -> 'despues',
+      reaccion_adversa_observada = v_tipo = 'reaccion',
+      tipo_reaccion = case when v_tipo in ('reaccion', 'incidente') then nullif(trim(p ->> 'categoria'), '') end,
+      hora_inicio = coalesce((p ->> 'inicio')::timestamptz, hora_inicio), hora_fin = (p ->> 'fin')::timestamptz,
       volumen_infundido_ml = nullif(p ->> 'volumenMl', '')::smallint, tipo_evento = v_tipo,
       categoria_reaccion = nullif(trim(p ->> 'categoria'), ''), severidad_reaccion = nullif(trim(p ->> 'severidad'), ''),
-      imputabilidad = nullif(trim(p ->> 'imputabilidad'), ''), sintomas = nullif(trim(p ->> 'sintomas'), ''),
+      imputabilidad = nullif(trim(p ->> 'imputabilidad'), ''), sintomas_presentados = nullif(trim(p ->> 'sintomas'), ''),
       acciones_tomadas = nullif(trim(p ->> 'acciones'), ''), medico_nombre = nullif(trim(p ->> 'medico'), ''),
       ubicacion_paciente = nullif(trim(p ->> 'ubicacion'), '')
     where folio = v_folio;
