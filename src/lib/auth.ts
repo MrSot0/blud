@@ -524,7 +524,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 export const STAFF_ROLES: Role[] = ['operador', 'laboratorio', 'soporte', 'director'];
 const INACTIVE_KEY = 'blud-staff-inactive';
-const CUENTA_INACTIVA = 'Tu cuenta está desactivada. Habla con la dirección del banco de sangre.';
+const CUENTA_INACTIVA = 'Tu cuenta está desactivada. Habla con la dirección de tu centro o escribe a soporte@blud.app.';
 
 export interface CuentaPersonal {
   email: string;
