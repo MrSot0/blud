@@ -8,36 +8,36 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
 ---
 
 <Layout title="BLUD | Hemovigilancia" description="Registros transfusionales y eventos adversos de la sede y de la red.">
-  <div class="container-blud py-8 space-y-6" data-hvd>
+  <div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-hvd>
     <div class="page-head">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Hemovigilancia</h1>
         <p class="text-ink-2 text-sm sm:text-base mt-1">Cada transfusión que registran los operadores: verificación, signos vitales y eventos adversos.</p>
       </div>
       <div class="page-head-acciones">
-        <button type="button" class="btn btn-secondary btn-sm" id="btn-csv">Exportar CSV</button>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-pdf">Consolidado PDF</button>
+        <button type="button" class="btn btn-secondary" id="btn-csv">Exportar CSV</button>
+        <button type="button" class="btn btn-primary" id="btn-pdf">Consolidado PDF</button>
       </div>
     </div>
 
     <p id="aviso" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status"></p>
 
-    <div class="flex flex-wrap items-end justify-between gap-3">
-      <div class="inline-flex rounded-full border border-line bg-surface p-1" role="group" aria-label="Alcance">
-        <button type="button" class="hvd-alcance" data-alcance="sede" aria-pressed="true">Mi sede</button>
-        <button type="button" class="hvd-alcance" data-alcance="red" aria-pressed="false">Toda la red</button>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div class="chips-scroll" role="group" aria-label="Alcance">
+        <button type="button" class="pildora" data-alcance="sede" aria-pressed="true">Mi sede</button>
+        <button type="button" class="pildora" data-alcance="red" aria-pressed="false">Toda la red</button>
       </div>
-      <div class="grid w-full grid-cols-2 gap-2 text-sm sm:w-auto">
-        <label class="min-w-0"><span class="block text-xs font-bold uppercase text-ink-3">Desde</span><input id="desde" type="date" class="field !min-h-10 w-full min-w-0" /></label>
-        <label class="min-w-0"><span class="block text-xs font-bold uppercase text-ink-3">Hasta</span><input id="hasta" type="date" class="field !min-h-10 w-full min-w-0" /></label>
+      <div class="grid grid-cols-2 gap-2 sm:w-[22rem]">
+        <div class="min-w-0"><label for="desde" class="etiqueta-campo">Desde</label><input id="desde" type="date" class="field min-w-0" /></div>
+        <div class="min-w-0"><label for="hasta" class="etiqueta-campo">Hasta</label><input id="hasta" type="date" class="field min-w-0" /></div>
       </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" id="kpis" aria-live="polite">
-      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Transfusiones</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-kpi="total">—</p><p class="text-xs text-ink-3">unidades registradas</p></div>
-      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Con evento</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-kpi="eventos">—</p><p class="text-xs text-ink-3" data-kpi="tasa">tasa —</p></div>
-      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">Graves</p><p class="mt-1 text-2xl font-extrabold tabular" data-kpi="graves">—</p><p class="text-xs text-ink-3">grave, amenaza la vida o muerte</p></div>
-      <div class="panel p-4"><p class="text-xs font-bold uppercase text-ink-3">En curso</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-kpi="curso">—</p><p class="text-xs text-ink-3">registros sin cerrar</p></div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" id="kpis" aria-live="polite">
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Transfusiones</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-kpi="total">—</p><p class="text-xs text-ink-3">unidades registradas</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Con evento</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-kpi="eventos">—</p><p class="text-xs text-ink-3" data-kpi="tasa">tasa —</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">Graves</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-kpi="graves">—</p><p class="text-xs text-ink-3">grave, amenaza la vida o muerte</p></div>
+      <div class="panel p-4 sm:p-5"><p class="text-[0.6875rem] sm:text-xs font-bold uppercase text-ink-3">En curso</p><p class="mt-0.5 text-2xl sm:text-3xl font-extrabold text-ink tabular" data-kpi="curso">—</p><p class="text-xs text-ink-3">registros sin cerrar</p></div>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -71,13 +71,13 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
       <section class="panel p-4 sm:p-6 space-y-4 self-start" aria-labelledby="h-cat">
         <h2 id="h-cat" class="text-lg font-bold text-ink">Eventos por categoría</h2>
         <ul id="categorias" class="space-y-3"></ul>
-        <p id="sin-cat" class="hidden text-sm text-ink-3">Sin eventos adversos en el periodo.</p>
+        <p id="sin-cat" class="hidden py-4 text-center text-sm text-ink-3">Sin eventos adversos en el periodo.</p>
       </section>
     </div>
   </div>
 
-  <dialog id="dlg" class="hvd-dialog" aria-labelledby="d-titulo">
-    <div class="flex max-h-[inherit] flex-col">
+  <dialog id="dlg" class="blud-dialog blud-dialog-ancho" aria-labelledby="d-titulo">
+    <div class="blud-dialog-marco">
       <header class="flex items-start justify-between gap-4 border-b border-line p-5">
         <div class="min-w-0">
           <p class="font-mono text-xs font-bold text-ink-3" id="d-folio"></p>
@@ -88,22 +88,14 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
           <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </header>
-      <div class="flex-1 space-y-6 overflow-y-auto p-5" id="d-cuerpo"></div>
-      <footer class="flex flex-col-reverse gap-2 border-t border-line p-4 sm:flex-row sm:justify-end">
+      <div class="blud-dialog-cuerpo space-y-6" id="d-cuerpo"></div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
         <button type="button" class="btn btn-secondary" data-cerrar>Cerrar</button>
         <button type="button" class="btn btn-primary" id="d-pdf">Descargar PDF</button>
       </footer>
     </div>
   </dialog>
 </Layout>
-
-<style is:global>
-  [data-hvd] .hvd-alcance { padding: .4rem 1rem; border-radius: 9999px; font-size: .875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
-  [data-hvd] .hvd-alcance[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
-  .hvd-dialog { width: min(48rem, calc(100vw - 1rem)); max-height: min(92dvh, 60rem); padding: 0; margin: auto; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--surface); color: var(--ink); box-shadow: 0 30px 60px -20px rgb(0 0 0 / .45); }
-  .hvd-dialog::backdrop { background: rgb(0 0 0 / .5); backdrop-filter: blur(4px); }
-  @media (max-width: 639px) { .hvd-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; } .hvd-dialog > div { height: 100%; } }
-</style>
 
 <script>
   import { HVNoDisponible, TIPO_EVENTO, esGrave, fmtFechaHora, listarHV, seedHVDemo } from '../../lib/hemovigilancia';
@@ -147,13 +139,13 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
       $('[data-kpi="tasa"]').textContent = total ? `tasa ${(Math.round((eventos.length / total) * 1000) / 10).toLocaleString('es-VE')} %` : 'tasa —';
       const g = $('[data-kpi="graves"]');
       g.textContent = String(graves);
-      g.className = `mt-1 text-2xl font-extrabold tabular ${graves ? 'text-accent-ink' : 'text-ink'}`;
+      g.className = `mt-0.5 text-2xl sm:text-3xl font-extrabold tabular ${graves ? 'text-accent-ink' : 'text-ink'}`;
       $('[data-kpi="curso"]').textContent = String(registros.filter((r) => r.estado === 'en_curso').length);
 
       const vis = visibles();
       $('#n-vis').textContent = String(vis.length);
       $('#filas').innerHTML = vis.map((r) => `<tr class="${esGrave(r) ? 'bg-accent-soft/40' : ''}">
-        <td class="p-3 celda-titulo celda-corta" data-label="Folio"><span class="font-mono text-xs font-bold">${esc(r.id)}</span><span class="block text-xs font-normal text-ink-3">${esc(r.paciente?.nombre ?? '')}</span></td>
+        <td class="p-3 celda-titulo celda-corta" data-label="Folio"><span class="whitespace-nowrap font-mono text-xs font-bold">${esc(r.id)}</span><span class="block text-xs font-normal text-ink-3">${esc(r.paciente?.nombre ?? '')}</span></td>
         <td class="p-3 celda-estado" data-label="Estado">${chipEstadoHV(r)}</td>
         <td class="p-3 text-xs text-ink-2 tabular" data-label="Fecha">${esc(fmtFechaHora(r.registrado))}</td>
         <td class="p-3" data-label="Sede">${esc(r.sede?.nombre ?? '—')}</td>

@@ -4,18 +4,18 @@
 // eslabón. Lo usan dirección y laboratorio. Ver lib/trazabilidad.
 ---
 
-<div class="container-blud py-8 space-y-6" data-traza>
+<div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-traza>
   <div class="page-head">
     <div class="min-w-0">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Trazabilidad</h1>
       <p class="text-ink-2 text-sm sm:text-base mt-1">Sigue una bolsa en los dos sentidos: del donante al paciente que la recibió y del paciente de vuelta al donante. Cada consulta queda en la bitácora.</p>
     </div>
     <div class="page-head-acciones">
-      <button type="button" class="btn btn-secondary btn-sm" data-tz-csv disabled>Exportar CSV</button>
+      <button type="button" class="btn btn-secondary" data-tz-csv disabled>Exportar CSV</button>
     </div>
   </div>
 
-  <section class="panel p-4 sm:p-6 space-y-3">
+  <section class="panel p-4 sm:p-6 space-y-3" aria-label="Buscar">
     <form class="flex flex-col gap-2 sm:flex-row" data-tz-form novalidate>
       <label for="tz-q" class="sr-only">Buscar</label>
       <input id="tz-q" type="search" class="field flex-1 font-mono" placeholder="DIN, código de bolsa, cédula o REQ-…" autocomplete="off" />

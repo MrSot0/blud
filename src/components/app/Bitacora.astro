@@ -2,6 +2,7 @@
 // src/components/app/Bitacora.astro
 // Bitácora de auditoría paginada (dirección: su sede; soporte: toda la red). Ver lib/bitacora.
 import Filtros from './Filtros.astro';
+import PaginasCursor from './PaginasCursor.astro';
 import { MODULO } from '../../lib/bitacora';
 
 const modulos = Object.entries(MODULO).sort((a, b) => a[1].localeCompare(b[1]));
@@ -10,7 +11,7 @@ interface Props { alcance: 'sede' | 'red' }
 const { alcance } = Astro.props;
 ---
 
-<div class="container-blud py-8 space-y-6" data-bitacora>
+<div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-bitacora>
   <div class="page-head">
     <div class="min-w-0">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Bitácora</h1>
@@ -21,7 +22,7 @@ const { alcance } = Astro.props;
       </p>
     </div>
     <div class="page-head-acciones">
-      <button type="button" class="btn btn-secondary btn-sm" data-bit-csv>Exportar esta página</button>
+      <button type="button" class="btn btn-secondary" data-bit-csv>Exportar esta página</button>
     </div>
   </div>
 
@@ -33,7 +34,7 @@ const { alcance } = Astro.props;
       <input type="date" class="field" aria-label="Hasta" data-bit-hasta data-no-cuenta />
     </Filtros>
 
-    <p class="hidden rounded-control bg-warn-soft px-3 py-2 text-sm font-medium text-warn" role="status" data-bit-aviso></p>
+    <p class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status" data-bit-aviso></p>
 
     <div class="tabla-apilable" role="region" aria-label="Entradas de la bitácora" tabindex="0">
       <table class="w-full min-w-[44rem] text-left text-sm">
@@ -51,17 +52,7 @@ const { alcance } = Astro.props;
       </table>
     </div>
     <p class="hidden py-8 text-center text-sm text-ink-3" data-bit-vacio>No hay entradas que coincidan con los filtros.</p>
-    <nav class="flex items-center justify-between gap-3 border-t border-line pt-4" aria-label="Páginas de la bitácora">
-      <button type="button" class="btn btn-secondary btn-sm" data-bit-ant disabled aria-label="Página anterior (más recientes)">
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-        <span class="hidden sm:inline">Más recientes</span>
-      </button>
-      <p class="text-center text-xs text-ink-3 tabular" data-bit-estado aria-live="polite"></p>
-      <button type="button" class="btn btn-secondary btn-sm" data-bit-sig disabled aria-label="Página siguiente (más antiguas)">
-        <span class="hidden sm:inline">Más antiguas</span>
-        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
-    </nav>
+    <PaginasCursor etiqueta="Páginas de la bitácora" anterior="Más recientes" siguiente="Más antiguas" />
   </section>
 </div>
 
@@ -111,15 +102,15 @@ const { alcance } = Astro.props;
     </tr>`;
 
     const botones = (cargando: boolean) => {
-      q<HTMLButtonElement>('[data-bit-ant]').disabled = cargando || pagina === 0;
-      q<HTMLButtonElement>('[data-bit-sig]').disabled = cargando || !siguiente;
+      q<HTMLButtonElement>('[data-pag-ant]').disabled = cargando || pagina === 0;
+      q<HTMLButtonElement>('[data-pag-sig]').disabled = cargando || !siguiente;
     };
 
     const pintar = () => {
       q('[data-bit-filas]').innerHTML = items.map(fila).join('');
       q('[data-bit-vacio]').classList.toggle('hidden', items.length > 0);
       const desde = pagina * POR_PAGINA + 1;
-      q('[data-bit-estado]').textContent = items.length
+      q('[data-pag-estado]').textContent = items.length
         ? `Página ${pagina + 1} · entradas ${desde}–${desde + items.length - 1}${siguiente ? '' : ' (últimas)'}`
         : '';
       botones(false);
@@ -172,8 +163,8 @@ const { alcance } = Astro.props;
       }, 400);
     });
     ['[data-bit-tabla]', '[data-bit-desde]', '[data-bit-hasta]'].forEach((s) => q(s).addEventListener('change', reiniciar));
-    q('[data-bit-ant]').addEventListener('click', () => ir(pagina - 1));
-    q('[data-bit-sig]').addEventListener('click', () => ir(pagina + 1));
+    q('[data-pag-ant]').addEventListener('click', () => ir(pagina - 1));
+    q('[data-pag-sig]').addEventListener('click', () => ir(pagina + 1));
     q('[data-bit-csv]').addEventListener('click', () => {
       if (!items.length) return toast('No hay entradas para exportar.');
       const rows = items.map((e) => ({

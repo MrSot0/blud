@@ -10,19 +10,19 @@ const { role } = Astro.props;
 const guia = GUIA[role];
 ---
 
-<div class="container-blud py-8 space-y-8" data-ayuda data-rol={role}>
+<div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-ayuda data-rol={role}>
   <div class="page-head">
     <div class="min-w-0">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Ayuda</h1>
       <p class="text-ink-2 text-sm sm:text-base mt-1">Respuestas a las dudas frecuentes de tu rol y un canal directo con soporte técnico.</p>
     </div>
     <div class="page-head-acciones">
-      <a href="#reportar" class="btn btn-primary btn-sm">Reportar un problema</a>
+      <a href="#reportar" class="btn btn-primary">Reportar un problema</a>
     </div>
   </div>
 
-  <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-    <section class="panel p-5 sm:p-8 space-y-2" aria-labelledby="h-guia">
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
+    <section class="panel p-4 sm:p-6 space-y-2" aria-labelledby="h-guia">
       <h2 id="h-guia" class="text-lg font-bold text-ink border-b border-line pb-3">Preguntas frecuentes</h2>
       <div class="divide-y divide-line">
         {guia.map((g) => (
@@ -38,25 +38,25 @@ const guia = GUIA[role];
       </div>
     </section>
 
-    <section id="reportar" class="panel p-5 sm:p-8 space-y-5 scroll-mt-24" aria-labelledby="h-reportar">
+    <section id="reportar" class="panel p-4 sm:p-6 space-y-4 scroll-mt-24" aria-labelledby="h-reportar">
       <div class="border-b border-line pb-3">
         <h2 id="h-reportar" class="text-lg font-bold text-ink">Reportar un problema</h2>
         <p class="mt-1 text-sm text-ink-3">Lo recibe soporte técnico. Te responde aquí mismo.</p>
       </div>
       <form class="space-y-4" data-ayuda-form novalidate>
         <div>
-          <label for="ay-asunto" class="block text-xs font-bold uppercase text-ink-2 mb-1">De qué se trata</label>
+          <label for="ay-asunto" class="etiqueta-campo">De qué se trata</label>
           <select id="ay-asunto" class="field" required>
             <option value="">Elegir</option>
             {ASUNTOS_PERSONAL.map((a) => <option value={a}>{a}</option>)}
           </select>
         </div>
         <div>
-          <label for="ay-pantalla" class="block text-xs font-bold uppercase text-ink-2 mb-1">Pantalla donde ocurrió <span class="font-normal normal-case text-ink-3">(opcional)</span></label>
+          <label for="ay-pantalla" class="etiqueta-campo">Pantalla donde ocurrió <span class="font-normal normal-case text-ink-3">(opcional)</span></label>
           <input id="ay-pantalla" class="field" placeholder="Ej. Despachos" />
         </div>
         <div>
-          <label for="ay-texto" class="block text-xs font-bold uppercase text-ink-2 mb-1">Qué pasó</label>
+          <label for="ay-texto" class="etiqueta-campo">Qué pasó</label>
           <textarea id="ay-texto" rows="5" class="field" required placeholder="Qué intentabas hacer, qué esperabas y qué ocurrió. Si salió un mensaje, cópialo."></textarea>
         </div>
         <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert" data-ayuda-error></p>
@@ -65,16 +65,16 @@ const guia = GUIA[role];
     </section>
   </div>
 
-  <section class="panel p-5 sm:p-8 space-y-4" aria-labelledby="h-mis">
+  <section class="panel p-4 sm:p-6 space-y-4" aria-labelledby="h-mis">
     <h2 id="h-mis" class="text-lg font-bold text-ink border-b border-line pb-3">Mis reportes <span class="text-ink-3 text-sm font-semibold">(<span data-ayuda-n>0</span>)</span></h2>
     <ul class="divide-y divide-line" data-ayuda-lista></ul>
-    <p class="hidden py-6 text-center text-sm text-ink-3" data-ayuda-vacio>Todavía no has reportado ningún problema.</p>
+    <p class="hidden py-8 text-center text-sm text-ink-3" data-ayuda-vacio>Todavía no has reportado ningún problema.</p>
   </section>
 </div>
 
-<dialog class="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-panel bg-transparent p-0 backdrop:bg-black/60" data-ayuda-dialogo aria-labelledby="ay-d-titulo">
-  <div class="panel flex max-h-[85dvh] flex-col">
-    <div class="flex items-start justify-between gap-4 border-b border-line p-5">
+<dialog class="blud-dialog" data-ayuda-dialogo aria-labelledby="ay-d-titulo">
+  <div class="blud-dialog-marco">
+    <header class="flex items-start justify-between gap-4 border-b border-line p-5">
       <div class="min-w-0">
         <p class="font-mono text-xs font-bold text-ink-3" data-ayuda-d-codigo></p>
         <h2 id="ay-d-titulo" class="text-lg font-bold text-ink" data-ayuda-d-asunto></h2>
@@ -83,8 +83,8 @@ const guia = GUIA[role];
       <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-ayuda-cerrar aria-label="Cerrar">
         <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
-    </div>
-    <ol class="flex-1 space-y-3 overflow-y-auto p-5" data-ayuda-hilo></ol>
+    </header>
+    <ol class="blud-dialog-cuerpo space-y-3" data-ayuda-hilo></ol>
     <form class="flex gap-2 border-t border-line p-4" data-ayuda-responder>
       <label for="ay-resp" class="sr-only">Responder</label>
       <input id="ay-resp" class="field flex-1" placeholder="Escribe una respuesta" autocomplete="off" />
@@ -125,7 +125,7 @@ const guia = GUIA[role];
         return `<li><button type="button" data-ayuda-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 rounded-control py-4 text-left hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2">
           <div class="min-w-0 flex-1">
             <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span>
-              ${respuesta && t.estado !== 'resuelto' ? '<span class="rounded-full bg-ok-soft px-2 py-0.5 text-[0.6875rem] font-bold text-ok">Soporte respondió</span>' : ''}</p>
+              ${respuesta && t.estado !== 'resuelto' ? '<span class="rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Soporte respondió</span>' : ''}</p>
             <p class="truncate text-sm text-ink-2">${esc(ult?.texto ?? '')}</p>
           </div>
           <div class="flex items-center gap-3 sm:shrink-0">${chip(t)}<span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span></div>

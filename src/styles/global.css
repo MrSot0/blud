@@ -653,6 +653,7 @@ html:not([data-role="director"]) [data-role-only="director"] {
 .blud-dialog-marco { display: flex; flex-direction: column; max-height: inherit; }
 .blud-dialog-cuerpo { flex: 1; min-height: 0; overflow-y: auto; padding: 1.25rem; }
 .blud-dialog-angosto { width: min(30rem, calc(100vw - 1rem)); }
+.blud-dialog-ancho { width: min(52rem, calc(100vw - 1rem)); }
 @media (max-width: 639px) {
   .blud-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; }
   .blud-dialog-marco { height: 100%; }
@@ -662,3 +663,9 @@ html:not([data-role="director"]) [data-role-only="director"] {
 .pildora span { opacity: .7; font-variant-numeric: tabular-nums; }
 .pildora[aria-pressed="true"], .pildora[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .etiqueta-campo { display: block; margin-bottom: .25rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; color: var(--ink-2); }
+/* Opción en forma de tarjeta (radio oculto con .sr-only dentro de un <label class="opcion-tarjeta">).
+   data-peligro la marca en rojo al elegirla (acciones que quitan acceso). */
+.opcion-tarjeta { display: grid; gap: .125rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); text-align: left; cursor: pointer; }
+.opcion-tarjeta:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.opcion-tarjeta:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.opcion-tarjeta[data-peligro]:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }

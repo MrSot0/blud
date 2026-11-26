@@ -25,7 +25,7 @@ const verificaciones = [
 ---
 
 <LayoutOperador title="BLUD | Hemovigilancia" description="Registro de cada transfusión: doble verificación, signos vitales y reacciones adversas.">
-  <div class="container-blud py-8 space-y-6" data-hv>
+  <div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-hv>
     <div class="page-head">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Hemovigilancia</h1>
@@ -36,9 +36,9 @@ const verificaciones = [
     <p id="hv-aviso" class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status"></p>
 
     <div class="chips-scroll" role="tablist" aria-label="Registros">
-      <button type="button" role="tab" class="hv-tab" data-tab="pendientes" aria-selected="true">Por registrar <span data-n="pendientes">0</span></button>
-      <button type="button" role="tab" class="hv-tab" data-tab="en_curso" aria-selected="false">En curso <span data-n="en_curso">0</span></button>
-      <button type="button" role="tab" class="hv-tab" data-tab="cerrado" aria-selected="false">Cerrados <span data-n="cerrado">0</span></button>
+      <button type="button" role="tab" class="pildora" data-tab="pendientes" aria-selected="true">Por registrar <span data-n="pendientes">0</span></button>
+      <button type="button" role="tab" class="pildora" data-tab="en_curso" aria-selected="false">En curso <span data-n="en_curso">0</span></button>
+      <button type="button" role="tab" class="pildora" data-tab="cerrado" aria-selected="false">Cerrados <span data-n="cerrado">0</span></button>
     </div>
 
     <section class="panel p-4 sm:p-6" data-frame="pendientes" aria-labelledby="h-pend">
@@ -63,8 +63,8 @@ const verificaciones = [
   </div>
 
   <!-- Formulario de registro -->
-  <dialog id="dlg" class="hv-dialog" aria-labelledby="dlg-titulo">
-    <form id="form" class="flex max-h-[inherit] flex-col" novalidate>
+  <dialog id="dlg" class="blud-dialog blud-dialog-ancho" data-hv-dlg aria-labelledby="dlg-titulo">
+    <form id="form" class="blud-dialog-marco" novalidate>
       <header class="flex items-start justify-between gap-4 border-b border-line p-5">
         <div class="min-w-0">
           <p class="font-mono text-xs font-bold text-ink-3" id="dlg-folio"></p>
@@ -76,9 +76,9 @@ const verificaciones = [
         </button>
       </header>
 
-      <div class="flex-1 space-y-7 overflow-y-auto p-5" id="dlg-cuerpo">
+      <div class="blud-dialog-cuerpo space-y-6" id="dlg-cuerpo">
         <fieldset class="space-y-3">
-          <legend class="hv-legend">1. Doble verificación en cabecera</legend>
+          <legend class="w-full border-b border-line pb-1.5 text-xs font-bold uppercase tracking-wider text-ink-2">1. Doble verificación en cabecera</legend>
           <div class="grid gap-2 sm:grid-cols-2">
             {verificaciones.map((v) => (
               <label class="hv-check">
@@ -89,44 +89,44 @@ const verificaciones = [
           </div>
           <div class="form-grid">
             <div class="col-full">
-              <label for="segundo" class="hv-label">Segundo verificador</label>
+              <label for="segundo" class="etiqueta-campo">Segundo verificador</label>
               <input id="segundo" class="field" placeholder="Nombre de quien verificó contigo" autocomplete="off" />
             </div>
             <div>
-              <label for="ubicacion" class="hv-label">Ubicación del paciente</label>
+              <label for="ubicacion" class="etiqueta-campo">Ubicación del paciente</label>
               <input id="ubicacion" class="field" placeholder="Servicio y cama" />
             </div>
             <div>
-              <label for="medico" class="hv-label">Médico responsable</label>
+              <label for="medico" class="etiqueta-campo">Médico responsable</label>
               <input id="medico" class="field" placeholder="Dr(a). Nombre Apellido" />
             </div>
           </div>
         </fieldset>
 
         <fieldset class="space-y-3">
-          <legend class="hv-legend">2. Infusión</legend>
+          <legend class="w-full border-b border-line pb-1.5 text-xs font-bold uppercase tracking-wider text-ink-2">2. Infusión</legend>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div class="col-span-2 sm:col-span-1">
-              <label for="inicio" class="hv-label">Inicio</label>
+              <label for="inicio" class="etiqueta-campo">Inicio</label>
               <input id="inicio" type="datetime-local" class="field" />
             </div>
             <div>
-              <label for="fin" class="hv-label">Fin</label>
+              <label for="fin" class="etiqueta-campo">Fin</label>
               <input id="fin" type="datetime-local" class="field" />
             </div>
             <div>
-              <label for="volumen" class="hv-label">Volumen (ml)</label>
+              <label for="volumen" class="etiqueta-campo">Volumen (ml)</label>
               <input id="volumen" type="number" min="0" max="2000" inputmode="numeric" class="field" placeholder="280" />
             </div>
           </div>
         </fieldset>
 
         <fieldset class="space-y-3">
-          <legend class="hv-legend">3. Signos vitales</legend>
+          <legend class="w-full border-b border-line pb-1.5 text-xs font-bold uppercase tracking-wider text-ink-2">3. Signos vitales</legend>
           <div class="grid gap-3 lg:grid-cols-3">
             {momentos.map((m) => (
               <div class="rounded-control border border-line p-3">
-                <p class="mb-2 text-xs font-bold uppercase text-ink-2">{m.label}</p>
+                <p class="etiqueta-campo mb-2">{m.label}</p>
                 <div class="grid grid-cols-3 gap-2 lg:grid-cols-2">
                   {signos.map((s) => (
                     <label class="block">
@@ -141,11 +141,11 @@ const verificaciones = [
         </fieldset>
 
         <fieldset class="space-y-3">
-          <legend class="hv-legend">4. Cómo terminó</legend>
+          <legend class="w-full border-b border-line pb-1.5 text-xs font-bold uppercase tracking-wider text-ink-2">4. Cómo terminó</legend>
           <div class="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Resultado de la transfusión">
-            <label class="hv-opcion"><input type="radio" name="tipo" value="sin_reaccion" class="sr-only" /><span class="font-semibold text-ink">Sin reacción</span><span class="text-xs text-ink-3">Terminó sin eventos</span></label>
-            <label class="hv-opcion"><input type="radio" name="tipo" value="reaccion" class="sr-only" /><span class="font-semibold text-ink">Reacción adversa</span><span class="text-xs text-ink-3">Signos o síntomas en el paciente</span></label>
-            <label class="hv-opcion"><input type="radio" name="tipo" value="incidente" class="sr-only" /><span class="font-semibold text-ink">Incidente</span><span class="text-xs text-ink-3">Error o problema con la unidad</span></label>
+            <label class="opcion-tarjeta"><input type="radio" name="tipo" value="sin_reaccion" class="sr-only" /><span class="font-semibold text-ink">Sin reacción</span><span class="text-xs text-ink-3">Terminó sin eventos</span></label>
+            <label class="opcion-tarjeta"><input type="radio" name="tipo" value="reaccion" class="sr-only" /><span class="font-semibold text-ink">Reacción adversa</span><span class="text-xs text-ink-3">Signos o síntomas en el paciente</span></label>
+            <label class="opcion-tarjeta"><input type="radio" name="tipo" value="incidente" class="sr-only" /><span class="font-semibold text-ink">Incidente</span><span class="text-xs text-ink-3">Error o problema con la unidad</span></label>
           </div>
           <p class="text-xs text-ink-3">Si la transfusión sigue, déjalo sin marcar y guarda en curso.</p>
 
@@ -153,23 +153,23 @@ const verificaciones = [
             <p class="rounded-control bg-accent-soft px-3 py-2 text-xs font-semibold text-accent-ink">Ante una reacción: detén la infusión, mantén la vía con solución salina, avisa al médico y conserva la bolsa y el equipo para el laboratorio.</p>
             <div class="form-grid">
               <div class="col-full">
-                <label for="categoria" class="hv-label">Categoría</label>
+                <label for="categoria" class="etiqueta-campo">Categoría</label>
                 <select id="categoria" class="field"></select>
               </div>
               <div>
-                <label for="severidad" class="hv-label">Severidad</label>
+                <label for="severidad" class="etiqueta-campo">Severidad</label>
                 <select id="severidad" class="field"><option value="">Elegir</option>{SEVERIDADES.map((s) => <option value={s}>{s}</option>)}</select>
               </div>
               <div>
-                <label for="imputabilidad" class="hv-label">Imputabilidad</label>
+                <label for="imputabilidad" class="etiqueta-campo">Imputabilidad</label>
                 <select id="imputabilidad" class="field">{IMPUTABILIDAD.map((s) => <option value={s}>{s}</option>)}</select>
               </div>
               <div class="col-full">
-                <label for="sintomas" class="hv-label">Signos y síntomas</label>
+                <label for="sintomas" class="etiqueta-campo">Signos y síntomas</label>
                 <textarea id="sintomas" rows="2" class="field" placeholder="Qué presentó el paciente y a los cuántos minutos"></textarea>
               </div>
               <div class="col-full">
-                <label for="acciones" class="hv-label">Acciones tomadas</label>
+                <label for="acciones" class="etiqueta-campo">Acciones tomadas</label>
                 <textarea id="acciones" rows="3" class="field" placeholder="Suspensión de la infusión, medicamentos indicados, muestras enviadas al laboratorio"></textarea>
               </div>
             </div>
@@ -179,7 +179,7 @@ const verificaciones = [
         <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
       </div>
 
-      <div id="dlg-lectura" class="hidden flex-1 space-y-6 overflow-y-auto p-5"></div>
+      <div id="dlg-lectura" class="blud-dialog-cuerpo hidden space-y-6"></div>
 
       <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
         <button type="button" class="btn btn-secondary hidden sm:inline-flex" data-cerrar>Cancelar</button>
@@ -192,19 +192,12 @@ const verificaciones = [
 </LayoutOperador>
 
 <style is:global>
-  [data-hv] .hv-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: .4rem; padding: .5rem 1rem; border: 1px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: .875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
-  [data-hv] .hv-tab span { opacity: .7; font-variant-numeric: tabular-nums; }
-  [data-hv] .hv-tab[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
-  .hv-dialog { width: min(52rem, calc(100vw - 1rem)); max-height: min(92dvh, 60rem); padding: 0; margin: auto; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--surface); color: var(--ink); box-shadow: 0 30px 60px -20px rgb(0 0 0 / .45); }
-  .hv-dialog::backdrop { background: rgb(0 0 0 / .5); backdrop-filter: blur(4px); }
-  @media (max-width: 639px) { .hv-dialog { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; border: 0; } .hv-dialog form { height: 100%; } }
-  .hv-dialog .hv-legend { margin-bottom: .25rem; font-size: .75rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); }
-  .hv-dialog .hv-label { display: block; margin-bottom: .25rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; color: var(--ink-2); }
-  .hv-dialog .hv-check { display: flex; gap: .75rem; align-items: flex-start; padding: .75rem; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; }
-  .hv-dialog .hv-check:has(input:checked) { border-color: var(--ok); background: var(--ok-soft); }
-  .hv-dialog .hv-opcion { display: grid; gap: .125rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; }
-  .hv-dialog .hv-opcion:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  .hv-dialog .hv-opcion:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* Casilla de la doble verificación: se pinta en verde al marcarla. */
+  [data-hv-dlg] .hv-check { display: flex; gap: .75rem; align-items: flex-start; padding: .75rem; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; }
+  [data-hv-dlg] .hv-check:has(input:checked) { border-color: var(--ok); background: var(--ok-soft); }
+  /* La columna de estado sobra en escritorio (cada pestaña ya filtra por estado): solo se ve en las tarjetas. */
+  @container (width >= 40rem) { [data-hv] .tabla-apilable td.celda-estado { display: none; } }
+  [data-hv] .tabla-apilable thead th:nth-child(1) { width: 1%; }
 </style>
 
 <script>
@@ -271,8 +264,6 @@ const verificaciones = [
         <td class="p-3 text-xs text-ink-2 tabular" data-label="Registrado">${esc(fmtFechaHora(r.registrado))}</td>
         <td class="p-3 celda-acciones text-right"><button type="button" class="btn btn-secondary btn-sm" data-abrir="${esc(r.id)}">${r.estado === 'cerrado' ? 'Ver' : 'Completar'}</button></td>
       </tr>`).join('');
-      // La columna de estado sobra en escritorio (cada pestaña ya filtra por estado): solo se ve en las tarjetas.
-      $('#filas').querySelectorAll('td.celda-estado').forEach((td) => td.classList.add('hv-estado-movil'));
       const vacio = $('#vacio-reg');
       vacio.textContent = tab === 'en_curso' ? 'No hay transfusiones en curso.' : 'Todavía no hay registros cerrados.';
       vacio.classList.toggle('hidden', lista.length > 0);
@@ -452,8 +443,3 @@ const verificaciones = [
   init();
   document.addEventListener('astro:page-load', init);
 </script>
-
-<style is:global>
-  @container (width >= 40rem) { [data-hv] .tabla-apilable td.hv-estado-movil { display: none; } }
-  [data-hv] .tabla-apilable thead th:nth-child(1) { width: 1%; }
-</style>
