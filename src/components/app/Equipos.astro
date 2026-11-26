@@ -149,8 +149,8 @@ import { TIPOS } from '../../lib/equipos';
           ${e.ultima?.nota ? `<p class="rounded-control bg-sunken px-3 py-2 text-xs text-ink-2">${esc(e.ultima.nota)}</p>` : ''}
           <p class="text-xs text-ink-3">Calibración: ${esc(e.ultimaCalibracion ?? '—')} · próxima ${esc(e.proximaCalibracion ?? '—')}</p>
           <div class="mt-auto grid grid-cols-2 gap-2">
-            <button type="button" class="btn btn-primary btn-sm" data-eq-leer="${esc(String(e.id))}" ${e.activo ? '' : 'disabled'}>Registrar lectura</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-eq-editar="${esc(String(e.id))}">Editar</button>
+            <button type="button" class="btn btn-primary btn-sm" data-eq-leer="${esc(String(e.id))}" aria-label="Registrar lectura de ${esc(e.nombre)}" ${e.activo ? '' : 'disabled'}>Registrar lectura</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-eq-editar="${esc(String(e.id))}" aria-label="Editar ${esc(e.nombre)}">Editar</button>
           </div>
         </li>`;
       }).join('');

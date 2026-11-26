@@ -173,6 +173,13 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
     }
 
     async function cargar() {
+      const desde = $<HTMLInputElement>('#desde').value, hasta = $<HTMLInputElement>('#hasta').value;
+      if (desde && hasta && desde > hasta) {
+        registros = [];
+        $('#aviso').textContent = 'La fecha «Desde» no puede ser posterior a «Hasta».';
+        $('#aviso').classList.remove('hidden');
+        return pintar();
+      }
       try {
         const r = await listarHV({ desde: $<HTMLInputElement>('#desde').value, hasta: $<HTMLInputElement>('#hasta').value, red });
         registros = r.registros;

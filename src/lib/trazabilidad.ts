@@ -6,6 +6,7 @@
 
 import { codigoDonacion, donaciones, entregas, fracciones, normCedula, pruebas, registro } from './db';
 import type { DonacionOp } from './db';
+import { seedHVDemo } from './hemovigilancia';
 import { rpc } from './rpc';
 import { usaSupabase } from './supabase';
 
@@ -40,6 +41,7 @@ export const ESTADO_UNIDAD: Record<string, string> = {
 
 // ------------------------------------------------------------------ Modo demo
 function hvDemo(): { solicitudId: string; unidadId: string; id: string; estado: string; tipoEvento?: string; categoria?: string; severidad?: string }[] {
+  seedHVDemo();
   try { return JSON.parse(localStorage.getItem('blud-db-hemovigilancia') || '[]'); } catch { return []; }
 }
 

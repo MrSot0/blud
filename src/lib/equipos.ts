@@ -45,11 +45,13 @@ export const ALERTA_LABEL: Record<Alerta, { texto: string; tono: string }> = {
 export function validarEquipo(d: DatosEquipo): string | null {
   if (d.nombre.trim().length < 3) return 'Escribe el nombre del equipo.';
   if (!(TIPOS as readonly string[]).includes(d.tipo)) return 'Elige el tipo de equipo.';
+  if (!Number.isFinite(Number(d.min)) || !Number.isFinite(Number(d.max)) || (d.min as unknown) === '' || (d.max as unknown) === '') return 'Escribe la temperatura mínima y la máxima del rango.';
   if (!(Number(d.min) < Number(d.max))) return 'La temperatura mínima debe ser menor que la máxima.';
   if (d.ultimaCalibracion && d.proximaCalibracion && d.proximaCalibracion < d.ultimaCalibracion) return 'La próxima calibración debe ser posterior a la última.';
   return null;
 }
 export function validarLectura(e: Equipo, t: number, nota: string): string | null {
+  if (typeof t !== 'number' || Number.isNaN(t)) return 'Escribe la temperatura que marca el equipo.';
   if (!Number.isFinite(t) || t < -90 || t > 60) return 'Revisa la temperatura: no es una lectura posible.';
   if ((t < Number(e.min) || t > Number(e.max)) && nota.trim().length < 10) return 'La lectura está fuera de rango: describe qué se hizo (mínimo 10 caracteres).';
   return null;

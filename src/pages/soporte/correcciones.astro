@@ -21,7 +21,7 @@ const tipos = Object.entries(TIPO_REGISTRO);
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <section class="panel p-5 sm:p-8 space-y-5" aria-labelledby="h-corr">
         <h2 id="h-corr" class="text-lg font-bold text-ink border-b border-line pb-3">1. Busca el registro</h2>
-        <div class="chips-scroll" role="radiogroup" aria-label="Tipo de registro">
+        <div class="chips-scroll" role="group" aria-label="Tipo de registro">
           {tipos.map(([k, v], i) => <button type="button" class="pildora" data-tipo={k} aria-pressed={i === 0 ? 'true' : 'false'}>{v.label}</button>)}
         </div>
         <form id="form-buscar" class="flex flex-col gap-2 sm:flex-row" novalidate>
@@ -75,6 +75,7 @@ const tipos = Object.entries(TIPO_REGISTRO);
     ESTADO_LEGIBLE, MENSAJE_NO_DISPONIBLE, NoDisponible, TIPO_REGISTRO, consultarRegistro, corregirEstado, ultimasCorrecciones,
   } from '../../lib/administracion';
   import type { RegistroEstado, TipoRegistro } from '../../lib/administracion';
+  import { validarMotivo } from '../../lib/rpc';
   import { esc, toast } from '../../lib/ui';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
@@ -129,6 +130,10 @@ const tipos = Object.entries(TIPO_REGISTRO);
       e.preventDefault();
       if (!reg) return;
       const nuevo = $<HTMLSelectElement>('#nuevo').value;
+      // El motivo se revisa antes de pedir la confirmación, no después.
+      const falta = validarMotivo($<HTMLTextAreaElement>('#motivo').value);
+      if (falta) return avisar(new Error(falta), '#error');
+      $('#error').classList.add('hidden');
       if (!confirm(`¿Cambiar ${reg.ref} de «${legible(reg.estado)}» a «${legible(nuevo)}»? Queda en la bitácora con tu nombre.`)) return;
       try {
         await corregirEstado(reg, nuevo, $<HTMLTextAreaElement>('#motivo').value, $<HTMLInputElement>('#incidencia').value);

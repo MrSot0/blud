@@ -120,7 +120,7 @@ export async function paginaBitacora(filtros: FiltrosBitacora, cursor: string | 
       (!f.tabla || e.tabla === f.tabla) &&
       (!f.desde || String(e.fecha).slice(0, 10) >= f.desde) &&
       (!f.hasta || String(e.fecha).slice(0, 10) <= f.hasta) &&
-      (!q || `${e.operacion} ${e.usuario ?? ''} ${JSON.stringify(e.detalle ?? {})}`.toLowerCase().includes(q)));
+      (!q || `${e.operacion} ${operacionDe(e.operacion)} ${moduloDe(e.tabla)} ${e.registro ?? ''} ${e.usuario ?? ''} ${JSON.stringify(e.detalle ?? {})}`.toLowerCase().includes(q)));
     const desde = cursor ? Number(cursor) : 0;
     pagina = { items: todo.slice(desde, desde + limite), siguiente: desde + limite < todo.length ? String(desde + limite) : null };
   } else {

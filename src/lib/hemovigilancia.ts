@@ -121,6 +121,7 @@ export function validarHV(d: DatosHV): string | null {
   if (d.cerrar && !d.tipoEvento) return 'Indica cómo terminó la transfusión antes de cerrarla.';
   if (d.tipoEvento && d.tipoEvento !== 'sin_reaccion' && (!d.categoria || !d.severidad)) return 'Indica la categoría y la severidad del evento.';
   if (d.cerrar && d.tipoEvento && d.tipoEvento !== 'sin_reaccion' && !d.acciones?.trim()) return 'Describe las acciones tomadas ante el evento.';
+  if (d.volumenMl !== '' && d.volumenMl != null && (!Number.isFinite(Number(d.volumenMl)) || Number(d.volumenMl) <= 0 || Number(d.volumenMl) > 2000)) return 'El volumen transfundido debe estar entre 1 y 2000 ml.';
   if (d.inicio && d.fin && d.fin < d.inicio) return 'La hora de fin no puede ser anterior a la de inicio.';
   return null;
 }
@@ -161,7 +162,8 @@ function guardarDemo(d: DatosHV): RegistroHV {
   if (!prev && !pend) throw new Error('Esa unidad ya tiene un registro de hemovigilancia.');
   const ahora = new Date().toISOString();
   const s = (getSession() ?? {}) as Record<string, unknown>;
-  const n = lista.length + 1;
+  // Folio siguiente al mayor existente (no al tamaño de la lista: los de ejemplo no empiezan en 1).
+  const n = lista.reduce((m, x) => Math.max(m, Number(/-(\d+)$/.exec(x.id)?.[1] ?? 0)), 0) + 1;
   const r: RegistroHV = {
     ...(prev ?? {
       id: `HV-${ahora.slice(0, 4)}-${String(n).padStart(4, '0')}`,
@@ -198,6 +200,7 @@ export interface ListaHV { registros: RegistroHV[]; pendientes: PendienteHV[] }
 
 export async function listarHV(o: { desde?: string; hasta?: string; red?: boolean } = {}): Promise<ListaHV> {
   if (!usaSupabase()) {
+    seedHVDemo(); // los ejemplos existen aunque se entre primero por Avisos o Trazabilidad
     const registros = leerDemo().filter((r) => (!o.desde || r.registrado.slice(0, 10) >= o.desde) && (!o.hasta || r.registrado.slice(0, 10) <= o.hasta));
     return { registros, pendientes: pendientesDemo(leerDemo()) };
   }

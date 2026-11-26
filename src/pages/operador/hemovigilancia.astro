@@ -131,7 +131,7 @@ const verificaciones = [
                   {signos.map((s) => (
                     <label class="block">
                       <span class="block text-[0.6875rem] font-semibold text-ink-3">{s.label}</span>
-                      <input class="field !min-h-10 !px-2.5 text-sm" name={`sg-${m.id}-${s.id}`} placeholder={s.ph} inputmode={s.modo as 'text'} autocomplete="off" />
+                      <input class="field !min-h-10 !px-2.5 text-sm" name={`sg-${m.id}-${s.id}`} aria-label={`${s.label} ${m.label.toLowerCase()}`} placeholder={s.ph} inputmode={s.modo as 'text'} autocomplete="off" />
                     </label>
                   ))}
                 </div>

@@ -123,12 +123,12 @@ const guia = GUIA[role];
         const ult = t.mensajes.at(-1);
         const respuesta = ult?.autor === 'soporte';
         return `<li><button type="button" data-ayuda-abrir="${esc(t.id)}" class="flex w-full flex-col gap-1 rounded-control py-4 text-left hover:bg-sunken sm:flex-row sm:items-center sm:gap-4 sm:px-2">
-          <div class="min-w-0 flex-1">
-            <p class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span>
-              ${respuesta && t.estado !== 'resuelto' ? '<span class="rounded-full bg-ok-soft px-2 py-0.5 text-[0.6875rem] font-bold text-ok">Soporte respondió</span>' : ''}</p>
-            <p class="truncate text-sm text-ink-2">${esc(ult?.texto ?? '')}</p>
-          </div>
-          <div class="flex items-center gap-3 sm:shrink-0">${chip(t)}<span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span></div>
+          <span class="block min-w-0 flex-1">
+            <span class="flex flex-wrap items-center gap-2"><span class="font-mono text-xs font-bold text-ink-3">${esc(t.codigo)}</span><span class="font-semibold text-ink">${esc(t.asunto)}</span>
+              ${respuesta && t.estado !== 'resuelto' ? '<span class="rounded-full bg-ok-soft px-2 py-0.5 text-[0.6875rem] font-bold text-ok">Soporte respondió</span>' : ''}</span>
+            <span class="block truncate text-sm text-ink-2">${esc(ult?.texto ?? '')}</span>
+          </span>
+          <span class="flex items-center gap-3 sm:shrink-0">${chip(t)}<span class="text-xs text-ink-3 tabular">${esc(fmtFechaHora(t.actualizado))}</span></span>
         </button></li>`;
       }).join('');
     };
