@@ -222,7 +222,7 @@ begin
   end if;
 
   insert into bitacora_auditoria (tabla_afectada, registro_id, operacion, usuario_id, sede_id, valores_nuevos)
-  values ('hemo_vigilancia', v_sid, case when v_prev.folio is null then 'HEMOVIGILANCIA' when v_cerrar then 'HEMOVIGILANCIA_CIERRE' else 'HEMOVIGILANCIA_EDICION' end,
+  values ('hemo_vigilancia', v_sid, case when v_prev.folio is null then 'HEMOVIGILANCIA' when v_cerrar then 'HV_CIERRE' else 'HV_EDICION' end,
           public._uid(), v_sede, jsonb_build_object('folio', v_folio, 'unidad_id', v_uni, 'tipo_evento', v_tipo, 'severidad', p ->> 'severidad'));
 
   return (select private.hv_json(h) from hemo_vigilancia h where h.folio = v_folio);

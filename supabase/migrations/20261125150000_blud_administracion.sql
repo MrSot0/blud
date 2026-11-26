@@ -149,7 +149,7 @@ declare u usuario; v_motivo text := private.exigir_motivo(p_motivo);
 begin
   perform public._exigir_rol(array['soporte']);
   u := private.cuenta_ajena(p_id);
-  if p_accion not in ('RESTABLECER_ACCESO', 'REENVIAR_CONFIRMACION') then raise exception 'Acción no válida.'; end if;
+  if p_accion not in ('RESTABLECER_ACCESO', 'REENVIO_CONFIRMACION') then raise exception 'Acción no válida.'; end if;
   perform private.auditar('usuario', p_id, p_accion, jsonb_build_object('correo', lower(u.correo), 'motivo', v_motivo));
 end $$;
 
@@ -241,7 +241,7 @@ begin
             public._uid(), nullif(p ->> 'ticketId', ''),
             jsonb_build_array(jsonb_build_object('fecha', now(), 'autor', v_yo, 'texto', 'Incidencia registrada.', 'estado', 'abierta')))
     returning * into i;
-    perform private.auditar('incidencia_tecnica', i.incidencia_id, 'INCIDENCIA_CREADA', jsonb_build_object('codigo', i.codigo, 'severidad', i.severidad));
+    perform private.auditar('incidencia_tecnica', i.incidencia_id, 'INC_CREADA', jsonb_build_object('codigo', i.codigo, 'severidad', i.severidad));
     return private.incidencia_json(i);
   end if;
 
@@ -266,7 +266,7 @@ begin
   where incidencia_id = i.incidencia_id
   returning * into i;
   if v_estado is not null then
-    perform private.auditar('incidencia_tecnica', i.incidencia_id, 'INCIDENCIA_' || upper(v_estado), jsonb_build_object('codigo', i.codigo));
+    perform private.auditar('incidencia_tecnica', i.incidencia_id, 'INC_' || upper(v_estado), jsonb_build_object('codigo', i.codigo));
   end if;
   return private.incidencia_json(i);
 end $$;
@@ -464,7 +464,7 @@ begin
   end if;
   insert into lectura_temperatura (equipo_id, temperatura, registrado_por, nota) values (p_equipo, p_temperatura, public._uid(), nullif(trim(p_nota), ''));
   if p_temperatura < e.temp_min or p_temperatura > e.temp_max then
-    perform private.auditar('equipo_almacenamiento', p_equipo, 'TEMPERATURA_FUERA_DE_RANGO',
+    perform private.auditar('equipo_almacenamiento', p_equipo, 'TEMP_FUERA_RANGO',
       jsonb_build_object('equipo', e.nombre, 'temperatura', p_temperatura, 'rango', e.temp_min || ' a ' || e.temp_max, 'nota', p_nota));
   end if;
   return private.equipo_json(e);
@@ -516,7 +516,7 @@ begin
   end if;
   if v_ids is null then return jsonb_build_object('por', null, 'donaciones', '[]'::jsonb); end if;
 
-  perform private.auditar('donacion', v_ids[1], 'CONSULTA_TRAZABILIDAD', jsonb_build_object('busqueda', v_q, 'por', v_por));
+  perform private.auditar('donacion', v_ids[1], 'CONSULTA_TRAZA', jsonb_build_object('busqueda', v_q, 'por', v_por));
   return jsonb_build_object('por', v_por, 'donaciones', coalesce((
     select jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
       'din', x.din_codigo, 'dinIsbt', x.din_isbt, 'fecha', private.dia(x.fechadonacion),

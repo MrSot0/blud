@@ -131,7 +131,7 @@ export async function registrarTemperatura(e: Equipo, t: number, nota: string): 
   if (i < 0 || !l[i].activo) throw new Error('No encontramos ese equipo activo.');
   l[i].historial = [...l[i].historial, { temperatura: t, fecha: new Date().toISOString(), nota: nota.trim() || undefined, por: String(getSession()?.name ?? 'Personal') }];
   escribir(l);
-  if (t < e.min || t > e.max) anotar(e.id, 'TEMPERATURA_FUERA_DE_RANGO', { equipo: e.nombre, temperatura: t, rango: `${e.min} a ${e.max}`, nota });
+  if (t < e.min || t > e.max) anotar(e.id, 'TEMP_FUERA_RANGO', { equipo: e.nombre, temperatura: t, rango: `${e.min} a ${e.max}`, nota });
   return publico(l[i]);
 }
 

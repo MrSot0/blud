@@ -219,7 +219,7 @@ export async function guardarIncidencia(d: DatosIncidencia): Promise<Incidencia>
       seguimiento: [{ fecha: ahora, autor: yo(), texto: 'Incidencia registrada.', estado: 'abierta' }], creado: ahora, actualizado: ahora,
     };
     demoEscribir(DEMO_INC, [i, ...l]);
-    anotar('incidencia_tecnica', i.id, 'INCIDENCIA_CREADA', { codigo: i.id, severidad: i.severidad });
+    anotar('incidencia_tecnica', i.id, 'INC_CREADA', { codigo: i.id, severidad: i.severidad });
     return i;
   }
   const prev = l.find((x) => x.id === d.id);
@@ -235,7 +235,7 @@ export async function guardarIncidencia(d: DatosIncidencia): Promise<Incidencia>
       ? [...prev.seguimiento, { fecha: ahora, autor: yo(), texto: d.nota?.trim() || 'Cambio de estado.', estado: d.estado }] : prev.seguimiento,
   };
   demoEscribir(DEMO_INC, l.map((x) => (x.id === i.id ? i : x)));
-  if (d.estado) anotar('incidencia_tecnica', i.id, 'INCIDENCIA_' + d.estado.toUpperCase(), { codigo: i.id });
+  if (d.estado) anotar('incidencia_tecnica', i.id, 'INC_' + d.estado.toUpperCase(), { codigo: i.id });
   return i;
 }
 
