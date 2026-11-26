@@ -4,11 +4,12 @@
 // quitar la verificación en dos pasos y restablecer el acceso. Cada acción pide motivo y queda en la bitácora.
 import Layout from '../../layouts/LayoutSoporte.astro';
 import Filtros from '../../components/app/Filtros.astro';
+import PaginasCursor from '../../components/app/PaginasCursor.astro';
 import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
 ---
 
 <Layout title="BLUD | Cuentas" description="Gestión de cuentas de donantes y del personal.">
-  <div class="container-blud py-8 space-y-6" data-cuentas>
+  <div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-cuentas>
     <div class="page-head">
       <div class="min-w-0">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Cuentas</h1>
@@ -43,15 +44,7 @@ import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
         </table>
       </div>
       <p id="vacio" class="hidden py-8 text-center text-sm text-ink-3">No hay cuentas que coincidan.</p>
-      <nav class="flex items-center justify-between gap-3 border-t border-line pt-4" aria-label="Páginas de cuentas">
-        <button type="button" class="btn btn-secondary btn-sm" id="ant" disabled aria-label="Página anterior">
-          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <p id="estado-pag" class="text-xs text-ink-3 tabular" aria-live="polite"></p>
-        <button type="button" class="btn btn-secondary btn-sm" id="sig" disabled aria-label="Página siguiente">
-          <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </nav>
+      <PaginasCursor etiqueta="Páginas de cuentas" />
     </section>
   </div>
 
@@ -100,13 +93,6 @@ import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
   </dialog>
 </Layout>
 
-<style is:global>
-  [data-cuentas-accion] { display: grid; gap: .125rem; padding: .75rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-control); cursor: pointer; text-align: left; }
-  [data-cuentas-accion]:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  [data-cuentas-accion]:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-  [data-cuentas-accion][data-peligro]:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-</style>
-
 <script>
   import {
     MENSAJE_NO_DISPONIBLE, NoDisponible, ROL_LABEL, buscarCuentas, cambiarActivo, cambiarRol, quitarDosPasos, restablecerAcceso,
@@ -154,7 +140,7 @@ import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
     const chipEstado = (c: Cuenta) => (c.activo
       ? '<span class="rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Activa</span>'
       : '<span class="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-ink">Inactiva</span>')
-      + (c.dosPasos ? ' <span class="rounded-full bg-sunken px-2 py-0.5 text-[0.6875rem] font-bold text-ink-2" title="Verificación en dos pasos activa">2 pasos</span>' : '');
+      + (c.dosPasos ? ' <span class="rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2" title="Verificación en dos pasos activa">2 pasos</span>' : '');
 
     function pintar() {
       $('#filas').innerHTML = items.map((c, i) => `<tr>
@@ -166,9 +152,9 @@ import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
         <td class="p-3 celda-acciones text-right"><button type="button" class="btn btn-secondary btn-sm" data-abrir="${i}" ${c.email === miCorreo ? 'disabled title="No puedes gestionar tu propia cuenta"' : ''}>Gestionar</button></td>
       </tr>`).join('');
       $('#vacio').classList.toggle('hidden', items.length > 0);
-      $<HTMLButtonElement>('#ant').disabled = pagina === 0;
-      $<HTMLButtonElement>('#sig').disabled = !siguiente;
-      $('#estado-pag').textContent = items.length ? `Página ${pagina + 1} · ${items.length} cuentas${siguiente ? '' : ' (últimas)'}` : '';
+      raiz.querySelector<HTMLButtonElement>('[data-pag-ant]')!.disabled = pagina === 0;
+      raiz.querySelector<HTMLButtonElement>('[data-pag-sig]')!.disabled = !siguiente;
+      raiz.querySelector('[data-pag-estado]')!.textContent = items.length ? `Página ${pagina + 1} · ${items.length} cuentas${siguiente ? '' : ' (últimas)'}` : '';
     }
 
     async function ir(n: number) {
@@ -200,13 +186,13 @@ import { ROL_LABEL, ROLES_PERSONAL } from '../../lib/administracion';
       }, 400);
     });
     ['#f-rol', '#f-activo'].forEach((s) => $(s).addEventListener('change', reiniciar));
-    $('#ant').addEventListener('click', () => ir(pagina - 1));
-    $('#sig').addEventListener('click', () => ir(pagina + 1));
+    raiz.querySelector('[data-pag-ant]')!.addEventListener('click', () => ir(pagina - 1));
+    raiz.querySelector('[data-pag-sig]')!.addEventListener('click', () => ir(pagina + 1));
 
     // ---------- Gestionar
     const accionSel = () => (document.querySelector<HTMLInputElement>('input[name="accion"]:checked')?.value ?? '') as Accion | '';
     const dato = (k: string, v?: string) => `<div><dt class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">${esc(k)}</dt><dd class="mt-0.5 text-sm font-semibold text-ink">${esc(v || '—')}</dd></div>`;
-    const opcion = (valor: Accion, titulo: string, ayuda: string, peligro = false) => `<label data-cuentas-accion ${peligro ? 'data-peligro' : ''}>
+    const opcion = (valor: Accion, titulo: string, ayuda: string, peligro = false) => `<label class="opcion-tarjeta" data-cuentas-accion ${peligro ? 'data-peligro' : ''}>
       <input type="radio" name="accion" value="${valor}" class="sr-only" /><span class="text-sm font-semibold text-ink">${titulo}</span><span class="text-xs text-ink-3">${ayuda}</span></label>`;
 
     function abrir(c: Cuenta) {

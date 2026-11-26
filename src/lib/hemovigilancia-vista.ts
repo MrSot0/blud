@@ -6,25 +6,25 @@ import type { RegistroHV, Signos } from './hemovigilancia';
 import { esc } from './ui';
 
 export function chipEvento(r: RegistroHV): string {
-  if (!r.tipoEvento) return '<span class="rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2">En curso</span>';
-  if (r.tipoEvento === 'sin_reaccion') return '<span class="rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Sin reacción</span>';
-  return `<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${tonoSeveridad(r.severidad)}">${esc(TIPO_EVENTO[r.tipoEvento])}${r.severidad ? ' · ' + esc(r.severidad) : ''}</span>`;
+  if (!r.tipoEvento) return '<span class="whitespace-nowrap rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2">En curso</span>';
+  if (r.tipoEvento === 'sin_reaccion') return '<span class="whitespace-nowrap rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Sin reacción</span>';
+  return `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${tonoSeveridad(r.severidad)}">${esc(TIPO_EVENTO[r.tipoEvento])}${r.severidad ? ' · ' + esc(r.severidad) : ''}</span>`;
 }
 
 export const chipEstadoHV = (r: RegistroHV) =>
   r.estado === 'cerrado'
     ? '<span class="rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2">Cerrado</span>'
-    : '<span class="inline-flex items-center gap-1.5 rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn"><span class="size-1.5 rounded-full bg-warn" aria-hidden="true"></span>En curso</span>';
+    : '<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn"><span class="size-1.5 rounded-full bg-warn" aria-hidden="true"></span>En curso</span>';
 
 const dato = (k: string, v?: string | number | null) =>
   `<div><dt class="text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">${esc(k)}</dt><dd class="mt-0.5 text-sm font-semibold text-ink">${v === undefined || v === null || v === '' ? '—' : esc(v)}</dd></div>`;
 
 const bloque = (titulo: string, cuerpo: string) =>
-  `<section class="space-y-3"><h3 class="text-xs font-bold uppercase tracking-wider text-ink-3 border-b border-line pb-1.5">${esc(titulo)}</h3>${cuerpo}</section>`;
+  `<section class="space-y-3"><h3 class="border-b border-line pb-1.5 text-xs font-bold uppercase tracking-wider text-ink-2">${esc(titulo)}</h3>${cuerpo}</section>`;
 
 const control = (t: string, ok: boolean) =>
   `<li class="flex items-center justify-between gap-3 py-2 text-sm"><span class="text-ink-2">${esc(t)}</span>
-    <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-accent-soft text-accent-ink'}">${ok ? 'Conforme' : 'No consta'}</span></li>`;
+    <span class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-accent-soft text-accent-ink'}">${ok ? 'Conforme' : 'No consta'}</span></li>`;
 
 const celda = (s: Signos | undefined, k: keyof Signos, suf = '') => (s?.[k] ? esc(s[k]) + suf : '<span class="text-ink-3">—</span>');
 

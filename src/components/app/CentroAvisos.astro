@@ -8,22 +8,22 @@ interface Props { role: Role }
 const { role } = Astro.props;
 ---
 
-<div class="container-blud py-8 space-y-6" data-avisos-centro data-rol={role}>
+<div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-avisos-centro data-rol={role}>
   <div class="page-head">
     <div class="min-w-0">
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Avisos</h1>
       <p class="text-ink-2 text-sm sm:text-base mt-1">Lo que espera una acción tuya. Cada aviso se va solo cuando resuelves lo que lo causó.</p>
     </div>
     <div class="page-head-acciones">
-      <button type="button" class="btn btn-secondary btn-sm" data-avisos-recargar>Actualizar</button>
+      <button type="button" class="btn btn-secondary" data-avisos-recargar>Actualizar</button>
     </div>
   </div>
 
   <div class="chips-scroll" role="group" aria-label="Filtrar avisos">
-    <button type="button" class="aviso-chip" data-avisos-filtro="todos" aria-pressed="true">Todos <span data-avisos-n="todos">0</span></button>
-    <button type="button" class="aviso-chip" data-avisos-filtro="alta" aria-pressed="false">Urgentes <span data-avisos-n="alta">0</span></button>
-    <button type="button" class="aviso-chip" data-avisos-filtro="media" aria-pressed="false">Pendientes <span data-avisos-n="media">0</span></button>
-    <button type="button" class="aviso-chip" data-avisos-filtro="info" aria-pressed="false">Para revisar <span data-avisos-n="info">0</span></button>
+    <button type="button" class="pildora" data-avisos-filtro="todos" aria-pressed="true">Todos <span data-avisos-n="todos">0</span></button>
+    <button type="button" class="pildora" data-avisos-filtro="alta" aria-pressed="false">Urgentes <span data-avisos-n="alta">0</span></button>
+    <button type="button" class="pildora" data-avisos-filtro="media" aria-pressed="false">Pendientes <span data-avisos-n="media">0</span></button>
+    <button type="button" class="pildora" data-avisos-filtro="info" aria-pressed="false">Para revisar <span data-avisos-n="info">0</span></button>
   </div>
 
   <section class="panel p-4 sm:p-6" aria-live="polite" aria-busy="true" data-avisos-panel>
@@ -32,7 +32,7 @@ const { role } = Astro.props;
         <li class="flex items-center gap-4 py-4"><span class="skeleton size-10 rounded-full"></span><span class="skeleton h-4 flex-1 rounded"></span></li>
       ))}
     </ul>
-    <div class="hidden py-10 text-center" data-avisos-vacio>
+    <div class="hidden py-8 text-center" data-avisos-vacio>
       <span class="mx-auto grid size-12 place-items-center rounded-full bg-ok-soft text-ok" aria-hidden="true">
         <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
       </span>
@@ -44,9 +44,6 @@ const { role } = Astro.props;
 </div>
 
 <style is:global>
-  [data-avisos-centro] .aviso-chip { flex-shrink: 0; scroll-snap-align: start; display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .9rem; border: 1px solid var(--line); border-radius: 9999px; background: var(--surface); font-size: .875rem; font-weight: 600; color: var(--ink-2); cursor: pointer; }
-  [data-avisos-centro] .aviso-chip span { font-variant-numeric: tabular-nums; opacity: .7; }
-  [data-avisos-centro] .aviso-chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
   [data-avisos-centro] .aviso-borde-alta { box-shadow: inset 3px 0 0 var(--accent); }
   [data-avisos-centro] .aviso-borde-media { box-shadow: inset 3px 0 0 var(--warn); }
   [data-avisos-centro] .aviso-borde-info { box-shadow: inset 3px 0 0 var(--line-strong); }
@@ -90,7 +87,7 @@ const { role } = Astro.props;
             </span>
             <div class="min-w-0">
               <p class="flex flex-wrap items-center gap-x-2 gap-y-1"><span class="font-bold text-ink">${esc(a.titulo)}</span>
-                <span class="rounded-full px-2 py-0.5 text-[0.6875rem] font-bold ${TONO[a.nivel]}">${NIVEL_LABEL[a.nivel]}</span></p>
+                <span class="rounded-full px-2.5 py-0.5 text-xs font-bold ${TONO[a.nivel]}">${NIVEL_LABEL[a.nivel]}</span></p>
               <p class="mt-0.5 text-sm text-ink-2">${esc(a.detalle)}</p>
             </div>
           </div>
