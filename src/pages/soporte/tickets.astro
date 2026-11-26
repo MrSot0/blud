@@ -73,7 +73,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
             </div>
           </div>
           <div>
-            <label for="resp" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tu respuesta al donante</label>
+            <label for="resp" id="resp-label" class="block text-xs font-bold uppercase text-ink-2 mb-1">Tu respuesta al donante</label>
             <textarea id="resp" rows="5" class="field resize-y" maxlength="2000" placeholder="Escribe tu respuesta…"></textarea>
           </div>
           <p id="resp-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
@@ -87,7 +87,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
           <h3 class="text-sm font-bold uppercase tracking-wider text-ink-2">Notas internas <span class="font-normal normal-case text-ink-3">(el donante no las ve)</span></h3>
           <ul id="notas" class="space-y-2"></ul>
           <form id="form-nota" class="flex flex-col sm:flex-row gap-3" novalidate>
-            <input id="nota" class="field flex-1" placeholder="Añadir una nota para el equipo…" maxlength="500" />
+            <input id="nota" class="field flex-1" aria-label="Nota interna para el equipo" placeholder="Añadir una nota para el equipo…" maxlength="500" />
             <button type="submit" class="btn btn-secondary min-h-12 sm:px-8">Guardar nota</button>
           </form>
         </div>
@@ -221,6 +221,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       const dn = $<HTMLAnchorElement>('#d-donante');
       dn.textContent = t.donanteNombre;
       $('#d-donante-label').textContent = esDelPersonal(t) ? `Personal (${rolDelReporte(t).toLowerCase()})` : 'Donante';
+      $('#resp-label').textContent = esDelPersonal(t) ? 'Tu respuesta' : 'Tu respuesta al donante';
       if (esDelPersonal(t)) dn.removeAttribute('href');
       else dn.href = `/soporte/donantes?q=${encodeURIComponent(t.donanteId)}`;
       $('#d-email').textContent = t.donanteEmail || '—';
@@ -279,7 +280,8 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       err.classList.add('hidden');
       $<HTMLTextAreaElement>('#resp').value = '';
       $<HTMLSelectElement>('#rapida').value = '';
-      toast(resolver ? 'Respuesta enviada y solicitud resuelta.' : 'Respuesta enviada al donante.');
+      const personal = esDelPersonal(getTicket(abierto)!);
+      toast(resolver ? 'Respuesta enviada y solicitud resuelta.' : personal ? 'Respuesta enviada.' : 'Respuesta enviada al donante.');
     };
     form.addEventListener('submit', (e) => { e.preventDefault(); enviar(false); });
     $('#btn-enviar-resolver').addEventListener('click', () => enviar(true));

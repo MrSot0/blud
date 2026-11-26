@@ -126,8 +126,26 @@ const { alcance } = Astro.props;
     };
 
     /** Carga la página n con los filtros actuales. Solo se pinta la respuesta de la última petición. */
+    /** Rango de fechas válido (la base rechaza más de 2 años por consulta). */
+    const errorRango = (): string | null => {
+      const { desde, hasta } = filtros();
+      if (desde && hasta && desde > hasta) return 'La fecha «Desde» no puede ser posterior a «Hasta».';
+      if (desde && hasta && new Date(hasta).getTime() - new Date(desde).getTime() > 731 * 86400000) return 'Consulta como máximo 2 años a la vez: acorta el rango de fechas.';
+      return null;
+    };
+
     const ir = async (n: number) => {
       const yo = ++peticion;
+      const malRango = errorRango();
+      if (malRango) {
+        const aviso = q('[data-bit-aviso]');
+        aviso.textContent = malRango;
+        aviso.classList.remove('hidden');
+        items = []; siguiente = null; pagina = 0;
+        pintar();
+        q('[data-bit-vacio]').classList.add('hidden');
+        return;
+      }
       botones(true);
       q('[data-bit-filas]').setAttribute('aria-busy', 'true');
       try {

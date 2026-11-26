@@ -211,7 +211,7 @@ export async function guardarIncidencia(d: DatosIncidencia): Promise<Incidencia>
   const l = incidenciasDemo();
   const ahora = new Date().toISOString();
   if (!d.id) {
-    const n = l.length + 1;
+    const n = l.reduce((m, x) => Math.max(m, Number(/-(\d+)$/.exec(x.id)?.[1] ?? 0)), 0) + 1;
     const i: Incidencia = {
       id: `INC-${ahora.slice(0, 4)}-${String(n).padStart(4, '0')}`, titulo: d.titulo!.trim(), descripcion: d.descripcion!.trim(),
       categoria: d.categoria || 'Plataforma', severidad: d.severidad || 'Media', estado: 'abierta', sede: 'Banco de Sangre del Zulia',
@@ -280,14 +280,16 @@ export async function corregirEstado(r: RegistroEstado, nuevo: string, motivo: s
     await rpc('blud_corregir_estado', { p_tipo: r.tipo, p_id: Number(r.id), p_nuevo: nuevo, p_motivo: m, p_incidencia: incidencia?.trim() || null });
     return;
   }
+  const incId = incidencia?.trim().toUpperCase() || '';
+  if (incId && !incidenciasDemo().some((i) => i.id === incId)) throw new Error(`No encontramos la incidencia ${incId}. Revisa el código o déjalo vacío.`);
   const ov = demoLeer<Record<string, string>>(DEMO_EST, {});
   ov[`${r.tipo}:${r.id}`] = nuevo;
   demoEscribir(DEMO_EST, ov);
   const tabla = r.tipo === 'unidad' ? 'unidadsangre' : r.tipo === 'prueba' ? 'prueba_serologica' : 'prueba_tipaje_muestra';
-  anotar(tabla, r.ref, 'CORRECCION_ESTADO', { antes: r.estado, despues: nuevo, motivo: m, incidencia: incidencia?.trim() || undefined });
-  if (incidencia?.trim()) {
+  anotar(tabla, r.ref, 'CORRECCION_ESTADO', { antes: r.estado, despues: nuevo, motivo: m, incidencia: incId || undefined });
+  if (incId) {
     const l = incidenciasDemo();
-    demoEscribir(DEMO_INC, l.map((i) => i.id === incidencia.trim() ? { ...i, actualizado: new Date().toISOString(),
+    demoEscribir(DEMO_INC, l.map((i) => i.id === incId ? { ...i, actualizado: new Date().toISOString(),
       seguimiento: [...i.seguimiento, { fecha: new Date().toISOString(), autor: yo(), texto: `Corrección: ${r.ref} de ${r.estado} a ${nuevo}. ${m}` }] } : i));
   }
 }

@@ -413,6 +413,14 @@ let n = 0;
     pintarAvisos(n);
   });
 
+  // Si cambian los datos (se registra una transfusión, una lectura…), el número guardado ya no vale: la próxima
+  // página lo recalcula en lugar de mostrar el anterior hasta 2 minutos.
+  // La sincronización general ('*') no cuenta: ocurre en cada carga y anularía la caché.
+  window.addEventListener('blud:db', (e) => {
+    if ((e as CustomEvent<{ key?: string }>).detail?.key === '*') return;
+    try { sessionStorage.removeItem(AVISOS_KEY); } catch {}
+  });
+
   window.addEventListener('blud:citas', (e) => pintarCitas((e as CustomEvent<{ abiertas: number }>).detail.abiertas));
 
   renderSidebarAuth();
