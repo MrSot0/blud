@@ -8,17 +8,15 @@ import { questions, requisitosFisicos } from '../../data/eligibility';
 
 export const prerender = false;
 
-// De más barato a más estable. Si Google satura uno (503) o no contesta a tiempo, se pasa al siguiente al instante;
-// los de familias distintas casi nunca se saturan a la vez. Si fallan todos, una segunda vuelta tras una pausa breve.
+// Primero los Flash Lite (15 solicitudes/min cada uno en el nivel gratuito); un Flash (5/min) solo como último respaldo.
+// Sin segunda vuelta: cada intento gasta cuota del modelo, así que un mensaje usa como mucho 3 solicitudes.
 // shortcut: lista según las pruebas del 4 nov 2026 (gemini-3-flash-preview es preview); revisarla si Google retira alguno.
 const MODELOS: { model: string; ms: number }[] = [
-  { model: 'gemini-3.1-flash-lite', ms: 4_000 },
-  { model: 'gemini-flash-lite-latest', ms: 4_000 },
-  { model: 'gemini-3-flash-preview', ms: 7_000 },
-  { model: 'gemini-3.5-flash', ms: 7_000 },
-  { model: 'gemini-3.6-flash', ms: 7_000 },
+  { model: 'gemini-3.1-flash-lite', ms: 5_000 },
+  { model: 'gemini-flash-lite-latest', ms: 5_000 },
+  { model: 'gemini-3.6-flash', ms: 8_000 },
 ];
-const ATTEMPTS = [...MODELOS, ...MODELOS.slice(2)];
+const ATTEMPTS = MODELOS;
 const endpoint = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -72,18 +70,40 @@ ${eligibilityLines}
 Centros de la red:
 ${centerLines}`;
 
-// Límite simple por IP (por instancia del servidor): frena abusos que gastarían la cuota.
+// Límites para que nadie gaste la cuota de Gemini con un script. Viven en la memoria de cada instancia del servidor:
+// frenan el abuso normal, no un ataque distribuido (para eso, el firewall de Vercel).
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 12;
+const MAX_PER_WINDOW = 8; // por IP y minuto
+const DAY_MS = 86_400_000;
+const MAX_PER_DAY = 80; // por IP y día
+const MAX_GLOBAL_PER_WINDOW = 25; // todas las IP juntas: por debajo de los 30/min de los dos Flash Lite gratuitos
 const hits = new Map<string, number[]>();
+let globalHits: number[] = [];
 
 function rateLimited(ip: string): boolean {
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  globalHits = globalHits.filter((t) => now - t < WINDOW_MS);
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < DAY_MS);
+  const lastMinute = recent.filter((t) => now - t < WINDOW_MS).length;
+  if (lastMinute >= MAX_PER_WINDOW || recent.length >= MAX_PER_DAY || globalHits.length >= MAX_GLOBAL_PER_WINDOW) {
+    hits.set(ip, recent);
+    return true;
+  }
   recent.push(now);
+  globalHits.push(now);
   hits.set(ip, recent);
-  return recent.length > MAX_PER_WINDOW;
+  if (hits.size > 5_000) hits.delete(hits.keys().next().value!); // la memoria no crece sin límite
+  return false;
 }
+
+/** Solo se aceptan llamadas desde las páginas de BLUD (mismo origen), no desde otros sitios. */
+function sameOrigin(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  if (!origin) return false;
+  try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
+}
+
+const MAX_BODY_BYTES = 20_000;
 
 type ChatMessage = { role: 'user' | 'model'; text: string };
 
@@ -114,6 +134,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!GEMINI_API_KEY) {
     return fail('not_configured', 'Bluddie aún no está configurado en este servidor.', 503);
   }
+  if (!sameOrigin(request)) return fail('invalid', 'Origen no permitido.', 403);
+  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return fail('invalid', 'Mensaje demasiado largo.', 413);
   if (rateLimited(clientAddress ?? 'desconocida')) {
     return fail('rate_limited', 'Vas muy rápido. Espera un momento y vuelve a intentarlo.', 429);
   }
@@ -134,10 +156,9 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const started = Date.now();
   let lastStatus = 0;
   let timedOut = false;
-  for (const [i, { model, ms }] of ATTEMPTS.entries()) {
+  for (const { model, ms } of ATTEMPTS) {
     const left = TOTAL_BUDGET_MS - (Date.now() - started);
     if (left < 3_000) break; // no alcanza para otro intento
-    if (i === MODELOS.length) await new Promise((r) => setTimeout(r, 1_200)); // pausa antes de la segunda vuelta
     try {
       const res = await fetch(endpoint(model), {
         method: 'POST',
