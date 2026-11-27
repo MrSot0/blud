@@ -136,6 +136,7 @@ const slots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'];
                 </label>
               ))}
             </div>
+            <p id="aviso-cupos" class="hidden text-xs font-medium text-warn" aria-live="polite"></p>
           </fieldset>
         </div>
 
@@ -263,6 +264,7 @@ const slots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'];
   import { centers } from '../../data/centers';
   import { cargarFicha, estadoDonacion, getCita, getDonor, requisitos, fmtFecha, toast, type Donor } from '../../lib/donante';
   import { agendarCita, getSession } from '../../lib/auth';
+  import { cuposDelDia, libresEn } from '../../lib/cupos';
 
   const centerById = (id: string) => centers.find((c) => c.id === id);
 
@@ -442,7 +444,47 @@ const slots = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00'];
       update();
     });
 
+    // RF-D7: horas fuera del horario del centro o sin cupo quedan deshabilitadas (la base valida igual al agendar).
+    let cuposClave = '';
+    async function marcarHoras() {
+      const centro = centerById(centroSelect.value);
+      const clave = `${centro?.id}|${fecha.value}`;
+      if (clave === cuposClave) return;
+      cuposClave = clave;
+      const aviso = $('#aviso-cupos');
+      const radios = radiosHora('hora');
+      const abre = centro?.hours.open ?? '00:00', cierra = centro?.hours.close ?? '23:59';
+      const dia = fecha.value ? new Date(fecha.value + 'T12:00:00').getDay() : -1;
+      const atiende = !centro || dia < 0 || centro.hours.days.includes(dia);
+      const fueraHorario = (h: string) => h < abre || h >= cierra;
+      const pintar = (libres?: (h: string) => number | undefined) => {
+        let disponibles = 0;
+        radios.forEach((r) => {
+          const n = libres?.(r.value);
+          const off = !atiende || fueraHorario(r.value) || n === 0;
+          r.disabled = off;
+          if (off && r.checked) r.checked = false;
+          const chip = r.nextElementSibling as HTMLElement;
+          chip.classList.toggle('opacity-40', off);
+          chip.classList.toggle('line-through', off);
+          chip.classList.toggle('cursor-not-allowed', off);
+          chip.title = off ? (n === 0 ? 'Sin cupos' : 'Fuera del horario del centro') : n !== undefined ? `${n} ${n === 1 ? 'cupo libre' : 'cupos libres'}` : '';
+          if (!off) disponibles++;
+        });
+        aviso.classList.toggle('hidden', !fecha.value || (atiende && disponibles > 0));
+        aviso.textContent = !atiende ? 'El centro no atiende ese día. Elige otra fecha.' : 'No quedan horas libres ese día. Elige otra fecha.';
+        update();
+      };
+      pintar();
+      if (!centro || !fecha.value || !atiende) return;
+      try {
+        const cupos = await cuposDelDia(centro.name, fecha.value);
+        if (cupos && clave === cuposClave) pintar((h) => libresEn(cupos, h));
+      } catch { /* sin datos de cupos: la base valida al agendar */ }
+    }
+
     function update() {
+      void marcarHoras();
       const centro = centerById(centroSelect.value);
       const hora = pickedHora('hora');
       const apto = aptos.every((a) => a.checked);

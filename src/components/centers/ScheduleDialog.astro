@@ -151,6 +151,7 @@ import { centers } from '../../data/centers';
 
   /* Chips de día y hora (radios). */
   .schedule-dialog :global(.slot) {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -176,6 +177,19 @@ import { centers } from '../../data/centers';
     border-color: var(--accent);
     background: var(--accent);
     color: #fff;
+  }
+  .schedule-dialog :global(.slot.slot-lleno) {
+    opacity: 0.4;
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+  .schedule-dialog :global(.slot .slot-pocos) {
+    position: absolute;
+    bottom: 1px;
+    font-family: var(--font-sans, inherit);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    color: var(--warn);
   }
   .schedule-dialog :global(input:focus-visible + .slot) {
     outline: 2px solid var(--accent);
@@ -203,6 +217,7 @@ import { centers } from '../../data/centers';
   import { agendarCita, appointmentLabel, getSession, toDateKey } from '../../lib/auth';
   import { puedeDonar } from '../../lib/donante';
   import { withSubmitting } from '../../lib/forms';
+  import { cuposDelDia, libresEn } from '../../lib/cupos';
   import { hoursLabel, type HealthCenter } from '../../data/centers';
 
   const dialog = document.getElementById('schedule-dialog') as HTMLDialogElement | null;
@@ -273,6 +288,30 @@ import { centers } from '../../data/centers';
         )
         .join('');
       timesEmpty.hidden = slots.length > 0;
+      updateSummary();
+      void marcarCupos(center, dateKey);
+    }
+
+    // RF-D7: con base real, deshabilita las horas sin cupo y avisa cuando quedan pocos.
+    let cuposToken = 0;
+    async function marcarCupos(c: HealthCenter, dateKey: string) {
+      const token = ++cuposToken;
+      let cupos;
+      try { cupos = await cuposDelDia(c.name, dateKey); } catch { return; }
+      if (!cupos || token !== cuposToken) return;
+      let libres = 0;
+      timesEl.querySelectorAll<HTMLInputElement>('input[name="time"]').forEach((input) => {
+        const n = libresEn(cupos, input.value) ?? 0;
+        const chip = input.nextElementSibling as HTMLElement;
+        input.disabled = n <= 0;
+        if (n <= 0) { input.checked = false; chip.title = 'Sin cupos'; chip.classList.add('slot-lleno'); }
+        else {
+          libres++;
+          chip.title = `${n} ${n === 1 ? 'cupo libre' : 'cupos libres'}`;
+          if (n <= 2) chip.insertAdjacentHTML('beforeend', `<span class="slot-pocos">${n === 1 ? 'Último' : `Quedan ${n}`}</span>`);
+        }
+      });
+      timesEmpty.hidden = libres > 0;
       updateSummary();
     }
 

@@ -2,9 +2,8 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 27-11-2026:** 79 hechos, 8 parciales, 4 pendientes y 1 que cambió por decisión del
-> usuario (de 92). Lo marcado «migración sin aplicar» funciona en la interfaz, pero necesita
-> `supabase/migrations/20261125120000_blud_roles_pendientes.sql` y `20261125150000_blud_administracion.sql` en la base.
+> **Estado al 27-11-2026:** 80 hechos, 7 parciales, 4 pendientes y 1 que cambió por decisión del
+> usuario (de 92). Todas las migraciones están aplicadas en la base.
 
 # BLUD — Requerimientos funcionales unificados
 
@@ -63,7 +62,7 @@ El donante llena el cuestionario de autoexclusión antes de ir al centro; el enf
 | RF-D4 | El donante debe poder llenar el cuestionario de autoexclusión (~30 preguntas: salud, viajes, cirugías, medicamentos, vacunas) antes de ir, y este debe quedar en su perfil para el enfermero | Procesos M01 | Pendiente | Hecho | cuestionario de salud por partes en el perfil |
 | RF-D5 | El donante debe tener un carnet digital con QR y verificación de identidad (KYC) | Nuevo | Hecho | Hecho |  |
 | RF-D6 | El donante debe ver su historial de donaciones y la fecha desde la que puede volver a donar, calculada según sexo y tipo de extracción | Procesos M03 | Parcial | Parcial | próxima donación a 90 días (hombre) o 120 (mujer); falta según tipo de extracción |
-| RF-D7 | El donante debe poder agendar una cita de donación en una sede | Procesos M03 | Parcial | Parcial | agenda por sede; falta validar horario y cupos en el servidor |
+| RF-D7 | El donante debe poder agendar una cita de donación en una sede | Procesos M03 | Parcial | Hecho | la base valida día, horario y cupo por hora de cada sede (`blud_cupos`, `blud_agendar_cita`); el formulario deshabilita las horas llenas o fuera de horario |
 | RF-D8 | El donante debe recibir recordatorios por WhatsApp para volver a donar y mensajes de campañas | Procesos M03 | Pendiente | Pendiente | requiere proveedor de WhatsApp |
 | RF-D9 | El donante debe poder abrir tickets con soporte y ver las respuestas | Doc G8 | Hecho | Hecho |  |
 | RF-D10 | El donante debe ser contactado cuando una prueba resulte reactiva, sin que la app muestre resultados de laboratorio | Procesos M05 | Parcial | Hecho | marca «contacto pendiente» en la ficha y registro del contacto en la bitácora, sin mostrar resultados |
