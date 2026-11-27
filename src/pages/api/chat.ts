@@ -35,7 +35,7 @@ const eligibilityLines = questions
   .map((q) => {
     const deferrals = q.options
       .filter((o) => !o.eligible && o.timeframe)
-      .map((o) => `${o.label}: ${o.timeframe}`)
+      .map((o) => `${o.label}: ${o.timeframe}`.replace(/\{meses\}/g, '3 (hombres) o 4 (mujeres)'))
       .join(' / ');
     return deferrals ? `- ${q.title} ${deferrals}` : null;
   })

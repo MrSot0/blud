@@ -68,32 +68,53 @@ export const questions: Question[] = [
   {
     id: 3,
     category: 'basicos',
-    title: "¿Dormiste al menos 6 horas anoche y comiste algo en las últimas 4 horas?",
-    description: "Donar en ayunas o sin descanso aumenta el riesgo de mareos durante la extracción.",
+    title: "¿Dormiste al menos 6 horas anoche?",
+    description: "Donar sin descanso aumenta el riesgo de mareos durante la extracción.",
     options: [
-      { label: "Sí, descansé y comí algo ligero", eligible: true },
+      { label: "Sí, dormí 6 horas o más", eligible: true },
       {
-        label: "No, dormí poco o estoy en ayunas",
+        label: "No, dormí menos de 6 horas",
         eligible: false,
-        reasonTitle: "Descanso o alimentación insuficiente",
-        medicalReason: "La extracción reduce por un momento el volumen de sangre circulante. Sin descanso ni alimento, la probabilidad de que baje la presión arterial y aparezca un desmayo aumenta de forma importante.",
-        timeframe: "Puedes donar otro día, tras dormir bien y comer algo ligero y sin grasa.",
+        reasonTitle: "Descanso insuficiente",
+        medicalReason: "La extracción reduce por un momento el volumen de sangre circulante. Sin descanso, la probabilidad de que baje la presión arterial y aparezca un desmayo aumenta de forma importante.",
+        timeframe: "Puedes donar otro día, después de dormir al menos 6 horas.",
+      },
+    ],
+  },
+  {
+    id: 29,
+    category: 'basicos',
+    title: "¿Comiste algo en las últimas 4 horas?",
+    description: "No hace falta ayunar: conviene comer algo ligero y sin grasa antes de donar.",
+    options: [
+      { label: "Sí, comí algo ligero", eligible: true },
+      {
+        label: "Sí, pero fue una comida muy grasosa",
+        eligible: true,
+        note: "Puedes donar, pero la grasa puede enturbiar el plasma de la bolsa. Si puedes, espera unas horas o la próxima vez come algo ligero.",
+      },
+      {
+        label: "No, estoy en ayunas",
+        eligible: false,
+        reasonTitle: "Ayuno",
+        medicalReason: "Donar en ayunas favorece que baje el azúcar y la presión arterial durante o después de la extracción, con mareos o desmayos.",
+        timeframe: "Puedes donar hoy mismo después de comer algo ligero y sin grasa.",
       },
     ],
   },
   {
     id: 4,
     category: 'basicos',
-    title: "¿Consumiste bebidas alcohólicas en las últimas 24 horas?",
+    title: "¿Cuándo tomaste tu última bebida alcohólica?",
     description: "El alcohol deshidrata y reduce la tolerancia del cuerpo a la extracción.",
     options: [
-      { label: "No he bebido alcohol en las últimas 24 horas", eligible: true },
+      { label: "Hace 24 horas o más (o no bebo alcohol)", eligible: true },
       {
-        label: "Sí, bebí alcohol en las últimas 24 horas",
+        label: "Hace menos de 24 horas",
         eligible: false,
         reasonTitle: "Consumo reciente de alcohol",
         medicalReason: "El alcohol produce deshidratación y dilata los vasos sanguíneos, lo que favorece mareos y desmayos después de donar.",
-        timeframe: "Espera al menos 24 horas sin consumir alcohol.",
+        timeframe: "Puedes donar cuando se cumplan 24 horas desde la última bebida.",
       },
     ],
   },
@@ -103,13 +124,13 @@ export const questions: Question[] = [
     title: "¿Cuándo realizaste tu última donación de sangre?",
     description: "El organismo requiere un lapso de tiempo para reponer los depósitos de hierro y glóbulos rojos.",
     options: [
-      { label: "Hace más de {meses} meses (o es mi primera vez)", eligible: true },
+      { label: "Hace {meses} meses o más (o es mi primera vez)", eligible: true },
       {
         label: "Hace menos de {meses} meses",
         eligible: false,
         reasonTitle: "Intervalo de recuperación incompleto",
         medicalReason: "La regeneración total de los eritrocitos (glóbulos rojos) requiere entre 8 y 12 semanas. Donar antes de este periodo puede inducir anemia ferropénica en el donante.",
-        timeframe: "Esperar al menos 3 meses desde la última donación (4 meses en el caso de las mujeres).",
+        timeframe: "Puedes donar cuando se cumplan {meses} meses desde la última donación.",
       },
     ],
   },
@@ -151,9 +172,9 @@ export const questions: Question[] = [
     title: "¿Tuviste dengue, zika o chikungunya en las últimas 4 semanas?",
     description: "Son enfermedades transmitidas por mosquitos, frecuentes en el Zulia, que pueden pasar por la sangre.",
     options: [
-      { label: "No, o ya pasaron más de 4 semanas desde que me recuperé", eligible: true },
+      { label: "No, o ya pasaron 4 semanas o más desde que me recuperé", eligible: true },
       {
-        label: "Sí, o todavía tengo síntomas",
+        label: "Sí, hace menos de 4 semanas o todavía tengo síntomas",
         eligible: false,
         reasonTitle: "Dengue, zika o chikungunya reciente",
         medicalReason: "Estos virus pueden seguir en la sangre después de que desaparecen los síntomas y transmitirse al paciente por transfusión.",
@@ -167,9 +188,9 @@ export const questions: Question[] = [
     title: "¿Has tomado medicamentos antibióticos en los últimos 14 días?",
     description: "Evita la transferencia residual de fármacos a pacientes receptores.",
     options: [
-      { label: "No he consumido antibióticos recientemente", eligible: true },
+      { label: "No, o terminé el tratamiento hace 14 días o más", eligible: true },
       {
-        label: "Sí, he finalizado un tratamiento antibiótico en los últimos 14 días",
+        label: "Sí, todavía los tomo o terminé hace menos de 14 días",
         eligible: false,
         reasonTitle: "Tratamiento antibiótico reciente",
         medicalReason: "La presencia de trazas de antibióticos en la sangre donada puede desencadenar reacciones alérgicas o interferir con el tratamiento farmacológico del paciente receptor.",
@@ -387,12 +408,12 @@ export const questions: Question[] = [
     options: [
       { label: "No, nunca", eligible: true },
       {
-        label: "Sí, hace más de 3 años y me curé por completo",
+        label: "Sí, hace 3 años o más y me curé por completo",
         eligible: true,
         note: "Coméntalo en la entrevista: el banco puede pedirte una prueba antes de aceptar la donación.",
       },
       {
-        label: "Sí, en los últimos 3 años",
+        label: "Sí, hace menos de 3 años",
         eligible: false,
         reasonTitle: "Malaria o leishmaniasis reciente",
         medicalReason: "Los parásitos pueden permanecer en la sangre sin dar síntomas y transmitirse al paciente por transfusión.",

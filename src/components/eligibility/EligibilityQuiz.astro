@@ -362,7 +362,7 @@ const countByCategory = Object.fromEntries(
     const out: Motivo[] = [];
     for (let i = 0; i <= hasta; i++) {
       const opt = questions[i]?.options[answers[i] ?? -1];
-      if (opt && !opt.eligible) out.push({ title: opt.reasonTitle || 'Motivo de espera', text: opt.medicalReason || '', badge: opt.timeframe, permanent: opt.permanent });
+      if (opt && !opt.eligible) out.push({ title: opt.reasonTitle || 'Motivo de espera', text: opt.medicalReason || '', badge: opt.timeframe && personalizar(opt.timeframe), permanent: opt.permanent });
     }
     return out;
   }
