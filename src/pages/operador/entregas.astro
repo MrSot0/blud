@@ -121,11 +121,59 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       </section>
     </div>
   </div>
+
+  <!-- RF-DS2 a DS5: verificación del despacho local, traslado entre centros y recepción con inspección -->
+  <dialog id="dlg-salida" class="blud-dialog" aria-labelledby="ds-titulo">
+    <form id="form-salida" class="blud-dialog-marco" novalidate>
+      <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div class="min-w-0">
+          <h2 id="ds-titulo" class="text-lg font-bold text-ink"></h2>
+          <p id="ds-sub" class="text-sm text-ink-2"></p>
+        </div>
+        <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-ds-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div class="blud-dialog-cuerpo space-y-4">
+        <fieldset data-ds-modo="local" class="space-y-3">
+          <legend class="etiqueta-campo">Verificación antes de entregar</legend>
+          <label class="flex items-start gap-3 rounded-control border border-line p-3 text-sm"><input type="checkbox" id="ds-brazalete" class="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" /><span><span class="block font-semibold text-ink">Brazalete del paciente</span><span class="block text-xs text-ink-3">Nombre y cédula coinciden con la solicitud</span></span></label>
+          <label class="flex items-start gap-3 rounded-control border border-line p-3 text-sm"><input type="checkbox" id="ds-din" class="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" /><span><span class="block font-semibold text-ink">DIN de cada bolsa</span><span class="block text-xs text-ink-3">Coincide con las unidades reservadas</span></span></label>
+          <label class="flex items-start gap-3 rounded-control border border-line p-3 text-sm"><input type="checkbox" id="ds-etiqueta" class="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" /><span><span class="block font-semibold text-ink">Etiqueta de compatibilidad pegada</span><span class="block text-xs text-ink-3">Una en cada bolsa, con el grupo y la prueba cruzada</span></span></label>
+          <div><label for="ds-recibe" class="etiqueta-campo">Quién recibe en el servicio</label><input id="ds-recibe" class="field" placeholder="Nombre y cargo" autocomplete="off" /></div>
+        </fieldset>
+        <fieldset data-ds-modo="despachar" class="form-grid">
+          <legend class="etiqueta-campo col-full">Datos del traslado</legend>
+          <div><label for="ds-transporte" class="etiqueta-campo">Transporte</label><input id="ds-transporte" class="field" placeholder="Ej. Ambulancia A-12" /></div>
+          <div><label for="ds-chofer" class="etiqueta-campo">Chofer</label><input id="ds-chofer" class="field" placeholder="Nombre y cédula" /></div>
+          <div><label for="ds-contenedor" class="etiqueta-campo">Contenedor isotérmico</label><input id="ds-contenedor" class="field" placeholder="Código del contenedor" /></div>
+          <div><label for="ds-logger" class="etiqueta-campo">Data logger <span class="font-normal normal-case text-ink-3">(opcional)</span></label><input id="ds-logger" class="field" placeholder="Serial" /></div>
+          <div class="col-full"><label for="ds-temp-salida" class="etiqueta-campo">Temperatura de salida (°C)</label><input id="ds-temp-salida" type="number" step="0.1" inputmode="decimal" class="field" /></div>
+        </fieldset>
+        <fieldset data-ds-modo="recibir" class="space-y-3">
+          <legend class="etiqueta-campo">Recepción</legend>
+          <p class="text-sm text-ink-2" data-ds-traslado></p>
+          <div><label for="ds-temp-llegada" class="etiqueta-campo">Temperatura de llegada (°C)</label><input id="ds-temp-llegada" type="number" step="0.1" inputmode="decimal" class="field" /></div>
+          <p class="text-sm text-ink-2">Inspección visual: marca lo que encuentres en alguna bolsa.</p>
+          <div class="grid grid-cols-2 gap-2" data-ds-defectos></div>
+          <div><label for="ds-obs" class="etiqueta-campo">Observaciones</label><textarea id="ds-obs" rows="2" class="field" placeholder="Obligatorias si marcaste algún hallazgo"></textarea></div>
+          <p class="text-xs text-ink-3">Si hay hallazgos, las bolsas entran a tu sede en cuarentena hasta que el laboratorio las revise.</p>
+        </fieldset>
+        <p id="ds-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+        <button type="button" class="btn btn-secondary" data-ds-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="ds-ok"></button>
+      </footer>
+    </form>
+  </dialog>
 </LayoutOperador>
 
 <script>
   import { ESTADO_PEDIDO, PRIORIDAD_LABEL, anularPedido, codigoPedido, esc, fmtFecha, getEntregasOp, getPedidos, getPedidosPendientes, onDb, registrarEntrega, reintentarReserva, stockDe, toast, sumarDiasOp } from '../../lib/operador';
-  import { bandejaCentros, despacharPedidoCentro, recibirPedidoCentro, ESTADO_PEDIDO_CENTRO, TONO_PEDIDO_CENTRO } from '../../lib/centros';
+  import { DEFECTOS, bandejaCentros, despacharPedidoCentro, recibirPedidoCentro, ESTADO_PEDIDO_CENTRO, TONO_PEDIDO_CENTRO } from '../../lib/centros';
+  import type { Defecto } from '../../lib/centros';
+  import { verificarDespacho } from '../../lib/transfusion';
   import type { BandejaCentros } from '../../lib/centros';
   import type { Hemocomponente } from '../../lib/operador';
   import { usaSupabase } from '../../lib/supabase';
@@ -216,9 +264,62 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       if (falta) return toast(falta);
       const disp = stockDe(p.tipoSangre, p.tipoHemocomponente);
       if (disp < p.unidades && !confirmar(`El stock registrado de ${p.tipoSangre} ${p.tipoHemocomponente} es de ${disp} u. y el pedido pide ${p.unidades}.`)) return;
-      const r = registrarEntrega({ ...p, pedidoId: p.id });
-      if (!r.ok) return toast(r.motivo);
-      toast(`Pedido de ${p.pacienteNombre} despachado.`);
+      abrirSalida({ modo: 'local', id: p.id, titulo: 'Entregar al servicio', sub: `${p.pacienteNombre} · ${p.pacienteCedula} · ${p.unidades} u. ${p.tipoSangre} ${p.tipoHemocomponente}` });
+    });
+
+    // ---------- RF-DS2 a DS5: diálogo de salida y recepción
+    type Modo = 'local' | 'despachar' | 'recibir';
+    const dlgSalida = $<HTMLDialogElement>('#dlg-salida');
+    let salidaActual: { modo: Modo; id: string } | null = null;
+    $('[data-ds-defectos]').innerHTML = DEFECTOS.map((d) => `<label class="flex items-center gap-2 rounded-control border border-line p-2.5 text-sm"><input type="checkbox" data-defecto="${d.id}" class="size-4 accent-[var(--accent)]" />${d.label}</label>`).join('');
+    function abrirSalida(o: { modo: Modo; id: string; titulo: string; sub: string; traslado?: string }) {
+      salidaActual = { modo: o.modo, id: o.id };
+      $<HTMLFormElement>('#form-salida').reset();
+      $('#ds-error').classList.add('hidden');
+      $('#ds-titulo').textContent = o.titulo;
+      $('#ds-sub').textContent = o.sub;
+      dlgSalida.querySelectorAll<HTMLElement>('[data-ds-modo]').forEach((f) => f.classList.toggle('hidden', f.dataset.dsModo !== o.modo));
+      $('[data-ds-traslado]').textContent = o.traslado ?? '';
+      $('#ds-ok').textContent = o.modo === 'local' ? 'Verificado: despachar' : o.modo === 'despachar' ? 'Despachar al centro' : 'Confirmar recepción';
+      dlgSalida.showModal();
+    }
+    dlgSalida.querySelectorAll('[data-ds-cerrar]').forEach((b) => b.addEventListener('click', () => dlgSalida.close()));
+    const num = (id: string) => parseFloat(($(`#${id}`) as HTMLInputElement).value.replace(',', '.'));
+    $('#form-salida').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!salidaActual) return;
+      const btn = $<HTMLButtonElement>('#ds-ok');
+      btn.disabled = true;
+      try {
+        if (salidaActual.modo === 'local') {
+          const p = getPedidosPendientes().find((x) => x.id === salidaActual!.id);
+          if (!p) throw new Error('La solicitud ya no está por despachar.');
+          await verificarDespacho(p.id, {
+            brazalete: $<HTMLInputElement>('#ds-brazalete').checked, din: $<HTMLInputElement>('#ds-din').checked,
+            etiqueta: $<HTMLInputElement>('#ds-etiqueta').checked, recibe: val('ds-recibe'),
+          });
+          const r = registrarEntrega({ ...p, pedidoId: p.id });
+          if (!r.ok) throw new Error(r.motivo);
+          toast(`Pedido de ${p.pacienteNombre} despachado.`);
+        } else if (salidaActual.modo === 'despachar') {
+          await despacharPedidoCentro(salidaActual.id, {
+            transporte: val('ds-transporte'), chofer: val('ds-chofer'), contenedor: val('ds-contenedor'),
+            datalogger: val('ds-logger') || undefined, tempSalida: num('ds-temp-salida'),
+          });
+          toast('Pedido despachado: va en camino al centro solicitante.');
+          await cargarCentros();
+        } else {
+          const inspeccion = Object.fromEntries(DEFECTOS.map((d) => [d.id, dlgSalida.querySelector<HTMLInputElement>(`[data-defecto="${d.id}"]`)!.checked])) as Record<Defecto, boolean>;
+          const r = await recibirPedidoCentro(salidaActual.id, { tempLlegada: num('ds-temp-llegada'), inspeccion, observaciones: val('ds-obs') });
+          toast(!r.conforme ? 'Recibido con hallazgos: las bolsas quedaron en cuarentena para el laboratorio.'
+            : r.reservaLocal ? 'Recibido: las unidades entraron a tu stock y quedaron reservadas para la solicitud.' : 'Recibido: las unidades entraron al stock de tu sede.');
+          await cargarCentros();
+        }
+        dlgSalida.close();
+      } catch (ex) {
+        $('#ds-error').textContent = (ex as Error).message;
+        $('#ds-error').classList.remove('hidden');
+      } finally { btn.disabled = false; }
     });
 
     $('#espera').addEventListener('click', (e) => {
@@ -263,21 +364,15 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     };
     $('#centros').addEventListener('click', async (e) => {
       const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-centro]');
-      if (!b) return;
-      b.disabled = true;
-      try {
-        if (b.dataset.accion === 'despachar') {
-          await despacharPedidoCentro(b.dataset.centro!);
-          toast('Pedido despachado: va en camino al centro solicitante.');
-        } else {
-          const r = await recibirPedidoCentro(b.dataset.centro!);
-          toast(r.reservaLocal ? 'Recibido: las unidades entraron a tu stock y quedaron reservadas para la solicitud.' : 'Recibido: las unidades entraron al stock de tu sede.');
-        }
-        await cargarCentros();
-      } catch (err) {
-        toast((err as Error).message);
-        b.disabled = false;
-      }
+      if (!b || !centros) return;
+      const p = [...centros.recibidos, ...centros.enviados].find((x) => x.id === b.dataset.centro);
+      if (!p) return;
+      const sub = `${p.id} · ${p.unidades} u. ${p.tipoSangre} ${p.componente} · ${b.dataset.accion === 'despachar' ? 'hacia ' + p.solicitante.nombre : 'desde ' + p.proveedora.nombre}`;
+      const t = p.traslado;
+      abrirSalida(b.dataset.accion === 'despachar'
+        ? { modo: 'despachar', id: p.id, titulo: 'Despachar al centro', sub }
+        : { modo: 'recibir', id: p.id, titulo: 'Recibir el pedido', sub,
+            traslado: t ? `Salió ${t.horaSalida ? new Date(t.horaSalida).toLocaleString('es-VE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) : ''} en ${t.transporte} (chofer ${t.chofer}), contenedor ${t.contenedor}${t.datalogger ? `, logger ${t.datalogger}` : ''}, a ${t.tempSalida} °C.` : '' });
     });
 
     const render = () => {

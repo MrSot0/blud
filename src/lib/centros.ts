@@ -28,6 +28,30 @@ export interface PedidoCentro {
   recibidoEn?: string;
   stockProveedor: number;
   bolsas?: { codigo: string; vence: string }[];
+  /** RF-DS2/DS3: datos del traslado al despachar. */
+  traslado?: Traslado & { horaSalida?: string; por?: string };
+  /** RF-DS4: recepción con temperatura e inspección visual. */
+  recepcion?: Recepcion & { conforme?: boolean; defectos?: string[]; hora?: string; por?: string };
+}
+
+export interface Traslado { transporte: string; chofer: string; contenedor: string; datalogger?: string; tempSalida: number }
+export const DEFECTOS = [
+  { id: 'hemolisis', label: 'Hemólisis' }, { id: 'coagulos', label: 'Coágulos' }, { id: 'turbidez', label: 'Turbidez' },
+  { id: 'burbujas', label: 'Burbujas' }, { id: 'fugas', label: 'Fugas o bolsa dañada' },
+] as const;
+export type Defecto = (typeof DEFECTOS)[number]['id'];
+export interface Recepcion { tempLlegada: number; inspeccion: Record<Defecto, boolean>; observaciones?: string }
+
+export function validarTraslado(t: Traslado): string | null {
+  if (!t.transporte.trim() || !t.chofer.trim()) return 'Indica el transporte y el chofer del traslado.';
+  if (!t.contenedor.trim()) return 'Indica el contenedor isotérmico.';
+  if (!Number.isFinite(t.tempSalida) || t.tempSalida < -40 || t.tempSalida > 30) return 'Registra la temperatura de salida del contenedor.';
+  return null;
+}
+export function validarRecepcion(r: Recepcion): string | null {
+  if (!Number.isFinite(r.tempLlegada) || r.tempLlegada < -40 || r.tempLlegada > 30) return 'Registra la temperatura de llegada del contenedor.';
+  if (Object.values(r.inspeccion).some(Boolean) && (r.observaciones?.trim().length ?? 0) < 10) return 'Describe lo que encontraste en la inspección (mínimo 10 caracteres).';
+  return null;
 }
 
 export interface LocalSinStock {
@@ -88,15 +112,19 @@ export async function resolverPedidoCentro(id: string, aprobar: boolean, motivo?
   if (error) throw err(error);
 }
 
-export async function despacharPedidoCentro(id: string): Promise<void> {
-  const { error } = await cliente().rpc('blud_pedido_centro_despachar', { p_id: id });
+export async function despacharPedidoCentro(id: string, traslado: Traslado): Promise<void> {
+  const e = validarTraslado(traslado);
+  if (e) throw new Error(e);
+  const { error } = await cliente().rpc('blud_pedido_centro_despachar', { p_id: id, p_traslado: traslado });
   if (error) throw err(error);
 }
 
-export async function recibirPedidoCentro(id: string): Promise<{ reservaLocal: number }> {
-  const { data, error } = await cliente().rpc('blud_pedido_centro_recibir', { p_id: id });
+export async function recibirPedidoCentro(id: string, recepcion: Recepcion): Promise<{ reservaLocal: number; conforme: boolean }> {
+  const e = validarRecepcion(recepcion);
+  if (e) throw new Error(e);
+  const { data, error } = await cliente().rpc('blud_pedido_centro_recibir', { p_id: id, p_recepcion: recepcion });
   if (error) throw err(error);
-  return data as { reservaLocal: number };
+  return data as { reservaLocal: number; conforme: boolean };
 }
 
 export async function cancelarPedidoCentro(id: string): Promise<void> {

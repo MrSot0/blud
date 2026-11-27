@@ -83,3 +83,22 @@ export async function avisarMedico(solicitud: string, nota: string): Promise<voi
   const { error } = await cliente().rpc('blud_avisar_medico', { p_solicitud: solicitud, p_nota: nota.trim() });
   if (error) throw err(error);
 }
+
+// ------------------------------------------------------------------ RF-DS5 · Verificación antes del despacho local
+export interface VerificacionDespacho { brazalete: boolean; din: boolean; etiqueta: boolean; recibe: string }
+
+export function validarVerificacion(v: VerificacionDespacho): string | null {
+  if (!(v.brazalete && v.din && v.etiqueta)) return 'Verifica el brazalete del paciente, el DIN de cada bolsa y la etiqueta de compatibilidad.';
+  if (v.recibe.trim().length < 3) return 'Indica quién recibe las unidades en el servicio.';
+  return null;
+}
+
+/** Deja la verificación en la bitácora; la base la exige (2 horas) para despachar. */
+export async function verificarDespacho(solicitud: string, v: VerificacionDespacho): Promise<void> {
+  const e = validarVerificacion(v);
+  if (e) throw new Error(e);
+  const c = sb();
+  if (!c) return; // modo demo: solo se valida en la pantalla
+  const { error } = await c.rpc('blud_verificar_despacho', { p_solicitud: solicitud, p: v });
+  if (error) throw err(error);
+}

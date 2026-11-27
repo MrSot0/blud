@@ -2,7 +2,7 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 27-11-2026:** 70 hechos, 13 parciales, 8 pendientes y 1 que cambió por decisión del
+> **Estado al 27-11-2026:** 74 hechos, 11 parciales, 6 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Lo marcado «migración sin aplicar» funciona en la interfaz, pero necesita
 > `supabase/migrations/20261125120000_blud_roles_pendientes.sql` y `20261125150000_blud_administracion.sql` en la base.
 
@@ -161,10 +161,10 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 | ID | Requerimiento | Origen | Estado (20-10) | Estado (25-11) | Nota |
 |---|---|---|---|---|---|
 | RF-DS1 | El sistema debe gestionar solicitudes e intercambio de hemocomponentes entre centros | Procesos M07 | Pendiente | Hecho | pedidos entre centros (pedido_entre_centros) |
-| RF-DS2 | Cada despacho debe registrar centro emisor y receptor, transporte, chofer, fecha y hora | Procesos M07 | Parcial | Parcial | emisor, receptor y fechas; faltan transporte y chofer |
-| RF-DS3 | Cada envío debe registrar contenedor isotérmico, data logger y lecturas de temperatura a la salida y a la llegada | Procesos M07 | Pendiente | Pendiente | contenedor isotérmico, data logger y temperaturas de salida y llegada |
-| RF-DS4 | Al recibir, el sistema debe registrar la verificación visual (hemólisis, coágulos, turbidez, burbujas, fugas) y confirmar la recepción | Procesos M07 | Pendiente | Pendiente | inspección visual al recibir |
-| RF-DS5 | Antes del despacho, el sistema debe verificar brazalete, DIN y etiqueta de compatibilidad | Diagrama de procesos | Pendiente | Parcial | el despacho se bloquea sin compatibilidad; falta verificar brazalete y etiqueta |
+| RF-DS2 | Cada despacho debe registrar centro emisor y receptor, transporte, chofer, fecha y hora | Procesos M07 | Parcial | Hecho | emisor, receptor, transporte, chofer, fecha y hora en el despacho entre centros (27-11) |
+| RF-DS3 | Cada envío debe registrar contenedor isotérmico, data logger y lecturas de temperatura a la salida y a la llegada | Procesos M07 | Pendiente | Hecho | contenedor isotérmico, data logger y temperaturas de salida y de llegada (27-11) |
+| RF-DS4 | Al recibir, el sistema debe registrar la verificación visual (hemólisis, coágulos, turbidez, burbujas, fugas) y confirmar la recepción | Procesos M07 | Pendiente | Hecho | inspección visual al recibir; con hallazgos las bolsas entran en cuarentena (27-11) |
+| RF-DS5 | Antes del despacho, el sistema debe verificar brazalete, DIN y etiqueta de compatibilidad | Diagrama de procesos | Pendiente | Hecho | verificación de brazalete, DIN y etiqueta obligatoria antes del despacho local (VERIF_DESPACHO) (27-11) |
 
 ### Transfusión y solicitudes (RF-TR)
 
