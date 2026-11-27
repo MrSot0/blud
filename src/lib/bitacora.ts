@@ -62,7 +62,7 @@ const OPERACION: Record<string, string> = {
   CORRECCION_ESTADO: 'Corrigió un estado', EQUIPO_CREADO: 'Registró un equipo', EQUIPO_EDITADO: 'Editó un equipo',
   TEMP_FUERA_RANGO: 'Temperatura fuera de rango', CONSULTA_TRAZA: 'Consultó trazabilidad',
   DEVOLUCION_BOLSA: 'Devolvió una bolsa', DEVOLUCION_RECIBIDA: 'Recibió una bolsa devuelta', HV_COMITE: 'Notificó al comité',
-  AVISO_MEDICO: 'Avisó al médico tratante', BAJA_UNIDAD: 'Dio de baja una unidad', UBICACION: 'Movió una unidad', VERIF_DESPACHO: 'Verificó antes de despachar', RECEPCION_NO_CONF: 'Recepción con hallazgos', TRASLADO: 'Recibió por traslado',
+  AVISO_MEDICO: 'Avisó al médico tratante', BAJA_UNIDAD: 'Dio de baja una unidad', UBICACION: 'Movió una unidad', VERIF_DESPACHO: 'Verificó antes de despachar', ADJUNTO: 'Adjuntó un documento', RECEPCION_NO_CONF: 'Recepción con hallazgos', TRASLADO: 'Recibió por traslado',
 };
 export const operacionDe = (o: string) => OPERACION[o] ?? (o.charAt(0) + o.slice(1).toLowerCase()).replace(/_/g, ' ');
 

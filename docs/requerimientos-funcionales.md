@@ -2,7 +2,7 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 27-11-2026:** 83 hechos, 4 parciales, 4 pendientes y 1 que cambió por decisión del
+> **Estado al 27-11-2026:** 85 hechos, 2 parciales, 4 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Todas las migraciones están aplicadas en la base.
 
 # BLUD — Requerimientos funcionales unificados
@@ -169,7 +169,7 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 
 | ID | Requerimiento | Origen | Estado (20-10) | Estado (25-11) | Nota |
 |---|---|---|---|---|---|
-| RF-TR1 | El sistema debe recibir la solicitud clínica: centro, servicio, médico, diagnóstico, indicación, urgencia, y adjuntar la orden médica, la historia y el consentimiento | Procesos M08 | Parcial | Parcial | orden médica con datos clínicos y consentimiento; sin adjuntos |
+| RF-TR1 | El sistema debe recibir la solicitud clínica: centro, servicio, médico, diagnóstico, indicación, urgencia, y adjuntar la orden médica, la historia y el consentimiento | Procesos M08 | Parcial | Hecho | datos clínicos en la solicitud y documentos adjuntos (orden, consentimiento, historia) en el bucket privado documentos-clinicos (migración 20261127180000) |
 | RF-TR2 | El laboratorio debe registrar la muestra del paciente con su grupo ABO, Rh y fenotipo extendido | Procesos M08 | Pendiente | Hecho | tipaje de la muestra del paciente |
 | RF-TR3 | El laboratorio debe registrar pruebas cruzadas: Coombs directo e indirecto, prueba mayor y menor, con fecha, hora y firma del analista | Procesos M08 | Pendiente | Hecho | prueba cruzada mayor, menor y Coombs |
 | RF-TR4 | El sistema debe reservar unidades y vincular el DIN con el ID del paciente según la urgencia (emergencia, urgente, programada) | Procesos M08 | Pendiente | Hecho | reserva de unidades vinculada a la solicitud y al paciente |
@@ -182,7 +182,7 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 | ID | Requerimiento | Origen | Estado (20-10) | Estado (25-11) | Nota |
 |---|---|---|---|---|---|
 | RF-H1 | Antes de transfundir, el sistema debe exigir la doble verificación al lado de la cama: identidad y brazalete, DIN contra etiqueta, ABO/Rh del paciente contra la bolsa, vencimiento e inspección visual | Procesos M09 | Pendiente | Hecho | doble verificación obligatoria con segundo verificador; aplicada y probada (26-11) |
-| RF-H2 | El sistema debe exigir el consentimiento informado firmado y la orden médica por escrito | Procesos M09 | Pendiente | Parcial | consentimiento en la solicitud y en la verificación; falta la orden escrita adjunta |
+| RF-H2 | El sistema debe exigir el consentimiento informado firmado y la orden médica por escrito | Procesos M09 | Pendiente | Hecho | la base no deja despachar sin la orden médica y el consentimiento adjuntos, salvo en una emergencia (se regularizan después) |
 | RF-H3 | El sistema debe registrar el monitoreo: inicio antes de 30 min fuera de refrigeración, fin en máximo 4 horas, signos vitales y velocidad de infusión | Procesos M09 | Pendiente | Hecho | tiempos, volumen, velocidad y signos; alertas de 30 min desde el despacho y de 4 h de infusión (27-11) |
 | RF-H4 | El sistema debe registrar reacciones adversas (categoría, hora, síntomas, acciones tomadas) y notificarlas al comité de hemovigilancia | Procesos M09 | Pendiente | Hecho | reacciones con categoría, severidad e imputabilidad; la dirección notifica al comité (HV_COMITE) (27-11) |
 | RF-H5 | El sistema debe permitir la trazabilidad en ambos sentidos entre donante y receptor | Procesos M09 | Pendiente | Hecho | Trazabilidad (dirección y laboratorio); aplicada y probada (27-11) |

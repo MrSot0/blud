@@ -72,12 +72,14 @@ los RF está anotado como comentario en la sección donde irá.
      ficha del carnet (`FichaDonante`).
   3. **Donaciones**: evaluación médica obligatoria (O7) + extracción (O8) → cuarentena con DIN.
   4. **Transfusión local**: el operador la registra, **sin aprobación de la dirección**; se reservan unidades de su
-     sede; laboratorio hace tipaje y prueba cruzada; el operador despacha. Sin stock: «En espera de stock».
+     sede; laboratorio hace tipaje y prueba cruzada; el operador adjunta la orden médica y el consentimiento
+     («Documentos») y despacha. Sin esos dos documentos la base no deja despachar, salvo prioridad crítica
+     (emergencia). Al registrar la transfusión en hemovigilancia la bolsa pasa a «Transfundido». Sin stock: «En espera de stock».
 - **Laboratorio** (menú: Inicio: Panel, Avisos · Donaciones: Pruebas, Fraccionamiento, Casos positivos ·
-  Transfusión: Compatibilidad · Banco de sangre: Equipos y temperatura, Trazabilidad · Seguimiento: Reportes,
+  Transfusión: Compatibilidad · Banco de sangre: Equipos y temperatura, Trazabilidad, Movimientos · Seguimiento: Reportes,
   Registros · Cuenta): tamizaje, fraccionamiento, positivos, **Compatibilidad** (tipaje + cruzada), reportes, registros.
 - **Director** (menú: Inicio: Panel, Avisos · Banco de sangre: Inventario, Equipos y temperatura, Solicitudes entre centros,
-  Hemovigilancia, Trazabilidad ·
+  Hemovigilancia, Movimientos, Trazabilidad ·
   Análisis: Mapa de calor, Reportes · Gestión: Personal, Bitácora · Cuenta: Mi perfil, Configuración, Ayuda): **solo aprueba pedidos de hemocomponentes entre centros**. El director que
   necesita bolsas pide a otro centro; el director del centro proveedor aprueba/rechaza; su operador despacha; el
   solicitante confirma la recepción. No aprueba lo que registra el operador.
@@ -115,6 +117,21 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
   un PDF por reporte). Para revisarlos: descargarlos con Playwright y `pdftoppm -png`.
 
 ## 7. Hecho recientemente (de más nuevo a más viejo)
+
+- **27-11-2026 (tarde)**. Todo aplicado en la base y subido a `main`:
+  - Rama `backend` de iFlam3 unida (límites del chat de Bluddie, 2FA obligatoria para el personal, cabeceras HTTP;
+    `vercel.json` con `camera=(self)` para el escáner de QR e `img-src` con `*.supabase.co`).
+  - Issue #12 (elegibilidad): sueño y comida en preguntas separadas; límites inclusivos («24 horas o más»,
+    «{meses} meses o más»…). El issue #11 (video del hero) queda fuera, por decisión del usuario.
+  - RF-D7: `lib/cupos.ts` + `blud_cupos`; el diálogo de agendar y `/donante/donar` deshabilitan horas llenas o fuera de horario.
+  - RF-I1, I2, DIR3 (`20261127160000_blud_movimientos_unidad`, `20261127170000_blud_estado_transfundido`):
+    `blud_movimientos` lee la auditoría de `unidadsangre`; páginas `/director/movimientos` y `/laboratorio/movimientos`.
+    Disparador `hv_transfundida`; `unidades_de_solicitud` incluye las transfundidas; `blud_cambiar_unidad` ya no
+    acepta unidades despachadas (antes podía devolver una bolsa en tránsito al stock).
+  - RF-TR1 y H2 (`20261127180000_blud_adjuntos_clinicos`): bucket privado `documentos-clinicos`
+    (`<sede>/<solicitud>/…`, PDF o imagen ≤ 10 MB, sin borrar), tabla `solicitud_adjunto`, `blud_adjuntos`,
+    `blud_adjunto_carpeta`, `blud_adjunto_registrar` (operación `ADJUNTO`); `blud_verificar_despacho` exige orden y
+    consentimiento salvo `Emergencia`. Probado con SQL; la subida real al bucket falta probarla con sesión en Vercel.
 
 - **Administración, equipos y trazabilidad (26-11-2026)**. Migración `20261125150000_blud_administracion.sql`
   **escrita, SIN APLICAR** (va después de `20261125120000`; ambas pasan el analizador `pglast`). Con `lib/rpc.ts`
@@ -174,8 +191,8 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
    `docs/requerimientos-funcionales.md`.
 3. **Mensajes** para laboratorio y entre directores (para pedidos entre centros): requiere canales nuevos en
    Realtime. Hoy el laboratorio contacta al donante a través del operador.
-4. **Sedes desde la base**: `/centros`, Donar y el diálogo de agendar aún usan `src/data/centers.ts`; la cita se
-   enlaza por nombre (`blud_agendar_cita`); no se validan horario ni cupos en el servidor.
+4. **Sedes desde la base**: `/centros`, Donar y el diálogo de agendar aún usan `src/data/centers.ts` (los horarios
+   están duplicados en `sede`); la cita se enlaza por nombre. Horario y cupos ya se validan en el servidor (RF-D7).
 5. Agregación en servidor para rangos > 1 año (mapa de calor «Todo», reportes); notas internas de tickets antiguos;
    triggers lentos en inserciones masivas; prioridad «urgente» en reportes del personal (g_ticket la ignora).
 6. **Avisos por correo (T10, D8)**: requieren configurar SMTP en Supabase (las plantillas `supabase/templates/`

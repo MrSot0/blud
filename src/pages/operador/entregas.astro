@@ -167,6 +167,29 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       </footer>
     </form>
   </dialog>
+  <!-- RF-TR1 y RF-H2: documentos de la solicitud (orden médica, consentimiento, historia) -->
+  <dialog id="dlg-docs" class="blud-dialog" aria-labelledby="dd-titulo">
+    <div class="blud-dialog-marco">
+      <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div class="min-w-0">
+          <h2 id="dd-titulo" class="text-lg font-bold text-ink">Documentos de la solicitud</h2>
+          <p id="dd-sub" class="text-sm text-ink-2"></p>
+        </div>
+        <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-dd-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div class="blud-dialog-cuerpo space-y-4">
+        <p id="dd-regla" class="rounded-control bg-sunken px-3 py-2 text-xs text-ink-2"></p>
+        <ul id="dd-lista" class="space-y-3"></ul>
+        <p id="dd-demo" class="hidden text-xs text-ink-3">Modo demo: se guarda el nombre del archivo, no el archivo.</p>
+        <p id="dd-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <footer class="flex justify-end border-t border-line p-4">
+        <button type="button" class="btn btn-secondary" data-dd-cerrar>Cerrar</button>
+      </footer>
+    </div>
+  </dialog>
 </LayoutOperador>
 
 <script>
@@ -174,6 +197,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   import { DEFECTOS, bandejaCentros, despacharPedidoCentro, recibirPedidoCentro, ESTADO_PEDIDO_CENTRO, TONO_PEDIDO_CENTRO } from '../../lib/centros';
   import type { Defecto } from '../../lib/centros';
   import { verificarDespacho } from '../../lib/transfusion';
+  import { MIMES, TIPOS_ADJUNTO, adjuntosDe, enlaceAdjunto, faltantes, subirAdjunto, tamano } from '../../lib/adjuntos';
+  import type { Adjunto, TipoAdjunto } from '../../lib/adjuntos';
   import type { BandejaCentros } from '../../lib/centros';
   import type { Hemocomponente } from '../../lib/operador';
   import { usaSupabase } from '../../lib/supabase';
@@ -187,6 +212,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   const compat = new Map<string, string>();
   /** Solicitud aprobada → datos de compatibilidad completos (para imprimir las etiquetas). */
   const transfusiones = new Map<string, Transfusion>();
+  /** Solicitud por despachar → documentos adjuntos (RF-TR1, H2). */
+  const documentos = new Map<string, Adjunto[]>();
 
   function init() {
     const form = $<HTMLFormElement>('#form');
@@ -204,6 +231,93 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         render();
       } catch {}
     };
+
+    // Documentos adjuntos de las solicitudes por despachar.
+    const cargarDocs = async () => {
+      try {
+        const ids = getPedidosPendientes().map((p) => p.id);
+        const m = await adjuntosDe(ids);
+        documentos.clear();
+        m.forEach((v, k) => documentos.set(k, v));
+        render();
+      } catch {}
+    };
+    /** En una emergencia (prioridad crítica) los documentos se regularizan después. */
+    const exigeDocs = (prioridad?: string) => prioridad !== 'critica';
+    const docsChip = (p: { id: string; prioridad?: string }) => {
+      const l = documentos.get(p.id);
+      if (!l) return '';
+      const faltan = faltantes(l);
+      if (!faltan.length) return `<p class="rounded-control bg-ok-soft px-3 py-2 text-xs font-semibold text-ok">Documentos completos (${l.length}).</p>`;
+      return exigeDocs(p.prioridad)
+        ? `<p class="rounded-control bg-warn-soft px-3 py-2 text-xs font-semibold text-warn">Falta adjuntar: ${esc(faltan.join(' y ').toLowerCase())}.</p>`
+        : `<p class="rounded-control bg-sunken px-3 py-2 text-xs text-ink-2">Emergencia: adjunta ${esc(faltan.join(' y ').toLowerCase())} en cuanto los tengas.</p>`;
+    };
+
+    // ---------- Diálogo de documentos
+    const dlgDocs = $<HTMLDialogElement>('#dlg-docs');
+    let docsDe: { id: string; prioridad?: string } | null = null;
+    const pintarDocs = () => {
+      if (!docsDe) return;
+      const l = documentos.get(docsDe.id) ?? [];
+      $('#dd-regla').textContent = exigeDocs(docsDe.prioridad)
+        ? 'Para despachar hacen falta la orden médica escrita y el consentimiento informado firmado. PDF o foto, hasta 10 MB. Los documentos no se pueden borrar: forman parte del expediente.'
+        : 'Emergencia: puedes despachar sin documentos, pero adjúntalos en cuanto los tengas. PDF o foto, hasta 10 MB.';
+      $('#dd-lista').innerHTML = TIPOS_ADJUNTO.map((t) => {
+        const de = l.filter((a) => a.tipo === t.id);
+        return `<li class="rounded-control border border-line p-3 space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <p class="font-semibold text-ink">${esc(t.label)}${t.obligatorio ? '' : ' <span class="text-xs font-normal text-ink-3">(opcional)</span>'}</p>
+            <label class="btn btn-secondary btn-sm cursor-pointer">${de.length ? 'Agregar otro' : 'Adjuntar'}<input type="file" class="sr-only" accept="${MIMES.join(',')}" data-subir="${t.id}" /></label>
+          </div>
+          ${de.length ? `<ul class="space-y-1">${de.map((a) => `<li class="flex items-center justify-between gap-2 text-sm">
+              <span class="min-w-0"><span class="block truncate text-ink">${esc(a.nombre)}</span><span class="block text-xs text-ink-3">${esc([tamano(a.bytes), a.subidoPor, fmtFecha(a.fecha.slice(0, 10), { day: 'numeric', month: 'short' })].filter(Boolean).join(' · '))}</span></span>
+              ${usaSupabase() ? `<button type="button" class="btn btn-secondary btn-sm shrink-0" data-ver="${esc(String(a.id))}">Ver</button>` : ''}</li>`).join('')}</ul>`
+            : `<p class="text-xs ${t.obligatorio && exigeDocs(docsDe!.prioridad) ? 'text-warn' : 'text-ink-3'}">Sin adjuntar.</p>`}
+        </li>`;
+      }).join('');
+    };
+    const abrirDocs = (p: { id: string; prioridad?: string; pacienteNombre: string }) => {
+      docsDe = p;
+      $('#dd-sub').textContent = `${codigoPedido(p.id)} · ${p.pacienteNombre}`;
+      $('#dd-error').classList.add('hidden');
+      $('#dd-demo').classList.toggle('hidden', usaSupabase());
+      pintarDocs();
+      dlgDocs.showModal();
+    };
+    dlgDocs.querySelectorAll('[data-dd-cerrar]').forEach((b) => b.addEventListener('click', () => dlgDocs.close()));
+    $('#dd-lista').addEventListener('change', async (e) => {
+      const input = (e.target as HTMLElement).closest<HTMLInputElement>('[data-subir]');
+      const f = input?.files?.[0];
+      if (!input || !f || !docsDe) return;
+      const id = docsDe.id;
+      const label = input.parentElement!;
+      label.classList.add('opacity-60', 'pointer-events-none');
+      $('#dd-error').classList.add('hidden');
+      try {
+        const a = await subirAdjunto(id, input.dataset.subir as TipoAdjunto, f);
+        documentos.set(id, [...(documentos.get(id) ?? []), a]);
+        toast('Documento adjuntado.');
+        pintarDocs();
+        render();
+      } catch (ex) {
+        $('#dd-error').textContent = (ex as Error).message;
+        $('#dd-error').classList.remove('hidden');
+        label.classList.remove('opacity-60', 'pointer-events-none');
+        input.value = '';
+      }
+    });
+    $('#dd-lista').addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-ver]');
+      if (!b || !docsDe) return;
+      const a = (documentos.get(docsDe.id) ?? []).find((x) => String(x.id) === b.dataset.ver);
+      if (!a) return;
+      const w = window.open('', '_blank', 'noopener');
+      try {
+        const url = await enlaceAdjunto(a);
+        if (url && w) w.location.href = url; else if (url) location.href = url;
+      } catch (ex) { w?.close(); toast((ex as Error).message); }
+    });
 
     // Aviso de stock en vivo para la salida directa
     const hint = $('#stock-hint');
@@ -256,9 +370,21 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         catch (ex) { toast((ex as Error).message); } finally { et.disabled = false; }
         return;
       }
+      const dc = (e.target as HTMLElement).closest<HTMLElement>('[data-docs]')?.dataset.docs;
+      if (dc) {
+        const pd = getPedidosPendientes().find((x) => x.id === dc);
+        if (pd) abrirDocs(pd);
+        return;
+      }
       const id = (e.target as HTMLElement).closest<HTMLElement>('[data-despachar]')?.dataset.despachar;
       const p = id ? getPedidosPendientes().find((x) => x.id === id) : undefined;
       if (!p) return;
+      // RF-H2: orden médica y consentimiento adjuntos (la base también lo exige), salvo en una emergencia.
+      const faltan = faltantes(documentos.get(p.id));
+      if (exigeDocs(p.prioridad) && documentos.has(p.id) && faltan.length) {
+        toast(`Antes de despachar adjunta: ${faltan.join(' y ').toLowerCase()}.`);
+        return abrirDocs(p);
+      }
       // Sin tipaje y pruebas cruzadas compatibles no se despacha (la base también lo exige).
       const falta = compat.get(p.id);
       if (falta) return toast(falta);
@@ -396,10 +522,12 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
           </div>
           <p class="text-sm text-ink-2">${p.unidades} u. de ${esc(p.tipoHemocomponente)} → ${esc(p.hospitalDestino)}</p>
           ${compatChip}
+          ${docsChip(p)}
           <div class="flex items-center justify-between gap-3">
             <span class="rounded-full px-2 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${ok ? `Hay stock (${disp} u.)` : `Stock ${disp} u.`}</span>
             <span class="flex gap-2">
               ${transfusiones.get(p.id) && unidadesEtiquetables(transfusiones.get(p.id)!).length ? `<button type="button" class="btn btn-secondary btn-sm" data-etiquetas="${esc(p.id)}">Etiquetas</button>` : ''}
+              <button type="button" class="btn btn-secondary btn-sm" data-docs="${esc(p.id)}">Documentos</button>
               <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}" ${usaSupabase() && (falta || !compat.has(p.id)) ? 'disabled' : ''}>Despachar</button>
             </span>
           </div></li>`;
@@ -461,8 +589,9 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     setVista('pedidos');
 
     render();
-    onDb(() => { render(); cargarCompat(); cargarCentros(); });
+    onDb(() => { render(); cargarCompat(); cargarCentros(); cargarDocs(); });
     cargarCompat();
+    cargarDocs();
     cargarCentros();
   }
 
