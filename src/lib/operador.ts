@@ -21,7 +21,9 @@ export const sumarDiasOp = (n: number) => sumarDias(hoyISO(), n);
 export type { DonacionOp, EntregaOp, EstadoPedido, Hemocomponente, PedidoOp, Prioridad, RegistroDonante };
 
 export const STOCK_BAJO = 3; // unidades por debajo de las cuales se avisa
-export const DIAS_ENTRE_DONACIONES = 90; // sangre total
+export const DIAS_ENTRE_DONACIONES = 90; // sangre total, hombres
+/** Días entre donaciones de sangre total: 90 en hombres y 120 en mujeres (igual que la base, private.proxima_donacion). */
+export const diasEntreDonaciones = (sexo?: 'M' | 'F') => (sexo === 'F' ? 120 : DIAS_ENTRE_DONACIONES);
 
 export type Resultado<T> = { ok: true; data: T; aviso?: string } | { ok: false; motivo: string };
 const fail = (motivo: string): { ok: false; motivo: string } => ({ ok: false, motivo });
@@ -124,8 +126,9 @@ export function registrarDonacionOp(input: {
     const ultima = donaciones.all()
       .filter((d) => d.donanteId === donante.id && d.tipoHemocomponente === 'Sangre Total')
       .sort(porFechaDesc)[0];
-    if (ultima && diasDesde(ultima.fecha) < DIAS_ENTRE_DONACIONES) {
-      return fail(`${donante.nombreCompleto} donó sangre total el ${ultima.fecha}. Podrá donar de nuevo el ${sumarDias(ultima.fecha, DIAS_ENTRE_DONACIONES)}.`);
+    const espera = diasEntreDonaciones(donante.sexo);
+    if (ultima && diasDesde(ultima.fecha) < espera) {
+      return fail(`${donante.nombreCompleto} donó sangre total el ${ultima.fecha}. Podrá donar de nuevo el ${sumarDias(ultima.fecha, espera)}.`);
     }
   }
 
