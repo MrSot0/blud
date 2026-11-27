@@ -2,6 +2,7 @@
 // src/layouts/LayoutPortal.astro
 // Estructura común de las zonas privadas (donante, operador, laboratorio, soporte y dirección).
 // Los layouts de cada rol solo eligen el rol, el título y la descripción.
+import MfaObligatoria from '../components/app/MfaObligatoria.astro';
 import '../styles/global.css';
 import Navbar from '../components/app/Navbar.astro';
 import { ROLE_HOME } from '../lib/roles';
@@ -57,6 +58,7 @@ const { role, title, description } = Astro.props;
     <main id="main">
       <slot />
     </main>
+    {role !== 'donante' && <MfaObligatoria />}
 
     <script>
       import { guard } from '../lib/roles';
@@ -78,6 +80,8 @@ const { role, title, description } = Astro.props;
             if (!viva) location.replace(`/login?next=${encodeURIComponent(location.pathname)}`);
             else {
               guard([role]);
+              // El personal debe tener verificación en dos pasos: si no la tiene, se le pide activarla ya.
+              if (role !== 'donante') import('../lib/mfa').then((m) => m.exigirAlPersonal());
               // Avisos de mensajes nuevos (contador, aviso en la página y notificación del sistema).
               import('../lib/notificaciones').then((m) => m.iniciarAvisosMensajes());
             }

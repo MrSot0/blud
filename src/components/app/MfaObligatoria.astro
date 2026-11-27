@@ -1,0 +1,37 @@
+---
+// src/components/app/MfaObligatoria.astro
+// El personal (operador, laboratorio, soporte, dirección) tiene acceso a datos de donantes: la verificación en dos
+// pasos es obligatoria. Si la cuenta aún no la tiene, este diálogo bloquea el portal hasta activarla.
+// LayoutPortal lo abre con abrirMfaObligatoria() tras validar la sesión; el donante nunca lo ve.
+---
+
+<dialog class="blud-dialog" data-mfa-ob aria-labelledby="mfa-ob-titulo">
+  <div class="p-6 sm:p-8 space-y-5">
+    <div class="space-y-1">
+      <h2 id="mfa-ob-titulo" class="text-lg font-bold text-ink">Activa la verificación en dos pasos</h2>
+      <p class="text-sm text-ink-2">
+        Tu cuenta da acceso a datos de donantes, así que es obligatoria para el personal. Usa una app como Google
+        Authenticator, Microsoft Authenticator o Authy.
+      </p>
+    </div>
+    <ol class="grid gap-5 sm:grid-cols-2">
+      <li class="space-y-3">
+        <p class="text-sm font-semibold text-ink"><span class="text-accent-ink">1.</span> Escanea este código con tu app</p>
+        <div class="grid place-items-center rounded-control bg-white p-3 w-fit mx-auto sm:mx-0 border border-line">
+          <img alt="Código QR para tu app de autenticación" class="size-44" data-mfa-ob-qr />
+        </div>
+        <p class="text-xs text-ink-3">¿No puedes escanearlo? Escribe esta clave en la app:</p>
+        <code class="block break-all rounded-control bg-sunken px-3 py-2 font-mono text-xs text-ink" data-mfa-ob-clave></code>
+      </li>
+      <li class="space-y-3">
+        <p class="text-sm font-semibold text-ink"><span class="text-accent-ink">2.</span> Escribe el código que muestra la app</p>
+        <input class="field text-center font-mono text-2xl tracking-[0.5em]" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" data-mfa-ob-codigo aria-label="Código de 6 dígitos" />
+        <p class="hidden text-sm font-medium text-accent-ink" role="alert" data-mfa-ob-err></p>
+      </li>
+    </ol>
+    <div class="flex flex-col-reverse sm:flex-row justify-center gap-3">
+      <button type="button" class="btn btn-secondary sm:px-8" data-mfa-ob-salir>Cerrar sesión</button>
+      <button type="button" class="btn btn-primary sm:px-10" data-mfa-ob-confirmar>Confirmar y activar</button>
+    </div>
+  </div>
+</dialog>

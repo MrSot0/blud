@@ -70,18 +70,40 @@ ${eligibilityLines}
 Centros de la red:
 ${centerLines}`;
 
-// Límite simple por IP (por instancia del servidor): frena abusos que gastarían la cuota.
+// Límites para que nadie gaste la cuota de Gemini con un script. Viven en la memoria de cada instancia del servidor:
+// frenan el abuso normal, no un ataque distribuido (para eso, el firewall de Vercel).
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 12;
+const MAX_PER_WINDOW = 8; // por IP y minuto
+const DAY_MS = 86_400_000;
+const MAX_PER_DAY = 80; // por IP y día
+const MAX_GLOBAL_PER_WINDOW = 25; // todas las IP juntas: por debajo de los 30/min de los dos Flash Lite gratuitos
 const hits = new Map<string, number[]>();
+let globalHits: number[] = [];
 
 function rateLimited(ip: string): boolean {
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  globalHits = globalHits.filter((t) => now - t < WINDOW_MS);
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < DAY_MS);
+  const lastMinute = recent.filter((t) => now - t < WINDOW_MS).length;
+  if (lastMinute >= MAX_PER_WINDOW || recent.length >= MAX_PER_DAY || globalHits.length >= MAX_GLOBAL_PER_WINDOW) {
+    hits.set(ip, recent);
+    return true;
+  }
   recent.push(now);
+  globalHits.push(now);
   hits.set(ip, recent);
-  return recent.length > MAX_PER_WINDOW;
+  if (hits.size > 5_000) hits.delete(hits.keys().next().value!); // la memoria no crece sin límite
+  return false;
 }
+
+/** Solo se aceptan llamadas desde las páginas de BLUD (mismo origen), no desde otros sitios. */
+function sameOrigin(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  if (!origin) return false;
+  try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
+}
+
+const MAX_BODY_BYTES = 20_000;
 
 type ChatMessage = { role: 'user' | 'model'; text: string };
 
@@ -112,6 +134,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!GEMINI_API_KEY) {
     return fail('not_configured', 'Bluddie aún no está configurado en este servidor.', 503);
   }
+  if (!sameOrigin(request)) return fail('invalid', 'Origen no permitido.', 403);
+  if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) return fail('invalid', 'Mensaje demasiado largo.', 413);
   if (rateLimited(clientAddress ?? 'desconocida')) {
     return fail('rate_limited', 'Vas muy rápido. Espera un momento y vuelve a intentarlo.', 429);
   }

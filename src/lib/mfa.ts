@@ -70,3 +70,47 @@ export async function desactivar(factorId: string): Promise<void> {
   if (error) throw new Error(motivo(error));
   await cliente().auth.refreshSession();
 }
+
+/**
+ * El personal no puede usar el portal sin verificación en dos pasos. Si la cuenta no tiene un factor activo, abre el
+ * diálogo de MfaObligatoria.astro (no se puede cerrar con Esc) hasta que la active o cierre sesión.
+ */
+export async function exigirAlPersonal(): Promise<void> {
+  const dlg = document.querySelector<HTMLDialogElement>('[data-mfa-ob]');
+  if (!dlg || !sb()) return;
+  let activos: Factor[];
+  try { activos = await factoresActivos(); } catch { return; }
+  if (activos.length) return;
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => dlg.querySelector<T>(s)!;
+  const codigo = $<HTMLInputElement>('[data-mfa-ob-codigo]');
+  const err = (m: string) => { $('[data-mfa-ob-err]').textContent = m; $('[data-mfa-ob-err]').classList.toggle('hidden', !m); };
+  let factorId = '';
+  try {
+    const a = await empezarAlta();
+    factorId = a.factorId;
+    $<HTMLImageElement>('[data-mfa-ob-qr]').src = a.qr;
+    $('[data-mfa-ob-clave]').textContent = a.clave;
+  } catch (e) { err((e as Error).message); }
+
+  dlg.addEventListener('cancel', (e) => e.preventDefault());
+  codigo.addEventListener('input', () => { codigo.value = codigo.value.replace(/\D/g, '').slice(0, 6); err(''); });
+  $('[data-mfa-ob-salir]').addEventListener('click', async () => {
+    const { logout } = await import('./auth');
+    logout();
+    location.replace('/login');
+  });
+  $<HTMLButtonElement>('[data-mfa-ob-confirmar]').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget as HTMLButtonElement;
+    btn.disabled = true;
+    try {
+      await verificarCodigo(codigo.value, factorId);
+      dlg.close();
+      const { toast } = await import('./ui');
+      toast('Verificación en dos pasos activada.');
+    } catch (e) { err((e as Error).message); }
+    finally { btn.disabled = false; }
+  });
+  dlg.showModal();
+  codigo.focus();
+}

@@ -206,7 +206,9 @@ const avisos = [
 
           <div class="hidden flex-col sm:flex-row sm:items-center justify-between gap-3" data-mfa-activa>
             <p class="text-sm text-ink-2" data-mfa-desde></p>
-            <button type="button" class="btn btn-secondary shrink-0" data-mfa-desactivar>Desactivar</button>
+            {esDonante
+              ? <button type="button" class="btn btn-secondary shrink-0" data-mfa-desactivar>Desactivar</button>
+              : <p class="text-xs text-ink-3 sm:text-right">Obligatoria para el personal. Si pierdes tu app, pide a soporte que la restablezca.</p>}
           </div>
         </div>
 
@@ -550,7 +552,7 @@ const avisos = [
       } catch (e) { mfaErr((e as Error).message); }
       finally { btn.disabled = false; }
     });
-    mq$('[data-mfa-desactivar]').addEventListener('click', async () => {
+    mq$('[data-mfa-desactivar]')?.addEventListener('click', async () => {
       if (!confirm('¿Desactivar la verificación en dos pasos? Tu cuenta quedará protegida solo por la contraseña.')) return;
       const { desactivar } = await import('../../lib/mfa');
       try {
