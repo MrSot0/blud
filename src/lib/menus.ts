@@ -101,6 +101,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Transfusión', label: 'Compatibilidad', hint: 'Tipaje y pruebas cruzadas', href: '/laboratorio/compatibilidad', icon: 'verify' },
       { grupo: 'Banco de sangre', label: 'Equipos y temperatura', hint: 'Cámaras, neveras y congeladores', href: '/laboratorio/equipos', icon: 'package' },
       { grupo: 'Banco de sangre', label: 'Trazabilidad', hint: 'Del donante al paciente', href: '/laboratorio/trazabilidad', icon: 'search' },
+      { grupo: 'Banco de sangre', label: 'Movimientos', hint: 'Historial de las bolsas', href: '/laboratorio/movimientos', icon: 'layers' },
       // Pendiente: Mensajes del laboratorio (hoy el contacto con el donante pasa por el operador).
       { grupo: 'Seguimiento', label: 'Reportes', hint: 'Estadísticas y exportación', href: '/laboratorio/reportes', icon: 'chart' },
       { grupo: 'Seguimiento', label: 'Registros', hint: 'Toda tu actividad', href: '/laboratorio/registros', icon: 'clock' },
@@ -120,6 +121,7 @@ export const MENUS: Partial<Record<Role, RoleMenu>> = {
       { grupo: 'Banco de sangre', label: 'Equipos y temperatura', hint: 'Cadena de frío de la sede', href: '/director/equipos', icon: 'layers' },
       { grupo: 'Banco de sangre', label: 'Solicitudes entre centros', hint: 'Pedir y aprobar bolsas', href: '/director/solicitudes/historial', icon: 'inbox' },
       { grupo: 'Banco de sangre', label: 'Hemovigilancia', hint: 'Eventos transfusionales', href: '/director/hemovigilancia', icon: 'alert' },
+      { grupo: 'Banco de sangre', label: 'Movimientos', hint: 'Historial de las bolsas', href: '/director/movimientos', icon: 'layers' },
       { grupo: 'Banco de sangre', label: 'Trazabilidad', hint: 'Del donante al paciente', href: '/director/trazabilidad', icon: 'search' },
       // Pendiente: Mensajes entre directores para coordinar los pedidos entre centros.
       { grupo: 'Análisis', label: 'Mapa de calor', hint: 'Donaciones por centro', href: '/director/estadisticas', icon: 'pin' },

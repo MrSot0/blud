@@ -93,7 +93,7 @@ const { alcance } = Astro.props;
     });
 
     const fila = (e: EntradaBitacora) => `<tr class="align-top">
-      <td class="p-3 celda-titulo celda-corta whitespace-nowrap tabular" data-label="Fecha">${esc(fmt(String(e.fecha)))}</td>
+      <td class="p-3 celda-titulo celda-corta tabular sm:whitespace-nowrap" data-label="Fecha">${esc(fmt(String(e.fecha)))}</td>
       <td class="p-3 celda-estado" data-label="Operación"><span class="inline-flex items-center gap-2 font-semibold text-ink"><span class="size-2 shrink-0 rounded-full ${tonoOperacion(e.operacion)}" aria-hidden="true"></span>${esc(operacionDe(e.operacion))}</span></td>
       <td class="p-3 text-ink-2" data-label="Módulo">${esc(moduloDe(e.tabla))}${e.registro != null ? ` <span class="text-ink-3 tabular">#${esc(e.registro)}</span>` : ''}</td>
       <td class="p-3" data-label="Persona"><span class="block text-ink">${esc(e.usuario || 'Sistema')}</span>${e.correo ? `<span class="block text-xs text-ink-3">${esc(e.correo)}</span>` : ''}</td>

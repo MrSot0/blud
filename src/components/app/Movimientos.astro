@@ -1,0 +1,171 @@
+---
+// src/components/app/Movimientos.astro
+// Historial de movimientos de las unidades de la sede (RF-I2, RF-DIR3). Dirección y laboratorio. Ver lib/movimientos.
+import Filtros from './Filtros.astro';
+import PaginasCursor from './PaginasCursor.astro';
+import { TIPOS } from '../../lib/movimientos';
+---
+
+<div class="container-blud py-6 sm:py-8 space-y-6 sm:space-y-8" data-movimientos>
+  <div class="page-head">
+    <div class="min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">Movimientos del inventario</h1>
+      <p class="text-ink-2 text-sm sm:text-base mt-1">Cada ingreso, cambio de estado, cambio de ubicación y traslado de las bolsas de tu sede, con la fecha, la hora y quién lo hizo.</p>
+    </div>
+    <div class="page-head-acciones">
+      <button type="button" class="btn btn-secondary" data-mov-csv>Exportar esta página</button>
+    </div>
+  </div>
+
+  <section class="panel p-4 sm:p-6 space-y-4">
+    <Filtros>
+      <input type="search" class="field filtro-ancho" placeholder="Código de bolsa o persona (3 letras o más)" aria-label="Buscar movimientos" data-mov-q />
+      <select class="field" aria-label="Tipo de movimiento" data-mov-tipo><option value="">Todos los movimientos</option>{TIPOS.map((t) => <option value={t.id}>{t.label}</option>)}</select>
+      <input type="date" class="field" aria-label="Desde" data-mov-desde data-no-cuenta />
+      <input type="date" class="field" aria-label="Hasta" data-mov-hasta data-no-cuenta />
+    </Filtros>
+
+    <p class="hidden rounded-control bg-warn-soft px-4 py-3 text-sm font-medium text-warn" role="status" data-mov-aviso></p>
+
+    <div class="tabla-apilable" role="region" aria-label="Movimientos de las unidades" tabindex="0">
+      <table class="w-full min-w-[44rem] text-left text-sm">
+        <thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
+          <tr>
+            <th class="p-3 font-bold">Fecha y hora</th>
+            <th class="p-3 font-bold">Bolsa</th>
+            <th class="p-3 font-bold">Movimiento</th>
+            <th class="p-3 font-bold">Cambio</th>
+            <th class="p-3 font-bold">Responsable</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line" data-mov-filas></tbody>
+      </table>
+    </div>
+    <p class="hidden py-8 text-center text-sm text-ink-3" data-mov-vacio>No hay movimientos que coincidan con los filtros.</p>
+    <PaginasCursor etiqueta="Páginas de movimientos" anterior="Más recientes" siguiente="Más antiguos" />
+  </section>
+</div>
+
+<script>
+  import { MIN_BUSQUEDA, NoDisponible, POR_PAGINA, TIPOS, cambioTexto, paginaMovimientos } from '../../lib/movimientos';
+  import type { FiltrosMov, Movimiento } from '../../lib/movimientos';
+  import { downloadFile, esc, hoyISO, sumarDias, toCSV, toast } from '../../lib/ui';
+
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return `${d.toLocaleDateString('es-VE', { day: 'numeric', month: 'short', year: 'numeric' })} · ${d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+  };
+  const TONO: Record<string, string> = { Ingreso: 'bg-ok', Estado: 'bg-accent', 'Ubicación': 'bg-ink-3', Traslado: 'bg-warn' };
+  const etiquetaTipo = (t: string) => TIPOS.find((x) => x.id === t)?.label ?? t;
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-movimientos]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => raiz.querySelector<T>(s)!;
+    q<HTMLInputElement>('[data-mov-hasta]').value = hoyISO();
+    q<HTMLInputElement>('[data-mov-desde]').value = sumarDias(hoyISO(), -30);
+
+    let cursores: (string | null)[] = [null];
+    let pagina = 0;
+    let siguiente: string | null = null;
+    let items: Movimiento[] = [];
+    let peticion = 0;
+
+    const filtros = (): FiltrosMov => ({
+      q: q<HTMLInputElement>('[data-mov-q]').value,
+      tipo: q<HTMLSelectElement>('[data-mov-tipo]').value,
+      desde: q<HTMLInputElement>('[data-mov-desde]').value,
+      hasta: q<HTMLInputElement>('[data-mov-hasta]').value,
+    });
+
+    const fila = (m: Movimiento) => `<tr class="align-top">
+      <td class="p-3 celda-titulo celda-corta tabular sm:whitespace-nowrap" data-label="Fecha">${esc(fmt(m.fecha))}</td>
+      <td class="p-3" data-label="Bolsa"><span class="block font-mono text-xs font-semibold text-ink">${esc(m.codigo ?? m.unidad)}</span><span class="block text-xs text-ink-3">${esc([m.componente, m.sangre].filter(Boolean).join(' · '))}</span></td>
+      <td class="p-3 celda-estado" data-label="Movimiento"><span class="inline-flex items-center gap-2 font-semibold text-ink"><span class="size-2 shrink-0 rounded-full ${TONO[m.tipo] ?? 'bg-ink-3'}" aria-hidden="true"></span>${esc(etiquetaTipo(m.tipo))}</span></td>
+      <td class="p-3 celda-ancha text-ink-2" data-label="Cambio">${esc(cambioTexto(m))}${m.causa ? `<span class="block text-xs text-ink-3">Causa: ${esc(m.causa)}</span>` : ''}</td>
+      <td class="p-3 text-ink" data-label="Responsable">${esc(m.usuario || 'Sistema')}</td>
+    </tr>`;
+
+    const botones = (cargando: boolean) => {
+      q<HTMLButtonElement>('[data-pag-ant]').disabled = cargando || pagina === 0;
+      q<HTMLButtonElement>('[data-pag-sig]').disabled = cargando || !siguiente;
+    };
+    const pintar = () => {
+      q('[data-mov-filas]').innerHTML = items.map(fila).join('');
+      q('[data-mov-vacio]').classList.toggle('hidden', items.length > 0);
+      const desde = pagina * POR_PAGINA + 1;
+      q('[data-pag-estado]').textContent = items.length ? `Página ${pagina + 1} · movimientos ${desde}–${desde + items.length - 1}${siguiente ? '' : ' (últimos)'}` : '';
+      botones(false);
+    };
+    const avisar = (txt: string) => {
+      const a = q('[data-mov-aviso]');
+      a.textContent = txt;
+      a.classList.remove('hidden');
+      items = []; siguiente = null;
+      pintar();
+      q('[data-mov-vacio]').classList.add('hidden');
+    };
+
+    const ir = async (n: number) => {
+      const yo = ++peticion;
+      const { desde, hasta } = filtros();
+      if (desde && hasta && desde > hasta) return avisar('La fecha «Desde» no puede ser posterior a «Hasta».');
+      if (desde && hasta && new Date(hasta).getTime() - new Date(desde).getTime() > 731 * 86400000) return avisar('Consulta como máximo 2 años a la vez: acorta el rango de fechas.');
+      botones(true);
+      q('[data-mov-filas]').setAttribute('aria-busy', 'true');
+      try {
+        const r = await paginaMovimientos(filtros(), cursores[n] ?? null);
+        if (yo !== peticion) return;
+        pagina = n; items = r.items; siguiente = r.siguiente;
+        cursores = cursores.slice(0, n + 1);
+        if (siguiente) cursores[n + 1] = siguiente;
+        q('[data-mov-aviso]').classList.add('hidden');
+        pintar();
+        if (n > 0) raiz.querySelector('.tabla-apilable')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } catch (e) {
+        if (yo !== peticion) return;
+        avisar(e instanceof NoDisponible ? 'El historial de movimientos todavía no está habilitado en el servidor.' : (e as Error).message);
+      } finally {
+        q('[data-mov-filas]').removeAttribute('aria-busy');
+      }
+    };
+    const reiniciar = () => { cursores = [null]; ir(0); };
+
+    let t: number | undefined;
+    let ultima = '';
+    q('[data-mov-q]').addEventListener('input', () => {
+      clearTimeout(t);
+      t = window.setTimeout(() => {
+        const v = q<HTMLInputElement>('[data-mov-q]').value.trim();
+        const efectiva = v.length >= MIN_BUSQUEDA ? v : '';
+        if (efectiva === ultima) return;
+        ultima = efectiva;
+        reiniciar();
+      }, 400);
+    });
+    ['[data-mov-tipo]', '[data-mov-desde]', '[data-mov-hasta]'].forEach((s) => q(s).addEventListener('change', reiniciar));
+    q('[data-pag-ant]').addEventListener('click', () => ir(pagina - 1));
+    q('[data-pag-sig]').addEventListener('click', () => ir(pagina + 1));
+    q('[data-mov-csv]').addEventListener('click', () => {
+      if (!items.length) return toast('No hay movimientos para exportar.');
+      const rows = items.map((m) => ({
+        Fecha: m.fecha, Bolsa: m.codigo ?? m.unidad, Componente: m.componente ?? '', Grupo: m.sangre ?? '', Movimiento: etiquetaTipo(m.tipo),
+        Anterior: m.de ?? '', Nuevo: m.a ?? '', Causa: m.causa ?? '', Responsable: m.usuario ?? '',
+      }));
+      downloadFile(`blud-movimientos-pagina-${pagina + 1}-${hoyISO()}.csv`, toCSV(rows), 'text/csv');
+    });
+    // Modo demo: las donaciones de ejemplo se siembran después de la primera carga.
+    let recarga: number | undefined;
+    window.addEventListener('blud:db', (e) => {
+      if ((e as CustomEvent).detail?.key !== 'blud-db-donaciones' || !raiz.isConnected) return;
+      clearTimeout(recarga);
+      recarga = window.setTimeout(reiniciar, 200);
+    });
+    ir(0);
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -2,7 +2,7 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 27-11-2026:** 80 hechos, 7 parciales, 4 pendientes y 1 que cambió por decisión del
+> **Estado al 27-11-2026:** 83 hechos, 4 parciales, 4 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Todas las migraciones están aplicadas en la base.
 
 # BLUD — Requerimientos funcionales unificados
@@ -115,7 +115,7 @@ Las páginas del director ya existen en el proyecto, pero el inventario, el dash
 |---|---|---|---|---|---|
 | RF-DIR1 | El director debe tener un dashboard con los movimientos y estadísticas de su sede y de la red | Páginas director | Parcial | Hecho | panel con datos reales |
 | RF-DIR2 | El director debe ver el inventario por unidad (DIN, tipo, grupo, volumen, estado, vencimiento y alerta), alimentado por las donaciones y pruebas reales | Páginas director | Parcial | Hecho | inventario por unidad desde la base |
-| RF-DIR3 | El director debe gestionar requisiciones pendientes y ver el historial de movimientos de inventario | Páginas director | Parcial | Parcial | pedidos entre centros; historial de movimientos vía bitácora (sin aplicar) |
+| RF-DIR3 | El director debe gestionar requisiciones pendientes y ver el historial de movimientos de inventario | Páginas director | Parcial | Hecho | pedidos entre centros y «Movimientos del inventario» (ingresos, estados, ubicaciones y traslados, paginado) |
 | RF-DIR4 | El director debe crear, modificar y desactivar cuentas del personal con cualquier rol (operador, laboratorio, soporte) | Procesos (director) | Parcial | Hecho | Personal: crear, editar, activar y desactivar |
 | RF-DIR5 | El director debe generar reportes consolidados (ingresos, vencidas, egresadas, descartes, transfusiones, donantes) por rango de fechas y producto | Procesos (director) | Parcial | Hecho | reportes PDF consolidados |
 | RF-DIR6 | El director debe consultar el registro de cambios realizados en los hemocomponentes | Páginas director | Parcial | Hecho | Bitácora de la sede (dirección); aplicada (27-11) |
@@ -146,8 +146,8 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 
 | ID | Requerimiento | Origen | Estado (20-10) | Estado (25-11) | Nota |
 |---|---|---|---|---|---|
-| RF-I1 | Cada unidad debe tener un estado: cuarentena (por defecto al extraer), disponible, reservado, en tránsito, transfundido o descartado | Procesos M06 | Parcial | Parcial | estados en unidadsangre; falta «en tránsito» y «transfundido» explícitos |
-| RF-I2 | Cada cambio de estado debe guardar fecha, hora y operador responsable | Procesos M06 | Pendiente | Parcial | bitácora de reservas, despachos y rechazos |
+| RF-I1 | Cada unidad debe tener un estado: cuarentena (por defecto al extraer), disponible, reservado, en tránsito, transfundido o descartado | Procesos M06 | Parcial | Hecho | los seis estados en unidadsangre; la unidad pasa a «Transfundido» al registrar su transfusión en hemovigilancia (migración 20261127170000) |
+| RF-I2 | Cada cambio de estado debe guardar fecha, hora y operador responsable | Procesos M06 | Pendiente | Hecho | la auditoría de unidadsangre guarda cada cambio con usuario y hora; «Movimientos» lo muestra a dirección y laboratorio (`blud_movimientos`) |
 | RF-I3 | Cada unidad debe tener ubicación física: equipo (cámara, refrigerador, congelador, agitador), estante, gradilla y posición | Procesos M06 | Pendiente | Hecho | ubicación al fraccionar y al mover cada unidad desde el inventario (27-11) |
 | RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Hecho | Equipos y temperatura (laboratorio y dirección); aplicada y probada (27-11) |
 | RF-I5 | El sistema debe calcular la caducidad según el componente y alertar: 7 días antes en eritrocitos, 30 días antes en plasma y 48 horas antes en plaquetas | Procesos M04 | Pendiente | Hecho | alerta por componente: eritrocitos 7 días, plasma y crio 30, plaquetas 48 h (27-11) |
