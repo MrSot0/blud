@@ -48,6 +48,18 @@ const opciones = [
                 {BLOOD_TYPES.map((t) => <option value={t}>{t}</option>)}
               </select>
             </div>
+            <div>
+              <label for="coombs" class="block text-xs font-bold uppercase text-ink-2 mb-1">Coombs directo</label>
+              <select id="coombs" class="field" required>
+                <option value="">Seleccionar</option><option>Negativo</option><option>Positivo</option>
+              </select>
+            </div>
+            <div>
+              <label for="anticuerpos" class="block text-xs font-bold uppercase text-ink-2 mb-1">Anticuerpos irregulares</label>
+              <select id="anticuerpos" class="field" required>
+                <option value="">Seleccionar</option><option>Negativo</option><option>Positivo</option>
+              </select>
+            </div>
           </div>
 
           <fieldset class="space-y-2">
@@ -173,7 +185,8 @@ const opciones = [
       if (Object.values(resultados).includes('reactivo') &&
           !confirm('Hay al menos un resultado REACTIVO.\n\nLa donación se descartará, se abrirá un caso y el donante quedará diferido. Esta acción no se puede deshacer.\n\n¿Confirmas?')) return;
 
-      const r = registrarPruebas({ donacionId: sel.value, resultados, tipoSangre: grupo.value, lote: $<HTMLInputElement>('#lote').value, observaciones: $<HTMLInputElement>('#obs').value });
+      const r = registrarPruebas({ donacionId: sel.value, resultados, tipoSangre: grupo.value,
+        inmuno: { coombs: $<HTMLSelectElement>('#coombs').value, anticuerpos: $<HTMLSelectElement>('#anticuerpos').value }, lote: $<HTMLInputElement>('#lote').value, observaciones: $<HTMLInputElement>('#obs').value });
       if (!r.ok) { err.textContent = r.motivo; err.classList.remove('hidden'); return; }
       err.classList.add('hidden');
       const g = r.data.global;

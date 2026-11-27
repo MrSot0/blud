@@ -102,6 +102,7 @@
             <p class="text-xs text-ink-3">${esc(fecha(t.fecha))}${t.sede ? ` · ${esc(t.sede)}` : ''}</p>
           </div>
           <p>${t.tamizaje ? `${chip(`Tamizaje ${t.tamizaje.resultado.toLowerCase()}`, tonoTamizaje(t.tamizaje.resultado))} <span class="text-xs text-ink-3">${esc(fecha(t.tamizaje.fecha))}</span>` : chip('Sin tamizaje', 'bg-warn-soft text-warn')}</p>
+          ${t.tamizaje?.coombs ? `<p class="text-xs text-ink-2">Grupo confirmado ${esc(t.tamizaje.grupo ?? '—')} · Coombs ${esc(t.tamizaje.coombs.toLowerCase())} · anticuerpos ${esc((t.tamizaje.anticuerpos ?? '—').toLowerCase())}</p>` : ''}
         </div>
         <div>
           <p class="mb-2 text-[0.6875rem] font-bold uppercase tracking-wide text-ink-3">Bolsas (${t.unidades.length})</p>

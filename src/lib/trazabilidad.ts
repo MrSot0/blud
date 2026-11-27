@@ -23,7 +23,7 @@ export interface TrazaUnidad {
 export interface TrazaDonacion {
   din: string; dinIsbt?: string; fecha: string; sede?: string;
   donante: { id: string; nombre: string; cedula: string; sangre?: string };
-  tamizaje?: { resultado: string; fecha?: string };
+  tamizaje?: { resultado: string; fecha?: string; grupo?: string; coombs?: string; anticuerpos?: string };
   unidades: TrazaUnidad[];
 }
 export type BuscadoPor = 'donacion' | 'unidad' | 'solicitud' | 'donante' | 'paciente' | null;

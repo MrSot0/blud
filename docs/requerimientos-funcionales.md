@@ -2,7 +2,7 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 27-11-2026:** 74 hechos, 11 parciales, 6 pendientes y 1 que cambió por decisión del
+> **Estado al 27-11-2026:** 79 hechos, 8 parciales, 4 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Lo marcado «migración sin aplicar» funciona en la interfaz, pero necesita
 > `supabase/migrations/20261125120000_blud_roles_pendientes.sql` y `20261125150000_blud_administracion.sql` en la base.
 
@@ -99,11 +99,11 @@ Cubre M04 y M05: fraccionamiento, inmunohematología y serología.
 | RF-L1 | El laboratorio debe poder consultar las muestras pendientes | Doc L1 | Hecho | Hecho |  |
 | RF-L2 | El laboratorio debe poder consultar el registro de muestras procesadas | Doc L2 | Hecho | Hecho |  |
 | RF-L3 | El laboratorio debe registrar serología (VIH 1 y 2, HBsAg, anti-HBc, anti-HCV, Chagas, sífilis, HTLV I/II) con resultado reactivo, no reactivo o indeterminado | Procesos M05 | Hecho | Hecho |  |
-| RF-L4 | El laboratorio debe registrar inmunohematología: grupo ABO, Rh, test de Coombs y anticuerpos irregulares | Procesos M05 | Parcial | Parcial | tipaje del paciente en Compatibilidad; falta en la unidad donada (Coombs, anticuerpos) |
+| RF-L4 | El laboratorio debe registrar inmunohematología: grupo ABO, Rh, test de Coombs y anticuerpos irregulares | Procesos M05 | Parcial | Hecho | grupo y Rh confirmados, Coombs directo y anticuerpos irregulares en el tamizaje de la donación (27-11) |
 | RF-L5 | El laboratorio debe marcar alerta en las pruebas positivas y registrar el contacto con el donante | Doc L3 | Hecho | Hecho |  |
 | RF-L6 | Según el resultado, el laboratorio debe liberar la unidad (disponible) o descartarla con su causa de baja | Procesos M05 | Parcial | Hecho | liberar o descartar al registrar el tamizaje |
-| RF-L7 | El laboratorio debe registrar el fraccionamiento: componentes, volumen, fecha, fecha y hora de caducidad, código ISBT-128 y centrifugación (RCF, tiempo, temperatura) | Procesos M04 | Parcial | Parcial | componentes y volumen; faltan centrifugación (RCF, tiempo, temperatura), hora de caducidad y código ISBT por producto |
-| RF-L8 | El laboratorio debe registrar las variantes del hemocomponente: leucorreducido, lavado, irradiado, pool de plaquetas o plaquetoféresis, hora de congelación del plasma | Procesos M04 | Pendiente | Pendiente | variantes leucorreducido, lavado, irradiado, pool y hora de congelación del plasma |
+| RF-L7 | El laboratorio debe registrar el fraccionamiento: componentes, volumen, fecha, fecha y hora de caducidad, código ISBT-128 y centrifugación (RCF, tiempo, temperatura) | Procesos M04 | Parcial | Hecho | componentes, volumen, centrifugación obligatoria (RCF, tiempo, temperatura), caducidad con hora y código por producto (27-11) |
+| RF-L8 | El laboratorio debe registrar las variantes del hemocomponente: leucorreducido, lavado, irradiado, pool de plaquetas o plaquetoféresis, hora de congelación del plasma | Procesos M04 | Pendiente | Hecho | leucorreducido, lavado, irradiado, solución aditiva, método (pool o aféresis) y hora de congelación del plasma (27-11) |
 | RF-L9 | El laboratorio debe poder generar reportes de sus registros | Nuevo | Hecho | Hecho |  |
 | RF-L10 | El laboratorio debe tener un dashboard con estadísticas de su perfil y su sede | Doc L4 | Hecho | Hecho |  |
 | RF-L11 | El sistema debe poder recibir resultados directamente de los analizadores | Procesos M05 | Pendiente | Pendiente | integración con los analizadores |
@@ -149,11 +149,11 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 |---|---|---|---|---|---|
 | RF-I1 | Cada unidad debe tener un estado: cuarentena (por defecto al extraer), disponible, reservado, en tránsito, transfundido o descartado | Procesos M06 | Parcial | Parcial | estados en unidadsangre; falta «en tránsito» y «transfundido» explícitos |
 | RF-I2 | Cada cambio de estado debe guardar fecha, hora y operador responsable | Procesos M06 | Pendiente | Parcial | bitácora de reservas, despachos y rechazos |
-| RF-I3 | Cada unidad debe tener ubicación física: equipo (cámara, refrigerador, congelador, agitador), estante, gradilla y posición | Procesos M06 | Pendiente | Pendiente | equipo, estante, gradilla y posición de cada unidad |
+| RF-I3 | Cada unidad debe tener ubicación física: equipo (cámara, refrigerador, congelador, agitador), estante, gradilla y posición | Procesos M06 | Pendiente | Hecho | ubicación al fraccionar y al mover cada unidad desde el inventario (27-11) |
 | RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Hecho | Equipos y temperatura (laboratorio y dirección); aplicada y probada (27-11) |
 | RF-I5 | El sistema debe calcular la caducidad según el componente y alertar: 7 días antes en eritrocitos, 30 días antes en plasma y 48 horas antes en plaquetas | Procesos M04 | Pendiente | Hecho | alerta por componente: eritrocitos 7 días, plasma y crio 30, plaquetas 48 h (27-11) |
 | RF-I6 | Las unidades deben asignarse por FIFO según la fecha de caducidad más cercana | Procesos M08 | Pendiente | Hecho | la base reserva por fecha de vencimiento más cercana (verificado 26-11) |
-| RF-I7 | Cada baja debe registrar causa (caducidad, serología reactiva, rotura, alteración térmica, hemólisis), fecha, hora, método de disposición y firma del responsable | Procesos M06 | Parcial | Parcial | solo baja automática por serología reactiva; faltan otras causas (caducidad, rotura, térmica, hemólisis), disposición y firma |
+| RF-I7 | Cada baja debe registrar causa (caducidad, serología reactiva, rotura, alteración térmica, hemólisis), fecha, hora, método de disposición y firma del responsable | Procesos M06 | Parcial | Hecho | baja con causa, método de disposición y firma (BAJA_UNIDAD); la serología reactiva sigue siendo automática (27-11) |
 | RF-I8 | El sistema debe mostrar el stock disponible por grupo sanguíneo y componente | Nuevo | Hecho | Hecho |  |
 
 ### Distribución y traslado (RF-DS)

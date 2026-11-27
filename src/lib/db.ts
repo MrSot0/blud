@@ -202,6 +202,8 @@ export interface PruebaLab {
   resultados: Record<string, ResultadoPrueba>;
   resultadoGlobal: ResultadoGlobal;
   tipoSangreConfirmado: string;
+  /** RF-L4: inmunohematología de la donación. */
+  inmuno?: { coombs: 'Negativo' | 'Positivo'; anticuerpos: 'Negativo' | 'Positivo' };
   lote?: string;
   observaciones?: string;
   laboratoristaId: string;
@@ -211,6 +213,11 @@ export interface ProductoFraccion {
   componente: Hemocomponente;
   unidades: number;
   volumenMl: number;
+  /** RF-L8 e I3: variantes, método de obtención, ubicación y hora de congelación del plasma. */
+  variantes?: {
+    leucorreducida?: boolean; lavada?: boolean; irradiada?: boolean; solucion?: string; metodo?: string;
+    ubicacion?: string; horaCongelacion?: string;
+  };
 }
 
 export interface Fraccionamiento {
@@ -219,6 +226,8 @@ export interface Fraccionamiento {
   codigo: string;
   fecha: string;
   productos: ProductoFraccion[];
+  /** RF-L7: centrifugación (g, minutos, °C). */
+  centrifugacion?: { rcf: number; minutos: number; temperatura: number };
   observaciones?: string;
   laboratoristaId: string;
 }

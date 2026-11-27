@@ -2,6 +2,7 @@
 // Lógica del módulo de operador: verificar donantes, registrar donaciones, pedidos, entregas y stock.
 // Todo pasa por lib/db, así el donante ve en su carnet e historial lo que el operador registra.
 
+import { bajasDemo } from './inventario';
 import { getSession } from './auth';
 import { centers } from '../data/centers';
 import {
@@ -225,7 +226,9 @@ export function unidadesInventario(): Unidad[] {
     }
   }
   const out: Unidad[] = [];
+  const bajas = bajasDemo();
   grupos.forEach((lista) => lista.forEach((u) => {
+    if (bajas.has(u.id)) return;
     const dias = -diasDesde(u.vence);
     out.push({ ...u, dias, estado: dias < 0 ? 'vencida' : dias <= diasAlerta(u.componente) ? 'por_vencer' : 'disponible' });
   }));

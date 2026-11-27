@@ -52,6 +52,7 @@ export function registrarPruebas(input: {
   donacionId: string;
   resultados: Record<string, ResultadoPrueba>;
   tipoSangre: string;
+  inmuno?: { coombs: string; anticuerpos: string };
   lote?: string;
   observaciones?: string;
 }): Resultado<{ prueba: PruebaLab; global: ResultadoGlobal; casos: CasoPositivo[] }> {
@@ -61,6 +62,9 @@ export function registrarPruebas(input: {
   const faltan = PRUEBAS.filter((p) => !input.resultados[p.id]);
   if (faltan.length) return fail(`Falta el resultado de: ${faltan.map((f) => f.nombre).join(', ')}.`);
   if (!BLOOD_TYPES.includes(input.tipoSangre as any)) return fail('Confirma el grupo sanguíneo (ABO/Rh).');
+  const ok = (v?: string) => v === 'Negativo' || v === 'Positivo';
+  if (!ok(input.inmuno?.coombs)) return fail('Registra el resultado del Coombs directo.');
+  if (!ok(input.inmuno?.anticuerpos)) return fail('Registra el rastreo de anticuerpos irregulares.');
 
   const global = resultadoGlobal(input.resultados);
   const fecha = hoyISO();
@@ -72,6 +76,7 @@ export function registrarPruebas(input: {
     resultados: input.resultados,
     resultadoGlobal: global,
     tipoSangreConfirmado: input.tipoSangre,
+    inmuno: input.inmuno as PruebaLab['inmuno'],
     lote: input.lote?.trim() || undefined,
     observaciones: input.observaciones?.trim() || undefined,
     laboratoristaId: laboratoristaActual().id,
@@ -113,6 +118,7 @@ export function fraccionables(): DonacionOp[] {
 export function registrarFraccionamiento(input: {
   donacionId: string;
   productos: ProductoFraccion[];
+  centrifugacion: { rcf: number; minutos: number; temperatura: number };
   observaciones?: string;
 }): Resultado<Fraccionamiento> {
   const d = fraccionables().find((x) => x.id === input.donacionId);
@@ -121,12 +127,18 @@ export function registrarFraccionamiento(input: {
   if (!productos.length) return fail('Indica al menos un hemocomponente obtenido.');
   if (productos.some((p) => p.componente === 'Sangre Total' || !COMPONENTES.includes(p.componente))) return fail('Hemocomponente no válido.');
   if (productos.some((p) => !(p.volumenMl > 0))) return fail('Indica el volumen de cada hemocomponente.');
+  const c = input.centrifugacion;
+  if (!(c.rcf >= 500 && c.rcf <= 6000) || !(c.minutos >= 1 && c.minutos <= 60) || !(c.temperatura >= -10 && c.temperatura <= 30)) {
+    return fail('Registra la centrifugación: RCF (500 a 6000 g), tiempo (1 a 60 min) y temperatura (-10 a 30 °C).');
+  }
+  if (productos.some((p) => p.componente === 'Plasma Fresco Congelado' && !p.variantes?.horaCongelacion)) return fail('Registra la hora de congelación del plasma.');
   const data = fracciones.upsert({
     id: uid(),
     donacionId: d.id,
     codigo: codigoDonacion(d.id),
     fecha: hoyISO(),
-    productos: productos.map((p) => ({ componente: p.componente, unidades: Math.round(p.unidades), volumenMl: Math.round(p.volumenMl) })),
+    productos: productos.map((p) => ({ componente: p.componente, unidades: Math.round(p.unidades), volumenMl: Math.round(p.volumenMl), variantes: p.variantes })),
+    centrifugacion: c,
     observaciones: input.observaciones?.trim() || undefined,
     laboratoristaId: laboratoristaActual().id,
   });

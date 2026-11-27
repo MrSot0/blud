@@ -84,7 +84,7 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         </Filtros>
       </div>
       <div class="tabla-apilable" role="region" aria-labelledby="h-unidades" tabindex="0">
-        <table class="w-full min-w-[40rem] text-left text-sm">
+        <table class="w-full min-w-[56rem] text-left text-sm">
           <thead class="border-b border-line bg-sunken text-xs uppercase text-ink-3">
             <tr>
               <th class="p-3 font-bold">Bolsa</th>
@@ -93,6 +93,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
               <th class="p-3 font-bold">Extracción</th>
               <th class="p-3 font-bold">Vence</th>
               <th class="p-3 font-bold">Estado</th>
+              <th class="p-3 font-bold">Ubicación</th>
+              <th class="p-3"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody id="unidades" class="divide-y divide-line"></tbody>
@@ -101,6 +103,33 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       <Paginador id="pag-unidades" />
     </section>
   </div>
+
+  <!-- RF-I3 e I7: mover una unidad o darla de baja -->
+  <dialog id="dlg-unidad" class="blud-dialog blud-dialog-angosto" aria-labelledby="du-titulo">
+    <form id="form-unidad" class="blud-dialog-marco" novalidate>
+      <header class="flex items-start justify-between gap-4 border-b border-line p-5">
+        <div class="min-w-0"><h2 id="du-titulo" class="text-lg font-bold text-ink"></h2><p id="du-sub" class="text-sm text-ink-2"></p></div>
+        <button type="button" class="grid size-9 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-sunken" data-du-cerrar aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </header>
+      <div class="blud-dialog-cuerpo space-y-4">
+        <div data-du="mover"><label for="du-ubic" class="etiqueta-campo">Nueva ubicación</label><input id="du-ubic" class="field" list="du-equipos" placeholder="Equipo · estante · gradilla · posición" /><datalist id="du-equipos"></datalist></div>
+        <div data-du="baja" class="space-y-3">
+          <div><label for="du-causa" class="etiqueta-campo">Causa</label><select id="du-causa" class="field"></select></div>
+          <div><label for="du-detalle" class="etiqueta-campo">Detalle <span class="font-normal normal-case text-ink-3">(obligatorio si eliges «Otra»)</span></label><input id="du-detalle" class="field" /></div>
+          <div><label for="du-metodo" class="etiqueta-campo">Método de disposición</label><select id="du-metodo" class="field"></select></div>
+          <div><label for="du-firma" class="etiqueta-campo">Firma del responsable</label><input id="du-firma" class="field" placeholder="Nombre completo" autocomplete="name" /></div>
+          <p class="text-xs text-ink-3">La unidad sale del inventario de forma definitiva y queda en la bitácora.</p>
+        </div>
+        <p id="du-error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
+      </div>
+      <footer class="grid grid-cols-2 gap-2 border-t border-line p-4 sm:flex sm:justify-end">
+        <button type="button" class="btn btn-secondary" data-du-cerrar>Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="du-ok"></button>
+      </footer>
+    </form>
+  </dialog>
 </Layout>
 
 <script>
@@ -108,6 +137,12 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   import type { Unidad } from '../../lib/director';
   import { Paginador } from '../../lib/paginacion';
   import { BLOOD_TYPES } from '../../lib/db';
+  import { CAUSAS_BAJA, METODOS_DISPOSICION, darDeBaja, detalleInventario, ubicarUnidad, variantesTexto } from '../../lib/inventario';
+  import type { DetalleUnidad } from '../../lib/inventario';
+  import { toast } from '../../lib/ui';
+
+  let detalle = new Map<string, DetalleUnidad>();
+  const horaVence = (d?: DetalleUnidad) => d?.venceHora ? new Date(d.venceHora).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
 
   const sel = (id: string) => document.getElementById(id) as HTMLSelectElement;
   const TIPOS = BLOOD_TYPES;
@@ -157,17 +192,72 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   // Unidades: 25 por tanda (las tarjetas apiladas en móvil se vuelven muy largas con todo el stock).
   const pagUnidades = new Paginador<Unidad>({
     lista: document.getElementById('unidades')!, pie: document.getElementById('pag-unidades')!, tam: 25, nombre: 'unidades', clave: (u) => u.id,
-    vacio: () => '<tr><td colspan="6" class="celda-vacia p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>',
+    vacio: () => '<tr><td colspan="8" class="celda-vacia p-8 text-center text-sm text-ink-3">No hay unidades con esos filtros.</td></tr>',
     render: (vis) => vis.map((u) => {
           const [txt, cls] = etiqueta(u);
           return `<tr><td class="celda-titulo celda-corta p-3 font-mono text-xs font-bold text-ink">${esc(u.codigo)}</td>
             <td class="p-3 text-ink" data-label="Componente">${esc(u.componente)}</td><td class="p-3" data-label="Tipo"><span class="blood-chip">${esc(u.tipoSangre)}</span></td>
-            <td class="celda-movil-oculta p-3 text-ink-2" data-label="Extracción">${esc(fecha(u.extraccion))}</td><td class="p-3 text-ink-2" data-label="Vence">${esc(fecha(u.vence))}</td>
-            <td class="celda-estado p-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${esc(txt)}</span></td></tr>`;
+            <td class="celda-movil-oculta p-3 text-ink-2" data-label="Extracción">${esc(fecha(u.extraccion))}</td><td class="p-3 text-ink-2" data-label="Vence">${esc(fecha(u.vence))}${horaVence(detalle.get(u.id)) ? ` <span class="text-xs text-ink-3">${esc(horaVence(detalle.get(u.id)))}</span>` : ''}</td>
+            <td class="celda-estado p-3"><span class="rounded-full px-2 py-0.5 text-xs font-bold ${cls}">${esc(txt)}</span></td>
+            <td class="p-3 text-xs text-ink-2" data-label="Ubicación">${esc(detalle.get(u.id)?.ubicacion ?? 'Sin registrar')}${variantesTexto(detalle.get(u.id)) ? `<span class="block text-ink-3">${esc(variantesTexto(detalle.get(u.id)))}</span>` : ''}</td>
+            <td class="celda-acciones p-3 text-right whitespace-nowrap"><button type="button" class="btn btn-secondary btn-sm" data-mover="${esc(u.id)}" aria-label="Mover la unidad ${esc(u.codigo)}">Mover</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-baja="${esc(u.id)}" aria-label="Dar de baja la unidad ${esc(u.codigo)}">Dar de baja</button></td></tr>`;
         }).join(''),
   });
 
   ['f-estado', 'f-comp', 'f-tipo'].forEach((id) => sel(id).addEventListener('change', render));
+
+  // ---------- RF-I3 e I7: detalle, mover y dar de baja
+  const cargarDetalle = async () => { try { detalle = await detalleInventario(); render(); } catch {} };
+  cargarDetalle();
+  const dlgU = document.getElementById('dlg-unidad') as HTMLDialogElement;
+  const q = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  q('#du-causa').innerHTML = '<option value="">Elegir</option>' + CAUSAS_BAJA.map((c) => `<option>${esc(c)}</option>`).join('');
+  q('#du-metodo').innerHTML = '<option value="">Elegir</option>' + METODOS_DISPOSICION.map((c) => `<option>${esc(c)}</option>`).join('');
+  import('../../lib/equipos').then(async ({ listarEquipos }) => {
+    try { q('#du-equipos').innerHTML = (await listarEquipos()).filter((e) => e.activo).map((e) => `<option value="${esc(e.nombre)} · estante "></option>`).join(''); } catch {}
+  });
+  let accion: { tipo: 'mover' | 'baja'; id: string } | null = null;
+  document.getElementById('unidades')!.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const mover = t.closest<HTMLElement>('[data-mover]')?.dataset.mover;
+    const baja = t.closest<HTMLElement>('[data-baja]')?.dataset.baja;
+    const id = mover ?? baja;
+    if (!id) return;
+    const u = resumenInventario().unidades.find((x) => x.id === id);
+    accion = { tipo: mover ? 'mover' : 'baja', id };
+    q<HTMLFormElement>('#form-unidad').reset();
+    q('#du-error').classList.add('hidden');
+    q('#du-titulo').textContent = mover ? 'Mover la unidad' : 'Dar de baja la unidad';
+    q('#du-sub').textContent = u ? `${u.codigo} · ${u.componente} · ${u.tipoSangre}` : id;
+    dlgU.querySelectorAll<HTMLElement>('[data-du]').forEach((b) => b.classList.toggle('hidden', b.dataset.du !== accion!.tipo));
+    q('#du-ok').textContent = mover ? 'Guardar ubicación' : 'Dar de baja';
+    if (mover) q<HTMLInputElement>('#du-ubic').value = detalle.get(id)?.ubicacion ?? '';
+    if (baja && u?.estado === 'vencida') q<HTMLSelectElement>('#du-causa').value = 'Caducidad';
+    dlgU.showModal();
+  });
+  dlgU.querySelectorAll('[data-du-cerrar]').forEach((b) => b.addEventListener('click', () => dlgU.close()));
+  q('#form-unidad').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!accion) return;
+    const btn = q<HTMLButtonElement>('#du-ok');
+    btn.disabled = true;
+    try {
+      if (accion.tipo === 'mover') { await ubicarUnidad(accion.id, q<HTMLInputElement>('#du-ubic').value); toast('Ubicación actualizada.'); }
+      else {
+        await darDeBaja(accion.id, { causa: q<HTMLSelectElement>('#du-causa').value, detalle: q<HTMLInputElement>('#du-detalle').value,
+          metodo: q<HTMLSelectElement>('#du-metodo').value, firma: q<HTMLInputElement>('#du-firma').value });
+        toast('Unidad dada de baja.');
+        const { sincronizar } = await import('../../lib/supabase');
+        await sincronizar();
+      }
+      dlgU.close();
+      await cargarDetalle();
+    } catch (ex) {
+      q('#du-error').textContent = (ex as Error).message;
+      q('#du-error').classList.remove('hidden');
+    } finally { btn.disabled = false; }
+  });
   document.getElementById('btn-pdf')!.addEventListener('click', async (e) => {
     const b = e.currentTarget as HTMLButtonElement;
     b.disabled = true;
