@@ -164,7 +164,8 @@ fusionaron en las `@blud.app` y se borraron; quedan 6 donantes de ejemplo `@blud
 
 ## 8. Pendiente (orden recomendado)
 
-1. **Aplicar `20261125120000_blud_roles_pendientes.sql` y luego `20261125150000_blud_administracion.sql`** (ver
+1. ~~Aplicar `20261125120000` y `20261125150000`~~ **Hecho el 26 y 27-11-2026** (más `20261126100000_blud_operaciones_cortas`;
+   `bitacora_auditoria.operacion` es varchar(20)). Antes: (ver
    sección 7) y probar como operador, laboratorio, director y soporte con SQL `begin … rollback`. Revisar en la base los
    valores reales del enum de `unidadsangre.estado` (la corrección ofrece Cuarentena, Disponible, Reservado, EnTransito,
    Descartado y Transfundido).

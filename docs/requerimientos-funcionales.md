@@ -2,7 +2,7 @@
 https://claude.ai/artifact/ASk5sW2JksG5chd76iXRBy), versión del 20-10-2026. Las columnas «Estado (25-11)» y «Nota»
 son una revisión contra el código al 25-11-2026; el resto es el texto original. -->
 
-> **Estado al 26-11-2026:** 53 hechos, 28 parciales, 10 pendientes y 1 que cambió por decisión del
+> **Estado al 27-11-2026:** 62 hechos, 19 parciales, 10 pendientes y 1 que cambió por decisión del
 > usuario (de 92). Lo marcado «migración sin aplicar» funciona en la interfaz, pero necesita
 > `supabase/migrations/20261125120000_blud_roles_pendientes.sql` y `20261125150000_blud_administracion.sql` en la base.
 
@@ -45,7 +45,7 @@ Aplican a todos los roles. Aquí se unifican los requerimientos que el documento
 | RF-T6 | El sistema debe permitir verificación en dos factores al iniciar sesión | Doc G11, O12, L7 | Pendiente | Hecho | 2FA TOTP (lib/mfa.ts); falta decidir si es obligatoria para el personal |
 | RF-T7 | Un agente de IA debe guiar a donantes, operadores y laboratorio en los procesos del sistema y permitir operaciones simples | Doc G7, O9, L8 | Parcial | Parcial | chat con Gemini (/api/chat); no ejecuta operaciones |
 | RF-T8 | La sesión debe cerrarse por inactividad y el usuario debe poder cerrar sesión en todos sus dispositivos | Nuevo | Pendiente | Parcial | cierre por inactividad (15/30 min); falta cerrar sesión en todos los dispositivos |
-| RF-T9 | El sistema debe registrar quién hizo cada cambio de estado, cuándo y desde qué sede (bitácora de auditoría) | Procesos M06 | Pendiente | Parcial | pantalla Bitácora lista; migración 20261125120000 sin aplicar |
+| RF-T9 | El sistema debe registrar quién hizo cada cambio de estado, cuándo y desde qué sede (bitácora de auditoría) | Procesos M06 | Pendiente | Hecho | bitácora con pantalla para dirección y soporte; migraciones aplicadas y probadas (27-11) |
 | RF-T10 | El sistema debe enviar notificaciones por correo y WhatsApp (citas, resultados que requieren contacto, estado de solicitudes) | Procesos M03 | Pendiente | Pendiente | requiere SMTP y proveedor de WhatsApp |
 | RF-T11 | La autorización por rol debe verificarse en el servidor, no solo en la interfaz | Nuevo | Pendiente | Hecho | RLS y RPC con _exigir_rol en Supabase |
 | RF-T12 | Cada usuario del personal debe pertenecer a una sede y ver los datos de esa sede en su dashboard | Doc O1, L4 | Parcial | Hecho | personal con sede (_sede_id) y paneles por sede |
@@ -119,7 +119,7 @@ Las páginas del director ya existen en el proyecto, pero el inventario, el dash
 | RF-DIR3 | El director debe gestionar requisiciones pendientes y ver el historial de movimientos de inventario | Páginas director | Parcial | Parcial | pedidos entre centros; historial de movimientos vía bitácora (sin aplicar) |
 | RF-DIR4 | El director debe crear, modificar y desactivar cuentas del personal con cualquier rol (operador, laboratorio, soporte) | Procesos (director) | Parcial | Hecho | Personal: crear, editar, activar y desactivar |
 | RF-DIR5 | El director debe generar reportes consolidados (ingresos, vencidas, egresadas, descartes, transfusiones, donantes) por rango de fechas y producto | Procesos (director) | Parcial | Hecho | reportes PDF consolidados |
-| RF-DIR6 | El director debe consultar el registro de cambios realizados en los hemocomponentes | Páginas director | Parcial | Parcial | Bitácora; migración sin aplicar |
+| RF-DIR6 | El director debe consultar el registro de cambios realizados en los hemocomponentes | Páginas director | Parcial | Hecho | Bitácora de la sede (dirección); aplicada (27-11) |
 | RF-DIR7 | El director debe registrar solicitudes de transfusión y ver las pendientes, resueltas y propias, con búsqueda y filtro por prioridad | Páginas director | Hecho | Cambió | por decisión del usuario, el operador registra la transfusión local sin aprobación |
 | RF-DIR8 | El director debe aprobar o rechazar las solicitudes de hemocomponentes entre centros | Procesos (director) | Pendiente | Hecho | aprobar o rechazar pedidos entre centros |
 | RF-DIR9 | El director debe poder editar su perfil | Páginas director | Hecho | Hecho |  |
@@ -134,10 +134,10 @@ Soporte atiende al donante y el administrador técnico atiende al sistema; son r
 | RF-S2 | Soporte debe consultar a un donante en solo lectura, sin ver resultados médicos | Nuevo | Hecho | Hecho |  |
 | RF-S3 | Soporte debe tener un dashboard con solicitudes sin resolver, sin asignar y propias | Nuevo | Hecho | Hecho |  |
 | RF-S4 | El sistema debe medir el tiempo de primera respuesta y de resolución de cada solicitud | Nuevo | Pendiente | Pendiente | tiempo de primera respuesta y de resolución por solicitud |
-| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/cuentas (activar, rol y sede, quitar 2FA, restablecer acceso); migración 20261125150000 sin aplicar |
-| RF-A2 | El administrador técnico debe registrar fallas del sistema e incidencias técnicas | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/incidencias con seguimiento; migración 20261125150000 sin aplicar |
-| RF-A3 | El administrador técnico debe resolver incidencias de inventario, muestras y pruebas, corrigiendo estados con justificación | Procesos (actores) | Pendiente | Parcial | pantalla /soporte/correcciones (unidad, tamizaje, tipaje) con motivo; migración 20261125150000 sin aplicar |
-| RF-A4 | El administrador técnico debe poder consultar la bitácora de auditoría (RF-T9) | Nuevo | Pendiente | Parcial | /soporte/bitacora; migraciones sin aplicar |
+| RF-A1 | El administrador técnico debe gestionar usuarios: alta, baja y restablecer acceso | Procesos (actores) | Pendiente | Hecho | /soporte/cuentas: activar, rol y sede, quitar 2FA, restablecer acceso; aplicada y probada (27-11) |
+| RF-A2 | El administrador técnico debe registrar fallas del sistema e incidencias técnicas | Procesos (actores) | Pendiente | Hecho | /soporte/incidencias con seguimiento; aplicada y probada (27-11) |
+| RF-A3 | El administrador técnico debe resolver incidencias de inventario, muestras y pruebas, corrigiendo estados con justificación | Procesos (actores) | Pendiente | Hecho | /soporte/correcciones con motivo e incidencia; aplicada y probada (27-11) |
+| RF-A4 | El administrador técnico debe poder consultar la bitácora de auditoría (RF-T9) | Nuevo | Pendiente | Hecho | /soporte/bitacora (toda la red); aplicada (27-11) |
 
 ## Procesos de banco de sangre (M06–M09)
 
@@ -150,7 +150,7 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 | RF-I1 | Cada unidad debe tener un estado: cuarentena (por defecto al extraer), disponible, reservado, en tránsito, transfundido o descartado | Procesos M06 | Parcial | Parcial | estados en unidadsangre; falta «en tránsito» y «transfundido» explícitos |
 | RF-I2 | Cada cambio de estado debe guardar fecha, hora y operador responsable | Procesos M06 | Pendiente | Parcial | bitácora de reservas, despachos y rechazos |
 | RF-I3 | Cada unidad debe tener ubicación física: equipo (cámara, refrigerador, congelador, agitador), estante, gradilla y posición | Procesos M06 | Pendiente | Pendiente | equipo, estante, gradilla y posición de cada unidad |
-| RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Parcial | pantalla Equipos y temperatura (laboratorio y dirección); migración 20261125150000 sin aplicar |
+| RF-I4 | El sistema debe registrar la temperatura de los equipos, alertar fuera de rango y guardar la calibración de los sensores | Procesos M06 | Pendiente | Hecho | Equipos y temperatura (laboratorio y dirección); aplicada y probada (27-11) |
 | RF-I5 | El sistema debe calcular la caducidad según el componente y alertar: 7 días antes en eritrocitos, 30 días antes en plasma y 48 horas antes en plaquetas | Procesos M04 | Pendiente | Parcial | alerta fija a 7 días; faltan los plazos por componente |
 | RF-I6 | Las unidades deben asignarse por FIFO según la fecha de caducidad más cercana | Procesos M08 | Pendiente | Hecho | la base reserva por fecha de vencimiento más cercana (verificado 26-11) |
 | RF-I7 | Cada baja debe registrar causa (caducidad, serología reactiva, rotura, alteración térmica, hemólisis), fecha, hora, método de disposición y firma del responsable | Procesos M06 | Parcial | Parcial | solo baja automática por serología reactiva; faltan otras causas (caducidad, rotura, térmica, hemólisis), disposición y firma |
@@ -182,11 +182,11 @@ Estos cuatro módulos casi no existen todavía. Los plazos de caducidad y alerta
 
 | ID | Requerimiento | Origen | Estado (20-10) | Estado (25-11) | Nota |
 |---|---|---|---|---|---|
-| RF-H1 | Antes de transfundir, el sistema debe exigir la doble verificación al lado de la cama: identidad y brazalete, DIN contra etiqueta, ABO/Rh del paciente contra la bolsa, vencimiento e inspección visual | Procesos M09 | Pendiente | Parcial | doble verificación obligatoria; migración sin aplicar |
+| RF-H1 | Antes de transfundir, el sistema debe exigir la doble verificación al lado de la cama: identidad y brazalete, DIN contra etiqueta, ABO/Rh del paciente contra la bolsa, vencimiento e inspección visual | Procesos M09 | Pendiente | Hecho | doble verificación obligatoria con segundo verificador; aplicada y probada (26-11) |
 | RF-H2 | El sistema debe exigir el consentimiento informado firmado y la orden médica por escrito | Procesos M09 | Pendiente | Parcial | consentimiento en la solicitud y en la verificación; falta la orden escrita adjunta |
 | RF-H3 | El sistema debe registrar el monitoreo: inicio antes de 30 min fuera de refrigeración, fin en máximo 4 horas, signos vitales y velocidad de infusión | Procesos M09 | Pendiente | Parcial | tiempos, volumen y signos; faltan las alertas de 30 min y 4 h y la velocidad |
 | RF-H4 | El sistema debe registrar reacciones adversas (categoría, hora, síntomas, acciones tomadas) y notificarlas al comité de hemovigilancia | Procesos M09 | Pendiente | Parcial | reacciones con categoría, severidad e imputabilidad; falta notificar al comité |
-| RF-H5 | El sistema debe permitir la trazabilidad en ambos sentidos entre donante y receptor | Procesos M09 | Pendiente | Parcial | pantalla Trazabilidad (dirección y laboratorio); migración 20261125150000 sin aplicar |
+| RF-H5 | El sistema debe permitir la trazabilidad en ambos sentidos entre donante y receptor | Procesos M09 | Pendiente | Hecho | Trazabilidad (dirección y laboratorio); aplicada y probada (27-11) |
 | RF-H6 | Si la transfusión se suspende o la bolsa se rechaza, el sistema debe registrar la devolución y notificar al banco de sangre | Diagrama de procesos | Pendiente | Pendiente | devolución de la bolsa al suspender o rechazar, con aviso al banco |
 
 ## No funcionales y decisiones abiertas
