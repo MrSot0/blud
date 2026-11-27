@@ -1,0 +1,121 @@
+---
+// src/components/app/SeguridadTransfusional.astro
+// RF-TR7 y RF-H6 en un solo bloque, para Compatibilidad (laboratorio) y Despachos (operador):
+//   - pruebas cruzadas incompatibles de la sede y el registro del aviso al médico tratante;
+//   - bolsas devueltas al suspender o rechazar una transfusión; el laboratorio confirma que las recibió.
+// Se oculta solo si no hay nada pendiente. Solo con la base conectada.
+interface Props { role: 'laboratorio' | 'operador' }
+const { role } = Astro.props;
+---
+
+<section class="hidden space-y-4" data-seg data-rol={role} aria-labelledby="seg-titulo">
+  <h2 id="seg-titulo" class="sr-only">Seguridad transfusional</h2>
+
+  <div class="hidden panel space-y-3 p-4 sm:p-6 ring-2 ring-accent" data-seg-incomp>
+    <div>
+      <h3 class="text-lg font-bold text-ink">Pruebas cruzadas incompatibles</h3>
+      <p class="text-sm text-ink-2">Avisa al médico tratante y deja constancia de cómo lo hiciste. La unidad ya quedó bloqueada para el despacho.</p>
+    </div>
+    <ul class="divide-y divide-line" data-seg-incomp-lista></ul>
+  </div>
+
+  <div class="hidden panel space-y-3 p-4 sm:p-6" data-seg-dev>
+    <div>
+      <h3 class="text-lg font-bold text-ink">Bolsas devueltas por recibir</h3>
+      <p class="text-sm text-ink-2">{role === 'laboratorio'
+        ? 'Transfusiones suspendidas o rechazadas. Recibe la bolsa con su equipo para el estudio y confírmalo aquí.'
+        : 'Bolsas que tu sede devolvió al banco y que el laboratorio todavía no confirma.'}</p>
+    </div>
+    <ul class="divide-y divide-line" data-seg-dev-lista></ul>
+  </div>
+</section>
+
+<script>
+  import { listarIncompatibilidades, avisarMedico } from '../../lib/transfusion';
+  import type { Incompatibilidad } from '../../lib/transfusion';
+  import { devolucionesPendientes, fmtFechaHora, recibirDevolucion } from '../../lib/hemovigilancia';
+  import type { RegistroHV } from '../../lib/hemovigilancia';
+  import { usaSupabase } from '../../lib/supabase';
+  import { esc, toast } from '../../lib/ui';
+
+  function init() {
+    const raiz = document.querySelector<HTMLElement>('[data-seg]');
+    if (!raiz || raiz.dataset.ready) return;
+    raiz.dataset.ready = '1';
+    const lab = raiz.dataset.rol === 'laboratorio';
+    const q = <T extends HTMLElement = HTMLElement>(s: string) => raiz.querySelector<T>(s)!;
+    let incomp: Incompatibilidad[] = [];
+    let devs: RegistroHV[] = [];
+
+    function pintar() {
+      const sinAviso = incomp.filter((i) => !i.aviso);
+      q('[data-seg-incomp]').classList.toggle('hidden', !sinAviso.length);
+      q('[data-seg-incomp-lista]').innerHTML = sinAviso.map((i, n) => `<li class="space-y-3 py-4">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-semibold text-ink">${esc(i.paciente.nombre)} <span class="font-normal text-ink-3">· ${esc(i.paciente.cedula)}</span></p>
+            <p class="text-sm text-ink-2">${esc(i.solicitud)}${i.unidadCodigo ? ` · unidad <span class="font-mono">${esc(i.unidadCodigo)}</span>` : ''} · ${esc(fmtFechaHora(i.fecha))}</p>
+            <p class="text-sm text-ink-2">Médico tratante: <strong class="text-ink">${esc(i.medico?.nombre ?? 'sin registrar en la solicitud')}</strong>${i.medico?.telefono ? ` · ${esc(i.medico.telefono)}` : ''}${i.medico?.correo ? ` · ${esc(i.medico.correo)}` : ''}</p>
+          </div>
+          <span class="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-bold text-accent-ink">Sin avisar</span>
+        </div>
+        <form class="flex flex-col gap-2 sm:flex-row" data-seg-aviso="${n}" novalidate>
+          <label class="sr-only" for="seg-nota-${n}">Cómo avisaste al médico de ${esc(i.paciente.nombre)}</label>
+          <input id="seg-nota-${n}" class="field flex-1" placeholder="Ej. Llamada al Dr. de guardia a las 14:10; indicó repetir la cruzada" autocomplete="off" />
+          <button class="btn btn-primary shrink-0">Registrar aviso</button>
+        </form></li>`).join('');
+
+      q('[data-seg-dev]').classList.toggle('hidden', !devs.length);
+      q('[data-seg-dev-lista]').innerHTML = devs.map((r, n) => `<li class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+          <p class="font-semibold text-ink">${esc(r.paciente?.nombre ?? '')} <span class="font-normal text-ink-3">· ${esc(r.id)}</span></p>
+          <p class="text-sm text-ink-2"><span class="font-mono">${esc(r.unidadCodigo ?? String(r.unidadId))}</span> · ${esc(r.componente ?? '')} · devuelta ${esc(fmtFechaHora(r.devolucion?.fecha))}${r.devolucion?.por ? ` por ${esc(r.devolucion.por)}` : ''}</p>
+          <p class="text-sm text-ink">${esc(r.devolucion?.motivo ?? '')}</p>
+        </div>
+        ${lab ? `<button type="button" class="btn btn-secondary btn-sm shrink-0" data-seg-recibir="${n}">Confirmar recepción</button>`
+              : '<span class="shrink-0 rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn">Por recibir</span>'}
+      </li>`).join('');
+
+      raiz.classList.toggle('hidden', !sinAviso.length && !devs.length);
+    }
+
+    async function cargar() {
+      try {
+        [incomp, devs] = await Promise.all([usaSupabase() ? listarIncompatibilidades() : Promise.resolve([]), devolucionesPendientes()]);
+      } catch { incomp = []; devs = []; }
+      pintar();
+    }
+
+    raiz.addEventListener('submit', async (e) => {
+      const form = (e.target as HTMLElement).closest<HTMLFormElement>('[data-seg-aviso]');
+      if (!form) return;
+      e.preventDefault();
+      const i = incomp.filter((x) => !x.aviso)[Number(form.dataset.segAviso)];
+      const nota = form.querySelector<HTMLInputElement>('input')!.value;
+      const btn = form.querySelector<HTMLButtonElement>('button')!;
+      btn.disabled = true;
+      try {
+        await avisarMedico(i.solicitud, nota);
+        toast(`Aviso al médico registrado para ${i.solicitud}.`);
+        await cargar();
+      } catch (ex) { toast((ex as Error).message); btn.disabled = false; }
+    });
+    raiz.addEventListener('click', async (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-seg-recibir]');
+      if (!b) return;
+      const r = devs[Number(b.dataset.segRecibir)];
+      const nota = prompt(`Recepción de la bolsa ${r.unidadCodigo ?? ''} (${r.id}). Observación opcional:`, '');
+      if (nota === null) return;
+      b.disabled = true;
+      try {
+        await recibirDevolucion(r, nota);
+        toast('Recepción confirmada.');
+        await cargar();
+      } catch (ex) { toast((ex as Error).message); b.disabled = false; }
+    });
+    cargar();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

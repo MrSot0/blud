@@ -56,6 +56,8 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
           <div class="min-w-0"><dt class="text-xs font-bold uppercase text-ink-3">Correo</dt><dd class="mt-0.5 truncate text-ink-2" id="d-email"></dd></div>
           <div><dt class="text-xs font-bold uppercase text-ink-3">Recibida</dt><dd class="mt-0.5 text-ink-2" id="d-creado"></dd></div>
           <div><dt class="text-xs font-bold uppercase text-ink-3">Atiende</dt><dd class="mt-0.5 text-ink-2" id="d-asignado"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Primera respuesta</dt><dd class="mt-0.5 text-ink-2 tabular" id="d-primera"></dd></div>
+          <div><dt class="text-xs font-bold uppercase text-ink-3">Resolución</dt><dd class="mt-0.5 text-ink-2 tabular" id="d-resolucion"></dd></div>
         </dl>
 
         <div class="flex flex-wrap gap-2" id="d-acciones"></div>
@@ -100,6 +102,7 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
   import {
     ESTADO_LABEL, RESPUESTAS_RAPIDAS, agregarNota, bandeja, cambiarEstado, esc, fmtFechaHora, getTicket, getTickets,
     marcarUrgente, misCasos, onDb, resueltos, responderComoSoporte, soltarCaso, soporteActual, toast, tomarCaso,
+    META_PRIMERA_RESPUESTA_H, fmtDuracion, tiemposTicket,
   } from '../../lib/soporte';
   import type { Ticket } from '../../lib/soporte';
   import { Paginador, masAntigua, paginaRemota } from '../../lib/paginacion';
@@ -227,6 +230,12 @@ import { RESPUESTAS_RAPIDAS } from '../../lib/soporte';
       $('#d-email').textContent = t.donanteEmail || '—';
       $('#d-creado').textContent = fmtFechaHora(t.creado);
       $('#d-asignado').textContent = t.asignadoA ? (mio ? 'Tú' : t.asignadoA.nombre) : 'Sin asignar';
+      const tiempos = tiemposTicket(t);
+      const espera = Math.round((Date.now() - new Date(t.creado).getTime()) / 60000);
+      $('#d-primera').textContent = tiempos.primeraRespuesta !== null ? fmtDuracion(tiempos.primeraRespuesta)
+        : t.estado === 'resuelto' ? '—' : `Esperando hace ${fmtDuracion(espera)}`;
+      $('#d-primera').className = `mt-0.5 tabular ${tiempos.primeraRespuesta === null && t.estado !== 'resuelto' && espera > META_PRIMERA_RESPUESTA_H * 60 ? 'font-semibold text-accent-ink' : 'text-ink-2'}`;
+      $('#d-resolucion').textContent = tiempos.resolucion !== null ? fmtDuracion(tiempos.resolucion) : 'Sin resolver';
 
       const btn = (accion: string, texto: string, cls = 'btn-secondary') => `<button type="button" class="btn ${cls} btn-sm" data-accion="${accion}">${texto}</button>`;
       $('#d-acciones').innerHTML = [

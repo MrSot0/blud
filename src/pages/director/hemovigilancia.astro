@@ -98,7 +98,7 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
 </Layout>
 
 <script>
-  import { HVNoDisponible, TIPO_EVENTO, esGrave, fmtFechaHora, listarHV, seedHVDemo } from '../../lib/hemovigilancia';
+  import { HVNoDisponible, TIPO_EVENTO, esGrave, fmtFechaHora, listarHV, notificarComite, seedHVDemo } from '../../lib/hemovigilancia';
   import type { RegistroHV } from '../../lib/hemovigilancia';
   import { chipEstadoHV, chipEvento, detalleHTML } from '../../lib/hemovigilancia-vista';
   import { downloadFile, esc, hoyISO, sumarDias, toCSV, toast } from '../../lib/ui';
@@ -150,7 +150,9 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
         <td class="p-3 text-xs text-ink-2 tabular" data-label="Fecha">${esc(fmtFechaHora(r.registrado))}</td>
         <td class="p-3" data-label="Sede">${esc(r.sede?.nombre ?? '—')}</td>
         <td class="p-3" data-label="Unidad"><span class="block">${esc(r.componente ?? '')} · ${esc(r.tipoSangre ?? '')}</span><span class="font-mono text-xs text-ink-3">${esc(r.unidadCodigo ?? '')}</span></td>
-        <td class="p-3 celda-ancha" data-label="Resultado">${chipEvento(r)}${r.categoria ? `<span class="mt-1 block text-xs text-ink-2">${esc(r.categoria)}</span>` : ''}</td>
+        <td class="p-3 celda-ancha" data-label="Resultado">${chipEvento(r)}${r.categoria ? `<span class="mt-1 block text-xs text-ink-2">${esc(r.categoria)}</span>` : ''}${r.tipoEvento && r.tipoEvento !== 'sin_reaccion'
+          ? (r.comite ? '<span class="mt-1 inline-block rounded-full bg-ok-soft px-2.5 py-0.5 text-xs font-bold text-ok">Comité notificado</span>'
+                      : `<span class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${esGrave(r) ? 'bg-accent-soft text-accent-ink' : 'bg-warn-soft text-warn'}">Sin notificar al comité</span>`) : ''}</td>
         <td class="p-3 celda-acciones text-right"><button type="button" class="btn btn-secondary btn-sm" data-abrir="${esc(r.id)}">Ver registro</button></td>
       </tr>`).join('');
       $('#vacio').classList.toggle('hidden', vis.length > 0);
@@ -202,8 +204,40 @@ import { SEVERIDADES } from '../../lib/hemovigilancia';
       if (!abierto) return;
       $('#d-folio').textContent = abierto.id;
       $('#d-chips').innerHTML = `${chipEstadoHV(abierto)} ${chipEvento(abierto)}`;
-      $('#d-cuerpo').innerHTML = detalleHTML(abierto);
+      pintarDetalle();
       dlg.showModal();
+    });
+    /** Detalle y, para eventos sin notificar, el formulario de notificación al comité (RF-H4). */
+    function pintarDetalle() {
+      if (!abierto) return;
+      const evento = abierto.tipoEvento && abierto.tipoEvento !== 'sin_reaccion';
+      $('#d-cuerpo').innerHTML = detalleHTML(abierto) + (evento && !abierto.comite ? `
+        <form class="space-y-2 rounded-control border border-line p-4" data-comite novalidate>
+          <label for="comite-nota" class="etiqueta-campo">Notificar al comité de hemovigilancia</label>
+          <textarea id="comite-nota" rows="2" class="field" placeholder="A quién se notificó, por qué medio y con qué referencia"></textarea>
+          <p class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert" data-comite-error></p>
+          <button class="btn btn-primary btn-sm">Registrar notificación</button>
+        </form>` : '');
+    }
+    $('#d-cuerpo').addEventListener('submit', async (e) => {
+      const form = (e.target as HTMLElement).closest<HTMLFormElement>('[data-comite]');
+      if (!form || !abierto) return;
+      e.preventDefault();
+      const btn = form.querySelector('button')!;
+      btn.disabled = true;
+      try {
+        const nuevo = await notificarComite(abierto, form.querySelector<HTMLTextAreaElement>('textarea')!.value);
+        registros = registros.map((r) => (r.id === nuevo.id ? nuevo : r));
+        abierto = nuevo;
+        toast(`${nuevo.id}: notificado al comité.`);
+        pintarDetalle();
+        pintar();
+      } catch (ex) {
+        const err = form.querySelector<HTMLElement>('[data-comite-error]')!;
+        err.textContent = (ex as Error).message;
+        err.classList.remove('hidden');
+        btn.disabled = false;
+      }
     });
     dlg.querySelectorAll('[data-cerrar]').forEach((b) => b.addEventListener('click', () => dlg.close()));
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });

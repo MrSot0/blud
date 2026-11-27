@@ -40,6 +40,19 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
       </div>
     </div>
 
+    <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-tiempos">
+      <div class="flex flex-wrap items-end justify-between gap-2 border-b border-line pb-3">
+        <h2 id="h-tiempos" class="text-lg font-bold text-ink">Tiempos de atención</h2>
+        <p class="text-xs text-ink-3">Últimos 30 días · <span data-t="total">0</span> solicitudes · meta de primera respuesta: 24 h</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div><p class="text-xs font-bold uppercase text-ink-3">Primera respuesta</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-t="medianaPrimera">—</p><p class="text-xs text-ink-3">mediana</p></div>
+        <div><p class="text-xs font-bold uppercase text-ink-3">Resolución</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-t="medianaResolucion">—</p><p class="text-xs text-ink-3">mediana</p></div>
+        <div><p class="text-xs font-bold uppercase text-ink-3">Dentro de la meta</p><p class="mt-1 text-2xl font-extrabold text-ink tabular" data-t="dentroDeMeta">—</p><p class="text-xs text-ink-3">respondidas en 24 h o menos</p></div>
+        <div><p class="text-xs font-bold uppercase text-ink-3">Sin respuesta</p><p class="mt-1 text-2xl font-extrabold tabular" data-t="sinRespuesta">0</p><p class="text-xs text-ink-3"><span data-t="vencidasSinRespuesta">0</span> pasaron las 24 h</p></div>
+      </div>
+    </section>
+
     <section class="panel p-6 sm:p-8 space-y-4 w-full" aria-labelledby="h-pend">
       <div class="flex items-center justify-between border-b border-line pb-3">
         <h2 id="h-pend" class="text-lg font-bold text-ink">Por atender</h2>
@@ -55,7 +68,7 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
 </LayoutSoporte>
 
 <script>
-  import { bandeja, esc, fmtFechaHora, kpisSoporte, onDb, seedSoporteDemo, soporteActual, toast } from '../../lib/soporte';
+  import { bandeja, esc, fmtDuracion, fmtFechaHora, kpisSoporte, onDb, seedSoporteDemo, soporteActual, tiemposSoporte, toast } from '../../lib/soporte';
 
   const $ = (s: string) => document.querySelector<HTMLElement>(s)!;
 
@@ -65,6 +78,15 @@ import LayoutSoporte from '../../layouts/LayoutSoporte.astro';
       const el = document.querySelector<HTMLElement>(`[data-kpi="${key}"]`);
       if (el) el.textContent = String(k[key]);
     });
+    const t = tiemposSoporte();
+    const pon = (k: string, v: string) => { const el = document.querySelector<HTMLElement>(`[data-t="${k}"]`); if (el) el.textContent = v; };
+    pon('total', String(t.total));
+    pon('medianaPrimera', fmtDuracion(t.medianaPrimera));
+    pon('medianaResolucion', fmtDuracion(t.medianaResolucion));
+    pon('dentroDeMeta', t.dentroDeMeta === null ? '—' : `${t.dentroDeMeta} %`);
+    pon('sinRespuesta', String(t.sinRespuesta));
+    pon('vencidasSinRespuesta', String(t.vencidasSinRespuesta));
+    document.querySelector('[data-t="sinRespuesta"]')!.className = `mt-1 text-2xl font-extrabold tabular ${t.vencidasSinRespuesta ? 'text-accent-ink' : 'text-ink'}`;
     $('#sede-txt').textContent = `${soporteActual().centro} · atención al donante`;
 
     const pend = bandeja().slice(0, 6);

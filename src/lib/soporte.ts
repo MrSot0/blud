@@ -202,3 +202,51 @@ export function consultarDonante(query: string): FichaDonante | undefined {
 // ------------------------------------------------------------------ Datos de ejemplo
 /** Un solo conjunto de datos de ejemplo para todos los roles (ver lib/demo). */
 export const seedSoporteDemo = seedDemo;
+
+// ------------------------------------------------------------------ RF-S4 · Tiempos de atención
+/** Meta de primera respuesta (horas). */
+export const META_PRIMERA_RESPUESTA_H = 24;
+
+/** Minutos hasta la primera respuesta de soporte y hasta la resolución (null si aún no ocurre). */
+export function tiemposTicket(t: Ticket): { primeraRespuesta: number | null; resolucion: number | null } {
+  const inicio = new Date(t.creado).getTime();
+  const primera = t.mensajes.find((m) => m.autor === 'soporte');
+  const min = (iso?: string) => (iso ? Math.max(0, Math.round((new Date(iso).getTime() - inicio) / 60000)) : null);
+  return { primeraRespuesta: min(primera?.fecha), resolucion: t.estado === 'resuelto' ? min(t.resueltoEn) : null };
+}
+
+/** «45 min», «3 h 10 min», «2 d 4 h». */
+export function fmtDuracion(min: number | null): string {
+  if (min === null) return '—';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return min % 60 ? `${h} h ${min % 60} min` : `${h} h`;
+  const d = Math.floor(h / 24);
+  return h % 24 ? `${d} d ${h % 24} h` : `${d} d`;
+}
+
+const mediana = (l: number[]) => {
+  if (!l.length) return null;
+  const s = [...l].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
+
+/** Indicadores de los últimos `dias` días: medianas y cumplimiento de la meta de primera respuesta. */
+export function tiemposSoporte(dias = 30) {
+  const desde = Date.now() - dias * 86400000;
+  const lista = tickets.all().filter((t) => new Date(t.creado).getTime() >= desde);
+  const t = lista.map(tiemposTicket);
+  const respondidas = t.map((x) => x.primeraRespuesta).filter((x): x is number => x !== null);
+  const resueltas = t.map((x) => x.resolucion).filter((x): x is number => x !== null);
+  const meta = META_PRIMERA_RESPUESTA_H * 60;
+  const sinRespuesta = lista.filter((x, i) => t[i].primeraRespuesta === null && x.estado !== 'resuelto');
+  return {
+    total: lista.length,
+    medianaPrimera: mediana(respondidas),
+    medianaResolucion: mediana(resueltas),
+    dentroDeMeta: respondidas.length ? Math.round((respondidas.filter((m) => m <= meta).length / respondidas.length) * 100) : null,
+    sinRespuesta: sinRespuesta.length,
+    vencidasSinRespuesta: sinRespuesta.filter((x) => Date.now() - new Date(x.creado).getTime() > meta * 60000).length,
+  };
+}

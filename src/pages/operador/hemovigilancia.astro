@@ -119,7 +119,13 @@ const verificaciones = [
               <label for="volumen" class="etiqueta-campo">Volumen (ml)</label>
               <input id="volumen" type="number" min="0" max="2000" inputmode="numeric" class="field" placeholder="280" />
             </div>
+            <div class="col-span-2 sm:col-span-3">
+              <label for="velocidad" class="etiqueta-campo">Velocidad de infusión</label>
+              <input id="velocidad" class="field" placeholder="Ej. 60 ml/h o 30 gotas/min" autocomplete="off" />
+            </div>
           </div>
+          <p class="text-xs text-ink-3">Norma: iniciar antes de 30 minutos fuera de refrigeración y terminar en un máximo de 4 horas.</p>
+          <ul id="alertas-tiempo" class="hidden space-y-1 rounded-control bg-warn-soft px-3 py-2 text-xs font-semibold text-warn" role="status"></ul>
         </fieldset>
 
         <fieldset class="space-y-3">
@@ -175,6 +181,18 @@ const verificaciones = [
               </div>
             </div>
           </div>
+
+          <div class="space-y-2 rounded-control border border-line p-4">
+            <label class="flex items-start gap-3 text-sm">
+              <input type="checkbox" id="devuelta" class="mt-0.5 size-4 shrink-0 accent-[var(--accent)]" />
+              <span><span class="block font-semibold text-ink">La bolsa se devolvió al banco de sangre</span><span class="block text-xs text-ink-3">Si la transfusión se suspendió o la unidad se rechazó. El laboratorio recibe el aviso para confirmar la recepción.</span></span>
+            </label>
+            <div id="bloque-devolucion" class="hidden">
+              <label for="motivo-dev" class="etiqueta-campo">Motivo de la devolución</label>
+              <textarea id="motivo-dev" rows="2" class="field" placeholder="Ej. Reacción febril a los 20 min; se suspendió y se devuelve la bolsa con el equipo"></textarea>
+            </div>
+            <p id="devolucion-registrada" class="hidden text-sm text-ink-2"></p>
+          </div>
         </fieldset>
 
         <p id="error" class="hidden rounded-control bg-accent-soft px-3 py-2 text-sm font-medium text-accent-ink" role="alert"></p>
@@ -203,7 +221,7 @@ const verificaciones = [
 
 <script>
   import {
-    CATEGORIAS_INCIDENTE, CATEGORIAS_REACCION, HVNoDisponible, fmtFechaHora, guardarHV, listarHV, seedHVDemo,
+    CATEGORIAS_INCIDENTE, CATEGORIAS_REACCION, HVNoDisponible, alertasTiempo, fmtFechaHora, guardarHV, listarHV, seedHVDemo,
   } from '../../lib/hemovigilancia';
   import type { DatosHV, PendienteHV, RegistroHV, Signos, TipoEvento } from '../../lib/hemovigilancia';
   import { chipEstadoHV, chipEvento, detalleHTML } from '../../lib/hemovigilancia-vista';
@@ -261,7 +279,7 @@ const verificaciones = [
         <td class="p-3 celda-estado" data-label="Estado">${chipEstadoHV(r)}</td>
         <td class="p-3" data-label="Paciente">${paciente(r.paciente)}</td>
         <td class="p-3" data-label="Unidad"><span class="block">${esc(r.componente ?? '')} · ${esc(r.tipoSangre ?? '')}</span><span class="font-mono text-xs text-ink-3">${esc(r.unidadCodigo ?? '')}</span></td>
-        <td class="p-3" data-label="Resultado">${chipEvento(r)}</td>
+        <td class="p-3" data-label="Resultado">${chipEvento(r)}${alertasTiempo(r).length ? ' <span class="mt-1 inline-block rounded-full bg-warn-soft px-2.5 py-0.5 text-xs font-bold text-warn">Fuera de tiempo</span>' : ''}${r.devolucion ? ` <span class="mt-1 inline-block rounded-full bg-sunken px-2.5 py-0.5 text-xs font-bold text-ink-2">${r.devolucion.recibidaEn ? 'Bolsa recibida' : 'Bolsa devuelta'}</span>` : ''}</td>
         <td class="p-3 text-xs text-ink-2 tabular" data-label="Registrado">${esc(fmtFechaHora(r.registrado))}</td>
         <td class="p-3 celda-acciones text-right"><button type="button" class="btn btn-secondary btn-sm" data-abrir="${esc(r.id)}">${r.estado === 'cerrado' ? 'Ver' : 'Completar'}</button></td>
       </tr>`).join('');
@@ -339,6 +357,7 @@ const verificaciones = [
         campo('inicio').value = aLocal(reg.inicio);
         campo('fin').value = aLocal(reg.fin);
         campo('volumen').value = reg.volumenMl ? String(reg.volumenMl) : '';
+        campo('velocidad').value = reg.velocidad ?? '';
         (['antes', 'durante', 'despues'] as const).forEach((m) => {
           (['pa', 'fc', 'temp', 'fr', 'spo2'] as const).forEach((s) => {
             form.querySelector<HTMLInputElement>(`[name="sg-${m}-${s}"]`)!.value = reg.signos[m]?.[s] ?? '';
@@ -355,9 +374,31 @@ const verificaciones = [
         campo('ubicacion').value = pend?.paciente?.servicio ?? '';
         opcionesCategoria('reaccion');
       }
+      // Devolución: una vez registrada no se cambia.
+      const dev = reg?.devolucion;
+      $<HTMLInputElement>('#devuelta').checked = !!dev;
+      $<HTMLInputElement>('#devuelta').disabled = !!dev;
+      $('#devolucion-registrada').classList.toggle('hidden', !dev);
+      if (dev) $('#devolucion-registrada').textContent = `Devuelta ${fmtFechaHora(dev.fecha)}: ${dev.motivo}${dev.recibidaEn ? ` · recibida por el laboratorio ${fmtFechaHora(dev.recibidaEn)}` : ' · el laboratorio aún no confirma la recepción'}`;
+      pintarDevolucion();
       pintarEvento();
+      pintarAlertas();
       dlg.showModal();
     }
+
+    /** RF-H3: alertas de 30 min fuera de refrigeración y de 4 h de infusión, con lo que hay en el formulario. */
+    function pintarAlertas() {
+      const base = actual.reg ?? actual.pend;
+      const l = alertasTiempo({ despachado: base?.despachado, inicio: aISO(campo('inicio').value), fin: aISO(campo('fin').value), estado: actual.reg?.estado });
+      $('#alertas-tiempo').innerHTML = l.map((t) => `<li>${esc(t)}</li>`).join('');
+      $('#alertas-tiempo').classList.toggle('hidden', !l.length);
+    }
+    ['inicio', 'fin'].forEach((id) => campo(id).addEventListener('change', pintarAlertas));
+    const pintarDevolucion = () => {
+      const on = $<HTMLInputElement>('#devuelta').checked && !$<HTMLInputElement>('#devuelta').disabled;
+      $('#bloque-devolucion').classList.toggle('hidden', !on);
+    };
+    $('#devuelta').addEventListener('change', pintarDevolucion);
 
     function datos(cerrar: boolean): DatosHV {
       const sg = (m: string): Signos => {
@@ -390,6 +431,9 @@ const verificaciones = [
         imputabilidad: conEvento ? campo<HTMLSelectElement>('imputabilidad').value : undefined,
         sintomas: conEvento ? campo<HTMLTextAreaElement>('sintomas').value : undefined,
         acciones: conEvento ? campo<HTMLTextAreaElement>('acciones').value : undefined,
+        velocidad: campo('velocidad').value,
+        devolucion: $<HTMLInputElement>('#devuelta').checked && !$<HTMLInputElement>('#devuelta').disabled
+          ? { devuelta: true, motivo: campo<HTMLTextAreaElement>('motivo-dev').value } : undefined,
         cerrar,
       };
     }

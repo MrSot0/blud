@@ -48,6 +48,19 @@ export interface RegistroHV {
   imputabilidad?: string;
   sintomas?: string;
   acciones?: string;
+  /** RF-H3: velocidad de infusión (p. ej. «60 ml/h» o «30 gotas/min»). */
+  velocidad?: string;
+  /** Hora del despacho de la solicitud (para la alerta de 30 min fuera de refrigeración). */
+  despachado?: string;
+  /** RF-H6: bolsa devuelta al banco al suspender o rechazar la transfusión. */
+  devolucion?: Devolucion;
+  /** RF-H4: notificación al comité de hemovigilancia (la hace la dirección). */
+  comite?: { fecha: string; por?: string; nota?: string };
+}
+
+export interface Devolucion {
+  devuelta: true; motivo: string; fecha?: string; por?: string;
+  recibidaEn?: string; recibidaPor?: string; notaRecepcion?: string;
 }
 
 /** Unidad despachada que todavía no tiene registro. */
@@ -79,6 +92,8 @@ export interface DatosHV {
   imputabilidad?: string;
   sintomas?: string;
   acciones?: string;
+  velocidad?: string;
+  devolucion?: { devuelta: boolean; motivo: string };
   cerrar?: boolean;
 }
 
@@ -123,7 +138,38 @@ export function validarHV(d: DatosHV): string | null {
   if (d.cerrar && d.tipoEvento && d.tipoEvento !== 'sin_reaccion' && !d.acciones?.trim()) return 'Describe las acciones tomadas ante el evento.';
   if (d.volumenMl !== '' && d.volumenMl != null && (!Number.isFinite(Number(d.volumenMl)) || Number(d.volumenMl) <= 0 || Number(d.volumenMl) > 2000)) return 'El volumen transfundido debe estar entre 1 y 2000 ml.';
   if (d.inicio && d.fin && d.fin < d.inicio) return 'La hora de fin no puede ser anterior a la de inicio.';
+  if (d.devolucion?.devuelta && d.devolucion.motivo.trim().length < 10) return 'Explica por qué se devuelve la bolsa (mínimo 10 caracteres).';
   return null;
+}
+
+// ------------------------------------------------------------------ RF-H3 · Alertas de tiempo
+/** Minutos máximos entre el despacho (salida de refrigeración) y el inicio de la transfusión. */
+export const MAX_MIN_HASTA_INICIO = 30;
+/** Minutos máximos de infusión de una unidad. */
+export const MAX_MIN_INFUSION = 240;
+
+/** Minutos entre el despacho y el inicio (null si falta alguno). */
+export function minutosHastaInicio(r: { despachado?: string; inicio?: string }): number | null {
+  // Sin hora del despacho (solo la fecha) no se puede medir la espera.
+  if (!r.despachado || !r.inicio || r.despachado.length <= 10) return null;
+  const m = Math.round((new Date(r.inicio).getTime() - new Date(r.despachado).getTime()) / 60000);
+  return Number.isFinite(m) && m >= 0 ? m : null;
+}
+/** Minutos de infusión: hasta el fin, o hasta ahora si sigue en curso. */
+export function minutosInfusion(r: { inicio?: string; fin?: string; estado?: EstadoHV }): number | null {
+  if (!r.inicio) return null;
+  const fin = r.fin ? new Date(r.fin).getTime() : r.estado === 'cerrado' ? NaN : Date.now();
+  const m = Math.round((fin - new Date(r.inicio).getTime()) / 60000);
+  return Number.isFinite(m) && m >= 0 ? m : null;
+}
+/** Alertas de la norma (RF-H3) para un registro o un formulario. */
+export function alertasTiempo(r: { despachado?: string; inicio?: string; fin?: string; estado?: EstadoHV }): string[] {
+  const out: string[] = [];
+  const espera = minutosHastaInicio(r);
+  if (espera !== null && espera > MAX_MIN_HASTA_INICIO) out.push(`Inició ${espera} min después del despacho: la unidad no debe pasar más de ${MAX_MIN_HASTA_INICIO} min fuera de refrigeración antes de transfundirse.`);
+  const dur = minutosInfusion(r);
+  if (dur !== null && dur > MAX_MIN_INFUSION) out.push(`La infusión ${r.fin || r.estado === 'cerrado' ? 'duró' : 'lleva'} ${Math.floor(dur / 60)} h ${dur % 60} min: no debe pasar de 4 horas.`);
+  return out;
 }
 
 // ------------------------------------------------------------------ Modo demo
@@ -169,7 +215,7 @@ function guardarDemo(d: DatosHV): RegistroHV {
       id: `HV-${ahora.slice(0, 4)}-${String(n).padStart(4, '0')}`,
       solicitudId: d.solicitudId, unidadId: d.unidadId, unidadCodigo: pend!.unidadCodigo, componente: pend!.componente,
       tipoSangre: pend!.tipoSangre, paciente: pend!.paciente, sede: { nombre: String(s.sede ?? 'Banco de Sangre del Zulia') },
-      registradoPor: String(s.name ?? 'Operador'), registrado: ahora,
+      registradoPor: String(s.name ?? 'Operador'), registrado: ahora, despachado: pend!.despachado,
     }),
     estado: d.cerrar ? 'cerrado' : 'en_curso',
     actualizado: ahora,
@@ -186,6 +232,9 @@ function guardarDemo(d: DatosHV): RegistroHV {
     imputabilidad: d.imputabilidad || undefined,
     sintomas: d.sintomas?.trim() || undefined,
     acciones: d.acciones?.trim() || undefined,
+    velocidad: d.velocidad?.trim() || undefined,
+    devolucion: prev?.devolucion ?? (d.devolucion?.devuelta
+      ? { devuelta: true, motivo: d.devolucion.motivo.trim(), fecha: ahora, por: String(s.name ?? 'Operador') } : undefined),
   } as RegistroHV;
   escribirDemo(prev ? lista.map((x) => (x.id === r.id ? r : x)) : [r, ...lista]);
   return r;
@@ -222,6 +271,46 @@ export async function guardarHV(d: DatosHV): Promise<RegistroHV> {
     if (sinFuncion(error)) throw new HVNoDisponible('El registro de hemovigilancia aún no está activo en el servidor.');
     throw new Error(error.message || 'No pudimos guardar el registro.');
   }
+  return data as RegistroHV;
+}
+
+/** RF-H4: la dirección notifica un evento adverso al comité de hemovigilancia. */
+export async function notificarComite(r: RegistroHV, nota: string): Promise<RegistroHV> {
+  if (nota.trim().length < 10) throw new Error('Escribe a quién y cómo se notificó (mínimo 10 caracteres).');
+  if (!r.tipoEvento || r.tipoEvento === 'sin_reaccion') throw new Error('Solo se notifican reacciones adversas e incidentes.');
+  if (r.comite) throw new Error('Ese evento ya se notificó al comité.');
+  if (!usaSupabase()) {
+    const s = (getSession() ?? {}) as Record<string, unknown>;
+    const nuevo: RegistroHV = { ...r, comite: { fecha: new Date().toISOString(), por: String(s.name ?? 'Dirección'), nota: nota.trim() } };
+    escribirDemo(leerDemo().map((x) => (x.id === r.id ? nuevo : x)));
+    return nuevo;
+  }
+  const { data, error } = await sb()!.rpc('blud_hv_notificar_comite', { p_folio: r.id, p_nota: nota.trim() });
+  if (error) throw new Error(sinFuncion(error) ? 'La notificación al comité todavía no está habilitada en el servidor.' : error.message);
+  return data as RegistroHV;
+}
+
+/** RF-H6: bolsas devueltas que el laboratorio todavía no recibe. */
+export async function devolucionesPendientes(): Promise<RegistroHV[]> {
+  if (!usaSupabase()) { seedHVDemo(); return leerDemo().filter((r) => r.devolucion && !r.devolucion.recibidaEn); }
+  const { data, error } = await sb()!.rpc('blud_hv_devoluciones');
+  if (error) {
+    if (sinFuncion(error)) return [];
+    throw new Error(error.message);
+  }
+  return (data ?? []) as RegistroHV[];
+}
+
+/** RF-H6: el laboratorio confirma que recibió la bolsa devuelta. */
+export async function recibirDevolucion(r: RegistroHV, nota = ''): Promise<RegistroHV> {
+  if (!usaSupabase()) {
+    const s = (getSession() ?? {}) as Record<string, unknown>;
+    const nuevo: RegistroHV = { ...r, devolucion: { ...r.devolucion!, recibidaEn: new Date().toISOString(), recibidaPor: String(s.name ?? 'Laboratorio'), notaRecepcion: nota.trim() || undefined } };
+    escribirDemo(leerDemo().map((x) => (x.id === r.id ? nuevo : x)));
+    return nuevo;
+  }
+  const { data, error } = await sb()!.rpc('blud_hv_recibir_devolucion', { p_folio: r.id, p_nota: nota.trim() || null });
+  if (error) throw new Error(error.message);
   return data as RegistroHV;
 }
 

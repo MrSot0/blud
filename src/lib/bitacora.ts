@@ -61,13 +61,15 @@ const OPERACION: Record<string, string> = {
   INC_DESCARTADA: 'Descartó una incidencia', INC_ABIERTA: 'Reabrió una incidencia',
   CORRECCION_ESTADO: 'Corrigió un estado', EQUIPO_CREADO: 'Registró un equipo', EQUIPO_EDITADO: 'Editó un equipo',
   TEMP_FUERA_RANGO: 'Temperatura fuera de rango', CONSULTA_TRAZA: 'Consultó trazabilidad',
+  DEVOLUCION_BOLSA: 'Devolvió una bolsa', DEVOLUCION_RECIBIDA: 'Recibió una bolsa devuelta', HV_COMITE: 'Notificó al comité',
+  AVISO_MEDICO: 'Avisó al médico tratante',
 };
 export const operacionDe = (o: string) => OPERACION[o] ?? (o.charAt(0) + o.slice(1).toLowerCase()).replace(/_/g, ' ');
 
 /** Tono del punto según la operación. */
 export function tonoOperacion(o: string): string {
   if (/RECHAZO|DELETE|INCOMPATIBLE|DESACTIVADA|FUERA_RANGO|2FA/.test(o)) return 'bg-accent';
-  if (/HEMOVIGILANCIA|NOTIFICACION|CORRECCION|INC_|CUENTA_ROL|RESTABLECER/.test(o)) return 'bg-warn';
+  if (/HEMOVIGILANCIA|NOTIFICACION|CORRECCION|INC_|CUENTA_ROL|RESTABLECER|DEVOLUCION|HV_COMITE|AVISO_MEDICO/.test(o)) return 'bg-warn';
   if (/DESPACHO|RESERVA|INSERT/.test(o)) return 'bg-ok';
   return 'bg-ink-3';
 }

@@ -163,8 +163,18 @@ export const VIDA_UTIL: Record<Hemocomponente, number> = {
   'Plasma Fresco Congelado': 365,
   'Crioprecipitado': 365,
 };
-/** Días antes del vencimiento en que una unidad pasa a "por vencer". */
-export const DIAS_POR_VENCER = 7;
+/** Días antes del vencimiento en que una unidad pasa a "por vencer" (RF-I5: eritrocitos 7 días, plasma 30, plaquetas 48 h). */
+export const ALERTA_VENCIMIENTO: Record<Hemocomponente, number> = {
+  'Sangre Total': 7,
+  'Concentrado Globular': 7,
+  'Plaquetas': 2,
+  'Plasma Fresco Congelado': 30,
+  'Crioprecipitado': 30,
+};
+/** Umbral de alerta de un componente (7 días si no se conoce). */
+export const diasAlerta = (c: string) => ALERTA_VENCIMIENTO[c as Hemocomponente] ?? 7;
+/** Texto corto del criterio, para las pantallas y los PDF. */
+export const CRITERIO_POR_VENCER = 'eritrocitos 7 d, plasma 30 d, plaquetas 48 h';
 
 export type EstadoUnidad = 'disponible' | 'por_vencer' | 'vencida';
 export interface Unidad {
@@ -217,7 +227,7 @@ export function unidadesInventario(): Unidad[] {
   const out: Unidad[] = [];
   grupos.forEach((lista) => lista.forEach((u) => {
     const dias = -diasDesde(u.vence);
-    out.push({ ...u, dias, estado: dias < 0 ? 'vencida' : dias <= DIAS_POR_VENCER ? 'por_vencer' : 'disponible' });
+    out.push({ ...u, dias, estado: dias < 0 ? 'vencida' : dias <= diasAlerta(u.componente) ? 'por_vencer' : 'disponible' });
   }));
   return out.sort((a, b) => a.vence.localeCompare(b.vence));
 }
@@ -228,7 +238,7 @@ function unidadesRemotas(): Unidad[] {
   try { lista = JSON.parse(localStorage.getItem(UNIDADES_KEY) || '[]'); } catch {}
   return lista.map((u) => {
     const dias = -diasDesde(u.vence);
-    return { ...u, dias, estado: dias < 0 ? 'vencida' : dias <= DIAS_POR_VENCER ? 'por_vencer' : 'disponible' } as Unidad;
+    return { ...u, dias, estado: dias < 0 ? 'vencida' : dias <= diasAlerta(u.componente) ? 'por_vencer' : 'disponible' } as Unidad;
   });
 }
 

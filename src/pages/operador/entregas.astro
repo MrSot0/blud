@@ -1,6 +1,7 @@
 ---
 // src/pages/operador/entregas.astro
 import LayoutOperador from '../../layouts/LayoutOperador.astro';
+import SeguridadTransfusional from '../../components/app/SeguridadTransfusional.astro';
 import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
 ---
 
@@ -29,6 +30,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
         <a href="/operador/prescribir" class="btn btn-secondary btn-sm self-start sm:self-auto">Cargar orden médica</a>
       </div>
     </div>
+
+    <SeguridadTransfusional role="operador" />
 
     <!-- Vista: Solicitudes aprobadas por despachar -->
     <div data-frame="pedidos" class="space-y-8">
@@ -127,11 +130,15 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
   import type { Hemocomponente } from '../../lib/operador';
   import { usaSupabase } from '../../lib/supabase';
   import { listarTransfusiones } from '../../lib/transfusion';
+  import type { Transfusion } from '../../lib/transfusion';
+  import { unidadesEtiquetables } from '../../lib/etiquetas-pdf';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const val = (id: string) => ($(`#${id}`) as HTMLInputElement).value;
   /** Solicitud aprobada → qué le falta para despachar ('' si está lista). Solo con base real. */
   const compat = new Map<string, string>();
+  /** Solicitud aprobada → datos de compatibilidad completos (para imprimir las etiquetas). */
+  const transfusiones = new Map<string, Transfusion>();
 
   function init() {
     const form = $<HTMLFormElement>('#form');
@@ -144,7 +151,8 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
       try {
         const lista = await listarTransfusiones();
         compat.clear();
-        lista.filter((t) => t.estado === 'aprobado').forEach((t) => compat.set(t.id, t.faltaParaDespachar ?? ''));
+        transfusiones.clear();
+        lista.filter((t) => t.estado === 'aprobado').forEach((t) => { compat.set(t.id, t.faltaParaDespachar ?? ''); transfusiones.set(t.id, t); });
         render();
       } catch {}
     };
@@ -190,7 +198,16 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
     });
 
     // Despachar un pedido pendiente con un clic
-    $('#pedidos').addEventListener('click', (e) => {
+    $('#pedidos').addEventListener('click', async (e) => {
+      const et = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-etiquetas]');
+      if (et) {
+        const t = transfusiones.get(et.dataset.etiquetas!);
+        if (!t) return;
+        et.disabled = true;
+        try { await (await import('../../lib/etiquetas-pdf')).pdfEtiquetasCompatibilidad(t); }
+        catch (ex) { toast((ex as Error).message); } finally { et.disabled = false; }
+        return;
+      }
       const id = (e.target as HTMLElement).closest<HTMLElement>('[data-despachar]')?.dataset.despachar;
       const p = id ? getPedidosPendientes().find((x) => x.id === id) : undefined;
       if (!p) return;
@@ -286,7 +303,10 @@ import { BLOOD_TYPES, COMPONENTES } from '../../lib/db';
           ${compatChip}
           <div class="flex items-center justify-between gap-3">
             <span class="rounded-full px-2 py-0.5 text-xs font-bold ${ok ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'}">${ok ? `Hay stock (${disp} u.)` : `Stock ${disp} u.`}</span>
-            <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}" ${usaSupabase() && (falta || !compat.has(p.id)) ? 'disabled' : ''}>Despachar</button>
+            <span class="flex gap-2">
+              ${transfusiones.get(p.id) && unidadesEtiquetables(transfusiones.get(p.id)!).length ? `<button type="button" class="btn btn-secondary btn-sm" data-etiquetas="${esc(p.id)}">Etiquetas</button>` : ''}
+              <button type="button" class="btn btn-primary btn-sm" data-despachar="${esc(p.id)}" ${usaSupabase() && (falta || !compat.has(p.id)) ? 'disabled' : ''}>Despachar</button>
+            </span>
           </div></li>`;
       }).join('');
 

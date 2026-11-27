@@ -56,3 +56,30 @@ export async function cambiarUnidad(solicitud: string, unidadId: number): Promis
   const { error } = await cliente().rpc('blud_cambiar_unidad', { p_solicitud: solicitud, p_unidad: unidadId });
   if (error) throw err(error);
 }
+
+// ------------------------------------------------------------------ RF-TR7 · Incompatibilidades y aviso al médico tratante
+export interface Incompatibilidad {
+  solicitud: string; fecha: string; unidadId?: number; unidadCodigo?: string;
+  paciente: { nombre: string; cedula: string; servicio?: string };
+  medico?: { nombre: string; correo?: string; telefono?: string };
+  aviso?: { fecha: string; nota?: string; por?: string };
+}
+
+/** Pruebas cruzadas incompatibles de la sede en los últimos `dias` días, con el aviso al médico si ya se dio. */
+export async function listarIncompatibilidades(dias = 30): Promise<Incompatibilidad[]> {
+  const c = sb();
+  if (!c) return [];
+  const { data, error } = await c.rpc('blud_incompatibilidades', { p_dias: dias });
+  if (error) {
+    if (error.code === 'PGRST202') return [];
+    throw err(error);
+  }
+  return (data ?? []) as Incompatibilidad[];
+}
+
+/** Deja constancia de que se avisó al médico tratante (cómo y a quién). */
+export async function avisarMedico(solicitud: string, nota: string): Promise<void> {
+  if (nota.trim().length < 10) throw new Error('Escribe cómo y a quién avisaste (mínimo 10 caracteres).');
+  const { error } = await cliente().rpc('blud_avisar_medico', { p_solicitud: solicitud, p_nota: nota.trim() });
+  if (error) throw err(error);
+}

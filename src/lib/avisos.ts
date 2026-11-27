@@ -44,15 +44,15 @@ async function inventario(base: string): Promise<Aviso[]> {
     detalle: 'Retíralas del stock y regístralas como descarte.', href: base, accion: 'Revisar unidades',
   });
   if (inv.porVencer.length) out.push({
-    id: 'por-vencer', nivel: 'info', icono: 'clock', titulo: `${plural(inv.porVencer.length, 'unidad vence', 'unidades vencen')} en 7 días o menos`,
-    detalle: 'Úsalas primero en los próximos despachos.', href: base, accion: 'Ver vencimientos',
+    id: 'por-vencer', nivel: 'info', icono: 'clock', titulo: `${plural(inv.porVencer.length, 'unidad está', 'unidades están')} por vencer`,
+    detalle: 'Úsalas primero en los próximos despachos (alerta: eritrocitos 7 días, plasma 30, plaquetas 48 horas).', href: base, accion: 'Ver vencimientos',
   });
   return out;
 }
 
 // ------------------------------------------------------------------ Hemovigilancia
 async function hemovigilancia(rol: Role): Promise<Aviso[]> {
-  const { listarHV, esGrave } = await import('./hemovigilancia');
+  const { listarHV, esGrave, alertasTiempo } = await import('./hemovigilancia');
   const hoy = new Date();
   const desde = new Date(hoy.getTime() - 30 * 86400000).toISOString().slice(0, 10);
   const { registros, pendientes } = await listarHV({ desde, red: false });
@@ -63,19 +63,50 @@ async function hemovigilancia(rol: Role): Promise<Aviso[]> {
     detalle: 'Registra la doble verificación, los signos vitales y cómo terminó cada transfusión.', href, accion: 'Registrar',
   });
   const enCurso = registros.filter((r) => r.estado === 'en_curso');
-  if (rol === 'operador' && enCurso.length) out.push({
-    id: 'hv-en-curso', nivel: 'info', icono: 'clock', titulo: `${plural(enCurso.length, 'transfusión en curso', 'transfusiones en curso')}`,
+  const fueraDeTiempo = enCurso.filter((r) => alertasTiempo(r).length);
+  if (rol === 'operador' && fueraDeTiempo.length) out.push({
+    id: 'hv-fuera-tiempo', nivel: 'alta', icono: 'clock', titulo: `${plural(fueraDeTiempo.length, 'transfusión fuera de tiempo', 'transfusiones fuera de tiempo')}`,
+    detalle: 'Pasó de 4 horas de infusión o se inició más de 30 min después del despacho. Revisa y cierra el registro.', href, accion: 'Revisar',
+  });
+  const enCursoATiempo = enCurso.length - fueraDeTiempo.length;
+  if (rol === 'operador' && enCursoATiempo) out.push({
+    id: 'hv-en-curso', nivel: 'info', icono: 'clock', titulo: `${plural(enCursoATiempo, 'transfusión en curso', 'transfusiones en curso')}`,
     detalle: 'Completa los signos al terminar y cierra el registro.', href, accion: 'Completar',
   });
-  const graves = registros.filter(esGrave);
+  // RF-H4: la dirección notifica al comité cada evento adverso.
+  const eventos = registros.filter((r) => r.tipoEvento && r.tipoEvento !== 'sin_reaccion' && !r.comite);
+  const graves = eventos.filter(esGrave);
   if (rol === 'director' && graves.length) out.push({
-    id: 'hv-graves', nivel: 'alta', icono: 'alert', titulo: `${plural(graves.length, 'reacción grave', 'reacciones graves')} en los últimos 30 días`,
-    detalle: graves.slice(0, 2).map((r) => `${r.id}: ${r.categoria ?? 'sin categoría'}`).join(' · '), href, accion: 'Ver reportes',
+    id: 'hv-graves', nivel: 'alta', icono: 'alert', titulo: `${plural(graves.length, 'reacción grave sin notificar', 'reacciones graves sin notificar')} al comité`,
+    detalle: graves.slice(0, 2).map((r) => `${r.id}: ${r.categoria ?? 'sin categoría'}`).join(' · '), href, accion: 'Notificar',
   });
-  const reacciones = registros.filter((r) => r.tipoEvento && r.tipoEvento !== 'sin_reaccion' && !esGrave(r));
-  if (rol === 'director' && reacciones.length) out.push({
-    id: 'hv-reacciones', nivel: 'info', icono: 'alert', titulo: `${plural(reacciones.length, 'evento adverso', 'eventos adversos')} leves o moderados en 30 días`,
-    detalle: 'Revisa la imputabilidad y las acciones tomadas.', href, accion: 'Ver reportes',
+  const leves = eventos.length - graves.length;
+  if (rol === 'director' && leves) out.push({
+    id: 'hv-reacciones', nivel: 'media', icono: 'alert', titulo: `${plural(leves, 'evento adverso', 'eventos adversos')} sin notificar al comité`,
+    detalle: 'Leves o moderados. Revisa la imputabilidad y notifícalos.', href, accion: 'Revisar',
+  });
+  return out;
+}
+
+// ------------------------------------------------------------------ Seguridad transfusional (RF-TR7 y RF-H6)
+async function seguridad(rol: Role): Promise<Aviso[]> {
+  const out: Aviso[] = [];
+  const pagina = rol === 'laboratorio' ? '/laboratorio/compatibilidad' : '/operador/entregas';
+  if (usaSupabase()) {
+    const { listarIncompatibilidades } = await import('./transfusion');
+    const sinAviso = (await listarIncompatibilidades()).filter((i) => !i.aviso);
+    if (sinAviso.length) out.push({
+      id: 'incompatibles', nivel: 'alta', icono: 'alert', titulo: `${plural(sinAviso.length, 'prueba cruzada incompatible', 'pruebas cruzadas incompatibles')} sin avisar al médico`,
+      detalle: sinAviso.slice(0, 2).map((i) => `${i.solicitud} · ${i.paciente.nombre}`).join(' · '), href: pagina, accion: 'Registrar aviso',
+    });
+  }
+  const { devolucionesPendientes } = await import('./hemovigilancia');
+  const devs = await devolucionesPendientes();
+  if (devs.length) out.push({
+    id: 'devoluciones', nivel: rol === 'laboratorio' ? 'alta' : 'info', icono: 'package',
+    titulo: `${plural(devs.length, 'bolsa devuelta', 'bolsas devueltas')} ${rol === 'laboratorio' ? 'por recibir' : 'sin confirmar por el laboratorio'}`,
+    detalle: devs.slice(0, 2).map((r) => `${r.unidadCodigo ?? r.id}: ${r.devolucion?.motivo ?? ''}`).join(' · '), href: pagina,
+    accion: rol === 'laboratorio' ? 'Confirmar recepción' : 'Ver',
   });
   return out;
 }
@@ -255,8 +286,8 @@ async function soporte(): Promise<Aviso[]> {
 /** Avisos vigentes del rol, de lo más urgente a lo informativo. */
 export async function avisosDe(rol: Role): Promise<Aviso[]> {
   const fuentes: Promise<Aviso[]>[] = [];
-  if (rol === 'operador') fuentes.push(fuente(operador), fuente(() => compatibilidad(rol)), fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/operador/panel')));
-  if (rol === 'laboratorio') fuentes.push(fuente(laboratorio), fuente(() => compatibilidad(rol)), fuente(() => equipos(rol)));
+  if (rol === 'operador') fuentes.push(fuente(operador), fuente(() => seguridad(rol)), fuente(() => compatibilidad(rol)), fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/operador/panel')));
+  if (rol === 'laboratorio') fuentes.push(fuente(laboratorio), fuente(() => seguridad(rol)), fuente(() => compatibilidad(rol)), fuente(() => equipos(rol)));
   if (rol === 'director') fuentes.push(fuente(() => pedidosCentros(rol)), fuente(() => hemovigilancia(rol)), fuente(() => inventario('/director/inventario')), fuente(() => equipos(rol)));
   if (rol === 'soporte') fuentes.push(fuente(soporte));
   const todos = (await Promise.all(fuentes)).flat();

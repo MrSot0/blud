@@ -13,7 +13,7 @@ import type { Unidad } from './operador';
 import { ESTADO_PEDIDO, PRIORIDAD_LABEL } from './operador';
 import { ESTADO_PEDIDO_CENTRO } from './centros';
 import type { PedidoCentro } from './centros';
-import { TIPO_EVENTO, duracionMin, esGrave, fmtFechaHora as fmtFechaHoraHV } from './hemovigilancia';
+import { TIPO_EVENTO, alertasTiempo, duracionMin, esGrave, fmtFechaHora as fmtFechaHoraHV } from './hemovigilancia';
 import type { RegistroHV, Signos } from './hemovigilancia';
 
 const quien = () => {
@@ -103,7 +103,7 @@ export async function pdfInventario(unidades: Unidad[], filtros: string, resumen
   });
   pdf.kpis([
     { label: 'Vigentes', valor: String(resumen.vigentes), nota: 'unidades disponibles', tono: 'ok' },
-    { label: 'Por vencer', valor: String(resumen.porVencer), nota: 'en 7 días o menos', tono: resumen.porVencer ? 'aviso' : undefined },
+    { label: 'Por vencer', valor: String(resumen.porVencer), nota: 'eritrocitos 7 d, plasma 30 d, plaquetas 48 h', tono: resumen.porVencer ? 'aviso' : undefined },
     { label: 'Vencidas', valor: String(resumen.vencidas), nota: 'por retirar del stock', tono: resumen.vencidas ? 'rojo' : undefined },
     { label: 'En cuarentena', valor: String(resumen.cuarentena), nota: 'esperan al laboratorio' },
   ]);
@@ -260,7 +260,9 @@ export async function pdfHemovigilancia(r: RegistroHV) {
   ]);
   pdf.seccion('Infusión');
   pdf.fichas([['Inicio', fmtFechaHoraHV(r.inicio)], ['Fin', fmtFechaHoraHV(r.fin)], ['Duración', dur === null ? '—' : `${dur} min`],
-    ['Volumen infundido', r.volumenMl ? `${r.volumenMl} ml` : '—']], 4);
+    ['Volumen infundido', r.volumenMl ? `${r.volumenMl} ml` : '—'], ['Velocidad', r.velocidad ?? '—'],
+    ['Despachada', r.despachado && r.despachado.length > 10 ? fmtFechaHoraHV(r.despachado) : '—']], 4);
+  alertasTiempo(r).forEach((a) => pdf.aviso(a, 'aviso'));
   pdf.seccion('Signos vitales');
   const sg = (x?: Signos): string[] => [x?.pa || '—', x?.fc || '—', x?.temp ? `${x.temp} °C` : '—', x?.fr || '—', x?.spo2 ? `${x.spo2} %` : '—'];
   pdf.tabla(
@@ -273,6 +275,16 @@ export async function pdfHemovigilancia(r: RegistroHV) {
     if (r.sintomas) { pdf.seccion('Signos y síntomas'); pdf.parrafos([r.sintomas]); }
     pdf.seccion('Acciones tomadas');
     pdf.parrafos([r.acciones || 'Sin acciones registradas.']);
+  }
+  if (r.devolucion) {
+    pdf.seccion('Devolución de la bolsa');
+    pdf.fichas([['Devuelta', `${fmtFechaHoraHV(r.devolucion.fecha)}${r.devolucion.por ? ' · ' + r.devolucion.por : ''}`],
+      ['Recibida por el laboratorio', r.devolucion.recibidaEn ? `${fmtFechaHoraHV(r.devolucion.recibidaEn)}${r.devolucion.recibidaPor ? ' · ' + r.devolucion.recibidaPor : ''}` : 'Pendiente']], 2);
+    pdf.parrafos([r.devolucion.motivo]);
+  }
+  if (r.tipoEvento && r.tipoEvento !== 'sin_reaccion') {
+    pdf.seccion('Comité de hemovigilancia');
+    pdf.parrafos([r.comite ? `Notificado el ${fmtFechaHoraHV(r.comite.fecha)}${r.comite.por ? ' por ' + r.comite.por : ''}.${r.comite.nota ? ' ' + r.comite.nota : ''}` : 'Pendiente de notificar por la dirección de la sede.']);
   }
   pdf.firmas(['Operador que transfunde', 'Segundo verificador', 'Médico responsable']);
   await pdf.descargar(nombrePdf(`hemovigilancia-${r.id}`));

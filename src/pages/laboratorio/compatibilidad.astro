@@ -3,6 +3,7 @@
 // RF-TR2 / RF-TR3 / RF-TR4: tipaje de la muestra del paciente y prueba cruzada de cada unidad reservada.
 // Las solicitudes llegan aquí cuando la dirección las aprueba (las unidades quedan reservadas para el paciente).
 import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
+import SeguridadTransfusional from '../../components/app/SeguridadTransfusional.astro';
 ---
 
 <LayoutLaboratorio title="BLUD | Compatibilidad">
@@ -18,6 +19,8 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
         <button type="button" role="tab" aria-selected="false" data-filtro="despachadas">Despachadas</button>
       </div>
     </div>
+
+    <SeguridadTransfusional role="laboratorio" />
 
     <div class="hidden panel p-8 text-center space-y-2" data-sin-servidor>
       <p class="font-semibold text-ink">Necesita conexión con el servidor</p>
@@ -46,6 +49,7 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
 
 <script>
   import { cambiarUnidad, listarTransfusiones, registrarCruzada, registrarTipaje, type Transfusion } from '../../lib/transfusion';
+  import { unidadesEtiquetables } from '../../lib/etiquetas-pdf';
   import { usaSupabase } from '../../lib/supabase';
   import { esc, fmtFecha, toast } from '../../lib/ui';
 
@@ -126,6 +130,10 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
         ${t.requiereCruzada && !tj?.conforme && editable ? '<p class="text-xs text-ink-3">Registra primero el tipaje para hacer las pruebas cruzadas.</p>' : ''}
         <ul class="divide-y divide-line">${filas || '<li class="py-3 text-sm text-ink-3">Sin unidades reservadas.</li>'}</ul>
       </section>
+      ${unidadesEtiquetables(t).length ? `<section class="flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-ink-2">${unidadesEtiquetables(t).length} ${unidadesEtiquetables(t).length === 1 ? 'unidad compatible lista' : 'unidades compatibles listas'} para etiquetar.</p>
+        <button type="button" class="btn btn-secondary btn-sm" data-etiquetas="${esc(t.id)}">Imprimir etiquetas de compatibilidad</button>
+      </section>` : ''}
     </article>`;
   }
 
@@ -188,6 +196,15 @@ import LayoutLaboratorio from '../../layouts/LayoutLaboratorio.astro';
       }
     });
     lista.addEventListener('click', async (e) => {
+      const et = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-etiquetas]');
+      if (et) {
+        const t = todas.find((x) => x.id === et.dataset.etiquetas);
+        if (!t) return;
+        et.disabled = true;
+        try { await (await import('../../lib/etiquetas-pdf')).pdfEtiquetasCompatibilidad(t); }
+        catch (ex) { toast((ex as Error).message); } finally { et.disabled = false; }
+        return;
+      }
       const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cambiar]');
       if (!b) return;
       b.disabled = true;
